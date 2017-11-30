@@ -1,0 +1,4 @@
+centos:
+    from:
+        type: tar
+        url: http://files.tycho.ws/centos.tar.xz
