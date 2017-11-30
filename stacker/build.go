@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cisco.com/anuvu/stacker"
+	"github.com/anuvu/stacker"
 	"github.com/urfave/cli"
 )
 
