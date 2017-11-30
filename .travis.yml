@@ -5,4 +5,5 @@ go:
 matrix:
     allow_failures:
         - go: master
+install: make
 script: make check
