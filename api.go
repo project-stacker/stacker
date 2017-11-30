@@ -11,31 +11,31 @@ import (
 // config options.
 type StackerConfig struct {
 	StackerDir string
-	OCIDir string
-	RootFSDir string
+	OCIDir     string
+	RootFSDir  string
 }
 
 type Stackerfile map[string]*Layer
 
 const (
 	DockerType = "docker"
-	TarType = "tar"
-	OCIType = "oci"
-	BuiltType = "built"
+	TarType    = "tar"
+	OCIType    = "oci"
+	BuiltType  = "built"
 )
 
 type ImageSource struct {
 	Type string `yaml:"type"`
-	Url string `yaml:"url"`
-	Tag string `yaml:"tag"`
+	Url  string `yaml:"url"`
+	Tag  string `yaml:"tag"`
 	Path string `yaml:"path"`
 }
 
 type Layer struct {
-	From *ImageSource `yaml:"from"`
-	Import []string `yaml:"import"`
-	Run []string `yaml:"run"`
-	Entrypoint string `yaml:"entrypoint"`
+	From       *ImageSource `yaml:"from"`
+	Import     []string     `yaml:"import"`
+	Run        []string     `yaml:"run"`
+	Entrypoint string       `yaml:"entrypoint"`
 }
 
 func NewStackerfile(stackerfile string) (Stackerfile, error) {

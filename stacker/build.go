@@ -1,17 +1,17 @@
 package main
 
 import (
-	"github.com/urfave/cli"
 	"cisco.com/anuvu/stacker"
+	"github.com/urfave/cli"
 )
 
 var buildCmd = cli.Command{
-	Name: "build",
-	Usage: "builds a new OCI image from a stacker yaml file",
+	Name:   "build",
+	Usage:  "builds a new OCI image from a stacker yaml file",
 	Action: doBuild,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "stacker-file, f",
+			Name:  "stacker-file, f",
 			Usage: "the input stackerfile",
 			Value: "stacker.yaml",
 		},

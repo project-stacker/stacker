@@ -8,7 +8,7 @@ import (
 )
 
 func GetBaseLayer(c StackerConfig, name string, l *Layer) error {
-	switch(l.From.Type) {
+	switch l.From.Type {
 	case BuiltType:
 		/* nothing to do assuming layers are imported in dependency order */
 		return nil

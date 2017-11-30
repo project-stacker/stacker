@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"syscall"
 	"strings"
+	"syscall"
 )
 
 type Storage interface {
@@ -77,7 +77,7 @@ func (b *btrfsLoopback) Init() error {
 		}
 	} else {
 		/* TODO: make this configurable */
-		err := syscall.Ftruncate(int(f.Fd()), 100 * 1024 * 1024 * 1024)
+		err := syscall.Ftruncate(int(f.Fd()), 100*1024*1024*1024)
 		f.Close()
 		if err != nil {
 			return err

@@ -1,11 +1,11 @@
 package stacker
 
 import (
-	"path"
 	"encoding/base64"
-	"os"
-	"net/http"
 	"io"
+	"net/http"
+	"os"
+	"path"
 )
 
 // download with caching support in the specified cache dir.

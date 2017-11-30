@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli"
 	"github.com/anuvu/stacker"
+	"github.com/urfave/cli"
 )
 
 var config stacker.StackerConfig
@@ -21,17 +21,17 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name: "stacker-dir",
+			Name:  "stacker-dir",
 			Usage: "set the directory for stacker's cache",
 			Value: ".stacker",
 		},
 		cli.StringFlag{
-			Name: "oci-dir",
+			Name:  "oci-dir",
 			Usage: "set the directory for OCI output",
 			Value: "oci",
 		},
 		cli.StringFlag{
-			Name: "roots-dir",
+			Name:  "roots-dir",
 			Usage: "set the directory for the rootfs output",
 			Value: "roots",
 		},
