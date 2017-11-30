@@ -25,6 +25,16 @@ func doBuild(ctx *cli.Context) error {
 		return err
 	}
 
+	s, err := stacker.NewStorage(config)
+	if err != nil {
+		return err
+	}
+
+	err = s.Init()
+	if err != nil {
+		return err
+	}
+
 	order, err := sf.DependencyOrder()
 	if err != nil {
 		return err
