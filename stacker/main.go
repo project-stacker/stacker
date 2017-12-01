@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/user"
 
 	"github.com/anuvu/stacker"
 	"github.com/urfave/cli"
@@ -41,6 +42,16 @@ func main() {
 		config.StackerDir = ctx.String("stacker-dir")
 		config.OCIDir = ctx.String("oci-dir")
 		config.RootFSDir = ctx.String("roots-dir")
+
+		user, err := user.Current()
+		if err != nil {
+			return err
+		}
+
+		if user.Uid != "0" {
+			return fmt.Errorf("must be root to use stacker")
+		}
+
 		return nil
 	}
 
