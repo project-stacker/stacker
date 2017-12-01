@@ -29,20 +29,36 @@ func doBuild(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	err = s.Init()
-	if err != nil {
-		return err
-	}
+	defer s.Detach()
 
 	order, err := sf.DependencyOrder()
 	if err != nil {
 		return err
 	}
 
+	defer s.Delete("working")
 	for _, name := range order {
-		err := stacker.GetBaseLayer(config, name, sf[name])
-		if err != nil {
+		l := sf[name]
+
+		s.Delete(".working")
+		if l.From.Type == stacker.BuiltType {
+			if err := s.Restore(l.From.Tag, ".working"); err != nil {
+				return err
+			}
+		} else {
+			if err := s.Create(".working"); err != nil {
+				return err
+			}
+
+			err := stacker.GetBaseLayer(config, ".working", l)
+			if err != nil {
+				return err
+			}
+		}
+
+		// TODO: stacker's import and run flags here
+
+		if err := s.Snapshot(".working", name); err != nil {
 			return err
 		}
 	}
