@@ -37,6 +37,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/freddierice/go-losetup"
 )
 
 func main() {
@@ -80,17 +82,16 @@ func run() error {
 
 	/* Now we know that file is a valid btrfs "file" and that it's
 	 * not mounted, so let's mount it.
-	 * FIXME: this should probably be done in golang, but it's more work to
-	 * set up the loopback mounts. Could do it via:
-	 * https://github.com/freddierice/go-losetup
-	 * losetup.Attach()
-	 * syscall.Mount()
-	 * losetup.Detach()
-	 * This might allow us to drop the setuid attribute constructor hackery.
 	 */
-	output, err := exec.Command("mount", "-o", "loop,user_subvol_rm_allowed", file, dest).CombinedOutput()
+	dev, err := losetup.Attach(file, 0, false)
 	if err != nil {
-		return fmt.Errorf("problem doing loopback mount: %s: %s", err, output)
+		return fmt.Errorf("Failed to attach loop device: %v", err)
+	}
+	defer dev.Detach()
+
+	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed")
+	if err != nil {
+		return fmt.Errorf("Failed mount fs: %v", err)
 	}
 
 	if err := os.Chown(dest, uid, uid); err != nil {
