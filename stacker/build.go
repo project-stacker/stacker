@@ -15,6 +15,10 @@ var buildCmd = cli.Command{
 			Usage: "the input stackerfile",
 			Value: "stacker.yaml",
 		},
+		cli.BoolFlag{
+			Name: "leave-unladen",
+			Usage: "leave the built rootfs mount after image building",
+		},
 	},
 }
 
@@ -29,7 +33,9 @@ func doBuild(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer s.Detach()
+	if !ctx.Bool("leave-unladen") {
+		defer s.Detach()
+	}
 
 	order, err := sf.DependencyOrder()
 	if err != nil {
