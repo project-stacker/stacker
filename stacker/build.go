@@ -16,7 +16,7 @@ var buildCmd = cli.Command{
 			Value: "stacker.yaml",
 		},
 		cli.BoolFlag{
-			Name: "leave-unladen",
+			Name:  "leave-unladen",
 			Usage: "leave the built rootfs mount after image building",
 		},
 	},

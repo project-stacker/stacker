@@ -1,10 +1,10 @@
 package stacker
 
 import (
-	"os"
-	"io"
 	"encoding/base64"
+	"io"
 	"net/url"
+	"os"
 	"path"
 )
 
