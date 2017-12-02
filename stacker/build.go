@@ -62,7 +62,11 @@ func doBuild(ctx *cli.Context) error {
 			}
 		}
 
-		// TODO: stacker's import and run flags here
+		if err := stacker.Import(config, name, l.Import); err != nil {
+			return err
+		}
+
+		// TODO: stacker's run steps
 
 		if err := s.Snapshot(".working", name); err != nil {
 			return err
