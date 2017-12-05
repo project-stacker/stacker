@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"os"
 	"os/user"
 
@@ -39,9 +40,20 @@ func main() {
 	}
 
 	app.Before = func(ctx *cli.Context) error {
-		config.StackerDir = ctx.String("stacker-dir")
-		config.OCIDir = ctx.String("oci-dir")
-		config.RootFSDir = ctx.String("roots-dir")
+		var err error
+		config.StackerDir, err = filepath.Abs(ctx.String("stacker-dir"))
+		if err != nil {
+			return err
+		}
+
+		config.OCIDir, err = filepath.Abs(ctx.String("oci-dir"))
+		if err != nil {
+			return err
+		}
+		config.RootFSDir, err = filepath.Abs(ctx.String("roots-dir"))
+		if err != nil {
+			return err
+		}
 
 		user, err := user.Current()
 		if err != nil {
