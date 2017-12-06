@@ -89,7 +89,7 @@ func run() error {
 	}
 	defer dev.Detach()
 
-	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed")
+	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed,flushoncommit")
 	if err != nil {
 		return fmt.Errorf("Failed mount fs: %v", err)
 	}

@@ -109,7 +109,6 @@ func (b *btrfs) Snapshot(source string, target string) error {
 		"btrfs",
 		"subvolume",
 		"snapshot",
-		"-r",
 		path.Join(b.c.RootFSDir, source),
 		path.Join(b.c.RootFSDir, target)).CombinedOutput()
 	if err != nil {
