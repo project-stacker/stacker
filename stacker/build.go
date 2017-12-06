@@ -70,7 +70,10 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		// TODO: stacker's run steps
+		fmt.Println("running commands...")
+		if err := stacker.Run(config, name, l.Run); err != nil {
+			return err
+		}
 
 		if err := s.Snapshot(".working", name); err != nil {
 			return err

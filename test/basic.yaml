@@ -5,3 +5,5 @@ centos:
     import:
         - ./basic.yaml
         - https://www.cisco.com/favicon.ico
+    run:
+        - cp /stacker/favicon.ico /favicon.ico

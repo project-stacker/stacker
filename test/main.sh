@@ -52,4 +52,7 @@ stacker build --leave-unladen -f ./basic.yaml
 # did we do a copy correctly?
 [ "$(sha .stacker/imports/centos/basic.yaml)" == "$(sha ./basic.yaml)" ]
 
+# did run actually copy the favicon to the right place?
+[ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/favicon.ico)" ]
+
 RESULT=success
