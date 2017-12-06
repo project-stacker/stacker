@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/anuvu/stacker"
 	"github.com/urfave/cli"
 )
@@ -47,6 +49,7 @@ func doBuild(ctx *cli.Context) error {
 		l := sf[name]
 
 		s.Delete(".working")
+		fmt.Printf("building image %s...\n", name)
 		if l.From.Type == stacker.BuiltType {
 			if err := s.Restore(l.From.Tag, ".working"); err != nil {
 				return err
@@ -62,6 +65,7 @@ func doBuild(ctx *cli.Context) error {
 			}
 		}
 
+		fmt.Println("importing files...")
 		if err := stacker.Import(config, name, l.Import); err != nil {
 			return err
 		}
@@ -71,6 +75,7 @@ func doBuild(ctx *cli.Context) error {
 		if err := s.Snapshot(".working", name); err != nil {
 			return err
 		}
+		fmt.Printf("image %s built successfully\n", name)
 	}
 
 	return nil
