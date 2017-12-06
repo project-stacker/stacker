@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
 	"os"
 	"os/user"
+	"path/filepath"
 
 	"github.com/anuvu/stacker"
 	"github.com/urfave/cli"

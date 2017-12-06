@@ -2,20 +2,20 @@ package stacker
 
 import (
 	"bufio"
-	"path"
-	"os"
 	"fmt"
+	"os"
+	"path"
 	"strings"
 	"time"
 
-	"gopkg.in/lxc/go-lxc.v2"
 	"github.com/pkg/errors"
+	"gopkg.in/lxc/go-lxc.v2"
 )
 
 // our representation of a container
 type container struct {
 	sc StackerConfig
-	c *lxc.Container
+	c  *lxc.Container
 }
 
 func newContainer(sc StackerConfig, name string) (*container, error) {
@@ -29,8 +29,8 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		// ->execute() seems to set these up for is; if we provide
 		// them, we get an EBUSY for sysfs
 		//"lxc.mount.auto": "proc:mixed sys:mixed cgroup:mixed",
-		"lxc.autodev": "1",
-		"lxc.uts.name": name,
+		"lxc.autodev":    "1",
+		"lxc.uts.name":   name,
 		"lxc.net.0.type": "none",
 	}
 
@@ -58,7 +58,6 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 			return nil, err
 		}
 	}
-
 
 	err = os.MkdirAll(path.Join(sc.StackerDir, "logs"), 0755)
 	if err != nil {
@@ -140,6 +139,6 @@ func (c *container) execute(args []string) error {
 
 	// If the command exits too fast, this will return false, since there
 	// was nothing to wait for. so let's explicitly ignore the return code.
-	c.c.Wait(lxc.STOPPED, -1 * time.Second)
+	c.c.Wait(lxc.STOPPED, -1*time.Second)
 	return nil
 }
