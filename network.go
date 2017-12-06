@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"encoding/base64"
 	"io"
 	"net/http"
 	"os"
@@ -20,7 +19,7 @@ func download(cacheDir string, url string) (string, error) {
 		return "", err
 	}
 
-	name := path.Join(cacheDir, base64.URLEncoding.EncodeToString([]byte(url)))
+	name := path.Join(cacheDir, path.Base(resp.Request.URL.Path))
 	out, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		// It already exists, let's just use that one.

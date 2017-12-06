@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"encoding/base64"
 	"io"
 	"net/url"
 	"os"
@@ -38,11 +37,9 @@ func Import(c StackerConfig, name string, imports []string) error {
 			return err
 		}
 
-		encoded := base64.URLEncoding.EncodeToString([]byte(i))
-
 		// It's just a path, let's copy it to .stacker.
 		if url.Scheme == "" {
-			if err := fileCopy(path.Join(dir, encoded), i); err != nil {
+			if err := fileCopy(path.Join(dir, path.Base(url.Path)), i); err != nil {
 				return err
 			}
 		} else {

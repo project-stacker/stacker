@@ -33,9 +33,9 @@ stacker build --leave-unladen -f ./basic.yaml
 [ -d roots/centos ]
 
 # did we really download the image?
-[ -f .stacker/layer-bases/aHR0cDovL2ZpbGVzLnR5Y2hvLndzL2NlbnRvcy50YXIueHo= ]
+[ -f .stacker/layer-bases/centos.tar.xz ]
 
 # did we do a copy correctly?
-[ "$(sha .stacker/imports/centos/$(echo -n ./basic.yaml | base64))" == "$(sha ./basic.yaml)" ]
+[ "$(sha .stacker/imports/centos/basic.yaml)" == "$(sha ./basic.yaml)" ]
 
 RESULT=success
