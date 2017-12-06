@@ -5,5 +5,8 @@ go:
 matrix:
     allow_failures:
         - go: master
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install -yy lxc-dev
 install: make
 script: make check
