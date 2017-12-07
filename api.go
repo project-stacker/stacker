@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/anmitsu/go-shlex"
 	"gopkg.in/yaml.v2"
+)
+
+const (
+	MediaTypeImageBtrfsLayer = "application/vnd.cisco.image.layer.btrfs"
 )
 
 // StackerConfig is a struct that contains global (or widely used) stacker
@@ -36,6 +41,10 @@ type Layer struct {
 	Import     []string     `yaml:"import"`
 	Run        []string     `yaml:"run"`
 	Entrypoint string       `yaml:"entrypoint"`
+}
+
+func (l *Layer) ParseEntrypoint() ([]string, error) {
+	return shlex.Split(l.Entrypoint, true)
 }
 
 func NewStackerfile(stackerfile string) (Stackerfile, error) {

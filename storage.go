@@ -2,6 +2,8 @@ package stacker
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -10,12 +12,20 @@ import (
 	"syscall"
 )
 
+type DiffStrategy int
+
+const (
+	NativeDiff DiffStrategy = iota
+)
+
 type Storage interface {
 	Name() string
 	Create(path string) error
 	Snapshot(source string, target string) error
 	Restore(source string, target string) error
 	Delete(path string) error
+	Diff(DiffStrategy, string, string) (io.Reader, error)
+	Undiff(DiffStrategy, io.Reader) error
 	Detach() error
 }
 
@@ -109,6 +119,7 @@ func (b *btrfs) Snapshot(source string, target string) error {
 		"btrfs",
 		"subvolume",
 		"snapshot",
+		"-r",
 		path.Join(b.c.RootFSDir, source),
 		path.Join(b.c.RootFSDir, target)).CombinedOutput()
 	if err != nil {
@@ -119,6 +130,7 @@ func (b *btrfs) Snapshot(source string, target string) error {
 }
 
 func (b *btrfs) Restore(source string, target string) error {
+	fmt.Printf("restoring %s to %s\n", source, target)
 	output, err := exec.Command(
 		"btrfs",
 		"subvolume",
@@ -127,6 +139,20 @@ func (b *btrfs) Restore(source string, target string) error {
 		path.Join(b.c.RootFSDir, target)).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("btrfs restore: %s: %s", err, output)
+	}
+
+	// Since we create snapshots as readonly above, we must re-mark them
+	// writable here.
+	output, err = exec.Command(
+		"btrfs",
+		"property",
+		"set",
+		"-ts",
+		path.Join(b.c.RootFSDir, target),
+		"ro",
+		"false").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("btrfs mark writable: %s: %s", err, output)
 	}
 
 	return nil
@@ -140,6 +166,110 @@ func (b *btrfs) Delete(source string) error {
 		path.Join(b.c.RootFSDir, source)).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("btrfs delete: %s: %s", err, output)
+	}
+
+	return nil
+}
+
+type cmdRead struct {
+	cmd    *exec.Cmd
+	stdout io.ReadCloser
+	stderr io.ReadCloser
+	done   bool
+}
+
+func (crc *cmdRead) Read(p []byte) (int, error) {
+	if crc.done {
+		return 0, io.EOF
+	}
+
+	n, err := crc.stdout.Read(p)
+	if err == io.EOF {
+		crc.done = true
+		content, err2 := ioutil.ReadAll(crc.stderr)
+		err := crc.cmd.Wait()
+		if err != nil {
+			if err2 == nil {
+				return n, fmt.Errorf("EOF and %s: %s", err, string(content))
+			}
+
+			return n, fmt.Errorf("EOF and %s", err)
+		}
+	}
+
+	return n, err
+}
+
+func (crc *cmdRead) Close() error {
+	crc.stdout.Close()
+	crc.stderr.Close()
+	if !crc.done {
+		return crc.cmd.Wait()
+	}
+
+	return nil
+}
+
+func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.Reader, error) {
+	// for now we can ignore strategy, since there is only one
+	args := []string{"send"}
+	if source != "" {
+		args = append(args, "-p", path.Join(b.c.RootFSDir, source))
+	}
+	args = append(args, path.Join(b.c.RootFSDir, target))
+
+	cmd := exec.Command("btrfs", args...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	return &cmdRead{cmd: cmd, stdout: stdout, stderr: stderr}, nil
+}
+
+func (b *btrfs) Undiff(strategy DiffStrategy, r io.Reader) error {
+	cmd := exec.Command("btrfs", "receive", "-e", b.c.RootFSDir)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	defer stdin.Close()
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	defer stderr.Close()
+
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(stdin, r)
+	if err != nil {
+		return err
+	}
+
+	content, err2 := ioutil.ReadAll(stderr)
+	err = cmd.Wait()
+	if err != nil {
+		if err2 == nil {
+			return fmt.Errorf("btrfs receive: %s: %s", err, string(content))
+		}
+
+		return fmt.Errorf("btrfs receive: %s", err)
 	}
 
 	return nil

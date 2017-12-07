@@ -19,6 +19,7 @@ func main() {
 	app.Version = "0.0.1"
 	app.Commands = []cli.Command{
 		buildCmd,
+		unladeCmd,
 	}
 
 	app.Flags = []cli.Flag{
@@ -54,6 +55,8 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		fmt.Println(ctx.String("f"))
 
 		user, err := user.Current()
 		if err != nil {
