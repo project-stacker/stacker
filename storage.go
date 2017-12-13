@@ -10,12 +10,15 @@ import (
 	"path"
 	"strconv"
 	"syscall"
+
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type DiffStrategy int
 
 const (
 	NativeDiff DiffStrategy = iota
+	TarDiff    DiffStrategy = iota
 )
 
 type Storage interface {
@@ -24,7 +27,7 @@ type Storage interface {
 	Snapshot(source string, target string) error
 	Restore(source string, target string) error
 	Delete(path string) error
-	Diff(DiffStrategy, string, string) (io.Reader, error)
+	Diff(DiffStrategy, string, string) (io.ReadCloser, error)
 	Undiff(DiffStrategy, io.Reader) error
 	Detach() error
 }
@@ -210,7 +213,7 @@ func (crc *cmdRead) Close() error {
 	return nil
 }
 
-func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.Reader, error) {
+func (b *btrfs) nativeDiff(source string, target string) (io.ReadCloser, error) {
 	// for now we can ignore strategy, since there is only one
 	args := []string{"send"}
 	if source != "" {
@@ -237,7 +240,18 @@ func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.Re
 	return &cmdRead{cmd: cmd, stdout: stdout, stderr: stderr}, nil
 }
 
-func (b *btrfs) Undiff(strategy DiffStrategy, r io.Reader) error {
+func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.ReadCloser, error) {
+	switch strategy {
+	case NativeDiff:
+		return b.nativeDiff(source, target)
+	case TarDiff:
+		return tarDiff(b.c, source, target)
+	default:
+		return nil, fmt.Errorf("unknown diff strategy")
+	}
+}
+
+func (b *btrfs) nativeUndiff(r io.Reader) error {
 	cmd := exec.Command("btrfs", "receive", "-e", b.c.RootFSDir)
 
 	stdin, err := cmd.StdinPipe()
@@ -275,6 +289,17 @@ func (b *btrfs) Undiff(strategy DiffStrategy, r io.Reader) error {
 	return nil
 }
 
+func (b *btrfs) Undiff(strategy DiffStrategy, r io.Reader) error {
+	switch strategy {
+	case NativeDiff:
+		return b.nativeUndiff(r)
+	case TarDiff:
+		return fmt.Errorf("TarDiff unpack not implemented")
+	default:
+		return fmt.Errorf("unknown undiff strategy")
+	}
+}
+
 func (b *btrfs) Detach() error {
 	if b.needsUmount {
 		err := syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
@@ -289,4 +314,15 @@ func (b *btrfs) Detach() error {
 	}
 
 	return nil
+}
+
+func MediaTypeToDiffStrategy(mt string) (DiffStrategy, error) {
+	switch mt {
+	case MediaTypeImageBtrfsLayer:
+		return NativeDiff, nil
+	case ispec.MediaTypeImageLayer:
+		return TarDiff, nil
+	default:
+		return 0, fmt.Errorf("unknown media type: %s", mt)
+	}
 }

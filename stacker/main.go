@@ -56,8 +56,6 @@ func main() {
 			return err
 		}
 
-		fmt.Println(ctx.String("f"))
-
 		user, err := user.Current()
 		if err != nil {
 			return err

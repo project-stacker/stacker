@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/anuvu/stacker"
 	"github.com/openSUSE/umoci"
 	igen "github.com/openSUSE/umoci/oci/config/generate"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/urfave/cli"
 )
 
@@ -30,6 +30,10 @@ var buildCmd = cli.Command{
 		cli.BoolFlag{
 			Name:  "no-cache",
 			Usage: "don't use the previous build cache",
+		},
+		cli.BoolFlag{
+			Name:  "btrfs-diff",
+			Usage: "enable btrfs native layer diffing",
 		},
 	},
 }
@@ -120,18 +124,23 @@ func doBuild(ctx *cli.Context) error {
 		}
 		fmt.Printf("filesystem %s built successfully\n", name)
 
-		var diff io.Reader
-		if l.From.Type == stacker.BuiltType {
-			diff, err = s.Diff(stacker.NativeDiff, l.From.Tag, name)
-			if err != nil {
-				return err
-			}
-		} else {
-			diff, err = s.Diff(stacker.NativeDiff, "", name)
-			if err != nil {
-				return err
-			}
+		diffType := stacker.TarDiff
+		if ctx.Bool("btrfs-diff") {
+			diffType = stacker.NativeDiff
 		}
+
+		diffSource := ""
+		if l.From.Type == stacker.BuiltType {
+			diffSource = l.From.Tag
+		}
+
+		diff, err := s.Diff(diffType, diffSource, name)
+		if err != nil {
+			return err
+		}
+		defer diff.Close()
+
+		fmt.Println("starting diff...")
 
 		layer, err := oci.PutBlob(diff)
 		if err != nil {
@@ -180,7 +189,12 @@ func doBuild(ctx *cli.Context) error {
 		g.ClearConfigEnv()
 		g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
 
-		if err := oci.NewImage(name, g, deps, stacker.MediaTypeImageBtrfsLayer); err != nil {
+		mediaType := ispec.MediaTypeImageLayer
+		if ctx.Bool("btrfs-diff") {
+			mediaType = stacker.MediaTypeImageBtrfsLayer
+		}
+
+		if err := oci.NewImage(name, g, deps, mediaType); err != nil {
 			return err
 		}
 	}

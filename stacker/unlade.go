@@ -45,10 +45,6 @@ func doUnlade(ctx *cli.Context) error {
 		}
 
 		for _, b := range blobs {
-			if b.MediaType != stacker.MediaTypeImageBtrfsLayer {
-				return fmt.Errorf("bad blob type %s", b.MediaType)
-			}
-
 			reader, ok := b.Data.(io.ReadCloser)
 			if !ok {
 				return fmt.Errorf("couldn't cast blob data to reader")
@@ -64,7 +60,12 @@ func doUnlade(ctx *cli.Context) error {
 				imported[d] = true
 			}
 
-			err = s.Undiff(stacker.NativeDiff, reader)
+			diffType, err := stacker.MediaTypeToDiffStrategy(b.MediaType)
+			if err != nil {
+				return err
+			}
+
+			err = s.Undiff(diffType, reader)
 			if err != nil {
 				return err
 			}
