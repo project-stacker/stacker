@@ -189,7 +189,7 @@ func doBuild(ctx *cli.Context) error {
 		g.ClearConfigEnv()
 		g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
 
-		mediaType := ispec.MediaTypeImageLayer
+		mediaType := ispec.MediaTypeImageLayerGzip
 		if ctx.Bool("btrfs-diff") {
 			mediaType = stacker.MediaTypeImageBtrfsLayer
 		}

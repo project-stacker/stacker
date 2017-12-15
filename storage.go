@@ -320,7 +320,7 @@ func MediaTypeToDiffStrategy(mt string) (DiffStrategy, error) {
 	switch mt {
 	case MediaTypeImageBtrfsLayer:
 		return NativeDiff, nil
-	case ispec.MediaTypeImageLayer:
+	case ispec.MediaTypeImageLayerGzip:
 		return TarDiff, nil
 	default:
 		return 0, fmt.Errorf("unknown media type: %s", mt)

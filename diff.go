@@ -3,6 +3,7 @@ package stacker
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -200,7 +201,7 @@ func buildTarEntry(target string, path string, info os.FileInfo) (*tar.Header, i
 }
 
 func doTarDiff(source, target string, w *io.PipeWriter) {
-	tw := tar.NewWriter(w)
+	tw := tar.NewWriter(gzip.NewWriter(w))
 	diffFunc := func(path1 string, info1 os.FileInfo, path2 string, info2 os.FileInfo) error {
 		var header *tar.Header
 		var content io.ReadCloser
@@ -253,7 +254,7 @@ func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser,
 	t := path.Join(config.RootFSDir, target)
 	if source == "" {
 		go func() {
-			tw := tar.NewWriter(w)
+			tw := tar.NewWriter(gzip.NewWriter(w))
 			err := filepath.Walk(t, func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
