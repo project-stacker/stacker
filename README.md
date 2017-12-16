@@ -29,3 +29,39 @@ ubuntu with:
     sudo apt-add-repository ppa:projectatomic/ppa
     sudo apt update
     sudo apt install skopeo
+
+## Example
+
+An example recipe file would look like:
+
+```yaml
+centos:
+    from:
+        type: tar
+        url: http://example.com/centos.tar.gz
+boot:
+    from:
+        type: built
+        tag: centos
+    run: |
+        yum install openssh-server
+        echo meshuggah rocks
+web:
+    from:
+        type: built
+        tag: centos
+    import: ./lighttp.cfg
+    run: |
+        yum install lighttpd
+        cp /stacker/lighttp.cfg /etc/lighttpd/lighttp.cfg
+```
+
+If the above contents are in ./stacker.yaml, then the result of running
+
+```bash
+stacker
+```
+
+would be an OCI image with three images: centos, boot, and web.
+
+See the manpage for more information.
