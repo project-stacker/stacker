@@ -4,7 +4,9 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"os"
@@ -200,9 +202,7 @@ func buildTarEntry(target string, path string, info os.FileInfo) (*tar.Header, i
 	return header, content, nil
 }
 
-func doTarDiff(source, target string, w *io.PipeWriter) {
-	gz := gzip.NewWriter(w)
-	tw := tar.NewWriter(gz)
+func doTarDiff(source, target string, tw *tar.Writer) error {
 	diffFunc := func(path1 string, info1 os.FileInfo, path2 string, info2 os.FileInfo) error {
 		var header *tar.Header
 		var content io.ReadCloser
@@ -246,20 +246,18 @@ func doTarDiff(source, target string, w *io.PipeWriter) {
 
 	}
 
-	err := directoryDiff(source, target, diffFunc)
-	tw.Close()
-	gz.Close()
-	w.CloseWithError(err)
+	return directoryDiff(source, target, diffFunc)
 }
 
-func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser, error) {
+func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser, hash.Hash, error) {
 	r, w := io.Pipe()
+	gz := gzip.NewWriter(w)
+	h := sha256.New()
+	tw := tar.NewWriter(io.MultiWriter(gz, h))
 	s := path.Join(config.RootFSDir, source)
 	t := path.Join(config.RootFSDir, target)
 	if source == "" {
 		go func() {
-			gz := gzip.NewWriter(w)
-			tw := tar.NewWriter(gz)
 			err := filepath.Walk(t, func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
@@ -296,7 +294,12 @@ func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser,
 			w.CloseWithError(err)
 		}()
 	} else {
-		go doTarDiff(s, t, w)
+		go func() {
+			err := doTarDiff(s, t, tw)
+			tw.Close()
+			gz.Close()
+			w.CloseWithError(err)
+		}()
 	}
-	return r, nil
+	return r, h, nil
 }

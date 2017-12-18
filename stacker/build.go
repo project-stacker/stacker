@@ -38,6 +38,11 @@ var buildCmd = cli.Command{
 	},
 }
 
+type LayerInfo struct {
+	Layer umoci.Layer
+	DiffID string
+}
+
 func doBuild(ctx *cli.Context) error {
 	if ctx.Bool("no-cache") {
 		os.Remove(config.StackerDir)
@@ -78,7 +83,7 @@ func doBuild(ctx *cli.Context) error {
 	}
 
 	defer s.Delete(".working")
-	results := map[string]umoci.Layer{}
+	results := map[string]LayerInfo{}
 
 	for _, name := range order {
 		l := sf[name]
@@ -134,7 +139,7 @@ func doBuild(ctx *cli.Context) error {
 			diffSource = l.From.Tag
 		}
 
-		diff, err := s.Diff(diffType, diffSource, name)
+		diff, hash, err := s.Diff(diffType, diffSource, name)
 		if err != nil {
 			return err
 		}
@@ -147,15 +152,19 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		fmt.Printf("added blob %v\n", layer)
-		results[name] = layer
-		if err := buildCache.Put(l, layer); err != nil {
+		fmt.Printf("added blob %v\n", layer.Hash)
+		digest := layer.Hash
+		if hash != nil {
+			digest = fmt.Sprintf("sha256:%x", hash.Sum(nil))
+		}
+		results[name] = LayerInfo{layer, digest}
+		if err := buildCache.Put(l, results[name]); err != nil {
 			return err
 		}
 
-		deps := []umoci.Layer{layer}
+		deps := []LayerInfo{results[name]}
 		for cur := l; cur.From.Type == stacker.BuiltType; cur = sf[cur.From.Tag] {
-			deps = append([]umoci.Layer{results[cur.From.Tag]}, deps...)
+			deps = append([]LayerInfo{results[cur.From.Tag]}, deps...)
 		}
 
 		g := igen.New()
@@ -168,11 +177,7 @@ func doBuild(ctx *cli.Context) error {
 		g.ClearRootfsDiffIDs()
 
 		for _, d := range deps {
-			digest, err := d.ToDigest()
-			if err != nil {
-				return err
-			}
-			g.AddRootfsDiffID(digest)
+			g.AddRootfsDiffIDStr(d.DiffID)
 		}
 
 		if l.Entrypoint != "" {
@@ -194,7 +199,12 @@ func doBuild(ctx *cli.Context) error {
 			mediaType = stacker.MediaTypeImageBtrfsLayer
 		}
 
-		if err := oci.NewImage(name, g, deps, mediaType); err != nil {
+		layerDeps := []umoci.Layer{}
+		for _, d := range deps {
+			layerDeps = append(layerDeps, d.Layer)
+		}
+
+		if err := oci.NewImage(name, g, layerDeps, mediaType); err != nil {
 			return err
 		}
 	}

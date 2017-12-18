@@ -8,12 +8,11 @@ import (
 
 	"github.com/anuvu/stacker"
 	"github.com/mitchellh/hashstructure"
-	"github.com/openSUSE/umoci"
 )
 
 type cache struct {
 	path    string                 `json:omit`
-	Cache   map[uint64]umoci.Layer `json:"cache"`
+	Cache   map[uint64]LayerInfo   `json:"cache"`
 	Version int                    `json:"version"`
 }
 
@@ -24,7 +23,7 @@ func openCache(sc stacker.StackerConfig) (*cache, error) {
 		if os.IsNotExist(err) {
 			return &cache{
 				path:    p,
-				Cache:   map[uint64]umoci.Layer{},
+				Cache:   map[uint64]LayerInfo{},
 				Version: 1,
 			}, nil
 		}
@@ -44,16 +43,16 @@ func openCache(sc stacker.StackerConfig) (*cache, error) {
 	return c, nil
 }
 
-func (c *cache) Lookup(l *stacker.Layer) (umoci.Layer, bool) {
+func (c *cache) Lookup(l *stacker.Layer) (LayerInfo, bool) {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
-		return umoci.Layer{}, false
+		return LayerInfo{}, false
 	}
 	result, ok := c.Cache[h]
 	return result, ok
 }
 
-func (c *cache) Put(l *stacker.Layer, blob umoci.Layer) error {
+func (c *cache) Put(l *stacker.Layer, blob LayerInfo) error {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
 		return err

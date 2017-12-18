@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"os"
@@ -27,7 +28,12 @@ type Storage interface {
 	Snapshot(source string, target string) error
 	Restore(source string, target string) error
 	Delete(path string) error
-	Diff(DiffStrategy, string, string) (io.ReadCloser, error)
+
+	// Diff returns a reader for the blob to put, and a hash for the
+	// uncompressed layer if it is uncompressed. Note that OCI uses the
+	// uncompressed hash for the diffID field, and the compressed hash as
+	// the actual blob value, so unfortunately we need both.
+	Diff(DiffStrategy, string, string) (io.ReadCloser, hash.Hash, error)
 	Undiff(DiffStrategy, io.Reader) error
 	Detach() error
 }
@@ -213,7 +219,7 @@ func (crc *cmdRead) Close() error {
 	return nil
 }
 
-func (b *btrfs) nativeDiff(source string, target string) (io.ReadCloser, error) {
+func (b *btrfs) nativeDiff(source string, target string) (io.ReadCloser, hash.Hash, error) {
 	// for now we can ignore strategy, since there is only one
 	args := []string{"send"}
 	if source != "" {
@@ -224,30 +230,30 @@ func (b *btrfs) nativeDiff(source string, target string) (io.ReadCloser, error) 
 	cmd := exec.Command("btrfs", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &cmdRead{cmd: cmd, stdout: stdout, stderr: stderr}, nil
+	return &cmdRead{cmd: cmd, stdout: stdout, stderr: stderr}, nil, nil
 }
 
-func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.ReadCloser, error) {
+func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.ReadCloser, hash.Hash, error) {
 	switch strategy {
 	case NativeDiff:
 		return b.nativeDiff(source, target)
 	case TarDiff:
 		return tarDiff(b.c, source, target)
 	default:
-		return nil, fmt.Errorf("unknown diff strategy")
+		return nil, nil, fmt.Errorf("unknown diff strategy")
 	}
 }
 
