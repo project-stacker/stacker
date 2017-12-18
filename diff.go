@@ -201,7 +201,8 @@ func buildTarEntry(target string, path string, info os.FileInfo) (*tar.Header, i
 }
 
 func doTarDiff(source, target string, w *io.PipeWriter) {
-	tw := tar.NewWriter(gzip.NewWriter(w))
+	gz := gzip.NewWriter(w)
+	tw := tar.NewWriter(gz)
 	diffFunc := func(path1 string, info1 os.FileInfo, path2 string, info2 os.FileInfo) error {
 		var header *tar.Header
 		var content io.ReadCloser
@@ -245,7 +246,10 @@ func doTarDiff(source, target string, w *io.PipeWriter) {
 
 	}
 
-	w.CloseWithError(directoryDiff(source, target, diffFunc))
+	err := directoryDiff(source, target, diffFunc)
+	tw.Close()
+	gz.Close()
+	w.CloseWithError(err)
 }
 
 func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser, error) {
@@ -254,11 +258,14 @@ func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser,
 	t := path.Join(config.RootFSDir, target)
 	if source == "" {
 		go func() {
-			tw := tar.NewWriter(gzip.NewWriter(w))
+			gz := gzip.NewWriter(w)
+			tw := tar.NewWriter(gz)
 			err := filepath.Walk(t, func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					return err
 				}
+
+				fmt.Println("adding", path)
 
 				header, content, err := buildTarEntry(t, path, info)
 				if err != nil {
@@ -284,6 +291,8 @@ func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser,
 				return nil
 
 			})
+			tw.Close()
+			gz.Close()
 			w.CloseWithError(err)
 		}()
 	} else {
