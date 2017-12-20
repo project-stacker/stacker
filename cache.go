@@ -1,4 +1,4 @@
-package main
+package stacker
 
 import (
 	"encoding/json"
@@ -6,24 +6,26 @@ import (
 	"os"
 	"path"
 
-	"github.com/anuvu/stacker"
 	"github.com/mitchellh/hashstructure"
+	"github.com/openSUSE/umoci"
 )
 
-type cache struct {
-	path    string                 `json:omit`
-	Cache   map[uint64]LayerInfo   `json:"cache"`
-	Version int                    `json:"version"`
+type BuildCache struct {
+	oci     *umoci.Layout
+	path    string
+	Cache   map[uint64]umoci.Blob `json:"cache"`
+	Version int                   `json:"version"`
 }
 
-func openCache(sc stacker.StackerConfig) (*cache, error) {
-	p := path.Join(sc.StackerDir, "build.cache")
+func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
+	p := path.Join(dir, "build.cache")
 	f, err := os.Open(p)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &cache{
+			return &BuildCache{
+				oci:     oci,
 				path:    p,
-				Cache:   map[uint64]LayerInfo{},
+				Cache:   map[uint64]umoci.Blob{},
 				Version: 1,
 			}, nil
 		}
@@ -35,7 +37,7 @@ func openCache(sc stacker.StackerConfig) (*cache, error) {
 		return nil, err
 	}
 
-	c := &cache{}
+	c := &BuildCache{}
 	if err := json.Unmarshal(content, c); err != nil {
 		return nil, err
 	}
@@ -43,16 +45,17 @@ func openCache(sc stacker.StackerConfig) (*cache, error) {
 	return c, nil
 }
 
-func (c *cache) Lookup(l *stacker.Layer) (LayerInfo, bool) {
+func (c *BuildCache) Lookup(l *Layer) (umoci.Blob, bool) {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
-		return LayerInfo{}, false
+		return umoci.Blob{}, false
 	}
+
 	result, ok := c.Cache[h]
 	return result, ok
 }
 
-func (c *cache) Put(l *stacker.Layer, blob LayerInfo) error {
+func (c *BuildCache) Put(l *Layer, blob umoci.Blob) error {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
 		return err
@@ -62,7 +65,7 @@ func (c *cache) Put(l *stacker.Layer, blob LayerInfo) error {
 	return c.persist()
 }
 
-func (c *cache) persist() error {
+func (c *BuildCache) persist() error {
 	content, err := json.Marshal(c)
 	if err != nil {
 		return err

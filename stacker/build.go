@@ -38,11 +38,6 @@ var buildCmd = cli.Command{
 	},
 }
 
-type LayerInfo struct {
-	Layer umoci.Layer
-	DiffID string
-}
-
 func doBuild(ctx *cli.Context) error {
 	if ctx.Bool("no-cache") {
 		os.Remove(config.StackerDir)
@@ -62,11 +57,6 @@ func doBuild(ctx *cli.Context) error {
 		defer s.Detach()
 	}
 
-	buildCache, err := openCache(config)
-	if err != nil {
-		return err
-	}
-
 	order, err := sf.DependencyOrder()
 	if err != nil {
 		return err
@@ -82,16 +72,21 @@ func doBuild(ctx *cli.Context) error {
 		return err
 	}
 
-	defer s.Delete(".working")
-	results := map[string]LayerInfo{}
+	buildCache, err := stacker.OpenCache(config.StackerDir, oci)
+	if err != nil {
+		return err
+	}
 
+	defer s.Delete(".working")
 	for _, name := range order {
 		l := sf[name]
 
-		cached, ok := buildCache.Lookup(l)
+		_, ok := buildCache.Lookup(l)
 		if ok {
+			// TODO: for full correctness here we really need to
+			// add a new tag with the current name for this layout,
+			// in case someone changed the name instead.
 			fmt.Printf("found cached layer %s\n", name)
-			results[name] = cached
 			continue
 		}
 
@@ -106,7 +101,16 @@ func doBuild(ctx *cli.Context) error {
 				return err
 			}
 
-			err := stacker.GetBaseLayer(config, ".working", l)
+			os := stacker.BaseLayerOpts{
+				Config: config,
+				Name:   name,
+				Target: ".working",
+				Layer:  l,
+				Cache:  buildCache,
+				OCI:    oci,
+			}
+
+			err := stacker.GetBaseLayer(os)
 			if err != nil {
 				return err
 			}
@@ -147,24 +151,15 @@ func doBuild(ctx *cli.Context) error {
 
 		fmt.Println("starting diff...")
 
-		layer, err := oci.PutBlob(diff)
+		blob, err := oci.PutBlob(diff)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("added blob %v\n", layer.Hash)
-		digest := layer.Hash
+		fmt.Printf("added blob %v\n", blob.Hash)
+		diffID := blob.Hash
 		if hash != nil {
-			digest = fmt.Sprintf("sha256:%x", hash.Sum(nil))
-		}
-		results[name] = LayerInfo{layer, digest}
-		if err := buildCache.Put(l, results[name]); err != nil {
-			return err
-		}
-
-		deps := []LayerInfo{results[name]}
-		for cur := l; cur.From.Type == stacker.BuiltType; cur = sf[cur.From.Tag] {
-			deps = append([]LayerInfo{results[cur.From.Tag]}, deps...)
+			diffID = fmt.Sprintf("sha256:%x", hash.Sum(nil))
 		}
 
 		g := igen.New()
@@ -175,10 +170,6 @@ func doBuild(ctx *cli.Context) error {
 
 		g.SetRootfsType("layers")
 		g.ClearRootfsDiffIDs()
-
-		for _, d := range deps {
-			g.AddRootfsDiffIDStr(d.DiffID)
-		}
 
 		if l.Entrypoint != "" {
 			cmd, err := l.ParseEntrypoint()
@@ -194,19 +185,76 @@ func doBuild(ctx *cli.Context) error {
 		g.ClearConfigEnv()
 		g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
 
+		deps := []umoci.Blob{}
+
 		mediaType := ispec.MediaTypeImageLayerGzip
 		if ctx.Bool("btrfs-diff") {
 			mediaType = stacker.MediaTypeImageBtrfsLayer
 		}
 
-		layerDeps := []umoci.Layer{}
-		for _, d := range deps {
-			layerDeps = append(layerDeps, d.Layer)
+		if l.From.Type == stacker.BuiltType {
+			from, ok := sf[l.From.Tag]
+			if !ok {
+				return fmt.Errorf("didn't find parent %s in stackerfile", l.From.Tag)
+			}
+
+			fromBlob, ok := buildCache.Lookup(from)
+			if !ok {
+				return fmt.Errorf("didn't find parent %s in cache", l.From.Tag)
+			}
+
+			img, err := oci.LookupConfig(fromBlob)
+			if err != nil {
+				return err
+			}
+
+			for _, did := range img.RootFS.DiffIDs {
+				g.AddRootfsDiffID(did)
+			}
+
+			manifest, err := oci.LookupManifest(l.From.Tag)
+			if err != nil {
+				return err
+			}
+
+			for _, l := range manifest.Layers {
+				if mediaType != l.MediaType {
+					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
+				}
+
+				deps = append(deps, umoci.Blob{
+					Hash: string(l.Digest),
+					Size: l.Size,
+				})
+			}
 		}
 
-		if err := oci.NewImage(name, g, layerDeps, mediaType); err != nil {
+		err = g.AddRootfsDiffIDStr(diffID)
+		if err != nil {
 			return err
 		}
+
+		deps = append(deps, blob)
+
+		err = oci.NewImage(name, g, deps, mediaType)
+		if err != nil {
+			return err
+		}
+
+		manifest, err := oci.LookupManifest(name)
+		if err != nil {
+			return err
+		}
+
+		manifestBlob := umoci.Blob{
+			Hash: string(manifest.Config.Digest),
+			Size: manifest.Config.Size,
+		}
+
+		if err := buildCache.Put(l, manifestBlob); err != nil {
+			return err
+		}
+
 	}
 
 	return nil

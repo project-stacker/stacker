@@ -5,31 +5,55 @@ import (
 	"os"
 	"os/exec"
 	"path"
+
+	"github.com/openSUSE/umoci"
 )
 
-func GetBaseLayer(c StackerConfig, name string, l *Layer) error {
-	switch l.From.Type {
+type BaseLayerOpts struct {
+	Config StackerConfig
+	Name   string
+	Target string
+	Layer  *Layer
+	Cache  *BuildCache
+	OCI    *umoci.Layout
+}
+
+func GetBaseLayer(o BaseLayerOpts) error {
+	switch o.Layer.From.Type {
 	case BuiltType:
 		/* nothing to do assuming layers are imported in dependency order */
 		return nil
 	case TarType:
-		return getTar(c, name, l)
+		return getTar(o)
 	case OCIType:
-		fallthrough
-	case DockerType:
 		return fmt.Errorf("not implemented")
+	case DockerType:
+		return getDocker(o)
 	default:
-		return fmt.Errorf("unknown layer type: %v", l.From.Type)
+		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
 }
 
-func getTar(c StackerConfig, name string, l *Layer) error {
-	tar, err := download(path.Join(c.StackerDir, "layer-bases"), l.From.Url)
+func getDocker(o BaseLayerOpts) error {
+	out, err := exec.Command(
+		"skopeo",
+		"copy",
+		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name, o.Layer.From.Url),
+		o.Layer.From.Url).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("skopeo copy: %s: %s", err, string(out))
+	}
+
+	return o.OCI.Unpack(o.Name, path.Join(o.Config.RootFSDir, o.Name), nil)
+}
+
+func getTar(o BaseLayerOpts) error {
+	tar, err := download(path.Join(o.Config.StackerDir, "layer-bases"), o.Layer.From.Url)
 	if err != nil {
 		return err
 	}
 
-	layerPath := path.Join(c.RootFSDir, name)
+	layerPath := path.Join(o.Config.RootFSDir, o.Target)
 	if err := os.MkdirAll(layerPath, 0755); err != nil {
 		return err
 	}

@@ -93,4 +93,12 @@ stacker build -f ./basic.yaml
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
 
+cleanup
+
+# now, let's do something really crazy: import a docker image and build our own
+# layer on top of it.
+stacker build -f ./basic.yaml
+umoci unpack --image oci:layer1 dest
+[ ! -f dest/rootfs/favicon.ico ]
+
 RESULT=success
