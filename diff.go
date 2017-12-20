@@ -207,8 +207,6 @@ func doTarDiff(source, target string, tw *tar.Writer) error {
 		var header *tar.Header
 		var content io.ReadCloser
 
-		fmt.Println("got diff of", path1, path2)
-
 		// remove the file
 		if path2 == "" {
 			whiteout := path.Join(path.Dir(path1[len(source):]), fmt.Sprintf(".wh.%s", info1.Name()))
@@ -217,7 +215,6 @@ func doTarDiff(source, target string, tw *tar.Writer) error {
 				Mode:     0644,
 				Typeflag: tar.TypeReg,
 			}
-			//fmt.Printf("added whiteout file %s\n", header.Name)
 		} else {
 			// the file added or was changed, copy the v2 version in
 			var err error
