@@ -263,8 +263,6 @@ func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser,
 					return err
 				}
 
-				fmt.Println("adding", path)
-
 				header, content, err := buildTarEntry(t, path, info)
 				if err != nil {
 					return err
