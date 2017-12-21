@@ -38,6 +38,10 @@ func GetBaseLayer(o BaseLayerOpts) error {
 func getDocker(o BaseLayerOpts) error {
 	out, err := exec.Command(
 		"skopeo",
+		// So we don't have to make everyone install an
+		// /etc/containers/policy.json too. Alternatively, we could
+		// write a default policy out to /tmp and use --policy.
+		"--insecure-policy",
 		"copy",
 		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name, o.Layer.From.Url),
 		o.Layer.From.Url).CombinedOutput()
