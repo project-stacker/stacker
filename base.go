@@ -43,8 +43,9 @@ func getDocker(o BaseLayerOpts) error {
 		// write a default policy out to /tmp and use --policy.
 		"--insecure-policy",
 		"copy",
-		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name, o.Layer.From.Url),
-		o.Layer.From.Url).CombinedOutput()
+		o.Layer.From.Url,
+		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name),
+	).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("skopeo copy: %s: %s", err, string(out))
 	}
