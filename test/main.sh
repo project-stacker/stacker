@@ -97,7 +97,7 @@ cleanup
 
 # now, let's do something really crazy: import a docker image and build our own
 # layer on top of it.
-stacker build --substitute "FAVICON=favicon.ico" -f ./basic.yaml
+stacker build -f ./import-docker.yaml
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
 
