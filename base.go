@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/oci/layer"
 )
 
 type BaseLayerOpts struct {
@@ -44,7 +45,7 @@ func getDocker(o BaseLayerOpts) error {
 		return fmt.Errorf("skopeo copy: %s: %s", err, string(out))
 	}
 
-	return o.OCI.Unpack(o.Name, path.Join(o.Config.RootFSDir, o.Name), nil)
+	return o.OCI.Unpack(o.Name, path.Join(o.Config.RootFSDir, o.Name), &layer.MapOptions{})
 }
 
 func getTar(o BaseLayerOpts) error {
