@@ -22,3 +22,10 @@ You'll need both the stacker and stackermount binaries:
 
     go install github.com/anuvu/stacker/stacker
     go install github.com/anuvu/stacker/stackermount
+
+Stacker also depends on skopeo for some operations; you can install skopeo on
+ubuntu with:
+
+    sudo apt-add-repository ppa:projectatomic/ppa
+    sudo apt update
+    sudo apt install skopeo
