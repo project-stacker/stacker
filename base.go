@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -50,7 +51,41 @@ func getDocker(o BaseLayerOpts) error {
 		return fmt.Errorf("skopeo copy: %s: %s", err, string(out))
 	}
 
-	return o.OCI.Unpack(o.Name, path.Join(o.Config.RootFSDir, o.Name), &layer.MapOptions{})
+	target := path.Join(o.Config.RootFSDir, o.Target)
+	fmt.Println("unpacking to", target)
+	err = o.OCI.Unpack(o.Name, target, &layer.MapOptions{})
+	if err != nil {
+		return err
+	}
+
+	out, err = exec.Command("ls", "-al", target).CombinedOutput()
+	fmt.Println("ls output: %s", string(out))
+
+	// Now, a slight hack. Umoci unpacks the full OCI image, but we just
+	// want the rootfs without all the config and such, because we'll be
+	// generating our own config; so let's mv the rootfs back up one, and
+	// remove config.json
+	err = os.Remove(path.Join(target, "config.json"))
+	if err != nil {
+		return err
+	}
+	rootfs := path.Join(target, "rootfs")
+	ents, err := ioutil.ReadDir(rootfs)
+	if err != nil {
+		return err
+	}
+
+	for _, e := range ents {
+		err := os.Rename(path.Join(rootfs, e.Name()), path.Join(target, e.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	out, err = exec.Command("ls", "-al", target).CombinedOutput()
+	fmt.Println("ls output: %s", string(out))
+
+	return os.Remove(rootfs)
 }
 
 func getTar(o BaseLayerOpts) error {
