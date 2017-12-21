@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/anuvu/stacker"
@@ -35,6 +36,10 @@ var buildCmd = cli.Command{
 			Name:  "btrfs-diff",
 			Usage: "enable btrfs native layer diffing",
 		},
+		cli.StringSliceFlag{
+			Name:  "substitute",
+			Usage: "variable substitution in stackerfiles, FOO=bar format",
+		},
 	},
 }
 
@@ -47,6 +52,15 @@ func doBuild(ctx *cli.Context) error {
 	sf, err := stacker.NewStackerfile(file)
 	if err != nil {
 		return err
+	}
+
+	for _, subst := range ctx.StringSlice("substitute") {
+		membs := strings.SplitN(subst, "=", 2)
+		if len(membs) != 2 {
+			return fmt.Errorf("invalid substition %s", subst)
+		}
+
+		sf.VariableSub(membs[0], membs[1])
 	}
 
 	s, err := stacker.NewStorage(config)

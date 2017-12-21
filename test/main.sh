@@ -47,7 +47,7 @@ fi
 
 set -x
 
-stacker build --btrfs-diff --leave-unladen -f ./basic.yaml
+stacker build --substitute "FAVICON=favicon.ico" --btrfs-diff --leave-unladen -f ./basic.yaml
 
 # did we really download the image?
 [ -f .stacker/layer-bases/centos.tar.xz ]
@@ -80,7 +80,7 @@ diffid=$(cat oci/blobs/sha256/$config | jq -r .rootfs.diff_ids[0])
 [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
 # ok, now let's do the build again. it should all be the same, since it's all cached
-stacker build --btrfs-diff -f ./basic.yaml
+stacker build --substitute "FAVICON=favicon.ico" --btrfs-diff -f ./basic.yaml
 manifest2=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
 [ "$manifest" = "$manifest2" ]
 layer2=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest)
@@ -89,7 +89,7 @@ layer2=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest)
 cleanup
 
 # let's check that the main tar stuff is understood by umoci
-stacker build -f ./basic.yaml
+stacker build --substitute "FAVICON=favicon.ico" -f ./basic.yaml
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
 
@@ -97,7 +97,7 @@ cleanup
 
 # now, let's do something really crazy: import a docker image and build our own
 # layer on top of it.
-stacker build -f ./basic.yaml
+stacker build --substitute "FAVICON=favicon.ico" -f ./basic.yaml
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
 

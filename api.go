@@ -3,6 +3,7 @@ package stacker
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/anmitsu/go-shlex"
 	"gopkg.in/yaml.v2"
@@ -99,4 +100,16 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	}
 
 	return ret, nil
+}
+
+func (s *Stackerfile) VariableSub(from, to string) {
+	for _, layer := range *s {
+		for i, imp := range layer.Import {
+			layer.Import[i] = strings.Replace(imp, from, to, -1)
+		}
+
+		for i, r := range layer.Run {
+			layer.Run[i] = strings.Replace(r, from, to, -1)
+		}
+	}
 }
