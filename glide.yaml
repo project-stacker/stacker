@@ -1,0 +1,27 @@
+package: github.com/anuvu/stacker
+flatten: true
+import:
+- package: github.com/anmitsu/go-shlex
+- package: github.com/freddierice/go-losetup
+- package: github.com/mitchellh/hashstructure
+- package: github.com/openSUSE/umoci
+  subpackages:
+  - oci/config/generate
+  repo: git@github.com:tych0/umoci
+  version: api-draft
+- package: github.com/opencontainers/image-spec
+  subpackages:
+  - specs-go/v1
+- package: github.com/opencontainers/runtime-tools
+  subpackages:
+  - generate
+  version: e29f3ca4eb806a582ee1a1864c7b0563bd64c19b
+- package: github.com/pkg/errors
+- package: github.com/udhos/equalfile
+- package: github.com/urfave/cli
+- package: gopkg.in/lxc/go-lxc.v2
+- package: gopkg.in/yaml.v2
+- package: golang.org/x/sys
+  subpackages:
+  - unix
+  repo: git@github.com:golang/sys

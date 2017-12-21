@@ -1,0 +1,82 @@
+hash: d246c3e048cf68c2fe58e78f538498aefc7358742944865b65efffad5beea05d
+updated: 2017-12-21T00:24:36.770026733Z
+imports:
+- name: github.com/anmitsu/go-shlex
+  version: 648efa622239a2f6ff949fed78ee37b48d499ba4
+- name: github.com/apex/log
+  version: 0296d6eb16bb28f8a0c55668affcf4876dc269be
+- name: github.com/blang/semver
+  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+- name: github.com/cyphar/filepath-securejoin
+  version: ae69057f2299fb9e5ba2df738607e6a505b74ab6
+- name: github.com/freddierice/go-losetup
+  version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
+- name: github.com/mitchellh/hashstructure
+  version: 2bca23e0e452137f789efbc8610126fd8b94f73b
+- name: github.com/opencontainers/go-digest
+  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+- name: github.com/opencontainers/image-spec
+  version: 577479e4dc273d3779f00c223c7e0dba4cd6b8b0
+  subpackages:
+  - specs-go
+  - specs-go/v1
+- name: github.com/opencontainers/runtime-spec
+  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
+  subpackages:
+  - specs-go
+- name: github.com/opencontainers/runtime-tools
+  version: e29f3ca4eb806a582ee1a1864c7b0563bd64c19b
+  subpackages:
+  - generate
+  - generate/seccomp
+  - validate
+- name: github.com/openSUSE/umoci
+  version: 908fd6bc29ce5c969174c69d23acaa164639865e
+  repo: git@github.com:tych0/umoci
+  subpackages:
+  - oci/cas
+  - oci/cas/dir
+  - oci/casext
+  - oci/config/convert
+  - oci/config/generate
+  - oci/layer
+  - pkg/fseval
+  - pkg/idtools
+  - pkg/system
+  - pkg/unpriv
+  - third_party/user
+- name: github.com/pkg/errors
+  version: e881fd58d78e04cf6d0de1217f8707c8cc2249bc
+- name: github.com/sirupsen/logrus
+  version: a3f95b5c423586578a4e099b11a46c2479628cac
+- name: github.com/syndtr/gocapability
+  version: db04d3cc01c8b54962a58ec7e491717d06cfcc16
+  subpackages:
+  - capability
+- name: github.com/udhos/equalfile
+  version: c92b0e41854b49e567ba269dcc572ada60e48e7b
+- name: github.com/urfave/cli
+  version: 39908eb08fee7c10d842622a114a5c133fb0a3c6
+- name: github.com/vbatts/go-mtree
+  version: 16da0f86ee549d8949775bf3d555e7921a9caca9
+  subpackages:
+  - pkg/govis
+  - xattr
+- name: golang.org/x/crypto
+  version: d585fd2cc9195196078f516b69daff6744ef5e84
+  subpackages:
+  - ripemd160
+- name: golang.org/x/net
+  version: d866cfc389cec985d6fda2859936a575a55a3ab6
+  subpackages:
+  - context
+- name: golang.org/x/sys
+  version: d818ba11af4465e00c1998bd3f8a55603b422290
+  repo: git@github.com:golang/sys
+  subpackages:
+  - unix
+- name: gopkg.in/lxc/go-lxc.v2
+  version: 8b0b24a7de348f9af11b656e2037602ebfef9e2e
+- name: gopkg.in/yaml.v2
+  version: 287cf08546ab5e7e37d55a84f7ed3fd1db036de5
+testImports: []

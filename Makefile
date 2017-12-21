@@ -1,6 +1,5 @@
 .PHONY: default
 default:
-	go get -v ./...
 	go install -v ./...
 
 # For now, let's just leave the binaries in $GOPATH/bin, but we can at least
@@ -17,3 +16,7 @@ install: default
 check:
 	go fmt ./... && git diff --quiet
 	go test ./...
+
+.PHONY: vendor
+vendor:
+	glide up --strip-vendor

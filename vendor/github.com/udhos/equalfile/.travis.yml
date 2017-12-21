@@ -1,0 +1,14 @@
+language: go
+
+go:
+  - tip
+
+install:
+  - go get github.com/golang/lint/golint
+  - go get honnef.co/go/simple/cmd/gosimple
+
+script:
+  - go test -v
+  - go install
+  - go install github.com/udhos/equalfile/equal
+
