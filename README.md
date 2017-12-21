@@ -4,6 +4,13 @@ Stacker is a tool for building OCI images via a declarative yaml format.
 
 ### Hacking
 
+Stacker requires go 1.9, on Ubuntu you can get that with:
+
+    sudo apt-add-repository ppa:gophers/archive
+    sudo apt update
+    sudo apt install golang-1.9
+    export PATH=$PATH:/usr/lib/go-1.9/bin
+
 The test suite can be run with
 
     cd test
