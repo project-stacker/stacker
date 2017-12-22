@@ -11,7 +11,15 @@ Stacker requires go 1.9, on Ubuntu you can get that with:
     sudo apt install golang-1.9
     export PATH=$PATH:/usr/lib/go-1.9/bin
 
-The test suite can be run with
+The test suite requires `jq`, which can be installed on Ubuntu:
+
+    sudo apt install jq
+
+And `umoci`, which can be installed with:
+
+    go get github.com/openSUSE/umoci/cmd/umoci
+
+And can be run with
 
     cd test
     sudo -E ./main.sh
