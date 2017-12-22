@@ -103,6 +103,7 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 }
 
 func (s *Stackerfile) VariableSub(from, to string) {
+	from = fmt.Sprintf("$%s", from)
 	for _, layer := range *s {
 		for i, imp := range layer.Import {
 			layer.Import[i] = strings.Replace(imp, from, to, -1)
