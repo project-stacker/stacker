@@ -20,6 +20,7 @@ func main() {
 	app.Commands = []cli.Command{
 		buildCmd,
 		unladeCmd,
+		cleanCmd,
 	}
 
 	app.Flags = []cli.Flag{
