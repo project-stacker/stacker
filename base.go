@@ -58,9 +58,6 @@ func getDocker(o BaseLayerOpts) error {
 		return err
 	}
 
-	out, err = exec.Command("ls", "-al", target).CombinedOutput()
-	fmt.Println("ls output: %s", string(out))
-
 	// Now, a slight hack. Umoci unpacks the full OCI image, but we just
 	// want the rootfs without all the config and such, because we'll be
 	// generating our own config; so let's mv the rootfs back up one, and
@@ -81,9 +78,6 @@ func getDocker(o BaseLayerOpts) error {
 			return err
 		}
 	}
-
-	out, err = exec.Command("ls", "-al", target).CombinedOutput()
-	fmt.Println("ls output: %s", string(out))
 
 	return os.Remove(rootfs)
 }
