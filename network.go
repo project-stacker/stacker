@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +15,10 @@ func download(cacheDir string, url string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("couldn't download %s: %s", url, resp.Status)
+	}
 
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return "", err
