@@ -63,10 +63,20 @@ func NewStorage(c StackerConfig) (Storage, error) {
 			return nil, err
 		}
 
+		stackermount := "stackermount"
+		if _, err := exec.LookPath(stackermount); err != nil {
+			link, err := os.Readlink("/proc/self/exe")
+			if err != nil {
+				return nil, err
+			}
+
+			stackermount = path.Join(path.Dir(link), "stackermount")
+		}
+
 		// If it's not btrfs, let's make it one via a loopback.
 		// TODO: make the size configurable
 		output, err := exec.Command(
-			"stackermount",
+			stackermount,
 			path.Join(c.StackerDir, "btrfs.loop"),
 			fmt.Sprintf("%d", 100*1024*1024*1024),
 			currentUser.Uid,
