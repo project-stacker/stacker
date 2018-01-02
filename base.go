@@ -42,7 +42,7 @@ func getDocker(o BaseLayerOpts) error {
 		return err
 	}
 
-	out, err := exec.Command(
+	cmd := exec.Command(
 		"skopeo",
 		// So we don't have to make everyone install an
 		// /etc/containers/policy.json too. Alternatively, we could
@@ -51,9 +51,13 @@ func getDocker(o BaseLayerOpts) error {
 		"copy",
 		o.Layer.From.Url,
 		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
-	).CombinedOutput()
+	)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("skopeo copy: %s: %s", err, string(out))
+		return fmt.Errorf("skopeo copy: %s: %s", err)
 	}
 
 	target := path.Join(o.Config.RootFSDir, o.Target)
