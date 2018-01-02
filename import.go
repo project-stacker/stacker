@@ -14,11 +14,21 @@ func fileCopy(dest string, source string) error {
 	}
 	defer s.Close()
 
+	fi, err := s.Stat()
+	if err != nil {
+		return err
+	}
+
 	d, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
 	defer d.Close()
+
+	err = d.Chmod(fi.Mode())
+	if err != nil {
+		return err
+	}
 
 	_, err = io.Copy(d, s)
 	return err
