@@ -6,7 +6,7 @@ centos:
         - ./basic.yaml
         - https://www.cisco.com/favicon.ico
     run:
-        - cp /stacker/FAVICON /FAVICON
+        - cp /stacker/$FAVICON /$FAVICON
     entrypoint: echo hello world
 layer1:
     from:
