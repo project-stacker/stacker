@@ -60,6 +60,8 @@ function check_image() {
     [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/favicon.ico)" ]
 
     [ ! -f .stacker/imports/layer1/favicon.ico ]
+
+    [ "$(stat --format="%a" roots/centos/usr/bin/executable)" = "755" ]
 }
 
 check_image

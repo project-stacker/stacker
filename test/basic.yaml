@@ -5,8 +5,10 @@ centos:
     import:
         - ./basic.yaml
         - https://www.cisco.com/favicon.ico
+        - ./executable
     run:
         - cp /stacker/$FAVICON /$FAVICON
+        - cp /stacker/executable /usr/bin/executable
     entrypoint: echo hello world
 layer1:
     from:
