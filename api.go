@@ -3,6 +3,7 @@ package stacker
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
@@ -34,6 +35,31 @@ type ImageSource struct {
 	Type string `yaml:"type"`
 	Url  string `yaml:"url"`
 	Tag  string `yaml:"tag"`
+}
+
+func (is *ImageSource) ParseTag() (string, error) {
+	switch is.Type {
+	case BuiltType:
+		return is.Tag, nil
+	case DockerType:
+		url, err := url.Parse(is.Url)
+		if err != nil {
+			return "", err
+		}
+
+		tag := strings.Split(url.Path, ":")[0]
+		if tag != "" {
+			return tag, nil
+		}
+
+		// skopeo allows docker://centos:latest or
+		// docker://docker.io/centos:latest; if we don't have a
+		// url path, let's use the host as the image tag
+		return strings.Split(url.Host, ":")[0], nil
+
+	default:
+		return "", fmt.Errorf("unsupported type: %s", is.Type)
+	}
 }
 
 type Layer struct {

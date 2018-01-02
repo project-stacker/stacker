@@ -37,6 +37,11 @@ func GetBaseLayer(o BaseLayerOpts) error {
 }
 
 func getDocker(o BaseLayerOpts) error {
+	tag, err := o.Layer.From.ParseTag()
+	if err != nil {
+		return err
+	}
+
 	out, err := exec.Command(
 		"skopeo",
 		// So we don't have to make everyone install an
@@ -45,7 +50,7 @@ func getDocker(o BaseLayerOpts) error {
 		"--insecure-policy",
 		"copy",
 		o.Layer.From.Url,
-		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name),
+		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
 	).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("skopeo copy: %s: %s", err, string(out))
@@ -53,7 +58,7 @@ func getDocker(o BaseLayerOpts) error {
 
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
-	err = o.OCI.Unpack(o.Name, target, &layer.MapOptions{})
+	err = o.OCI.Unpack(tag, target, &layer.MapOptions{})
 	if err != nil {
 		return err
 	}

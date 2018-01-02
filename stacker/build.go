@@ -241,6 +241,42 @@ func doBuild(ctx *cli.Context) error {
 					Size: l.Size,
 				})
 			}
+		} else if l.From.Type == stacker.DockerType || l.From.Type == stacker.OCIType {
+			tag, err := l.From.ParseTag()
+			if err != nil {
+				return err
+			}
+
+			// TODO: this is essentially the same as the above code
+			manifest, err := oci.LookupManifest(tag)
+			if err != nil {
+				return err
+			}
+
+			configBlob := umoci.Blob{
+				Hash: string(manifest.Config.Digest),
+				Size: manifest.Config.Size,
+			}
+
+			img, err := oci.LookupConfig(configBlob)
+			if err != nil {
+				return err
+			}
+
+			for _, did := range img.RootFS.DiffIDs {
+				g.AddRootfsDiffID(did)
+			}
+
+			for _, l := range manifest.Layers {
+				if mediaType != l.MediaType {
+					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
+				}
+
+				deps = append(deps, umoci.Blob{
+					Hash: string(l.Digest),
+					Size: l.Size,
+				})
+			}
 		}
 
 		err = g.AddRootfsDiffIDStr(diffID)
