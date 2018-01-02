@@ -260,12 +260,12 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		manifestBlob := umoci.Blob{
+		configBlob := umoci.Blob{
 			Hash: string(manifest.Config.Digest),
 			Size: manifest.Config.Size,
 		}
 
-		if err := buildCache.Put(l, manifestBlob); err != nil {
+		if err := buildCache.Put(l, configBlob); err != nil {
 			return err
 		}
 
