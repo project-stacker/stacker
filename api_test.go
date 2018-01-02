@@ -31,7 +31,6 @@ func TestDockerFrom(t *testing.T) {
 	content := `meshuggah:
     from:
         type: docker
-        path: user/image:tag
 `
 	sf := parse(t, content)
 	l, ok := sf["meshuggah"]
@@ -41,10 +40,6 @@ func TestDockerFrom(t *testing.T) {
 
 	if l.From.Type != DockerType {
 		t.Fatalf("bad type : %v", l.From)
-	}
-
-	if l.From.Path != "user/image:tag" {
-		t.Fatalf("bad path %s", l.From.Path)
 	}
 
 	if l.From.Tag != "" {
