@@ -34,7 +34,6 @@ type ImageSource struct {
 	Type string `yaml:"type"`
 	Url  string `yaml:"url"`
 	Tag  string `yaml:"tag"`
-	Path string `yaml:"path"`
 }
 
 type Layer struct {
