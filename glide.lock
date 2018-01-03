@@ -1,16 +1,20 @@
 hash: d246c3e048cf68c2fe58e78f538498aefc7358742944865b65efffad5beea05d
-updated: 2017-12-21T00:24:36.770026733Z
+updated: 2018-01-03T00:08:55.996035526Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
 - name: github.com/apex/log
-  version: 0296d6eb16bb28f8a0c55668affcf4876dc269be
+  version: bf81de4b2280680c3ccdf5520047f055cdafc7e0
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+- name: github.com/cheggaaa/pb
+  version: 18d384da9bdc1e5a08fc2a62a494c321d9ae74ea
 - name: github.com/cyphar/filepath-securejoin
   version: ae69057f2299fb9e5ba2df738607e6a505b74ab6
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
+- name: github.com/mattn/go-runewidth
+  version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/mitchellh/hashstructure
   version: 2bca23e0e452137f789efbc8610126fd8b94f73b
 - name: github.com/opencontainers/go-digest
@@ -21,7 +25,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
+  version: b2d941ef6a780da2d9982c1fb28d77ad97f54fc7
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -63,7 +67,7 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: d585fd2cc9195196078f516b69daff6744ef5e84
+  version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
   subpackages:
   - ripemd160
 - name: golang.org/x/net
@@ -71,12 +75,12 @@ imports:
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: d818ba11af4465e00c1998bd3f8a55603b422290
+  version: 83801418e1b59fb1880e363299581ee543af32ca
   repo: git@github.com:golang/sys
   subpackages:
   - unix
 - name: gopkg.in/lxc/go-lxc.v2
   version: 8b0b24a7de348f9af11b656e2037602ebfef9e2e
 - name: gopkg.in/yaml.v2
-  version: 287cf08546ab5e7e37d55a84f7ed3fd1db036de5
+  version: c95af922eae69f190717a0b7148960af8c55a072
 testImports: []
