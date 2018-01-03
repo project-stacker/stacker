@@ -92,7 +92,12 @@ func getDocker(o BaseLayerOpts) error {
 }
 
 func getTar(o BaseLayerOpts) error {
-	tar, err := download(path.Join(o.Config.StackerDir, "layer-bases"), o.Layer.From.Url)
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return err
+	}
+
+	tar, err := download(cacheDir, o.Layer.From.Url)
 	if err != nil {
 		return err
 	}
