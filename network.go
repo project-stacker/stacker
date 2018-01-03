@@ -19,8 +19,14 @@ func download(cacheDir string, url string) (string, error) {
 		if os.IsExist(err) {
 			fmt.Println("using cached copy of", url)
 			return name, nil
+		} else if os.IsNotExist(err) {
+			out, err = os.OpenFile(name, os.O_RDWR, 0644)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", err
 		}
-		return "", err
 	}
 	defer out.Close()
 
