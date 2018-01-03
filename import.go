@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"fmt"
 	"io"
 	"net/url"
 	"os"
@@ -49,8 +50,14 @@ func Import(c StackerConfig, name string, imports []string) error {
 
 		// It's just a path, let's copy it to .stacker.
 		if url.Scheme == "" {
-			if err := fileCopy(path.Join(dir, path.Base(url.Path)), i); err != nil {
-				return err
+			dest := path.Join(dir, path.Base(url.Path))
+			if _, err := os.Stat(dest); err != nil {
+				fmt.Printf("copying %s\n", i)
+				if err := fileCopy(dest, i); err != nil {
+					return err
+				}
+			} else {
+				fmt.Println("using cached copy of %s", i)
 			}
 		} else {
 			// otherwise, we need to download it
