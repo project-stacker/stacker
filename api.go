@@ -48,7 +48,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 			return "", err
 		}
 
-		tag := path.Base(strings.Split(url.Path, ":")[0])
+		tag := path.Base(strings.Replace(url.Path, ":", "-", -1))
 		if tag != "" {
 			return tag, nil
 		}
@@ -56,7 +56,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 		// skopeo allows docker://centos:latest or
 		// docker://docker.io/centos:latest; if we don't have a
 		// url path, let's use the host as the image tag
-		return strings.Split(url.Host, ":")[0], nil
+		return strings.Replace(url.Host, ":", "-", -1), nil
 
 	default:
 		return "", fmt.Errorf("unsupported type: %s", is.Type)
