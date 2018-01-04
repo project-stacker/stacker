@@ -48,8 +48,8 @@ func (is *ImageSource) ParseTag() (string, error) {
 			return "", err
 		}
 
-		tag := path.Base(strings.Replace(url.Path, ":", "-", -1))
-		if tag != "" {
+		if url.Path != "" {
+			tag := path.Base(strings.Replace(url.Path, ":", "-", -1))
 			return tag, nil
 		}
 
