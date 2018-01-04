@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
@@ -47,7 +48,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 			return "", err
 		}
 
-		tag := strings.Split(url.Path, ":")[0]
+		tag := path.Base(strings.Split(url.Path, ":")[0])
 		if tag != "" {
 			return tag, nil
 		}
