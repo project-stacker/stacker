@@ -57,7 +57,7 @@ func Import(c StackerConfig, name string, imports []string) error {
 					return err
 				}
 			} else {
-				fmt.Println("using cached copy of %s", i)
+				fmt.Println("using cached copy of", i)
 			}
 		} else {
 			// otherwise, we need to download it
