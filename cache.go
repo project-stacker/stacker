@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,7 +14,7 @@ import (
 type BuildCache struct {
 	oci     *umoci.Layout
 	path    string
-	Cache   map[uint64]umoci.Blob `json:"cache"`
+	Cache   map[string]umoci.Blob `json:"cache"`
 	Version int                   `json:"version"`
 }
 
@@ -25,7 +26,7 @@ func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
 			return &BuildCache{
 				oci:     oci,
 				path:    p,
-				Cache:   map[uint64]umoci.Blob{},
+				Cache:   map[string]umoci.Blob{},
 				Version: 1,
 			}, nil
 		}
@@ -51,7 +52,7 @@ func (c *BuildCache) Lookup(l *Layer) (umoci.Blob, bool) {
 		return umoci.Blob{}, false
 	}
 
-	result, ok := c.Cache[h]
+	result, ok := c.Cache[fmt.Sprintf("%d", h)]
 	return result, ok
 }
 
@@ -61,7 +62,7 @@ func (c *BuildCache) Put(l *Layer, blob umoci.Blob) error {
 		return err
 	}
 
-	c.Cache[h] = blob
+	c.Cache[fmt.Sprintf("%d", h)] = blob
 	return c.persist()
 }
 
