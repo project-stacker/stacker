@@ -57,7 +57,7 @@ func getDocker(o BaseLayerOpts) error {
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("skopeo copy: %s: %s", err)
+		return fmt.Errorf("skopeo copy: %s", err)
 	}
 
 	target := path.Join(o.Config.RootFSDir, o.Target)
