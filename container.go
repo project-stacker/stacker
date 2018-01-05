@@ -19,6 +19,10 @@ type container struct {
 }
 
 func newContainer(sc StackerConfig, name string) (*container, error) {
+	if !lxc.VersionAtLeast(2, 1, 0) {
+		return nil, fmt.Errorf("stacker requires liblxc >= 2.1.0")
+	}
+
 	lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
 	if err != nil {
 		return nil, err
@@ -43,20 +47,9 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 	}
 
 	rootfs := path.Join(sc.RootFSDir, name)
-	if lxc.VersionAtLeast(2, 1, 0) {
-		err := c.setConfig("lxc.rootfs.path", fmt.Sprintf("dir:%s", rootfs))
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// stacker is explicitly managing things
-		if err := c.setConfig("lxc.rootfs.backend", "dir"); err != nil {
-			return nil, err
-		}
-
-		if err := c.setConfig("lxc.rootfs", rootfs); err != nil {
-			return nil, err
-		}
+	err = c.setConfig("lxc.rootfs.path", fmt.Sprintf("dir:%s", rootfs))
+	if err != nil {
+		return nil, err
 	}
 
 	err = os.MkdirAll(path.Join(sc.StackerDir, "logs"), 0755)
