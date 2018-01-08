@@ -65,7 +65,7 @@ func doUnlade(ctx *cli.Context) error {
 				return err
 			}
 
-			err = s.Undiff(diffType, reader)
+			err = s.Undiff(diffType, tag, reader)
 			if err != nil {
 				return err
 			}

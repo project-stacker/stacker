@@ -34,7 +34,7 @@ type Storage interface {
 	// uncompressed hash for the diffID field, and the compressed hash as
 	// the actual blob value, so unfortunately we need both.
 	Diff(DiffStrategy, string, string) (io.ReadCloser, hash.Hash, error)
-	Undiff(DiffStrategy, io.Reader) error
+	Undiff(DiffStrategy, string, io.Reader) error
 	Detach() error
 }
 
@@ -187,7 +187,7 @@ func (b *btrfs) Delete(source string) error {
 		return fmt.Errorf("btrfs delete: %s: %s", err, output)
 	}
 
-	return nil
+	return os.RemoveAll(path.Join(b.c.RootFSDir, source))
 }
 
 type cmdRead struct {
@@ -267,7 +267,7 @@ func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.Re
 	}
 }
 
-func (b *btrfs) nativeUndiff(r io.Reader) error {
+func (b *btrfs) nativeUndiff(name string, r io.Reader) error {
 	cmd := exec.Command("btrfs", "receive", "-e", b.c.RootFSDir)
 
 	stdin, err := cmd.StdinPipe()
@@ -305,10 +305,10 @@ func (b *btrfs) nativeUndiff(r io.Reader) error {
 	return nil
 }
 
-func (b *btrfs) Undiff(strategy DiffStrategy, r io.Reader) error {
+func (b *btrfs) Undiff(strategy DiffStrategy, name string, r io.Reader) error {
 	switch strategy {
 	case NativeDiff:
-		return b.nativeUndiff(r)
+		return b.nativeUndiff(name, r)
 	case TarDiff:
 		return fmt.Errorf("TarDiff unpack not implemented")
 	default:

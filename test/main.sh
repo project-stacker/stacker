@@ -57,11 +57,11 @@ stacker build --substitute "FAVICON=favicon.ico" --btrfs-diff --leave-unladen -f
 
 function check_image() {
     # did run actually copy the favicon to the right place?
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/favicon.ico)" ]
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
 
     [ ! -f .stacker/imports/layer1/favicon.ico ]
 
-    [ "$(stat --format="%a" roots/centos/usr/bin/executable)" = "755" ]
+    [ "$(stat --format="%a" roots/centos/rootfs/usr/bin/executable)" = "755" ]
 }
 
 check_image

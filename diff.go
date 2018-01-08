@@ -251,8 +251,8 @@ func tarDiff(config StackerConfig, source string, target string) (io.ReadCloser,
 	gz := gzip.NewWriter(w)
 	h := sha256.New()
 	tw := tar.NewWriter(io.MultiWriter(gz, h))
-	s := path.Join(config.RootFSDir, source)
-	t := path.Join(config.RootFSDir, target)
+	s := path.Join(config.RootFSDir, source, "rootfs")
+	t := path.Join(config.RootFSDir, target, "rootfs")
 	if source == "" {
 		go func() {
 			err := filepath.Walk(t, func(path string, info os.FileInfo, err error) error {

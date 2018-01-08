@@ -46,7 +46,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		return nil, err
 	}
 
-	rootfs := path.Join(sc.RootFSDir, name)
+	rootfs := path.Join(sc.RootFSDir, name, "rootfs")
 	err = c.setConfig("lxc.rootfs.path", fmt.Sprintf("dir:%s", rootfs))
 	if err != nil {
 		return nil, err

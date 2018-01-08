@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/layer"
@@ -67,14 +68,14 @@ func getDocker(o BaseLayerOpts) error {
 		return err
 	}
 
-	// Now, a slight hack. Umoci unpacks the full OCI image, but we just
-	// want the rootfs without all the config and such, because we'll be
-	// generating our own config; so let's mv the rootfs back up one, and
-	// remove config.json
+	// umoci generates the config.json from the image, and also adds some
+	// umoci metadata in a .umoci directory; we don't want to snapshot
+	// either of these things, so let's remove them both.
 	err = os.Remove(path.Join(target, "config.json"))
 	if err != nil {
 		return err
 	}
+
 	rootfs := path.Join(target, "rootfs")
 	ents, err := ioutil.ReadDir(rootfs)
 	if err != nil {
@@ -82,13 +83,14 @@ func getDocker(o BaseLayerOpts) error {
 	}
 
 	for _, e := range ents {
-		err := os.Rename(path.Join(rootfs, e.Name()), path.Join(target, e.Name()))
-		if err != nil {
-			return err
+		if strings.Contains(e.Name(), "umoci") {
+			if err := os.Remove(e.Name()); err != nil {
+				return err
+			}
 		}
 	}
 
-	return os.Remove(rootfs)
+	return nil
 }
 
 func getTar(o BaseLayerOpts) error {
@@ -102,7 +104,7 @@ func getTar(o BaseLayerOpts) error {
 		return err
 	}
 
-	layerPath := path.Join(o.Config.RootFSDir, o.Target)
+	layerPath := path.Join(o.Config.RootFSDir, o.Target, "rootfs")
 	if err := os.MkdirAll(layerPath, 0755); err != nil {
 		return err
 	}
