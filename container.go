@@ -30,6 +30,21 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 	}
 	c := &container{sc: sc, c: lxcC}
 
+	err = os.MkdirAll(path.Join(sc.StackerDir, "logs"), 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.c.SetLogFile(path.Join(sc.StackerDir, "logs", name))
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.c.SetLogLevel(lxc.TRACE)
+	if err != nil {
+		return nil, err
+	}
+
 	configs := map[string]string{
 		// ->execute() seems to set these up for is; if we provide
 		// them, we get an EBUSY for sysfs
@@ -39,26 +54,12 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		"lxc.net.0.type": "none",
 	}
 
-	if err := c.c.SetLogLevel(lxc.TRACE); err != nil {
-		return nil, err
-	}
-
 	if err := c.setConfigs(configs); err != nil {
 		return nil, err
 	}
 
 	rootfs := path.Join(sc.RootFSDir, name, "rootfs")
 	err = c.setConfig("lxc.rootfs.path", fmt.Sprintf("dir:%s", rootfs))
-	if err != nil {
-		return nil, err
-	}
-
-	err = os.MkdirAll(path.Join(sc.StackerDir, "logs"), 0755)
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.c.SetLogFile(path.Join(sc.StackerDir, "logs", name))
 	if err != nil {
 		return nil, err
 	}
