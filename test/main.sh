@@ -81,6 +81,8 @@ diffid=$(cat oci/blobs/sha256/$config | jq -r .rootfs.diff_ids[0])
 [ "$layer" = "$diffid" ]
 [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Env[0]')" = "FOO=bar" ]
+
 # ok, now let's do the build again. it should all be the same, since it's all cached
 stacker build --substitute "FAVICON=favicon.ico" --btrfs-diff -f ./basic.yaml
 manifest2=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)

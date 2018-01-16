@@ -202,10 +202,19 @@ func doBuild(ctx *cli.Context) error {
 			g.SetConfigEntrypoint(cmd)
 		}
 
-		// TODO: we should probably support setting environment
-		// variables somehow, but for now let's set a sane PATH
 		g.ClearConfigEnv()
-		g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
+		pathSet := false
+		for k, v := range l.Environment {
+			if k == "PATH" {
+				pathSet = true
+			}
+			g.AddConfigEnv(k, v)
+		}
+
+		// if the user didn't specify a path, let's set a sane one
+		if !pathSet {
+			g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
+		}
 
 		deps := []ispec.Descriptor{}
 

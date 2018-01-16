@@ -64,10 +64,11 @@ func (is *ImageSource) ParseTag() (string, error) {
 }
 
 type Layer struct {
-	From       *ImageSource `yaml:"from"`
-	Import     []string     `yaml:"import"`
-	Run        []string     `yaml:"run"`
-	Entrypoint string       `yaml:"entrypoint"`
+	From        *ImageSource      `yaml:"from"`
+	Import      []string          `yaml:"import"`
+	Run         []string          `yaml:"run"`
+	Entrypoint  string            `yaml:"entrypoint"`
+	Environment map[string]string `yaml:"environment"`
 }
 
 func (l *Layer) ParseEntrypoint() ([]string, error) {

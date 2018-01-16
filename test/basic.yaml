@@ -10,6 +10,8 @@ centos:
         - cp /stacker/$FAVICON /$FAVICON
         - cp /stacker/executable /usr/bin/executable
     entrypoint: echo hello world
+    environment:
+        FOO: bar
 layer1:
     from:
         type: built
