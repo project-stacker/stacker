@@ -9,13 +9,14 @@ import (
 
 	"github.com/mitchellh/hashstructure"
 	"github.com/openSUSE/umoci"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type BuildCache struct {
 	oci     *umoci.Layout
 	path    string
-	Cache   map[string]umoci.Blob `json:"cache"`
-	Version int                   `json:"version"`
+	Cache   map[string]ispec.Descriptor `json:"cache"`
+	Version int                         `json:"version"`
 }
 
 func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
@@ -26,7 +27,7 @@ func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
 			return &BuildCache{
 				oci:     oci,
 				path:    p,
-				Cache:   map[string]umoci.Blob{},
+				Cache:   map[string]ispec.Descriptor{},
 				Version: 1,
 			}, nil
 		}
@@ -46,17 +47,17 @@ func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
 	return c, nil
 }
 
-func (c *BuildCache) Lookup(l *Layer) (umoci.Blob, bool) {
+func (c *BuildCache) Lookup(l *Layer) (ispec.Descriptor, bool) {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
-		return umoci.Blob{}, false
+		return ispec.Descriptor{}, false
 	}
 
 	result, ok := c.Cache[fmt.Sprintf("%d", h)]
 	return result, ok
 }
 
-func (c *BuildCache) Put(l *Layer, blob umoci.Blob) error {
+func (c *BuildCache) Put(l *Layer, blob ispec.Descriptor) error {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
 		return err

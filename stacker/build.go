@@ -148,8 +148,10 @@ func doBuild(ctx *cli.Context) error {
 		fmt.Printf("filesystem %s built successfully\n", name)
 
 		diffType := stacker.TarDiff
+		mediaType := ispec.MediaTypeImageLayerGzip
 		if ctx.Bool("btrfs-diff") {
 			diffType = stacker.NativeDiff
+			mediaType = stacker.MediaTypeImageBtrfsLayer
 		}
 
 		diffSource := ""
@@ -165,13 +167,19 @@ func doBuild(ctx *cli.Context) error {
 
 		fmt.Println("starting diff...")
 
-		blob, err := oci.PutBlob(diff)
+		digest, size, err := oci.PutBlob(diff)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("added blob %v\n", blob.Hash)
-		diffID := blob.Hash
+		blob := ispec.Descriptor{
+			MediaType: mediaType,
+			Digest:    digest,
+			Size:      size,
+		}
+
+		fmt.Printf("added blob %v\n", string(digest))
+		diffID := string(digest)
 		if hash != nil {
 			diffID = fmt.Sprintf("sha256:%x", hash.Sum(nil))
 		}
@@ -199,12 +207,7 @@ func doBuild(ctx *cli.Context) error {
 		g.ClearConfigEnv()
 		g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
 
-		deps := []umoci.Blob{}
-
-		mediaType := ispec.MediaTypeImageLayerGzip
-		if ctx.Bool("btrfs-diff") {
-			mediaType = stacker.MediaTypeImageBtrfsLayer
-		}
+		deps := []ispec.Descriptor{}
 
 		if l.From.Type == stacker.BuiltType {
 			from, ok := sf[l.From.Tag]
@@ -236,10 +239,7 @@ func doBuild(ctx *cli.Context) error {
 					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
 				}
 
-				deps = append(deps, umoci.Blob{
-					Hash: string(l.Digest),
-					Size: l.Size,
-				})
+				deps = append(deps, l)
 			}
 		} else if l.From.Type == stacker.DockerType || l.From.Type == stacker.OCIType {
 			tag, err := l.From.ParseTag()
@@ -253,12 +253,7 @@ func doBuild(ctx *cli.Context) error {
 				return err
 			}
 
-			configBlob := umoci.Blob{
-				Hash: string(manifest.Config.Digest),
-				Size: manifest.Config.Size,
-			}
-
-			img, err := oci.LookupConfig(configBlob)
+			img, err := oci.LookupConfig(manifest.Config)
 			if err != nil {
 				return err
 			}
@@ -272,10 +267,7 @@ func doBuild(ctx *cli.Context) error {
 					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
 				}
 
-				deps = append(deps, umoci.Blob{
-					Hash: string(l.Digest),
-					Size: l.Size,
-				})
+				deps = append(deps, l)
 			}
 		}
 
@@ -286,7 +278,8 @@ func doBuild(ctx *cli.Context) error {
 
 		deps = append(deps, blob)
 
-		err = oci.NewImage(name, g, deps, mediaType)
+		img := g.Image()
+		err = oci.NewImage(name, &img, deps)
 		if err != nil {
 			return err
 		}
@@ -296,15 +289,9 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		configBlob := umoci.Blob{
-			Hash: string(manifest.Config.Digest),
-			Size: manifest.Config.Size,
-		}
-
-		if err := buildCache.Put(l, configBlob); err != nil {
+		if err := buildCache.Put(l, manifest.Config); err != nil {
 			return err
 		}
-
 	}
 
 	return nil

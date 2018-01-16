@@ -1,5 +1,5 @@
 hash: d246c3e048cf68c2fe58e78f538498aefc7358742944865b65efffad5beea05d
-updated: 2018-01-16T16:09:53.298559225Z
+updated: 2018-01-16T19:38:57.565334933Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -35,7 +35,7 @@ imports:
   - generate/seccomp
   - validate
 - name: github.com/openSUSE/umoci
-  version: 908fd6bc29ce5c969174c69d23acaa164639865e
+  version: 530662c9527fc1f14857ff82f99cce829027f03e
   repo: git@github.com:tych0/umoci
   subpackages:
   - oci/cas
