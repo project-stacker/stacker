@@ -16,6 +16,13 @@ import (
 	"unsafe"
 )
 
+// SyscallNoError may be used instead of Syscall for syscalls that don't fail.
+func SyscallNoError(trap, a1, a2, a3 uintptr) (r1, r2 uintptr)
+
+// RawSyscallNoError may be used instead of RawSyscall for syscalls that don't
+// fail.
+func RawSyscallNoError(trap, a1, a2, a3 uintptr) (r1, r2 uintptr)
+
 /*
  * Wrapped
  */
@@ -1311,6 +1318,7 @@ func Setgid(uid int) (err error) {
 
 //sys	Setpriority(which int, who int, prio int) (err error)
 //sys	Setxattr(path string, attr string, data []byte, flags int) (err error)
+//sys	Statx(dirfd int, path string, flags int, mask int, stat *Statx_t) (err error)
 //sys	Sync()
 //sys	Syncfs(fd int) (err error)
 //sysnb	Sysinfo(info *Sysinfo_t) (err error)
@@ -1448,11 +1456,9 @@ func Vmsplice(fd int, iovs []Iovec, flags int) (int, error) {
 // RtSigtimedwait
 // SchedGetPriorityMax
 // SchedGetPriorityMin
-// SchedGetaffinity
 // SchedGetparam
 // SchedGetscheduler
 // SchedRrGetInterval
-// SchedSetaffinity
 // SchedSetparam
 // SchedYield
 // Security

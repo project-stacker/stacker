@@ -1,5 +1,5 @@
 {
-    "description": "Open Container Initiative Runtime Specification Container Configuration Schema",
+    "description": "Open Container Runtime Specification Container Configuration Schema",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "id": "https://opencontainers.org/schema/bundle",
     "type": "object",
@@ -125,23 +125,38 @@
                     "properties": {
                         "bounding": {
                             "id": "https://opencontainers.org/schema/bundle/process/linux/capabilities/bounding",
-                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         },
                         "permitted": {
                             "id": "https://opencontainers.org/schema/bundle/process/linux/capabilities/permitted",
-                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         },
                         "effective": {
                             "id": "https://opencontainers.org/schema/bundle/process/linux/capabilities/effective",
-                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         },
                         "inheritable": {
                             "id": "https://opencontainers.org/schema/bundle/process/linux/capabilities/inheritable",
-                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         },
                         "ambient": {
                             "id": "https://opencontainers.org/schema/bundle/process/linux/capabilities/ambient",
-                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         }
                     }
                 },

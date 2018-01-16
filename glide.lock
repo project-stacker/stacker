@@ -1,5 +1,5 @@
 hash: d246c3e048cf68c2fe58e78f538498aefc7358742944865b65efffad5beea05d
-updated: 2018-01-03T00:08:55.996035526Z
+updated: 2018-01-16T16:09:53.298559225Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -8,7 +8,7 @@ imports:
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cheggaaa/pb
-  version: 18d384da9bdc1e5a08fc2a62a494c321d9ae74ea
+  version: 43d64de27312b32812ca7e994fa0bb03ccf08fdf
 - name: github.com/cyphar/filepath-securejoin
   version: ae69057f2299fb9e5ba2df738607e6a505b74ab6
 - name: github.com/freddierice/go-losetup
@@ -25,7 +25,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: b2d941ef6a780da2d9982c1fb28d77ad97f54fc7
+  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -60,27 +60,27 @@ imports:
 - name: github.com/udhos/equalfile
   version: c92b0e41854b49e567ba269dcc572ada60e48e7b
 - name: github.com/urfave/cli
-  version: 39908eb08fee7c10d842622a114a5c133fb0a3c6
+  version: 75104e932ac2ddb944a6ea19d9f9f26316ff1145
 - name: github.com/vbatts/go-mtree
   version: 16da0f86ee549d8949775bf3d555e7921a9caca9
   subpackages:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
+  version: 13931e22f9e72ea58bb73048bc752b48c6d4d4ac
   subpackages:
   - ripemd160
 - name: golang.org/x/net
-  version: d866cfc389cec985d6fda2859936a575a55a3ab6
+  version: 5ccada7d0a7ba9aeb5d3aca8d3501b4c2a509fec
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 83801418e1b59fb1880e363299581ee543af32ca
+  version: fff93fa7cd278d84afc205751523809c464168ab
   repo: git@github.com:golang/sys
   subpackages:
   - unix
 - name: gopkg.in/lxc/go-lxc.v2
-  version: 8b0b24a7de348f9af11b656e2037602ebfef9e2e
+  version: 8741a7213cda0df1951283400247300e75abaf17
 - name: gopkg.in/yaml.v2
-  version: c95af922eae69f190717a0b7148960af8c55a072
+  version: d670f9405373e636a5a2765eea47fac0c9bc91a4
 testImports: []

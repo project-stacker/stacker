@@ -86,15 +86,15 @@
                                     "$ref": "defs-linux.json#/definitions/blockIODeviceThrottle"
                                 }
                             },
-                            "throttleReadIOPSDevice": {
-                                "id": "https://opencontainers.org/schema/bundle/linux/resources/blockIO/throttleReadIOPSDevice",
+                            "throttleReadIopsDevice": {
+                                "id": "https://opencontainers.org/schema/bundle/linux/resources/blockIO/throttleReadIopsDevice",
                                 "type": "array",
                                 "items": {
                                     "$ref": "defs-linux.json#/definitions/blockIODeviceThrottle"
                                 }
                             },
-                            "throttleWriteIOPSDevice": {
-                                "id": "https://opencontainers.org/schema/bundle/linux/resources/blockIO/throttleWriteIOPSDevice",
+                            "throttleWriteIopsDevice": {
+                                "id": "https://opencontainers.org/schema/bundle/linux/resources/blockIO/throttleWriteIopsDevice",
                                 "type": "array",
                                 "items": {
                                     "$ref": "defs-linux.json#/definitions/blockIODeviceThrottle"
@@ -229,7 +229,7 @@
                 "properties": {
                     "defaultAction": {
                         "id": "https://opencontainers.org/schema/bundle/linux/seccomp/defaultAction",
-                        "$ref": "defs-linux.json#/definitions/SeccompAction"
+                        "type": "string"
                     },
                     "architectures": {
                         "id": "https://opencontainers.org/schema/bundle/linux/seccomp/architectures",
@@ -265,16 +265,6 @@
             "mountLabel": {
                 "id": "https://opencontainers.org/schema/bundle/linux/mountLabel",
                 "type": "string"
-            },
-            "intelRdt": {
-                "id": "https://opencontainers.org/schema/bundle/linux/intelRdt",
-                "type": "object",
-                "properties": {
-                    "l3CacheSchema": {
-                        "id": "https://opencontainers.org/schema/bundle/linux/intelRdt/l3CacheSchema",
-                        "type": "string"
-                    }
-                }
             }
         }
     }
