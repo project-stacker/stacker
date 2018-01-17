@@ -18,6 +18,7 @@ import (
 
 type diffFunc func(path1 string, info1 os.FileInfo, path2 string, info2 os.FileInfo) error
 
+// compareFiles returns true if the files are different, false if they are the same.
 func compareFiles(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bool, error) {
 	if info1.Name() != info2.Name() {
 		return false, fmt.Errorf("comparing files without the same name?")
@@ -56,7 +57,12 @@ func compareFiles(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (b
 	}
 	defer f2.Close()
 
-	return equalfile.New(nil, equalfile.Options{}).CompareReader(f1, f2)
+	eq, err := equalfile.New(nil, equalfile.Options{}).CompareReader(f1, f2)
+	if err != nil {
+		return false, err
+	}
+
+	return !eq, nil
 }
 
 func directoryDiff(path1 string, path2 string, diff diffFunc) error {
