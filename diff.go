@@ -23,14 +23,6 @@ func compareFiles(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (b
 		return false, fmt.Errorf("comparing files without the same name?")
 	}
 
-	if info1.IsDir() {
-		if info2.IsDir() {
-			return false, nil
-		}
-
-		return false, fmt.Errorf("adding new directory where file was not current supported")
-	}
-
 	if info1.Mode()&os.ModeSymlink != 0 {
 		if info2.Mode()&os.ModeSymlink != 0 {
 			link1, err := os.Readlink(p1)
@@ -85,14 +77,25 @@ func directoryDiff(path1 string, path2 string, diff diffFunc) error {
 		for _, e2 := range dir2 {
 			p2 := path.Join(path2, e2.Name())
 			if e1.Name() == e2.Name() {
-				different, err := compareFiles(p1, e1, p2, e2)
-				if err != nil {
-					return err
-				}
-
-				if different {
-					if err := diff(p1, e1, p2, e2); err != nil {
+				if e1.IsDir() {
+					if e2.IsDir() {
+						err := directoryDiff(p1, p2, diff)
+						if err != nil {
+							return err
+						}
+					} else {
+						return fmt.Errorf("adding new directory where file was not current supported")
+					}
+				} else {
+					different, err := compareFiles(p1, e1, p2, e2)
+					if err != nil {
 						return err
+					}
+
+					if different {
+						if err := diff(p1, e1, p2, e2); err != nil {
+							return err
+						}
 					}
 				}
 
