@@ -8,24 +8,21 @@ import (
 	"path"
 
 	"github.com/mitchellh/hashstructure"
-	"github.com/openSUSE/umoci"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type BuildCache struct {
-	oci     *umoci.Layout
 	path    string
 	Cache   map[string]ispec.Descriptor `json:"cache"`
 	Version int                         `json:"version"`
 }
 
-func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
+func OpenCache(dir string) (*BuildCache, error) {
 	p := path.Join(dir, "build.cache")
 	f, err := os.Open(p)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &BuildCache{
-				oci:     oci,
 				path:    p,
 				Cache:   map[string]ispec.Descriptor{},
 				Version: 1,
