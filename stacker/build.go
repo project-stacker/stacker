@@ -136,7 +136,7 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		fmt.Println("running commands...")
-		if err := stacker.Run(config, name, l.Run); err != nil {
+		if err := stacker.Run(config, name, l); err != nil {
 			return err
 		}
 

@@ -2,33 +2,34 @@ package stacker
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path"
-
-	"github.com/anmitsu/go-shlex"
+	"strings"
 )
 
-func Run(sc StackerConfig, name string, run []string) error {
+func Run(sc StackerConfig, name string, l *Layer) error {
 	c, err := newContainer(sc, ".working")
 	if err != nil {
 		return err
 	}
 
-	err = c.bindMount(path.Join(sc.StackerDir, "imports", name), "/stacker")
+	run, err := l.getRun()
 	if err != nil {
 		return err
 	}
 
-	for _, cmd := range run {
-		fmt.Println("running", cmd)
-		args, err := shlex.Split(cmd, true)
-		if err != nil {
-			return err
-		}
+	importsDir := path.Join(sc.StackerDir, "imports", name)
 
-		if err := c.execute(args); err != nil {
-			return err
-		}
+	script := fmt.Sprintf("#!/bin/bash\n%s", strings.Join(run, "\n"))
+	if err := ioutil.WriteFile(path.Join(importsDir, ".stacker-run.sh"), []byte(script), 0755); err != nil {
+		return err
 	}
 
-	return nil
+	err = c.bindMount(importsDir, "/stacker")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("running commands for", name)
+	return c.execute([]string{"/stacker/.stacker-run.sh"})
 }

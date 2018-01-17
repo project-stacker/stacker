@@ -4,8 +4,8 @@ centos:
         url: docker://centos:latest
     import:
         - https://www.cisco.com/favicon.ico
-    run:
-        - cp /stacker/favicon.ico /favicon.ico
+    run: |
+        cp /stacker/favicon.ico /favicon.ico
 layer1:
     from:
         type: built

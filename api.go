@@ -66,13 +66,52 @@ func (is *ImageSource) ParseTag() (string, error) {
 type Layer struct {
 	From        *ImageSource      `yaml:"from"`
 	Import      []string          `yaml:"import"`
-	Run         []string          `yaml:"run"`
+	Run         interface{}       `yaml:"run"`
 	Entrypoint  string            `yaml:"entrypoint"`
 	Environment map[string]string `yaml:"environment"`
 }
 
 func (l *Layer) ParseEntrypoint() ([]string, error) {
 	return shlex.Split(l.Entrypoint, true)
+}
+
+func (l *Layer) getRun() ([]string, error) {
+	// This is how the json decoder decodes it if it's:
+	// run:
+	//     - foo
+	//     - bar
+	ifs, ok := l.Run.([]interface{})
+	if ok {
+		strs := []string{}
+		for _, i := range ifs {
+			s, ok := i.(string)
+			if !ok {
+				return nil, fmt.Errorf("unknown run array type: %T", i)
+			}
+
+			strs = append(strs, s)
+		}
+		return strs, nil
+	}
+
+	// This is how the json decoder decodes it if it's:
+	// run: |
+	//     echo hello world
+	//     echo goodbye cruel world
+	line, ok := l.Run.(string)
+	if ok {
+		return []string{line}, nil
+	}
+
+	// This is how it is after we do our find replace and re-set it; as a
+	// convenience (so we don't have to re-wrap it in interface{}), let's
+	// handle []string
+	strs, ok := l.Run.([]string)
+	if ok {
+		return strs, nil
+	}
+
+	return nil, fmt.Errorf("unknown run directive type: %T", l.Run)
 }
 
 func NewStackerfile(stackerfile string) (Stackerfile, error) {
@@ -129,15 +168,24 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	return ret, nil
 }
 
-func (s *Stackerfile) VariableSub(from, to string) {
+func (s *Stackerfile) VariableSub(from, to string) error {
 	from = fmt.Sprintf("$%s", from)
 	for _, layer := range *s {
 		for i, imp := range layer.Import {
 			layer.Import[i] = strings.Replace(imp, from, to, -1)
 		}
 
-		for i, r := range layer.Run {
-			layer.Run[i] = strings.Replace(r, from, to, -1)
+		runs := []string{}
+		old, err := layer.getRun()
+		if err != nil {
+			return err
 		}
+
+		for _, r := range old {
+			runs = append(runs, strings.Replace(r, from, to, -1))
+		}
+		layer.Run = runs
 	}
+
+	return nil
 }

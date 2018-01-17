@@ -101,7 +101,8 @@ cleanup
 
 # now, let's do something really crazy: import a docker image and build our own
 # layer on top of it.
-stacker build -f ./import-docker.yaml
+stacker build --leave-unladen -f ./import-docker.yaml
+[ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
 
