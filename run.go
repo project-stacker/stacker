@@ -30,6 +30,11 @@ func Run(sc StackerConfig, name string, l *Layer) error {
 		return err
 	}
 
+	err = c.bindMount("/etc/resolv.conf", "/etc/resolv.conf")
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("running commands for", name)
 	return c.execute("/stacker/.stacker-run.sh")
 }
