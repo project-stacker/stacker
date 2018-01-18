@@ -36,7 +36,7 @@ func OpenCache(dir string) (*BuildCache, error) {
 		return nil, err
 	}
 
-	c := &BuildCache{}
+	c := &BuildCache{path: p}
 	if err := json.Unmarshal(content, c); err != nil {
 		return nil, err
 	}
