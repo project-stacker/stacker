@@ -20,7 +20,7 @@ func Run(sc StackerConfig, name string, l *Layer) error {
 
 	importsDir := path.Join(sc.StackerDir, "imports", name)
 
-	script := fmt.Sprintf("#!/bin/bash\n%s", strings.Join(run, "\n"))
+	script := fmt.Sprintf("#!/bin/bash -xe\n%s", strings.Join(run, "\n"))
 	if err := ioutil.WriteFile(path.Join(importsDir, ".stacker-run.sh"), []byte(script), 0755); err != nil {
 		return err
 	}
@@ -31,5 +31,5 @@ func Run(sc StackerConfig, name string, l *Layer) error {
 	}
 
 	fmt.Println("running commands for", name)
-	return c.execute([]string{"/stacker/.stacker-run.sh"})
+	return c.execute("/stacker/.stacker-run.sh")
 }

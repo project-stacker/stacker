@@ -3,10 +3,11 @@ package stacker
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"gopkg.in/lxc/go-lxc.v2"
@@ -124,14 +125,35 @@ func (c *container) containerError(theErr error, msg string) error {
 	return errors.Wrap(theErr, fmt.Sprintf("%s\nLast few LXC errors:\n%s\n", msg, extra))
 }
 
-func (c *container) execute(args []string) error {
-	err := c.c.StartExecute(args)
-	if err != nil {
-		return c.containerError(err, "execute failed")
+func (c *container) execute(args string) error {
+	if err := c.setConfig("lxc.execute.cmd", args); err != nil {
+		return err
 	}
 
-	// If the command exits too fast, this will return false, since there
-	// was nothing to wait for. so let's explicitly ignore the return code.
-	c.c.Wait(lxc.STOPPED, -1*time.Second)
-	return nil
+	f, err := ioutil.TempFile("", fmt.Sprintf("stacker_%s_run", c.c.Name()))
+	if err != nil {
+		return err
+	}
+	f.Close()
+	defer os.Remove(f.Name())
+
+	if err := c.c.SaveConfigFile(f.Name()); err != nil {
+		return err
+	}
+
+	cmd := exec.Command(
+		os.Args[0],
+		"internal",
+		c.c.Name(),
+		c.sc.RootFSDir,
+		f.Name(),
+	)
+
+	// These should all be non-interactive; let's ensure that.
+	cmd.Stdin = nil
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
