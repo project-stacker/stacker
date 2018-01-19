@@ -66,29 +66,43 @@ func NewStorage(c StackerConfig) (Storage, error) {
 			return nil, err
 		}
 
-		stackermount := "stackermount"
-		if _, err := exec.LookPath(stackermount); err != nil {
-			link, err := os.Readlink("/proc/self/exe")
-			if err != nil {
-				return nil, err
+		loopback := path.Join(c.StackerDir, "btrfs.loop")
+		size := 100*1024*1024*1024
+		uid, err := strconv.Atoi(currentUser.Uid)
+		if err != nil {
+			return nil, err
+		}
+
+		// Try to mount it ourself. If it fails, let's try to use
+		// stackermount, which, if it exists, is setuid and can do what
+		// we want.
+		err = MakeLoopbackBtrfs(loopback, int64(size), uid, c.RootFSDir)
+		if err != nil {
+			stackermount := "stackermount"
+			if _, err := exec.LookPath(stackermount); err != nil {
+				link, err := os.Readlink("/proc/self/exe")
+				if err != nil {
+					return nil, err
+				}
+
+				stackermount = path.Join(path.Dir(link), "stackermount")
 			}
 
-			stackermount = path.Join(path.Dir(link), "stackermount")
+			// If it's not btrfs, let's make it one via a loopback.
+			// TODO: make the size configurable
+			output, err := exec.Command(
+				stackermount,
+				loopback,
+				fmt.Sprintf("%d", size),
+				currentUser.Uid,
+				c.RootFSDir,
+			).CombinedOutput()
+			if err != nil {
+				os.RemoveAll(c.StackerDir)
+				return nil, fmt.Errorf("creating loopback: %s: %s", err, output)
+			}
 		}
 
-		// If it's not btrfs, let's make it one via a loopback.
-		// TODO: make the size configurable
-		output, err := exec.Command(
-			stackermount,
-			path.Join(c.StackerDir, "btrfs.loop"),
-			fmt.Sprintf("%d", 100*1024*1024*1024),
-			currentUser.Uid,
-			c.RootFSDir,
-		).CombinedOutput()
-		if err != nil {
-			os.RemoveAll(c.StackerDir)
-			return nil, fmt.Errorf("creating loopback: %s: %s", err, output)
-		}
 	} else {
 		// If it *is* btrfs, let's make sure we can actually create
 		// subvolumes like we need to.
