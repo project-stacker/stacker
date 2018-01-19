@@ -14,8 +14,8 @@ import (
 	"strings"
 	"syscall"
 
-	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/freddierice/go-losetup"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type DiffStrategy int
@@ -67,7 +67,7 @@ func NewStorage(c StackerConfig) (Storage, error) {
 		}
 
 		loopback := path.Join(c.StackerDir, "btrfs.loop")
-		size := 100*1024*1024*1024
+		size := 100 * 1024 * 1024 * 1024
 		uid, err := strconv.Atoi(currentUser.Uid)
 		if err != nil {
 			return nil, err
