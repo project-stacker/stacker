@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"bufio"
 	"fmt"
 	"hash"
 	"io"
@@ -10,9 +11,11 @@ import (
 	"os/user"
 	"path"
 	"strconv"
+	"strings"
 	"syscall"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/freddierice/go-losetup"
 )
 
 type DiffStrategy int
@@ -341,4 +344,91 @@ func MediaTypeToDiffStrategy(mt string) (DiffStrategy, error) {
 	default:
 		return 0, fmt.Errorf("unknown media type: %s", mt)
 	}
+}
+
+// MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
+// device and allows the specified uid to delete subvolumes on it.
+func MakeLoopbackBtrfs(loopback string, size int64, uid int, dest string) error {
+	mounted, err := isMounted(loopback)
+	if err != nil {
+		return err
+	}
+
+	/* if it's already mounted, don't do anything */
+	if mounted {
+		return nil
+	}
+
+	if err := setupLoopback(loopback, uid, size); err != nil {
+		return err
+	}
+
+	/* Now we know that file is a valid btrfs "file" and that it's
+	 * not mounted, so let's mount it.
+	 */
+	dev, err := losetup.Attach(loopback, 0, false)
+	if err != nil {
+		return fmt.Errorf("Failed to attach loop device: %v", err)
+	}
+	defer dev.Detach()
+
+	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed,flushoncommit")
+	if err != nil {
+		return fmt.Errorf("Failed mount fs: %v", err)
+	}
+
+	if err := os.Chown(dest, uid, uid); err != nil {
+		return fmt.Errorf("couldn't chown %s: %v", dest, err)
+	}
+
+	return nil
+}
+
+func setupLoopback(path string, uid int, size int64) error {
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
+
+		return nil
+	}
+	defer f.Close()
+
+	if err := f.Chown(uid, uid); err != nil {
+		os.RemoveAll(f.Name())
+		return err
+	}
+
+	/* TODO: make this configurable */
+	if err := syscall.Ftruncate(int(f.Fd()), size); err != nil {
+		os.RemoveAll(f.Name())
+		return err
+	}
+
+	output, err := exec.Command("mkfs.btrfs", f.Name()).CombinedOutput()
+	if err != nil {
+		os.RemoveAll(f.Name())
+		return fmt.Errorf("mkfs.btrfs: %s: %s", err, output)
+	}
+
+	return nil
+}
+
+func isMounted(path string) (bool, error) {
+	f, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, path) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
