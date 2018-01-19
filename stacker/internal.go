@@ -94,7 +94,6 @@ __attribute__((constructor)) void internal(void)
 	status = spawn_container(name, lxcpath, config_path);
 
 	// Try and propagate the container's exit code.
-	printf("error_num: %x\n", status);
 	if (WIFEXITED(status)) {
 		exit(WEXITSTATUS(status));
 	} else {
