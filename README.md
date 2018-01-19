@@ -72,6 +72,7 @@ web:
     run: |
         yum install lighttpd
         cp /stacker/lighttp.cfg /etc/lighttpd/lighttp.cfg
+    entrypoint: lighthttpd
 ```
 
 If the above contents are in ./stacker.yaml, then the result of running
