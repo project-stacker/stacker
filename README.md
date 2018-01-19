@@ -54,6 +54,9 @@ centos:
     from:
         type: tar
         url: http://example.com/centos.tar.gz
+    environment:
+        http_proxy: http://example.com:8080
+        https_proxy: https://example.com:8080
 boot:
     from:
         type: built
