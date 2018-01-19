@@ -14,6 +14,7 @@ package main
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <signal.h>
 
 #include <lxc/lxccontainer.h>
 
@@ -46,7 +47,7 @@ static int spawn_container(char *name, char *lxcpath, char *config)
 // stacker internal <container_name> <lxcpath> <config_path>
 __attribute__((constructor)) void internal(void)
 {
-        int ret;
+        int ret, status;
         char buf[4096];
         ssize_t size;
         char *cur, *name, *lxcpath, *config_path;
@@ -90,7 +91,16 @@ __attribute__((constructor)) void internal(void)
 	ADVANCE_ARG;
 	config_path = cur;
 
-	exit(spawn_container(name, lxcpath, config_path));
+	status = spawn_container(name, lxcpath, config_path);
+
+	// Try and propagate the container's exit code.
+	printf("error_num: %x\n", status);
+	if (WIFEXITED(status)) {
+		exit(WEXITSTATUS(status));
+	} else {
+		kill(0, WTERMSIG(status));
+		exit(EXIT_FAILURE);
+	}
 }
 */
 import "C"

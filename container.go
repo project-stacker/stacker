@@ -156,5 +156,9 @@ func (c *container) execute(args string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("run commands failed: %s", err)
+	}
+
+	return nil
 }
