@@ -7,7 +7,7 @@ import:
 - package: github.com/openSUSE/umoci
   subpackages:
   - oci/config/generate
-  repo: git@github.com:tych0/umoci
+  repo: git@github.com:anuvu/umoci
   version: api-draft
 - package: github.com/opencontainers/image-spec
   subpackages:

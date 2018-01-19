@@ -1,10 +1,10 @@
-hash: d246c3e048cf68c2fe58e78f538498aefc7358742944865b65efffad5beea05d
-updated: 2018-01-16T19:38:57.565334933Z
+hash: b2fa941297d8fb9409a5398d1a18af05be69294a026bac1425624e3bf02aa80c
+updated: 2018-01-19T16:55:05.844542879Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
 - name: github.com/apex/log
-  version: bf81de4b2280680c3ccdf5520047f055cdafc7e0
+  version: ff0f66940b829dc66c81dad34746d4349b83eb9e
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cheggaaa/pb
@@ -25,7 +25,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
+  version: b2d941ef6a780da2d9982c1fb28d77ad97f54fc7
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -36,7 +36,7 @@ imports:
   - validate
 - name: github.com/openSUSE/umoci
   version: 530662c9527fc1f14857ff82f99cce829027f03e
-  repo: git@github.com:tych0/umoci
+  repo: git@github.com:anuvu/umoci
   subpackages:
   - oci/cas
   - oci/cas/dir
@@ -67,7 +67,7 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 13931e22f9e72ea58bb73048bc752b48c6d4d4ac
+  version: ee41a25c63fb5b74abf2213abb6dee3751e6ac4a
   subpackages:
   - ripemd160
 - name: golang.org/x/net
@@ -75,12 +75,12 @@ imports:
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: fff93fa7cd278d84afc205751523809c464168ab
+  version: 2c42eef0765b9837fbdab12011af7830f55f88f0
   repo: git@github.com:golang/sys
   subpackages:
   - unix
 - name: gopkg.in/lxc/go-lxc.v2
-  version: 8741a7213cda0df1951283400247300e75abaf17
+  version: b964baab402d04122567df45c56559f64512f143
 - name: gopkg.in/yaml.v2
   version: d670f9405373e636a5a2765eea47fac0c9bc91a4
 testImports: []
