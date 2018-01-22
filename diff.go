@@ -18,8 +18,8 @@ import (
 
 type diffFunc func(path1 string, info1 os.FileInfo, path2 string, info2 os.FileInfo) error
 
-// compareFiles returns true if the files are different, false if they are the same.
-func compareFiles(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bool, error) {
+// filesDiffer returns true if the files are different, false if they are the same.
+func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bool, error) {
 	if info1.Name() != info2.Name() {
 		return false, fmt.Errorf("comparing files without the same name?")
 	}
@@ -93,7 +93,7 @@ func directoryDiff(path1 string, path2 string, diff diffFunc) error {
 						return fmt.Errorf("adding new directory where file was not current supported")
 					}
 				} else {
-					different, err := compareFiles(p1, e1, p2, e2)
+					different, err := filesDiffer(p1, e1, p2, e2)
 					if err != nil {
 						return err
 					}
