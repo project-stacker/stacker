@@ -50,8 +50,23 @@ func Import(c StackerConfig, name string, imports []string) error {
 
 		// It's just a path, let's copy it to .stacker.
 		if url.Scheme == "" {
+			e1, err := os.Stat(i)
+			if err != nil {
+				return err
+			}
+
 			dest := path.Join(dir, path.Base(url.Path))
-			if _, err := os.Stat(dest); err != nil {
+			e2, err := os.Stat(dest)
+			if err != nil {
+				return err
+			}
+
+			differ, err := filesDiffer(i, e1, dest, e2)
+			if err != nil {
+				return err
+			}
+
+			if differ {
 				fmt.Printf("copying %s\n", i)
 				if err := fileCopy(dest, i); err != nil {
 					return err
