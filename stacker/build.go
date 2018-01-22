@@ -213,7 +213,7 @@ func doBuild(ctx *cli.Context) error {
 
 		// if the user didn't specify a path, let's set a sane one
 		if !pathSet {
-			g.AddConfigEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin")
+			g.AddConfigEnv("PATH", stacker.ReasonableDefaultPath)
 		}
 
 		deps := []ispec.Descriptor{}

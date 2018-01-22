@@ -13,6 +13,8 @@ import (
 	"gopkg.in/lxc/go-lxc.v2"
 )
 
+const ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin"
+
 // our representation of a container
 type container struct {
 	sc StackerConfig
@@ -49,9 +51,10 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		// ->execute() seems to set these up for is; if we provide
 		// them, we get an EBUSY for sysfs
 		//"lxc.mount.auto": "proc:mixed sys:mixed cgroup:mixed",
-		"lxc.autodev":    "1",
-		"lxc.uts.name":   name,
-		"lxc.net.0.type": "none",
+		"lxc.autodev":     "1",
+		"lxc.uts.name":    name,
+		"lxc.net.0.type":  "none",
+		"lxc.environment": fmt.Sprintf("PATH=%s", ReasonableDefaultPath),
 	}
 
 	if err := c.setConfigs(configs); err != nil {
