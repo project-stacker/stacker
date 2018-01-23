@@ -57,6 +57,9 @@ centos:
     environment:
         http_proxy: http://example.com:8080
         https_proxy: https://example.com:8080
+    labels:
+        foo: bar
+        bar: baz
 boot:
     from:
         type: built

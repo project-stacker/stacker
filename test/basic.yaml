@@ -14,6 +14,9 @@ centos:
         FOO: bar
     volumes:
         - /data/db
+    labels:
+        foo: bar
+        bar: baz
 layer1:
     from:
         type: built

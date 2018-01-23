@@ -222,6 +222,10 @@ func doBuild(ctx *cli.Context) error {
 			g.AddConfigVolume(v)
 		}
 
+		for k, v := range l.Labels {
+			g.AddConfigLabel(k, v)
+		}
+
 		deps := []ispec.Descriptor{}
 
 		if l.From.Type == stacker.BuiltType {
