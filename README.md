@@ -78,6 +78,7 @@ web:
     entrypoint: lighthttpd
     volumes:
         - /data/db
+    working_dir: /var/lib/www
 ```
 
 If the above contents are in ./stacker.yaml, then the result of running

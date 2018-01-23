@@ -17,6 +17,7 @@ centos:
     labels:
         foo: bar
         bar: baz
+    working_dir: /meshuggah/rocks
 layer1:
     from:
         type: built

@@ -226,6 +226,10 @@ func doBuild(ctx *cli.Context) error {
 			g.AddConfigLabel(k, v)
 		}
 
+		if l.WorkingDir != "" {
+			g.SetConfigWorkingDir(l.WorkingDir)
+		}
+
 		deps := []ispec.Descriptor{}
 
 		if l.From.Type == stacker.BuiltType {

@@ -71,6 +71,7 @@ type Layer struct {
 	Environment map[string]string `yaml:"environment"`
 	Volumes     []string          `yaml:"volumes"`
 	Labels      map[string]string `yaml:"labels"`
+	WorkingDir  string            `yaml:"working_dir"`
 }
 
 func (l *Layer) ParseEntrypoint() ([]string, error) {
