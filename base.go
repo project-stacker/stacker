@@ -43,6 +43,15 @@ func getDocker(o BaseLayerOpts) error {
 		return err
 	}
 
+	// Note that we can do tihs over the top of the cache every time, since
+	// skopeo should be smart enough to only copy layers that have changed.
+	// Perhaps we want to do an `umoci gc` at some point, but for now we
+	// don't bother.
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", tag)
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return err
+	}
+
 	cmd := exec.Command(
 		"skopeo",
 		// So we don't have to make everyone install an
@@ -51,7 +60,8 @@ func getDocker(o BaseLayerOpts) error {
 		"--insecure-policy",
 		"copy",
 		o.Layer.From.Url,
-		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+		//fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
 	)
 
 	cmd.Stdout = os.Stdout
@@ -59,6 +69,20 @@ func getDocker(o BaseLayerOpts) error {
 	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("skopeo copy: %s", err)
+	}
+
+	// We just copied it to the cache, now let's copy that over to our image.
+	cmd = exec.Command(
+		"skopeo",
+		"--insecure-policy",
+		"copy",
+		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
 	}
 
 	target := path.Join(o.Config.RootFSDir, o.Target)
