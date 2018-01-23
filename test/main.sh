@@ -82,6 +82,7 @@ diffid=$(cat oci/blobs/sha256/$config | jq -r .rootfs.diff_ids[0])
 [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
 [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Env[0]')" = "FOO=bar" ]
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Volumes["/data/db"]')" = "{}" ]
 
 # ok, now let's do the build again. it should all be the same, since it's all cached
 stacker build --substitute "FAVICON=favicon.ico" --btrfs-diff -f ./basic.yaml

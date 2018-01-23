@@ -218,6 +218,10 @@ func doBuild(ctx *cli.Context) error {
 			g.AddConfigEnv("PATH", stacker.ReasonableDefaultPath)
 		}
 
+		for _, v := range l.Volumes {
+			g.AddConfigVolume(v)
+		}
+
 		deps := []ispec.Descriptor{}
 
 		if l.From.Type == stacker.BuiltType {

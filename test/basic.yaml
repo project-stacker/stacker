@@ -12,6 +12,8 @@ centos:
     entrypoint: echo hello world
     environment:
         FOO: bar
+    volumes:
+        - /data/db
 layer1:
     from:
         type: built

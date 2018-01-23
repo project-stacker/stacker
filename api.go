@@ -69,6 +69,7 @@ type Layer struct {
 	Run         interface{}       `yaml:"run"`
 	Entrypoint  string            `yaml:"entrypoint"`
 	Environment map[string]string `yaml:"environment"`
+	Volumes     []string          `yaml:"volumes"`
 }
 
 func (l *Layer) ParseEntrypoint() ([]string, error) {
