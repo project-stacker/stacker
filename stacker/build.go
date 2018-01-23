@@ -184,8 +184,10 @@ func doBuild(ctx *cli.Context) error {
 			diffID = fmt.Sprintf("sha256:%x", hash.Sum(nil))
 		}
 
+		now := time.Now()
+
 		g := igen.New()
-		g.SetCreated(time.Now())
+		g.SetCreated(now)
 		g.SetOS(runtime.GOOS)
 		g.SetArchitecture(runtime.GOARCH)
 		g.ClearHistory()
@@ -238,6 +240,10 @@ func doBuild(ctx *cli.Context) error {
 				g.AddRootfsDiffID(did)
 			}
 
+			for _, hist := range img.History {
+				g.AddHistory(hist)
+			}
+
 			manifest, err := oci.LookupManifest(l.From.Tag)
 			if err != nil {
 				return err
@@ -271,6 +277,10 @@ func doBuild(ctx *cli.Context) error {
 				g.AddRootfsDiffID(did)
 			}
 
+			for _, hist := range img.History {
+				g.AddHistory(hist)
+			}
+
 			for _, l := range manifest.Layers {
 				if mediaType != l.MediaType {
 					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
@@ -285,10 +295,20 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
+		g.AddHistory(ispec.History{
+			Created:   &now,
+			CreatedBy: "stacker",
+		})
+
 		deps = append(deps, blob)
 
 		img := g.Image()
-		err = oci.NewImage(name, &img, deps)
+		platform := ispec.Platform{
+			Architecture: runtime.GOARCH,
+			OS:           runtime.GOOS,
+		}
+
+		err = oci.NewImage(name, &img, deps, &platform)
 		if err != nil {
 			return err
 		}
