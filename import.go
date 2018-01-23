@@ -55,18 +55,21 @@ func Import(c StackerConfig, name string, imports []string) error {
 				return err
 			}
 
+			needsCopy := false
 			dest := path.Join(dir, path.Base(url.Path))
 			e2, err := os.Stat(dest)
 			if err != nil {
-				return err
+				needsCopy = true
+			} else {
+				differ, err := filesDiffer(i, e1, dest, e2)
+				if err != nil {
+					return err
+				}
+
+				needsCopy = differ
 			}
 
-			differ, err := filesDiffer(i, e1, dest, e2)
-			if err != nil {
-				return err
-			}
-
-			if differ {
+			if needsCopy {
 				fmt.Printf("copying %s\n", i)
 				if err := fileCopy(dest, i); err != nil {
 					return err
