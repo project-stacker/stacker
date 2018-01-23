@@ -1,5 +1,5 @@
 hash: b2fa941297d8fb9409a5398d1a18af05be69294a026bac1425624e3bf02aa80c
-updated: 2018-01-19T16:55:05.844542879Z
+updated: 2018-01-22T17:44:44.931552822Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -35,7 +35,7 @@ imports:
   - generate/seccomp
   - validate
 - name: github.com/openSUSE/umoci
-  version: 530662c9527fc1f14857ff82f99cce829027f03e
+  version: 4abde7d74de0527c3b57a07f365befec43faada5
   repo: git@github.com:anuvu/umoci
   subpackages:
   - oci/cas
@@ -67,7 +67,7 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: ee41a25c63fb5b74abf2213abb6dee3751e6ac4a
+  version: 39efaea5da11abd5e2b90a435b1f338cdb94619c
   subpackages:
   - ripemd160
 - name: golang.org/x/net
@@ -75,7 +75,7 @@ imports:
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 2c42eef0765b9837fbdab12011af7830f55f88f0
+  version: af50095a40f9041b3b38960738837185c26e9419
   repo: git@github.com:golang/sys
   subpackages:
   - unix
