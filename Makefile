@@ -1,6 +1,11 @@
-.PHONY: default
-default:
-	go install -v ./...
+GO_SRC=$(shell find . -name \*.go)
+COMMIT_HASH=$(shell git rev-parse HEAD)
+COMMIT=$(if $(shell git status --porcelain --untracked-files=no),$(COMMIT_HASH)-dirty,$(COMMIT_HASH))
+
+# Note: we don't really need stackermount right now since we're only
+# privileged, so we intentionally avoid building it.
+default: $(GO_SRC)
+	go build -ldflags "-X main.version=$(COMMIT)" -o $(GOPATH)/bin/stacker github.com/anuvu/stacker/stacker
 
 # For now, let's just leave the binaries in $GOPATH/bin, but we can at least
 # make stackermount suid. Note that we leave group as the user group, so that

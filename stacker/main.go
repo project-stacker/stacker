@@ -10,13 +10,16 @@ import (
 	"github.com/urfave/cli"
 )
 
-var config stacker.StackerConfig
+var (
+	config  stacker.StackerConfig
+	version = ""
+)
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "stacker"
 	app.Usage = "stacker builds OCI images"
-	app.Version = "0.0.1"
+	app.Version = version
 	app.Commands = []cli.Command{
 		buildCmd,
 		unladeCmd,
