@@ -32,10 +32,6 @@ var buildCmd = cli.Command{
 			Name:  "no-cache",
 			Usage: "don't use the previous build cache",
 		},
-		cli.BoolFlag{
-			Name:  "btrfs-diff",
-			Usage: "enable btrfs native layer diffing",
-		},
 		cli.StringSliceFlag{
 			Name:  "substitute",
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
@@ -148,19 +144,13 @@ func doBuild(ctx *cli.Context) error {
 		}
 		fmt.Printf("filesystem %s built successfully\n", name)
 
-		diffType := stacker.TarDiff
 		mediaType := ispec.MediaTypeImageLayerGzip
-		if ctx.Bool("btrfs-diff") {
-			diffType = stacker.NativeDiff
-			mediaType = stacker.MediaTypeImageBtrfsLayer
-		}
-
 		diffSource := ""
 		if l.From.Type == stacker.BuiltType {
 			diffSource = l.From.Tag
 		}
 
-		diff, hash, err := s.Diff(diffType, diffSource, name)
+		diff, hash, err := s.Diff(diffSource, name)
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -15,14 +14,6 @@ import (
 	"syscall"
 
 	"github.com/freddierice/go-losetup"
-	ispec "github.com/opencontainers/image-spec/specs-go/v1"
-)
-
-type DiffStrategy int
-
-const (
-	NativeDiff DiffStrategy = iota
-	TarDiff    DiffStrategy = iota
 )
 
 type Storage interface {
@@ -36,8 +27,8 @@ type Storage interface {
 	// uncompressed layer if it is uncompressed. Note that OCI uses the
 	// uncompressed hash for the diffID field, and the compressed hash as
 	// the actual blob value, so unfortunately we need both.
-	Diff(DiffStrategy, string, string) (io.ReadCloser, hash.Hash, error)
-	Undiff(DiffStrategy, string, io.Reader) error
+	Diff(string, string) (io.ReadCloser, hash.Hash, error)
+	Undiff(string, io.Reader) error
 	Detach() error
 }
 
@@ -207,130 +198,12 @@ func (b *btrfs) Delete(source string) error {
 	return os.RemoveAll(path.Join(b.c.RootFSDir, source))
 }
 
-type cmdRead struct {
-	cmd    *exec.Cmd
-	stdout io.ReadCloser
-	stderr io.ReadCloser
-	done   bool
+func (b *btrfs) Diff(source string, target string) (io.ReadCloser, hash.Hash, error) {
+	return tarDiff(b.c, source, target)
 }
 
-func (crc *cmdRead) Read(p []byte) (int, error) {
-	if crc.done {
-		return 0, io.EOF
-	}
-
-	n, err := crc.stdout.Read(p)
-	if err == io.EOF {
-		crc.done = true
-		content, err2 := ioutil.ReadAll(crc.stderr)
-		err := crc.cmd.Wait()
-		if err != nil {
-			if err2 == nil {
-				return n, fmt.Errorf("EOF and %s: %s", err, string(content))
-			}
-
-			return n, fmt.Errorf("EOF and %s", err)
-		}
-	}
-
-	return n, err
-}
-
-func (crc *cmdRead) Close() error {
-	crc.stdout.Close()
-	crc.stderr.Close()
-	if !crc.done {
-		return crc.cmd.Wait()
-	}
-
-	return nil
-}
-
-func (b *btrfs) nativeDiff(source string, target string) (io.ReadCloser, hash.Hash, error) {
-	// for now we can ignore strategy, since there is only one
-	args := []string{"send"}
-	if source != "" {
-		args = append(args, "-p", path.Join(b.c.RootFSDir, source))
-	}
-	args = append(args, path.Join(b.c.RootFSDir, target))
-
-	cmd := exec.Command("btrfs", args...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return &cmdRead{cmd: cmd, stdout: stdout, stderr: stderr}, nil, nil
-}
-
-func (b *btrfs) Diff(strategy DiffStrategy, source string, target string) (io.ReadCloser, hash.Hash, error) {
-	switch strategy {
-	case NativeDiff:
-		return b.nativeDiff(source, target)
-	case TarDiff:
-		return tarDiff(b.c, source, target)
-	default:
-		return nil, nil, fmt.Errorf("unknown diff strategy")
-	}
-}
-
-func (b *btrfs) nativeUndiff(name string, r io.Reader) error {
-	cmd := exec.Command("btrfs", "receive", "-e", b.c.RootFSDir)
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-	defer stdin.Close()
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-	defer stderr.Close()
-
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(stdin, r)
-	if err != nil {
-		return err
-	}
-
-	content, err2 := ioutil.ReadAll(stderr)
-	err = cmd.Wait()
-	if err != nil {
-		if err2 == nil {
-			return fmt.Errorf("btrfs receive: %s: %s", err, string(content))
-		}
-
-		return fmt.Errorf("btrfs receive: %s", err)
-	}
-
-	return nil
-}
-
-func (b *btrfs) Undiff(strategy DiffStrategy, name string, r io.Reader) error {
-	switch strategy {
-	case NativeDiff:
-		return b.nativeUndiff(name, r)
-	case TarDiff:
-		return fmt.Errorf("TarDiff unpack not implemented")
-	default:
-		return fmt.Errorf("unknown undiff strategy")
-	}
+func (b *btrfs) Undiff(name string, r io.Reader) error {
+	return fmt.Errorf("TarDiff unpack not implemented")
 }
 
 func (b *btrfs) Detach() error {
@@ -347,17 +220,6 @@ func (b *btrfs) Detach() error {
 	}
 
 	return nil
-}
-
-func MediaTypeToDiffStrategy(mt string) (DiffStrategy, error) {
-	switch mt {
-	case MediaTypeImageBtrfsLayer:
-		return NativeDiff, nil
-	case ispec.MediaTypeImageLayerGzip:
-		return TarDiff, nil
-	default:
-		return 0, fmt.Errorf("unknown media type: %s", mt)
-	}
 }
 
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop

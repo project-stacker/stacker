@@ -62,12 +62,7 @@ func doUnlade(ctx *cli.Context) error {
 				imported[d] = true
 			}
 
-			diffType, err := stacker.MediaTypeToDiffStrategy(b.MediaType)
-			if err != nil {
-				return err
-			}
-
-			err = s.Undiff(diffType, tag, reader)
+			err = s.Undiff(tag, reader)
 			if err != nil {
 				return err
 			}
