@@ -10,10 +10,11 @@ import (
 )
 
 var unladeCmd = cli.Command{
-	Name:   "unlade",
-	Usage:  "unpacks an OCI image to a directory",
-	Action: doUnlade,
-	Flags:  []cli.Flag{},
+	Name:    "unlade",
+	Usage:   "unpacks an OCI image to a directory",
+	Aliases: []string{"unpack"},
+	Action:  doUnlade,
+	Flags:   []cli.Flag{},
 }
 
 func doUnlade(ctx *cli.Context) error {
