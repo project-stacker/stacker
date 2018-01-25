@@ -85,6 +85,7 @@ func doBuild(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer oci.Close()
 
 	buildCache, err := stacker.OpenCache(config.StackerDir)
 	if err != nil {

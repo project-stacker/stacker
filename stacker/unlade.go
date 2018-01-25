@@ -26,6 +26,7 @@ func doUnlade(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer oci.Close()
 
 	tags, err := oci.ListTags()
 	if err != nil {
