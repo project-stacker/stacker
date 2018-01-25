@@ -3,8 +3,6 @@ package stacker
 import (
 	"bufio"
 	"fmt"
-	"hash"
-	"io"
 	"os"
 	"os/exec"
 	"os/user"
@@ -22,13 +20,6 @@ type Storage interface {
 	Snapshot(source string, target string) error
 	Restore(source string, target string) error
 	Delete(path string) error
-
-	// Diff returns a reader for the blob to put, and a hash for the
-	// uncompressed layer if it is uncompressed. Note that OCI uses the
-	// uncompressed hash for the diffID field, and the compressed hash as
-	// the actual blob value, so unfortunately we need both.
-	Diff(string, string) (io.ReadCloser, hash.Hash, error)
-	Undiff(string, io.Reader) error
 	Detach() error
 }
 
@@ -196,14 +187,6 @@ func (b *btrfs) Delete(source string) error {
 	}
 
 	return os.RemoveAll(path.Join(b.c.RootFSDir, source))
-}
-
-func (b *btrfs) Diff(source string, target string) (io.ReadCloser, hash.Hash, error) {
-	return tarDiff(b.c, source, target)
-}
-
-func (b *btrfs) Undiff(name string, r io.Reader) error {
-	return fmt.Errorf("TarDiff unpack not implemented")
 }
 
 func (b *btrfs) Detach() error {

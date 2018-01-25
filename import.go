@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 	"path"
+
+	"github.com/udhos/equalfile"
 )
 
 func fileCopy(dest string, source string) error {
@@ -33,6 +35,53 @@ func fileCopy(dest string, source string) error {
 
 	_, err = io.Copy(d, s)
 	return err
+}
+
+// filesDiffer returns true if the files are different, false if they are the same.
+func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bool, error) {
+	if info1.Name() != info2.Name() {
+		return false, fmt.Errorf("comparing files without the same name?")
+	}
+
+	if info1.Mode()&os.ModeSymlink != 0 {
+		if info2.Mode()&os.ModeSymlink != 0 {
+			link1, err := os.Readlink(p1)
+			if err != nil {
+				return false, err
+			}
+
+			link2, err := os.Readlink(p2)
+			if err != nil {
+				return false, err
+			}
+			return link1 != link2, err
+		}
+
+		return false, fmt.Errorf("symlink -> not symlink not supported")
+	}
+
+	if info1.Size() != info2.Size() {
+		return true, nil
+	}
+
+	f1, err := os.Open(p1)
+	if err != nil {
+		return false, err
+	}
+	defer f1.Close()
+
+	f2, err := os.Open(p2)
+	if err != nil {
+		return false, err
+	}
+	defer f2.Close()
+
+	eq, err := equalfile.New(nil, equalfile.Options{}).CompareReader(f1, f2)
+	if err != nil {
+		return false, err
+	}
+
+	return !eq, nil
 }
 
 func Import(c StackerConfig, name string, imports []string) error {

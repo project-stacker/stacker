@@ -88,6 +88,13 @@ layer2=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest)
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
 
+# Now does `stacker unlade` work?
+umount roots
+rm -rf .stacker/btrfs.loop
+stacker unlade
+[ -f roots/centos/rootfs/favicon.ico ]
+[ ! -f roots/layer1/rootfs/favicon.ico ]
+
 cleanup
 
 # now, let's do something really crazy: import a docker image and build our own

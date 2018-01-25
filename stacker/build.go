@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"path"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/anuvu/stacker"
 	"github.com/openSUSE/umoci"
-	igen "github.com/openSUSE/umoci/oci/config/generate"
+	"github.com/openSUSE/umoci/pkg/fseval"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/urfave/cli"
 )
@@ -137,184 +140,136 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		// Delete the old snapshot if it existed; we just did a new build.
-		s.Delete(name)
-		if err := s.Snapshot(".working", name); err != nil {
-			return err
-		}
-		fmt.Printf("filesystem %s built successfully\n", name)
-
-		mediaType := ispec.MediaTypeImageLayerGzip
-		diffSource := ""
-		if l.From.Type == stacker.BuiltType {
-			diffSource = l.From.Tag
-		}
-
-		diff, hash, err := s.Diff(diffSource, name)
+		fmt.Println("generating layer...")
+		cmd := exec.Command(
+			"umoci",
+			"repack",
+			"--image",
+			fmt.Sprintf("%s:%s", config.OCIDir, name),
+			path.Join(config.RootFSDir, ".working"))
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			return err
+			return fmt.Errorf("error during repack: %s: %s", err, string(output))
 		}
-		defer diff.Close()
 
-		fmt.Println("starting diff...")
-
-		digest, size, err := oci.PutBlob(diff)
+		mutator, err := oci.Mutator(name)
 		if err != nil {
 			return err
 		}
 
-		blob := ispec.Descriptor{
-			MediaType: mediaType,
-			Digest:    digest,
-			Size:      size,
+		imageConfig, err := mutator.Config(context.Background())
+		if err != nil {
+			return err
 		}
 
-		fmt.Printf("added blob %v\n", string(digest))
-		diffID := string(digest)
-		if hash != nil {
-			diffID = fmt.Sprintf("sha256:%x", hash.Sum(nil))
-		}
-
-		now := time.Now()
-
-		g := igen.New()
-		g.SetCreated(now)
-		g.SetOS(runtime.GOOS)
-		g.SetArchitecture(runtime.GOARCH)
-		g.ClearHistory()
-
-		g.SetRootfsType("layers")
-		g.ClearRootfsDiffIDs()
-
-		if l.Entrypoint != "" {
-			cmd, err := l.ParseEntrypoint()
-			if err != nil {
-				return err
-			}
-
-			g.SetConfigEntrypoint(cmd)
-		}
-
-		g.ClearConfigEnv()
 		pathSet := false
 		for k, v := range l.Environment {
 			if k == "PATH" {
 				pathSet = true
 			}
-			g.AddConfigEnv(k, v)
+			imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("%s=%s", k, v))
+		}
+
+		if !pathSet {
+			for _, s := range imageConfig.Env {
+				if strings.HasPrefix(s, "PATH=") {
+					pathSet = true
+					break
+				}
+			}
 		}
 
 		// if the user didn't specify a path, let's set a sane one
 		if !pathSet {
-			g.AddConfigEnv("PATH", stacker.ReasonableDefaultPath)
+			imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", stacker.ReasonableDefaultPath))
+		}
+
+		if l.Entrypoint != "" {
+			imageConfig.Entrypoint, err = l.ParseEntrypoint()
+			if err != nil {
+				return err
+			}
+		}
+
+		if imageConfig.Volumes == nil {
+			imageConfig.Volumes = map[string]struct{}{}
 		}
 
 		for _, v := range l.Volumes {
-			g.AddConfigVolume(v)
+			imageConfig.Volumes[v] = struct{}{}
+		}
+
+		if imageConfig.Labels == nil {
+			imageConfig.Labels = map[string]string{}
 		}
 
 		for k, v := range l.Labels {
-			g.AddConfigLabel(k, v)
+			imageConfig.Labels[k] = v
 		}
 
 		if l.WorkingDir != "" {
-			g.SetConfigWorkingDir(l.WorkingDir)
+			imageConfig.WorkingDir = l.WorkingDir
 		}
 
-		deps := []ispec.Descriptor{}
-
-		if l.From.Type == stacker.BuiltType {
-			from, ok := sf[l.From.Tag]
-			if !ok {
-				return fmt.Errorf("didn't find parent %s in stackerfile", l.From.Tag)
-			}
-
-			fromBlob, ok := buildCache.Lookup(from)
-			if !ok {
-				return fmt.Errorf("didn't find parent %s in cache", l.From.Tag)
-			}
-
-			img, err := oci.LookupConfig(fromBlob)
-			if err != nil {
-				return err
-			}
-
-			for _, did := range img.RootFS.DiffIDs {
-				g.AddRootfsDiffID(did)
-			}
-
-			for _, hist := range img.History {
-				g.AddHistory(hist)
-			}
-
-			manifest, err := oci.LookupManifest(l.From.Tag)
-			if err != nil {
-				return err
-			}
-
-			for _, l := range manifest.Layers {
-				if mediaType != l.MediaType {
-					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
-				}
-
-				deps = append(deps, l)
-			}
-		} else if l.From.Type == stacker.DockerType || l.From.Type == stacker.OCIType {
-			tag, err := l.From.ParseTag()
-			if err != nil {
-				return err
-			}
-
-			// TODO: this is essentially the same as the above code
-			manifest, err := oci.LookupManifest(tag)
-			if err != nil {
-				return err
-			}
-
-			img, err := oci.LookupConfig(manifest.Config)
-			if err != nil {
-				return err
-			}
-
-			for _, did := range img.RootFS.DiffIDs {
-				g.AddRootfsDiffID(did)
-			}
-
-			for _, hist := range img.History {
-				g.AddHistory(hist)
-			}
-
-			for _, l := range manifest.Layers {
-				if mediaType != l.MediaType {
-					return fmt.Errorf("media type mismatch: %s %s", mediaType, l.MediaType)
-				}
-
-				deps = append(deps, l)
-			}
-		}
-
-		err = g.AddRootfsDiffIDStr(diffID)
+		meta, err := mutator.Meta(context.Background())
 		if err != nil {
 			return err
 		}
 
-		g.AddHistory(ispec.History{
-			Created:   &now,
-			CreatedBy: "stacker",
-		})
+		meta.Created = time.Now()
+		meta.Architecture = runtime.GOARCH
+		meta.OS = runtime.GOOS
 
-		deps = append(deps, blob)
-
-		img := g.Image()
-		platform := ispec.Platform{
-			Architecture: runtime.GOARCH,
-			OS:           runtime.GOOS,
-		}
-
-		err = oci.NewImage(name, &img, deps, &platform)
+		annotations, err := mutator.Annotations(context.Background())
 		if err != nil {
 			return err
 		}
+
+		history := ispec.History{
+			EmptyLayer: true, // this is only the history for imageConfig edit
+			Created:    &meta.Created,
+			CreatedBy:  "stacker build",
+		}
+
+		err = mutator.Set(context.Background(), imageConfig, meta, annotations, history)
+		if err != nil {
+			return err
+		}
+
+		newPath, err := mutator.Commit(context.Background())
+		if err != nil {
+			return err
+		}
+
+		err = oci.UpdateReference(name, newPath.Root())
+		if err != nil {
+			return err
+		}
+
+		// Now, we need to set the umoci data on the fs to tell it that
+		// it has a layer that corresponds to this fs.
+		mtreeName := strings.Replace(newPath.Descriptor().Digest.String(), ":", "_", 1)
+		bundlePath := path.Join(config.RootFSDir, ".working")
+		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.DefaultFsEval)
+		if err != nil {
+			return err
+		}
+
+		// TODO: delete old mtree file
+
+		umociMeta := umoci.UmociMeta{Version: umoci.UmociMetaVersion, From: newPath}
+		err = umoci.WriteBundleMeta(bundlePath, umociMeta)
+		if err != nil {
+			return err
+		}
+
+		// Delete the old snapshot if it existed; we just did a new build.
+		s.Delete(name)
+		if err := s.Snapshot(".working", name); err != nil {
+			return err
+		}
+
+		fmt.Printf("filesystem %s built successfully\n", name)
 
 		manifest, err := oci.LookupManifest(name)
 		if err != nil {

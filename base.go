@@ -2,14 +2,11 @@ package stacker
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 
 	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/oci/layer"
 )
 
 type BaseLayerOpts struct {
@@ -87,31 +84,17 @@ func getDocker(o BaseLayerOpts) error {
 
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
-	err = o.OCI.Unpack(tag, target, &layer.MapOptions{})
-	if err != nil {
-		return err
-	}
 
-	// umoci generates the config.json from the image, and also adds some
-	// umoci metadata in a .umoci directory; we don't want to snapshot
-	// either of these things, so let's remove them both.
-	err = os.Remove(path.Join(target, "config.json"))
-	if err != nil {
-		return err
-	}
+	cmd = exec.Command(
+		"umoci",
+		"unpack",
+		"--image",
+		fmt.Sprintf("%s:%s", o.Config.OCIDir, tag),
+		path.Join(o.Config.RootFSDir, o.Target))
 
-	rootfs := path.Join(target, "rootfs")
-	ents, err := ioutil.ReadDir(rootfs)
+	output, err = cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
-
-	for _, e := range ents {
-		if strings.Contains(e.Name(), "umoci") {
-			if err := os.Remove(e.Name()); err != nil {
-				return err
-			}
-		}
+		return fmt.Errorf("error during unpack: %s: %s", err, string(output))
 	}
 
 	return nil
@@ -128,12 +111,33 @@ func getTar(o BaseLayerOpts) error {
 		return err
 	}
 
+	cmd := exec.Command(
+		"umoci",
+		"new",
+		"--image",
+		fmt.Sprintf("%s:%s", o.Config.OCIDir, o.Name))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("umoci layout creation failed: %s: %s", err, string(output))
+	}
+
+	cmd = exec.Command(
+		"umoci",
+		"unpack",
+		"--image",
+		fmt.Sprintf("%s:%s", o.Config.OCIDir, o.Name),
+		path.Join(o.Config.RootFSDir, ".working"))
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("umoci empty unpack failed: %s: %s", err, string(output))
+	}
+
 	layerPath := path.Join(o.Config.RootFSDir, o.Target, "rootfs")
 	if err := os.MkdirAll(layerPath, 0755); err != nil {
 		return err
 	}
 
-	output, err := exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
+	output, err = exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error: %s: %s", err, string(output))
 	}

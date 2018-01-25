@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"os/exec"
+	"path"
 
 	"github.com/anuvu/stacker"
 	"github.com/openSUSE/umoci"
@@ -34,38 +35,24 @@ func doUnlade(ctx *cli.Context) error {
 		return err
 	}
 
-	imported := map[string]bool{}
-
+	// TODO: this should be a lot better, we should use btrfs to do
+	// manifest-by-manifest extracting. But that's more work, so let's do
+	// this for now.
 	for _, tag := range tags {
-		blobs, err := oci.LayersForTag(tag)
+		err = s.Create(tag)
 		if err != nil {
 			return err
 		}
 
-		for _, b := range blobs {
-			defer b.Close()
-		}
-
-		for _, b := range blobs {
-			reader, ok := b.Data.(io.ReadCloser)
-			if !ok {
-				return fmt.Errorf("couldn't cast blob data to reader")
-			}
-
-			defer reader.Close()
-
-			d := string(b.Digest)
-			_, ok = imported[d]
-			if ok {
-				continue
-			} else {
-				imported[d] = true
-			}
-
-			err = s.Undiff(tag, reader)
-			if err != nil {
-				return err
-			}
+		cmd := exec.Command(
+			"umoci",
+			"unpack",
+			"--image",
+			fmt.Sprintf("%s:%s", config.OCIDir, tag),
+			path.Join(config.RootFSDir, tag))
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("umoci unpack: %s: %s", err, string(output))
 		}
 	}
 
