@@ -1,5 +1,5 @@
-hash: b2fa941297d8fb9409a5398d1a18af05be69294a026bac1425624e3bf02aa80c
-updated: 2018-01-25T21:31:08.4088136Z
+hash: a8bfb1e2a6a93c231bd46db360b750ad725c412d7dac50e7ecb5800f0e640fb2
+updated: 2018-01-27T00:32:44.098296379Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -15,6 +15,15 @@ imports:
   version: d59758554a3d3911fa25c0269de1ebe2f1912c39
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
+- name: github.com/gorilla/websocket
+  version: 91f589db023d66e4aba7112d44cc0d2fb091c553
+- name: github.com/lxc/lxd
+  version: 422751d77dfa13363552caac756de46910ae780c
+  repo: git@github.com:tych0/lxd
+  subpackages:
+  - shared
+  - shared/idmap
+  - shared/logger
 - name: github.com/mattn/go-runewidth
   version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/mitchellh/hashstructure
@@ -27,7 +36,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
+  version: b2d941ef6a780da2d9982c1fb28d77ad97f54fc7
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -70,7 +79,7 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 3d37316aaa6bd9929127ac9a527abf408178ea7b
+  version: 0efb9460aaf800c6376acf625be2853bceac2e06
   subpackages:
   - ripemd160
   - ssh/terminal

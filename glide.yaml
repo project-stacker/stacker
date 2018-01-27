@@ -3,6 +3,11 @@ flatten: true
 import:
 - package: github.com/anmitsu/go-shlex
 - package: github.com/freddierice/go-losetup
+- package: github.com/lxc/lxd
+  subpackages:
+  - shared/idmap
+  repo: git@github.com:tych0/lxd
+  version: dont-append-and-strip-string
 - package: github.com/mitchellh/hashstructure
 - package: github.com/openSUSE/umoci
   subpackages:
