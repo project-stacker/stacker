@@ -11,6 +11,10 @@ Stacker requires go 1.9, on Ubuntu you can get that with:
     sudo apt install golang-1.9
     export PATH=$PATH:/usr/lib/go-1.9/bin
 
+Stacker also has the following build dependencies:
+
+    sudo apt install libacl1-dev
+
 The test suite requires `jq`, which can be installed on Ubuntu:
 
     sudo apt install jq

@@ -57,7 +57,6 @@ func getDocker(o BaseLayerOpts) error {
 		"--insecure-policy",
 		"copy",
 		o.Layer.From.Url,
-		//fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
 		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
 	)
 
@@ -85,12 +84,13 @@ func getDocker(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
 
+	image := fmt.Sprintf("%s:%s", o.Config.OCIDir, tag)
 	cmd = exec.Command(
 		"umoci",
 		"unpack",
 		"--image",
-		fmt.Sprintf("%s:%s", o.Config.OCIDir, tag),
-		path.Join(o.Config.RootFSDir, o.Target))
+		image,
+		target)
 
 	output, err = cmd.CombinedOutput()
 	if err != nil {
@@ -137,6 +137,7 @@ func getTar(o BaseLayerOpts) error {
 		return err
 	}
 
+	// TODO: make this respect ID maps
 	output, err = exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error: %s: %s", err, string(output))

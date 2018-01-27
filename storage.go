@@ -85,26 +85,6 @@ func NewStorage(c StackerConfig) (Storage, error) {
 			}
 		}
 
-	} else {
-		// If it *is* btrfs, let's make sure we can actually create
-		// subvolumes like we need to.
-		fi, err := os.Stat(c.RootFSDir)
-		if err != nil {
-			return nil, err
-		}
-
-		myUid, err := strconv.Atoi(currentUser.Uid)
-		if err != nil {
-			return nil, err
-		}
-
-		if fi.Sys().(*syscall.Stat_t).Uid != uint32(myUid) {
-			return nil, fmt.Errorf(
-				"%s must be owned by you. try `sudo chmod %s %s`",
-				c.RootFSDir,
-				currentUser.Uid,
-				c.RootFSDir)
-		}
 	}
 
 	return &btrfs{c: c, needsUmount: !isBtrfs}, nil

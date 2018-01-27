@@ -14,7 +14,7 @@ var unladeCmd = cli.Command{
 	Name:    "unlade",
 	Usage:   "unpacks an OCI image to a directory",
 	Aliases: []string{"unpack"},
-	Action:  doUnlade,
+	Action:  usernsWrapper(doUnlade),
 	Flags:   []cli.Flag{},
 }
 
