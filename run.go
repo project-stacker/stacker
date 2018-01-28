@@ -8,12 +8,16 @@ import (
 )
 
 func Run(sc StackerConfig, name string, l *Layer) error {
-	c, err := newContainer(sc, ".working")
+	run, err := l.getRun()
 	if err != nil {
 		return err
 	}
 
-	run, err := l.getRun()
+	if len(run) == 0 {
+		return nil
+	}
+
+	c, err := newContainer(sc, ".working")
 	if err != nil {
 		return err
 	}

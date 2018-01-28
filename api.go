@@ -79,6 +79,11 @@ func (l *Layer) ParseEntrypoint() ([]string, error) {
 }
 
 func (l *Layer) getRun() ([]string, error) {
+	// The user didn't supply run: at all, so let's not do anything.
+	if l.Run == nil {
+		return []string{}, nil
+	}
+
 	// This is how the json decoder decodes it if it's:
 	// run:
 	//     - foo
