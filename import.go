@@ -84,6 +84,38 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 	return !eq, nil
 }
 
+func importFile(imp string, cacheDir string) error {
+	e1, err := os.Stat(imp)
+	if err != nil {
+		return err
+	}
+
+	needsCopy := false
+	dest := path.Join(cacheDir, path.Base(imp))
+	e2, err := os.Stat(dest)
+	if err != nil {
+		needsCopy = true
+	} else {
+		differ, err := filesDiffer(imp, e1, dest, e2)
+		if err != nil {
+			return err
+		}
+
+		needsCopy = differ
+	}
+
+	if needsCopy {
+		fmt.Printf("copying %s\n", imp)
+		if err := fileCopy(dest, imp); err != nil {
+			return err
+		}
+	} else {
+		fmt.Println("using cached copy of", imp)
+	}
+
+	return nil
+}
+
 func Import(c StackerConfig, name string, imports []string) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
@@ -99,32 +131,8 @@ func Import(c StackerConfig, name string, imports []string) error {
 
 		// It's just a path, let's copy it to .stacker.
 		if url.Scheme == "" {
-			e1, err := os.Stat(i)
-			if err != nil {
+			if err := importFile(i, dir); err != nil {
 				return err
-			}
-
-			needsCopy := false
-			dest := path.Join(dir, path.Base(url.Path))
-			e2, err := os.Stat(dest)
-			if err != nil {
-				needsCopy = true
-			} else {
-				differ, err := filesDiffer(i, e1, dest, e2)
-				if err != nil {
-					return err
-				}
-
-				needsCopy = differ
-			}
-
-			if needsCopy {
-				fmt.Printf("copying %s\n", i)
-				if err := fileCopy(dest, i); err != nil {
-					return err
-				}
-			} else {
-				fmt.Println("using cached copy of", i)
 			}
 		} else {
 			// otherwise, we need to download it
