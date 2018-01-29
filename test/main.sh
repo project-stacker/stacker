@@ -121,4 +121,12 @@ umoci unpack --image oci:layer1 dest
 
 cleanup
 
+# Do build only layers work?
+stacker build -f buildonly.yaml
+umoci unpack --image oci:layer1 dest
+[ "$(sha dest/rootfs/favicon.ico)" == "$(sha dest/rootfs/favicon2.ico)" ]
+[ "$(umoci ls --layout ./oci)" == "$(printf "centos-latest\nlayer1")" ]
+
+cleanup
+
 RESULT=success

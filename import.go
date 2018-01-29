@@ -134,10 +134,15 @@ func Import(c StackerConfig, name string, imports []string) error {
 			if err := importFile(i, dir); err != nil {
 				return err
 			}
-		} else {
+		} else if url.Scheme == "http" || url.Scheme == "https" {
 			// otherwise, we need to download it
 			_, err = download(dir, i)
 			if err != nil {
+				return err
+			}
+		} else if url.Scheme == "stacker" {
+			p := path.Join(c.RootFSDir, url.Host, "rootfs", url.Path)
+			if err := importFile(p, dir); err != nil {
 				return err
 			}
 		}

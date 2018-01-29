@@ -72,6 +72,7 @@ type Layer struct {
 	Volumes     []string          `yaml:"volumes"`
 	Labels      map[string]string `yaml:"labels"`
 	WorkingDir  string            `yaml:"working_dir"`
+	BuildOnly   bool              `yaml:"build_only"`
 }
 
 func (l *Layer) ParseEntrypoint() ([]string, error) {

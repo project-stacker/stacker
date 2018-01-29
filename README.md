@@ -64,6 +64,7 @@ centos:
     labels:
         foo: bar
         bar: baz
+    build_only: true
 boot:
     from:
         type: built

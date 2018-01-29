@@ -140,6 +140,23 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
+		// This is a build only layer, meaning we don't need to include
+		// it in the final image, as outputs from it are going to be
+		// imported into future images. Let's just snapshot it and add
+		// a bogus entry to our cache.
+		if l.BuildOnly {
+			s.Delete(name)
+			if err := s.Snapshot(".working", name); err != nil {
+				return err
+			}
+
+			fmt.Println("build only layer, skipping OCI diff generation")
+			if err := buildCache.Put(l, ispec.Descriptor{}); err != nil {
+				return err
+			}
+			continue
+		}
+
 		fmt.Println("generating layer...")
 		cmd := exec.Command(
 			"umoci",
