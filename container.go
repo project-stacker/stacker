@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/bin"
+	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 	// When calling RunInUserns, this is the uid that the host uid of
 	// stacker is mapped to.
 	HostIDInUserns = 100000
