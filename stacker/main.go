@@ -43,7 +43,7 @@ func main() {
 			Usage: "set the directory for the rootfs output",
 			Value: "roots",
 		},
-		cli.BoolFlag{
+		cli.IntFlag{
 			Name:   "internal-in-userns",
 			Usage:  "don't use this; stacker internal only!",
 			Hidden: true,
@@ -94,18 +94,23 @@ func usernsWrapper(do func(ctx *cli.Context) error) func(ctx *cli.Context) error
 				return err
 			}
 
-			if !ctx.Bool("internal-in-userns") {
+			if !ctx.IsSet("internal-in-userns") {
 				if stacker.IdmapSet == nil {
 					return fmt.Errorf("no uidmap for %s", user.Username)
 				}
 
+				id, err := stacker.HostIDInUserns()
+				if err != nil {
+					return err
+				}
+
 				args := os.Args
-				args = append(args[:1], append([]string{"--internal-in-userns"}, args[1:]...)...)
+				args = append(args[:1], append([]string{"--internal-in-userns", fmt.Sprintf("%d", id)}, args[1:]...)...)
 				return stacker.RunInUserns(args, "stacker re-exec")
 			}
 		}
 
-		err := do(ctx)
+		wrappedErr := do(ctx)
 
 		// Now, a convenience. Stacker just did a bunch of stuff,
 		// including write files to OCIDir and StackerDir, as a uid
@@ -119,14 +124,16 @@ func usernsWrapper(do func(ctx *cli.Context) error) func(ctx *cli.Context) error
 		//
 		// Note that we don't care about errors, since this is mostly
 		// for convenicence.
+		id := ctx.Int("internal-in-userns")
 		doPermChange := func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			return os.Chown(path, stacker.HostIDInUserns, stacker.HostIDInUserns)
+
+			return os.Chown(path, id, id)
 		}
 		filepath.Walk(config.OCIDir, doPermChange)
 		filepath.Walk(config.StackerDir, doPermChange)
-		return err
+		return wrappedErr
 	}
 }

@@ -18,9 +18,6 @@ import (
 
 const (
 	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-	// When calling RunInUserns, this is the uid that the host uid of
-	// stacker is mapped to.
-	HostIDInUserns = 100000
 )
 
 var (
@@ -35,6 +32,23 @@ func init() {
 		// So let's just ignore the error and let future code handle it.
 		IdmapSet, _ = idmap.DefaultIdmapSet()
 	}
+}
+
+// HostIDInUserns returns the uid that the host uid of stacker will be mapped
+// to when calling RunInUserns.
+func HostIDInUserns() (int64, error) {
+	if IdmapSet == nil {
+		return -1, fmt.Errorf("no idmap")
+	}
+
+	max := int64(100000)
+	for _, idm := range IdmapSet.Idmap {
+		if idm.Nsid + idm.Maprange >= max {
+			max = idm.Nsid + idm.Maprange + 1
+		}
+	}
+
+	return max, nil
 }
 
 // our representation of a container
@@ -246,9 +260,14 @@ func umociMapOptions() *layer.MapOptions {
 }
 
 func RunInUserns(userCmd []string, msg string) error {
+	id, err := HostIDInUserns()
+	if err != nil {
+		return err
+	}
+
 	args := []string{
 		"-m",
-		fmt.Sprintf("b:%d:%d:1", HostIDInUserns, os.Getuid()),
+		fmt.Sprintf("b:%d:%d:1", id, os.Getuid()),
 	}
 
 	for _, idm := range IdmapSet.Idmap {
@@ -273,7 +292,7 @@ func RunInUserns(userCmd []string, msg string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("error %s: %s", msg, err)
 	}
