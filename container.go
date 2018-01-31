@@ -43,7 +43,7 @@ func HostIDInUserns() (int64, error) {
 
 	max := int64(100000)
 	for _, idm := range IdmapSet.Idmap {
-		if idm.Nsid + idm.Maprange >= max {
+		if idm.Nsid+idm.Maprange >= max {
 			max = idm.Nsid + idm.Maprange + 1
 		}
 	}
