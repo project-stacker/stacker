@@ -129,4 +129,9 @@ umoci unpack --image oci:layer1 dest
 
 cleanup
 
+# Do scratch layers work?
+stacker build -f scratch.yaml
+umoci unpack --image oci:empty dest
+[ "$(ls dest/rootfs)" == "" ]
+
 RESULT=success

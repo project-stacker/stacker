@@ -26,10 +26,11 @@ type StackerConfig struct {
 type Stackerfile map[string]*Layer
 
 const (
-	DockerType = "docker"
-	TarType    = "tar"
-	OCIType    = "oci"
-	BuiltType  = "built"
+	DockerType  = "docker"
+	TarType     = "tar"
+	OCIType     = "oci"
+	BuiltType   = "built"
+	ScratchType = "scratch"
 )
 
 type ImageSource struct {

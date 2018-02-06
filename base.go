@@ -29,6 +29,8 @@ func GetBaseLayer(o BaseLayerOpts) error {
 		return fmt.Errorf("not implemented")
 	case DockerType:
 		return getDocker(o)
+	case ScratchType:
+		return getScratch(o)
 	default:
 		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
@@ -100,17 +102,7 @@ func getDocker(o BaseLayerOpts) error {
 	return nil
 }
 
-func getTar(o BaseLayerOpts) error {
-	cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return err
-	}
-
-	tar, err := download(cacheDir, o.Layer.From.Url)
-	if err != nil {
-		return err
-	}
-
+func umociInit(o BaseLayerOpts) error {
 	cmd := exec.Command(
 		"umoci",
 		"new",
@@ -137,11 +129,35 @@ func getTar(o BaseLayerOpts) error {
 		return err
 	}
 
+	return nil
+}
+
+func getTar(o BaseLayerOpts) error {
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return err
+	}
+
+	tar, err := download(cacheDir, o.Layer.From.Url)
+	if err != nil {
+		return err
+	}
+
+	err = umociInit(o)
+	if err != nil {
+		return err
+	}
+
 	// TODO: make this respect ID maps
-	output, err = exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
+	layerPath := path.Join(o.Config.RootFSDir, o.Target, "rootfs")
+	output, err := exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error: %s: %s", err, string(output))
 	}
 
 	return nil
+}
+
+func getScratch(o BaseLayerOpts) error {
+	return umociInit(o)
 }
