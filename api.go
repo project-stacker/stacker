@@ -146,7 +146,11 @@ func (l *Layer) getStringOrStringSlice(iface interface{}, xform func(string) ([]
 	return nil, fmt.Errorf("unknown directive type: %T", l.Run)
 }
 
-func NewStackerfile(stackerfile string) (Stackerfile, error) {
+// NewStackerfile creates a new stackerfile from the given path. substitutions
+// is a list of KEY=VALUE pairs of things to substitute. Note that this is
+// explicitly not a map, because the substitutions are performed one at a time
+// in the order that they are given.
+func NewStackerfile(stackerfile string, substitutions []string) (Stackerfile, error) {
 	sf := Stackerfile{}
 
 	raw, err := ioutil.ReadFile(stackerfile)
@@ -154,7 +158,23 @@ func NewStackerfile(stackerfile string) (Stackerfile, error) {
 		return nil, err
 	}
 
-	if err := yaml.Unmarshal(raw, &sf); err != nil {
+	content := string(raw)
+
+	for _, subst := range substitutions {
+		membs := strings.SplitN(subst, "=", 2)
+		if len(membs) != 2 {
+			return nil, fmt.Errorf("invalid substition %s", subst)
+		}
+
+		from := fmt.Sprintf("$%s", membs[0])
+		to := membs[1]
+
+		fmt.Println("substituting %s to %s", from, to)
+
+		content = strings.Replace(content, from, to, -1)
+	}
+
+	if err := yaml.Unmarshal([]byte(content), &sf); err != nil {
 		return nil, err
 	}
 
@@ -198,26 +218,4 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	}
 
 	return ret, nil
-}
-
-func (s *Stackerfile) VariableSub(from, to string) error {
-	from = fmt.Sprintf("$%s", from)
-	for _, layer := range *s {
-		for i, imp := range layer.Import {
-			layer.Import[i] = strings.Replace(imp, from, to, -1)
-		}
-
-		runs := []string{}
-		old, err := layer.getRun()
-		if err != nil {
-			return err
-		}
-
-		for _, r := range old {
-			runs = append(runs, strings.Replace(r, from, to, -1))
-		}
-		layer.Run = runs
-	}
-
-	return nil
 }

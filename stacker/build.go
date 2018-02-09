@@ -48,18 +48,9 @@ func doBuild(ctx *cli.Context) error {
 	}
 
 	file := ctx.String("f")
-	sf, err := stacker.NewStackerfile(file)
+	sf, err := stacker.NewStackerfile(file, ctx.StringSlice("substitute"))
 	if err != nil {
 		return err
-	}
-
-	for _, subst := range ctx.StringSlice("substitute") {
-		membs := strings.SplitN(subst, "=", 2)
-		if len(membs) != 2 {
-			return fmt.Errorf("invalid substition %s", subst)
-		}
-
-		sf.VariableSub(membs[0], membs[1])
 	}
 
 	s, err := stacker.NewStorage(config)
