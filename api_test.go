@@ -19,7 +19,7 @@ func parse(t *testing.T, content string) Stackerfile {
 		t.Fatalf("couldn't write content: %s", err)
 	}
 
-	sf, err := NewStackerfile(tf.Name())
+	sf, err := NewStackerfile(tf.Name(), nil)
 	if err != nil {
 		t.Fatalf("failed to parse %s\n\n%s", content, err)
 	}
