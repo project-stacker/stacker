@@ -6,13 +6,13 @@ import:
 - package: github.com/lxc/lxd
   subpackages:
   - shared/idmap
-  repo: git@github.com:tych0/lxd
+  repo: https://github.com/tych0/lxd
   version: dont-append-and-strip-string
 - package: github.com/mitchellh/hashstructure
 - package: github.com/openSUSE/umoci
   subpackages:
   - oci/config/generate
-  repo: git@github.com:anuvu/umoci
+  repo: https://github.com/anuvu/umoci
   version: api-draft
 - package: github.com/opencontainers/image-spec
   subpackages:

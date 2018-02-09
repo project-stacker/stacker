@@ -1,5 +1,5 @@
-hash: a4ecee9837ebe3e54ad4352d27837c241fa07de291f241ec61b22093fce02bb5
-updated: 2018-02-09T23:20:31.914551291Z
+hash: 0bc60bcb08401e9bd93257b3aa0cdf7cf79cd1c5b5078be0fb36e1411dc400f1
+updated: 2018-02-09T16:37:58.208375229-07:00
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -16,10 +16,10 @@ imports:
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
 - name: github.com/gorilla/websocket
-  version: 91f589db023d66e4aba7112d44cc0d2fb091c553
+  version: 4ac909741dfa57448bfadfdbca0cf7eeaa68f0e2
 - name: github.com/lxc/lxd
   version: 422751d77dfa13363552caac756de46910ae780c
-  repo: git@github.com:tych0/lxd
+  repo: https://github.com/tych0/lxd
   subpackages:
   - shared
   - shared/idmap
@@ -31,12 +31,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: 577479e4dc273d3779f00c223c7e0dba4cd6b8b0
+  version: 149252121d044fddff670adcdc67f33148e16226
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: b2d941ef6a780da2d9982c1fb28d77ad97f54fc7
+  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -47,7 +47,7 @@ imports:
   - validate
 - name: github.com/openSUSE/umoci
   version: aa6a1974b34ce1272c5d14686b749fb3c383f450
-  repo: git@github.com:anuvu/umoci
+  repo: https://github.com/anuvu/umoci
   subpackages:
   - mutate
   - oci/cas
@@ -62,7 +62,7 @@ imports:
   - pkg/unpriv
   - third_party/user
 - name: github.com/pkg/errors
-  version: e881fd58d78e04cf6d0de1217f8707c8cc2249bc
+  version: 30136e27e2ac8d167177e8a583aa4c3fea5be833
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/syndtr/gocapability
@@ -72,19 +72,19 @@ imports:
 - name: github.com/udhos/equalfile
   version: c92b0e41854b49e567ba269dcc572ada60e48e7b
 - name: github.com/urfave/cli
-  version: 75104e932ac2ddb944a6ea19d9f9f26316ff1145
+  version: 803d0665796d3b09d3190067803fc285d1604732
 - name: github.com/vbatts/go-mtree
   version: 16da0f86ee549d8949775bf3d555e7921a9caca9
   subpackages:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 0efb9460aaf800c6376acf625be2853bceac2e06
+  version: 5119cf507ed5294cc409c092980c7497ee5d6fd2
   subpackages:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: 0ed95abb35c445290478a5348a7b38bb154135fd
+  version: f5dfe339be1d06f81b22525fe34671ee7d2c8904
   subpackages:
   - context
 - name: golang.org/x/sys
