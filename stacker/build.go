@@ -215,9 +215,9 @@ func doBuild(ctx *cli.Context) error {
 			}
 		}
 
-		if l.RealEntrypoint != nil {
+		if l.FullCommand != nil {
 			imageConfig.Cmd = nil
-			imageConfig.Entrypoint, err = l.ParseRealEntrypoint()
+			imageConfig.Entrypoint, err = l.ParseFullCommand()
 			if err != nil {
 				return err
 			}

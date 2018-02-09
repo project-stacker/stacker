@@ -65,17 +65,17 @@ func (is *ImageSource) ParseTag() (string, error) {
 }
 
 type Layer struct {
-	From           *ImageSource      `yaml:"from"`
-	Import         []string          `yaml:"import"`
-	Run            interface{}       `yaml:"run"`
-	Cmd            interface{}       `yaml:"cmd"`
-	Entrypoint     interface{}       `yaml:"entrypoint"`
-	RealEntrypoint interface{}       `yaml:"real_entrypoint"`
-	Environment    map[string]string `yaml:"environment"`
-	Volumes        []string          `yaml:"volumes"`
-	Labels         map[string]string `yaml:"labels"`
-	WorkingDir     string            `yaml:"working_dir"`
-	BuildOnly      bool              `yaml:"build_only"`
+	From        *ImageSource      `yaml:"from"`
+	Import      []string          `yaml:"import"`
+	Run         interface{}       `yaml:"run"`
+	Cmd         interface{}       `yaml:"cmd"`
+	Entrypoint  interface{}       `yaml:"entrypoint"`
+	FullCommand interface{}       `yaml:"full_command"`
+	Environment map[string]string `yaml:"environment"`
+	Volumes     []string          `yaml:"volumes"`
+	Labels      map[string]string `yaml:"labels"`
+	WorkingDir  string            `yaml:"working_dir"`
+	BuildOnly   bool              `yaml:"build_only"`
 }
 
 func (l *Layer) ParseCmd() ([]string, error) {
@@ -90,8 +90,8 @@ func (l *Layer) ParseEntrypoint() ([]string, error) {
 	})
 }
 
-func (l *Layer) ParseRealEntrypoint() ([]string, error) {
-	return l.getStringOrStringSlice(l.RealEntrypoint, func(s string) ([]string, error) {
+func (l *Layer) ParseFullCommand() ([]string, error) {
+	return l.getStringOrStringSlice(l.FullCommand, func(s string) ([]string, error) {
 		return shlex.Split(s, true)
 	})
 }

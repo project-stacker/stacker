@@ -11,4 +11,4 @@ layer2:
     from:
         type: built
         tag: layer1
-    real_entrypoint: baz
+    full_command: baz
