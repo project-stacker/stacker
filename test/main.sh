@@ -134,4 +134,22 @@ stacker build -f scratch.yaml
 umoci unpack --image oci:empty dest
 [ "$(ls dest/rootfs)" == "" ]
 
+cleanup
+
+# Does this whole entrypoint propagation mess work correctly?
+stacker build -f entrypoint.yaml
+manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Cmd | join("")')" = "foo" ]
+
+manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
+config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Cmd | join("")')" = "foo" ]
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join("")')" = "bar" ]
+
+manifest=$(cat oci/index.json | jq -r .manifests[2].digest | cut -f2 -d:)
+config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Cmd')" = "null" ]
+[ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join("")')" = "baz" ]
+
 RESULT=success

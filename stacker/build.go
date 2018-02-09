@@ -201,8 +201,23 @@ func doBuild(ctx *cli.Context) error {
 			imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", stacker.ReasonableDefaultPath))
 		}
 
-		if l.Entrypoint != "" {
+		if l.Cmd != nil {
+			imageConfig.Cmd, err = l.ParseCmd()
+			if err != nil {
+				return err
+			}
+		}
+
+		if l.Entrypoint != nil {
 			imageConfig.Entrypoint, err = l.ParseEntrypoint()
+			if err != nil {
+				return err
+			}
+		}
+
+		if l.RealEntrypoint != nil {
+			imageConfig.Cmd = nil
+			imageConfig.Entrypoint, err = l.ParseRealEntrypoint()
 			if err != nil {
 				return err
 			}

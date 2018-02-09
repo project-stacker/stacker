@@ -65,24 +65,46 @@ func (is *ImageSource) ParseTag() (string, error) {
 }
 
 type Layer struct {
-	From        *ImageSource      `yaml:"from"`
-	Import      []string          `yaml:"import"`
-	Run         interface{}       `yaml:"run"`
-	Entrypoint  string            `yaml:"entrypoint"`
-	Environment map[string]string `yaml:"environment"`
-	Volumes     []string          `yaml:"volumes"`
-	Labels      map[string]string `yaml:"labels"`
-	WorkingDir  string            `yaml:"working_dir"`
-	BuildOnly   bool              `yaml:"build_only"`
+	From           *ImageSource      `yaml:"from"`
+	Import         []string          `yaml:"import"`
+	Run            interface{}       `yaml:"run"`
+	Cmd            interface{}       `yaml:"cmd"`
+	Entrypoint     interface{}       `yaml:"entrypoint"`
+	RealEntrypoint interface{}       `yaml:"real_entrypoint"`
+	Environment    map[string]string `yaml:"environment"`
+	Volumes        []string          `yaml:"volumes"`
+	Labels         map[string]string `yaml:"labels"`
+	WorkingDir     string            `yaml:"working_dir"`
+	BuildOnly      bool              `yaml:"build_only"`
+}
+
+func (l *Layer) ParseCmd() ([]string, error) {
+	return l.getStringOrStringSlice(l.Cmd, func(s string) ([]string, error) {
+		return shlex.Split(s, true)
+	})
 }
 
 func (l *Layer) ParseEntrypoint() ([]string, error) {
-	return shlex.Split(l.Entrypoint, true)
+	return l.getStringOrStringSlice(l.Entrypoint, func(s string) ([]string, error) {
+		return shlex.Split(s, true)
+	})
+}
+
+func (l *Layer) ParseRealEntrypoint() ([]string, error) {
+	return l.getStringOrStringSlice(l.RealEntrypoint, func(s string) ([]string, error) {
+		return shlex.Split(s, true)
+	})
 }
 
 func (l *Layer) getRun() ([]string, error) {
+	return l.getStringOrStringSlice(l.Run, func(s string) ([]string, error) {
+		return []string{s}, nil
+	})
+}
+
+func (l *Layer) getStringOrStringSlice(iface interface{}, xform func(string) ([]string, error)) ([]string, error) {
 	// The user didn't supply run: at all, so let's not do anything.
-	if l.Run == nil {
+	if iface == nil {
 		return []string{}, nil
 	}
 
@@ -90,7 +112,7 @@ func (l *Layer) getRun() ([]string, error) {
 	// run:
 	//     - foo
 	//     - bar
-	ifs, ok := l.Run.([]interface{})
+	ifs, ok := iface.([]interface{})
 	if ok {
 		strs := []string{}
 		for _, i := range ifs {
@@ -108,20 +130,20 @@ func (l *Layer) getRun() ([]string, error) {
 	// run: |
 	//     echo hello world
 	//     echo goodbye cruel world
-	line, ok := l.Run.(string)
+	line, ok := iface.(string)
 	if ok {
-		return []string{line}, nil
+		return xform(line)
 	}
 
 	// This is how it is after we do our find replace and re-set it; as a
 	// convenience (so we don't have to re-wrap it in interface{}), let's
 	// handle []string
-	strs, ok := l.Run.([]string)
+	strs, ok := iface.([]string)
 	if ok {
 		return strs, nil
 	}
 
-	return nil, fmt.Errorf("unknown run directive type: %T", l.Run)
+	return nil, fmt.Errorf("unknown directive type: %T", l.Run)
 }
 
 func NewStackerfile(stackerfile string) (Stackerfile, error) {

@@ -1,0 +1,14 @@
+base:
+    from:
+        type: scratch
+    cmd: foo
+layer1:
+    from:
+        type: built
+        tag: base
+    entrypoint: bar
+layer2:
+    from:
+        type: built
+        tag: layer1
+    real_entrypoint: baz
