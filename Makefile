@@ -4,7 +4,7 @@ COMMIT=$(if $(shell git status --porcelain --untracked-files=no),$(COMMIT_HASH)-
 
 # Note: we don't really need stackermount right now since we're only
 # privileged, so we intentionally avoid building it.
-default: $(GO_SRC)
+default: vendor $(GO_SRC)
 	go build -ldflags "-X main.version=$(COMMIT)" -o $(GOPATH)/bin/stacker github.com/anuvu/stacker/stacker
 
 # For now, let's just leave the binaries in $GOPATH/bin, but we can at least
@@ -17,11 +17,17 @@ install: default
 	sudo chown root:$(USER) $(shell which stackermount)
 	sudo chmod 4755 $(shell which stackermount)
 
+vendor: glide.lock
+	glide install --strip-vendor
+
 .PHONY: check
 check:
 	go fmt ./... && git diff --quiet
 	go test ./...
 
-.PHONY: vendor
-vendor:
+.PHONY: vendorup
+vendorup:
 	glide up --strip-vendor
+
+clean:
+	-rm -r vendor
