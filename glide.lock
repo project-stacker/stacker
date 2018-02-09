@@ -1,5 +1,5 @@
-hash: a8bfb1e2a6a93c231bd46db360b750ad725c412d7dac50e7ecb5800f0e640fb2
-updated: 2018-01-27T00:32:44.098296379Z
+hash: a4ecee9837ebe3e54ad4352d27837c241fa07de291f241ec61b22093fce02bb5
+updated: 2018-02-09T23:20:31.914551291Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -89,7 +89,6 @@ imports:
   - context
 - name: golang.org/x/sys
   version: 8dbc5d05d6edcc104950cc299a1ce6641235bc86
-  repo: git@github.com:golang/sys
   subpackages:
   - unix
   - windows

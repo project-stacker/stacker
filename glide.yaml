@@ -29,4 +29,3 @@ import:
 - package: golang.org/x/sys
   subpackages:
   - unix
-  repo: git@github.com:golang/sys
