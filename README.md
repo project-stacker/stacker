@@ -49,49 +49,43 @@ ubuntu with:
     sudo apt update
     sudo apt install skopeo
 
-## Example
+## The `stacker.yaml` file
 
-An example recipe file would look like:
+The basic driver of stacker is the stackerfile, canonically named
+`stacker.yaml`. The stackerfile describes a set of OCI manifests to build. For
+example:
 
-```yaml
-centos:
-    from:
-        type: tar
-        url: http://example.com/centos.tar.gz
-    environment:
-        http_proxy: http://example.com:8080
-        https_proxy: https://example.com:8080
-    labels:
-        foo: bar
-        bar: baz
-    build_only: true
-boot:
-    from:
-        type: built
-        tag: centos
-    run: |
-        yum install openssh-server
-        echo meshuggah rocks
-web:
-    from:
-        type: built
-        tag: centos
-    import: ./lighttp.cfg
-    run: |
-        yum install lighttpd
-        cp /stacker/lighttp.cfg /etc/lighttpd/lighttp.cfg
-    entrypoint: lighthttpd
-    volumes:
-        - /data/db
-    working_dir: /var/lib/www
-```
+    centos:
+		from:
+			type: docker
+			url: docker://centos:latest
+        run: echo meshuggah rocks > /etc/motd
 
-If the above contents are in ./stacker.yaml, then the result of running
+Describes a manifest which is the latest Centos image from the Docker hub.
+There are various other directives which users can use to 
 
-```bash
-stacker
-```
-
-would be an OCI image with three images: centos, boot, and web.
-
-See the manpage for more information.
+1. `from`: this describes the base image that stacker will start from. You can
+   either start from some other image in the same stackerfile, a Docker image,
+   or a tarball.
+1. `import`: A set of files to download or copy into the container. Stacker
+   will put these files at `/stacker`, which will be automatically cleaned up
+   after the commands in the `run` section are run and the image is finalized.
+   URLs (`http://example.com/file.txt`), files (`/path/to/file`), and files
+   from other stacker layers (`stacker:///output/my.exe`) are all supported.
+1. `run`: This is the set of commands to run in order to build the image; they
+   are run in a user namespaced container, with the set of files imported
+   available in `/stacker`.
+1. `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`:
+   these all correspond exactly to the similarly named bits in the [OCI image
+   config spec](https://github.com/opencontainers/image-spec/blob/master/config.md#properties),
+   and are available for users to pass things through to the runtime environment
+   of the image.
+1. `full_command`: because of the odd behavior of `cmd` and `entrypoint` (and
+   the inherited nature of these from previous stacker layers), `full_command`
+   provides a way to set the full command that will be executed in the image,
+   clearing out any previous `cmd` and `entrypoint` values that were set in the
+   image.
+1. `build_only`: indicates whether or not to include this layer in the final
+   OCI image. This can be useful in conjunction with an import from this layer
+   in another image, if you want to isolate the build environment for a binary
+   but not include all of its build dependencies.
