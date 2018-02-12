@@ -35,15 +35,16 @@ func doUnlade(ctx *cli.Context) error {
 		return err
 	}
 
+	fmt.Printf("Unpacking all layers from %s into %s\n", config.OCIDir, config.RootFSDir)
 	// TODO: this should be a lot better, we should use btrfs to do
 	// manifest-by-manifest extracting. But that's more work, so let's do
 	// this for now.
-	for _, tag := range tags {
+	for idx, tag := range tags {
 		err = s.Create(tag)
 		if err != nil {
 			return err
 		}
-
+		fmt.Printf("%d/%d: unpacking %s", idx+1, len(tags), tag)
 		cmd := exec.Command(
 			"umoci",
 			"unpack",
@@ -54,6 +55,7 @@ func doUnlade(ctx *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("umoci unpack: %s: %s", err, string(output))
 		}
+		fmt.Printf(" - done.\n")
 	}
 
 	return nil
