@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"syscall"
@@ -27,12 +28,38 @@ func doClean(ctx *cli.Context) error {
 	os.RemoveAll(config.RootFSDir)
 	os.RemoveAll(config.OCIDir)
 
+	fail := false
+
 	if !ctx.Bool("all") {
-		os.RemoveAll(path.Join(config.StackerDir, "logs"))
-		os.Remove(path.Join(config.StackerDir, "build.cache"))
-		os.Remove(path.Join(config.StackerDir, "btrfs.loop"))
+		if err := os.RemoveAll(path.Join(config.StackerDir, "logs")); err != nil {
+			if !os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "error deleting logs dir: %v", err)
+				fail = true
+			}
+		}
+		if err := os.Remove(path.Join(config.StackerDir, "build.cache")); err != nil {
+			if !os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "error deleting logs dir: %v", err)
+				fail = true
+			}
+		}
+		if err := os.Remove(path.Join(config.StackerDir, "btrfs.loop")); err != nil {
+			if !os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "error deleting btrfs loop: %v", err)
+				fail = true
+			}
+		}
 	} else {
-		os.RemoveAll(config.StackerDir)
+		if err := os.RemoveAll(config.StackerDir); err != nil {
+			if !os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "error deleting stacker dir: %v", err)
+				fail = true
+			}
+		}
+	}
+
+	if fail {
+		return fmt.Errorf("cleaning failed")
 	}
 
 	return nil
