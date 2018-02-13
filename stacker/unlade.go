@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path"
 
@@ -19,6 +20,10 @@ var unladeCmd = cli.Command{
 }
 
 func doUnlade(ctx *cli.Context) error {
+	if _, err := os.Stat(config.OCIDir); err != nil {
+		return err
+	}
+
 	s, err := stacker.NewStorage(config)
 	if err != nil {
 		return err
