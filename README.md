@@ -18,7 +18,7 @@ curl piped to sh as follows:
 
 Stacker also has the following build dependencies:
 
-    sudo apt install liblxc1 libacl1-dev
+    sudo apt install lxc-dev libacl1-dev
 
 The test suite requires `jq`, which can be installed on Ubuntu:
 
