@@ -66,11 +66,6 @@ func main() {
 			return err
 		}
 
-		user, err := user.Current()
-		if err != nil {
-			return err
-		}
-
 		return nil
 	}
 
