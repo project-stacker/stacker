@@ -42,10 +42,12 @@ It will exit 0 on failure. There are several environment variables available:
 
 ### Install
 
-You'll need both the stacker and stackermount binaries:
+You'll need the stacker sources:
 
-    go install github.com/anuvu/stacker/stacker
-    go install github.com/anuvu/stacker/stackermount
+    go get github.com/anuvu/stacker/stacker
+
+and also a glide install (see above). Once you have those, stacker can be built
+with a simple `make`.
 
 Stacker also depends on skopeo for some operations; you can install skopeo on
 ubuntu with:
