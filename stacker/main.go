@@ -71,10 +71,6 @@ func main() {
 			return err
 		}
 
-		if user.Uid != "0" {
-			fmt.Println("WARNING: rootless support experimental")
-		}
-
 		return nil
 	}
 
