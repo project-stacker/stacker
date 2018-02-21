@@ -169,7 +169,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (Stackerfile, er
 		from := fmt.Sprintf("$%s", membs[0])
 		to := membs[1]
 
-		fmt.Println("substituting %s to %s", from, to)
+		fmt.Printf("substituting %s to %s\n", from, to)
 
 		content = strings.Replace(content, from, to, -1)
 	}
