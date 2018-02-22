@@ -122,7 +122,12 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		fmt.Println("importing files...")
-		if err := stacker.Import(config, name, l.Import); err != nil {
+		imports, err := l.ParseImport()
+		if err != nil {
+			return err
+		}
+
+		if err := stacker.Import(config, name, imports); err != nil {
 			return err
 		}
 

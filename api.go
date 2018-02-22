@@ -66,7 +66,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 
 type Layer struct {
 	From        *ImageSource      `yaml:"from"`
-	Import      []string          `yaml:"import"`
+	Import      interface{}       `yaml:"import"`
 	Run         interface{}       `yaml:"run"`
 	Cmd         interface{}       `yaml:"cmd"`
 	Entrypoint  interface{}       `yaml:"entrypoint"`
@@ -93,6 +93,12 @@ func (l *Layer) ParseEntrypoint() ([]string, error) {
 func (l *Layer) ParseFullCommand() ([]string, error) {
 	return l.getStringOrStringSlice(l.FullCommand, func(s string) ([]string, error) {
 		return shlex.Split(s, true)
+	})
+}
+
+func (l *Layer) ParseImport() ([]string, error) {
+	return l.getStringOrStringSlice(l.Import, func(s string) ([]string, error) {
+		return strings.Split(s, "\n"), nil
 	})
 }
 
