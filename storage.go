@@ -55,34 +55,9 @@ func NewStorage(c StackerConfig) (Storage, error) {
 			return nil, err
 		}
 
-		// Try to mount it ourself. If it fails, let's try to use
-		// stackermount, which, if it exists, is setuid and can do what
-		// we want.
 		err = MakeLoopbackBtrfs(loopback, int64(size), uid, c.RootFSDir)
 		if err != nil {
-			stackermount := "stackermount"
-			if _, err := exec.LookPath(stackermount); err != nil {
-				link, err := os.Readlink("/proc/self/exe")
-				if err != nil {
-					return nil, err
-				}
-
-				stackermount = path.Join(path.Dir(link), "stackermount")
-			}
-
-			// If it's not btrfs, let's make it one via a loopback.
-			// TODO: make the size configurable
-			output, err := exec.Command(
-				stackermount,
-				loopback,
-				fmt.Sprintf("%d", size),
-				currentUser.Uid,
-				c.RootFSDir,
-			).CombinedOutput()
-			if err != nil {
-				os.RemoveAll(c.StackerDir)
-				return nil, fmt.Errorf("creating loopback: %s: %s", err, output)
-			}
+			return nil, err
 		}
 
 	}
