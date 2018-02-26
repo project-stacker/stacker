@@ -2,7 +2,7 @@
 
 Stacker is a tool for building OCI images via a declarative yaml format.
 
-### Hacking
+### Building
 
 Stacker requires go 1.9, on Ubuntu you can get that with:
 
@@ -19,6 +19,18 @@ curl piped to sh as follows:
 Stacker also has the following build dependencies:
 
     sudo apt install lxc-dev libacl1-dev
+
+And a few runtime dependencies as well:
+
+    sudo apt-add-repository ppa:projectatomic/ppa
+    sudo apt update
+    sudo apt install skopeo
+    go install github.com/openSUSE/umoci
+
+Finally, once you have the dependencies, stacker can be built with a simple
+`make`. The stacker binary will be output to `$GOPATH/bin/stacker`.
+
+### Testing
 
 The test suite requires `jq`, which can be installed on Ubuntu:
 
@@ -51,23 +63,7 @@ avoid making executables like ping setuid, and so unprivileged stacker will
 need a >= 4.14 kernel to work with these images. Fortunately, the Ubuntu
 kernels have these patches backported, so any ubuntu >= 16.04 will work.
 
-### Install
-
-You'll need the stacker sources:
-
-    go get github.com/anuvu/stacker/stacker
-
-and also a glide install (see above). Once you have those, stacker can be built
-with a simple `make`.
-
-Stacker also depends on skopeo for some operations; you can install skopeo on
-ubuntu with:
-
-    sudo apt-add-repository ppa:projectatomic/ppa
-    sudo apt update
-    sudo apt install skopeo
-
-## The `stacker.yaml` file
+### The `stacker.yaml` file
 
 The basic driver of stacker is the stackerfile, canonically named
 `stacker.yaml`. The stackerfile describes a set of OCI manifests to build. For
