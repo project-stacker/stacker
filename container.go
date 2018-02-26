@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
 	"strings"
 
@@ -26,11 +27,16 @@ var (
 
 func init() {
 	if os.Geteuid() != 0 {
+		currentUser, err := user.Current()
+		if err != nil {
+			return
+		}
+
 		// An error here means that this user has no subuid
 		// delegations. The only thing we can do is panic, and if we're
 		// re-execing inside a user namespace we don't want to do that.
 		// So let's just ignore the error and let future code handle it.
-		IdmapSet, _ = idmap.DefaultIdmapSet()
+		IdmapSet, _ = idmap.DefaultIdmapSet(currentUser.Username)
 	}
 }
 

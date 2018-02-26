@@ -1,5 +1,5 @@
-hash: 0bc60bcb08401e9bd93257b3aa0cdf7cf79cd1c5b5078be0fb36e1411dc400f1
-updated: 2018-02-09T16:37:58.208375229-07:00
+hash: e0b297447455777d9b12b97627986b562b13ee1a100f090489dd6ae8e1d76082
+updated: 2018-02-26T12:19:55.591759825-07:00
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -18,11 +18,12 @@ imports:
 - name: github.com/gorilla/websocket
   version: 4ac909741dfa57448bfadfdbca0cf7eeaa68f0e2
 - name: github.com/lxc/lxd
-  version: 422751d77dfa13363552caac756de46910ae780c
-  repo: https://github.com/tych0/lxd
+  version: 79a69f079376dbea5036815ac85c22e6f12a2821
   subpackages:
   - shared
+  - shared/cancel
   - shared/idmap
+  - shared/ioprogress
   - shared/logger
 - name: github.com/mattn/go-runewidth
   version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d

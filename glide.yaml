@@ -6,8 +6,6 @@ import:
 - package: github.com/lxc/lxd
   subpackages:
   - shared/idmap
-  repo: https://github.com/tych0/lxd
-  version: dont-append-and-strip-string
 - package: github.com/mitchellh/hashstructure
 - package: github.com/openSUSE/umoci
   subpackages:
