@@ -40,6 +40,17 @@ It will exit 0 on failure. There are several environment variables available:
 1. `STACKER_INSPECT` stops the test suite before cleanup, so you can inspect
    the failure
 
+### Kernel Version
+
+To use unprivileged stacker, you will need a kernel with user namespaces
+enabled (>= 3.10). However, many features related to user namespaces have
+landed since then, so it is best to use the most up to date kernel. For example
+user namespaced file capabilities were introduced in kernel commit 8db6c34f1db,
+which landed in 4.14-rc1. Stock rhel/centos images use file capabilities to
+avoid making executables like ping setuid, and so unprivileged stacker will
+need a >= 4.14 kernel to work with these images. Fortunately, the Ubuntu
+kernels have these patches backported, so any ubuntu >= 16.04 will work.
+
 ### Install
 
 You'll need the stacker sources:
