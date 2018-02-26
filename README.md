@@ -69,11 +69,11 @@ The basic driver of stacker is the stackerfile, canonically named
 `stacker.yaml`. The stackerfile describes a set of OCI manifests to build. For
 example:
 
-    centos:
+	centos:
 		from:
 			type: docker
 			url: docker://centos:latest
-        run: echo meshuggah rocks > /etc/motd
+		run: echo meshuggah rocks > /etc/motd
 
 Describes a manifest which is the latest Centos image from the Docker hub.
 There are various other directives which users can use to 
