@@ -15,6 +15,7 @@ check:
 
 .PHONY: vendorup
 vendorup:
+	glide cc
 	glide up --strip-vendor
 
 clean:
