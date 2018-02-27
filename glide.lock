@@ -1,5 +1,5 @@
 hash: e0b297447455777d9b12b97627986b562b13ee1a100f090489dd6ae8e1d76082
-updated: 2018-02-26T12:19:55.591759825-07:00
+updated: 2018-02-27T23:39:09.866925349Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -8,17 +8,17 @@ imports:
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cheggaaa/pb
-  version: 5119518d88fbf604cab04dafd667dc7022e3b5ac
+  version: 521e54ab5f0d0e5260964d094a414759c65fcbb3
 - name: github.com/cyphar/filepath-securejoin
   version: ae69057f2299fb9e5ba2df738607e6a505b74ab6
 - name: github.com/docker/go-units
-  version: d59758554a3d3911fa25c0269de1ebe2f1912c39
+  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
 - name: github.com/gorilla/websocket
-  version: 4ac909741dfa57448bfadfdbca0cf7eeaa68f0e2
+  version: f37d1588608ec036fa9b0b7b8afbde47dc06aea9
 - name: github.com/lxc/lxd
-  version: 79a69f079376dbea5036815ac85c22e6f12a2821
+  version: 625bc66e73e51ed283fa1801f730bb44fb8d9ec7
   subpackages:
   - shared
   - shared/cancel
@@ -37,7 +37,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: 02137cd4e50b37a01665e1731fcd4ac2d2178230
+  version: 7a8c2c89a10836d102b622ff9a867c6ae09afc47
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -73,19 +73,19 @@ imports:
 - name: github.com/udhos/equalfile
   version: c92b0e41854b49e567ba269dcc572ada60e48e7b
 - name: github.com/urfave/cli
-  version: 803d0665796d3b09d3190067803fc285d1604732
+  version: 8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff
 - name: github.com/vbatts/go-mtree
   version: 16da0f86ee549d8949775bf3d555e7921a9caca9
   subpackages:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 5119cf507ed5294cc409c092980c7497ee5d6fd2
+  version: 8c653846df49742c4c85ec37e5d9f8d3ba657895
   subpackages:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: f5dfe339be1d06f81b22525fe34671ee7d2c8904
+  version: cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -94,7 +94,7 @@ imports:
   - unix
   - windows
 - name: gopkg.in/lxc/go-lxc.v2
-  version: b964baab402d04122567df45c56559f64512f143
+  version: 2660c429a942a4a21455765c7046dde612c1baa7
 - name: gopkg.in/yaml.v2
-  version: d670f9405373e636a5a2765eea47fac0c9bc91a4
+  version: 7f97868eec74b32b0982dd158a51a446d1da7eb5
 testImports: []
