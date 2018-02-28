@@ -3,6 +3,7 @@ package stacker
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 )
@@ -33,6 +34,7 @@ func Run(sc StackerConfig, name string, l *Layer) error {
 	if err != nil {
 		return err
 	}
+	defer os.Remove(path.Join(sc.RootFSDir, ".working", "rootfs", "stacker"))
 
 	err = c.bindMount("/etc/resolv.conf", "/etc/resolv.conf")
 	if err != nil {

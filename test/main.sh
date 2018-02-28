@@ -87,6 +87,7 @@ layer2=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest)
 # let's check that the main tar stuff is understood by umoci
 umoci unpack --image oci:layer1 dest
 [ ! -f dest/rootfs/favicon.ico ]
+[ ! -d dest/rootfs/stacker ]
 
 # Now does `stacker unlade` work?
 umount roots
