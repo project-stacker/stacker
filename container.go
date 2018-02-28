@@ -273,7 +273,9 @@ func RunInUserns(userCmd []string, msg string) error {
 
 	args := []string{
 		"-m",
-		fmt.Sprintf("b:%d:%d:1", id, os.Getuid()),
+		fmt.Sprintf("u:%d:%d:1", id, os.Getuid()),
+		"-m",
+		fmt.Sprintf("g:%d:%d:1", id, os.Getgid()),
 	}
 
 	for _, idm := range IdmapSet.Idmap {
