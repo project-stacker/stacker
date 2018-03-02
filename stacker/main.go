@@ -85,13 +85,13 @@ func main() {
 func usernsWrapper(do func(ctx *cli.Context) error) func(ctx *cli.Context) error {
 	return func(ctx *cli.Context) error {
 		if os.Geteuid() != 0 {
-			user, err := user.Current()
-			if err != nil {
-				return err
-			}
-
 			if !ctx.IsSet("internal-in-userns") {
 				if stacker.IdmapSet == nil {
+					user, err := user.Current()
+					if err != nil {
+						return err
+					}
+
 					return fmt.Errorf("no uidmap for %s", user.Username)
 				}
 
