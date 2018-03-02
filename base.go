@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/openSUSE/umoci"
 )
@@ -26,7 +27,7 @@ func GetBaseLayer(o BaseLayerOpts) error {
 	case TarType:
 		return getTar(o)
 	case OCIType:
-		return fmt.Errorf("not implemented")
+		return getOci(o)
 	case DockerType:
 		return getDocker(o)
 	case ScratchType:
@@ -34,6 +35,75 @@ func GetBaseLayer(o BaseLayerOpts) error {
 	default:
 		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
+}
+
+func getOci(o BaseLayerOpts) error {
+	url, err := o.Layer.From.ParseTag()
+	if err != nil {
+		return err
+	}
+	// url is "ocidir:image"
+	res := strings.SplitN(url, ":", 2)
+	fullImage := res[1]
+	// image may be "imagebase_tag" i.e. boot_0.1.3
+	res = strings.SplitN(fullImage, "_", 2)
+	imageBase := fullImage
+	tag := ""
+	if len(res) == 2 {
+		imageBase = res[0]
+		tag = res[1]
+	}
+
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", tag)
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return err
+	}
+
+	cmd := exec.Command(
+		"skopeo",
+		"copy",
+		fmt.Sprintf("oci:%s",url),
+		fmt.Sprintf("oci:%s:%s", cacheDir, imageBase),
+	)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("skopeo copy: %s", err)
+	}
+
+	// We just copied it to the cache, now let's copy that over to our image.
+	cmd = exec.Command(
+		"skopeo",
+		"--insecure-policy",
+		"copy",
+		fmt.Sprintf("oci:%s:%s", cacheDir, imageBase),
+		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, imageBase),
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
+	}
+
+	target := path.Join(o.Config.RootFSDir, o.Target)
+	fmt.Println("unpacking to", target)
+
+	image := fmt.Sprintf("%s:%s", o.Config.OCIDir, imageBase)
+	cmd = exec.Command(
+		"umoci",
+		"unpack",
+		"--image",
+		image,
+		target)
+
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error during unpack: %s: %s", err, string(output))
+	}
+
+	return nil
 }
 
 func getDocker(o BaseLayerOpts) error {
