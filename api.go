@@ -43,6 +43,15 @@ func (is *ImageSource) ParseTag() (string, error) {
 	switch is.Type {
 	case BuiltType:
 		return is.Tag, nil
+	case OCIType:
+		// is.Url is "ocidir:imagename"
+		res := strings.SplitN(is.Url, ":", 2)
+		if len(res) != 2 {
+			return "", fmt.Errorf("Invalid oci url")
+		}
+		// the abstraction doesn't feel right here..
+		return is.Url, nil
+
 	case DockerType:
 		url, err := url.Parse(is.Url)
 		if err != nil {
