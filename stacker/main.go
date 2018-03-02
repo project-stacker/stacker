@@ -14,6 +14,7 @@ var (
 	config                  stacker.StackerConfig
 	version                 = ""
 	additionalShiftLocation = ""
+	internalInUserns        int
 )
 
 func main() {
@@ -68,6 +69,8 @@ func main() {
 			return err
 		}
 
+		internalInUserns = ctx.Int("internal-in-userns")
+
 		return nil
 	}
 
@@ -117,13 +120,12 @@ func usernsWrapper(do func(ctx *cli.Context) error) func(ctx *cli.Context) error
 		//
 		// Note that we don't care about errors, since this is mostly
 		// for convenicence.
-		id := ctx.Int("internal-in-userns")
 		doPermChange := func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 
-			return os.Chown(path, id, id)
+			return os.Chown(path, internalInUserns, internalInUserns)
 		}
 		filepath.Walk(config.OCIDir, doPermChange)
 		filepath.Walk(config.StackerDir, doPermChange)
