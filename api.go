@@ -34,9 +34,10 @@ const (
 )
 
 type ImageSource struct {
-	Type string `yaml:"type"`
-	Url  string `yaml:"url"`
-	Tag  string `yaml:"tag"`
+	Type     string `yaml:"type"`
+	Url      string `yaml:"url"`
+	Tag      string `yaml:"tag"`
+	Insecure bool   `yaml:"insecure"`
 }
 
 func (is *ImageSource) ParseTag() (string, error) {

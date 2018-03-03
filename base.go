@@ -51,17 +51,21 @@ func getDocker(o BaseLayerOpts) error {
 		return err
 	}
 
-	cmd := exec.Command(
-		"skopeo",
+	skopeoArgs := []string{
 		// So we don't have to make everyone install an
 		// /etc/containers/policy.json too. Alternatively, we could
 		// write a default policy out to /tmp and use --policy.
 		"--insecure-policy",
 		"copy",
-		o.Layer.From.Url,
-		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-	)
+	}
 
+	if o.Layer.From.Insecure {
+		skopeoArgs = append(skopeoArgs, "--src-tls-verify=false")
+	}
+
+	skopeoArgs = append(skopeoArgs, o.Layer.From.Url, fmt.Sprintf("oci:%s:%s", cacheDir, tag))
+
+	cmd := exec.Command("skopeo", skopeoArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
