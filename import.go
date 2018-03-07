@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 
 	"github.com/udhos/equalfile"
@@ -88,6 +89,14 @@ func importFile(imp string, cacheDir string) error {
 	e1, err := os.Stat(imp)
 	if err != nil {
 		return err
+	}
+
+	if e1.IsDir() {
+		output, err := exec.Command("cp", "-a", imp, cacheDir).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s", string(output))
+		}
+		return nil
 	}
 
 	needsCopy := false
