@@ -9,11 +9,10 @@ import (
 	"github.com/urfave/cli"
 )
 
-
 var grabCmd = cli.Command{
 	Name:   "grab",
 	Usage:  "grabs a file from the layer's filesystem",
-	Action: doGrab,
+	Action: usernsWrapper(doGrab),
 }
 
 func doGrab(ctx *cli.Context) error {
@@ -34,5 +33,6 @@ func doGrab(ctx *cli.Context) error {
 	}
 	defer s.Delete(".working")
 
+	additionalShiftLocation = path.Base(parts[1])
 	return stacker.Grab(config, parts[0], parts[1])
 }

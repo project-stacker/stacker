@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	config  stacker.StackerConfig
-	version = ""
+	config                  stacker.StackerConfig
+	version                 = ""
+	additionalShiftLocation = ""
 )
 
 func main() {
@@ -126,6 +127,9 @@ func usernsWrapper(do func(ctx *cli.Context) error) func(ctx *cli.Context) error
 		}
 		filepath.Walk(config.OCIDir, doPermChange)
 		filepath.Walk(config.StackerDir, doPermChange)
+		if additionalShiftLocation != "" {
+			filepath.Walk(additionalShiftLocation, doPermChange)
+		}
 		return wrappedErr
 	}
 }
