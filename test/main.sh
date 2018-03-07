@@ -128,6 +128,11 @@ umoci unpack --image oci:layer1 dest
 [ "$(sha dest/rootfs/favicon.ico)" == "$(sha dest/rootfs/favicon2.ico)" ]
 [ "$(umoci ls --layout ./oci)" == "$(printf "centos-latest\nlayer1")" ]
 
+stacker grab centos:/favicon.ico
+[ -f favicon.ico ]
+[ "$(sha favicon.ico)" == "$(sha .stacker/imports/centos/favicon.ico)" ]
+rm favicon.ico
+
 cleanup
 
 # Do scratch layers work?

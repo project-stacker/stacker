@@ -25,6 +25,7 @@ func main() {
 		unladeCmd,
 		cleanCmd,
 		inspectCmd,
+		grabCmd,
 	}
 
 	app.Flags = []cli.Flag{
