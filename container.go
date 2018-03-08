@@ -116,7 +116,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 	}
 
 	configs := map[string]string{
-		"lxc.mount.auto": "proc:mixed sys:mixed cgroup:mixed",
+		"lxc.mount.auto":  "proc:mixed sys:mixed cgroup:mixed",
 		"lxc.autodev":     "1",
 		"lxc.uts.name":    name,
 		"lxc.net.0.type":  "none",
