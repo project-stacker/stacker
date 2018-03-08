@@ -142,7 +142,7 @@ func getTar(o BaseLayerOpts) error {
 		return err
 	}
 
-	tar, err := download(cacheDir, o.Layer.From.Url)
+	tar, err := acquireUrl(o.Config, o.Layer.From.Url, cacheDir)
 	if err != nil {
 		return err
 	}

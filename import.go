@@ -85,18 +85,18 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 	return !eq, nil
 }
 
-func importFile(imp string, cacheDir string) error {
+func importFile(imp string, cacheDir string) (string, error) {
 	e1, err := os.Stat(imp)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if e1.IsDir() {
 		output, err := exec.Command("cp", "-a", imp, cacheDir).CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("%s", string(output))
+			return "", fmt.Errorf("%s", string(output))
 		}
-		return nil
+		return path.Join(cacheDir, path.Base(imp)), nil
 	}
 
 	needsCopy := false
@@ -107,7 +107,7 @@ func importFile(imp string, cacheDir string) error {
 	} else {
 		differ, err := filesDiffer(imp, e1, dest, e2)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		needsCopy = differ
@@ -116,13 +116,33 @@ func importFile(imp string, cacheDir string) error {
 	if needsCopy {
 		fmt.Printf("copying %s\n", imp)
 		if err := fileCopy(dest, imp); err != nil {
-			return err
+			return "", err
 		}
 	} else {
 		fmt.Println("using cached copy of", imp)
 	}
 
-	return nil
+	return dest, nil
+}
+
+func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
+	url, err := url.Parse(i)
+	if err != nil {
+		return "", err
+	}
+
+	// It's just a path, let's copy it to .stacker.
+	if url.Scheme == "" {
+		return importFile(i, cache)
+	} else if url.Scheme == "http" || url.Scheme == "https" {
+		// otherwise, we need to download it
+		return download(cache, i)
+	} else if url.Scheme == "stacker" {
+		p := path.Join(c.RootFSDir, url.Host, "rootfs", url.Path)
+		return importFile(p, cache)
+	}
+
+	return "", fmt.Errorf("unsupported url scheme %s", i)
 }
 
 func Import(c StackerConfig, name string, imports []string) error {
@@ -133,27 +153,9 @@ func Import(c StackerConfig, name string, imports []string) error {
 	}
 
 	for _, i := range imports {
-		url, err := url.Parse(i)
+		_, err := acquireUrl(c, i, dir)
 		if err != nil {
 			return err
-		}
-
-		// It's just a path, let's copy it to .stacker.
-		if url.Scheme == "" {
-			if err := importFile(i, dir); err != nil {
-				return err
-			}
-		} else if url.Scheme == "http" || url.Scheme == "https" {
-			// otherwise, we need to download it
-			_, err = download(dir, i)
-			if err != nil {
-				return err
-			}
-		} else if url.Scheme == "stacker" {
-			p := path.Join(c.RootFSDir, url.Host, "rootfs", url.Path)
-			if err := importFile(p, dir); err != nil {
-				return err
-			}
 		}
 	}
 
