@@ -207,6 +207,9 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 
 			// do we have this layer yet?
 			if !have {
+				if layer.From == nil {
+					return nil, fmt.Errorf("invalid layer: no base (from directive)")
+				}
 				// all imported layers have no deps
 				if layer.From.Type != BuiltType {
 					ret = append(ret, name)
