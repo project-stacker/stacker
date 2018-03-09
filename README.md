@@ -52,6 +52,25 @@ It will exit 0 on failure. There are several environment variables available:
 1. `STACKER_INSPECT` stops the test suite before cleanup, so you can inspect
    the failure
 
+### BTRFS
+
+If you are running in a btrfs filesystem, nothing needs to be done.
+
+If you are running in a non-btrfs filesystem, but as root, then stacker
+will automatically create and mount a loopback btrfs to use.
+
+If you are running as non-root in a non-btrfs filesystem, then you need
+to prepare by, with privilege, mounting a btrfs under "./roots" first.
+You can see this being done in tests/main.sh:
+
+```bash
+truncate -s 100G btrfs.loop
+mkfs.btrfs btrfs.loop
+mkdir -p roots
+sudo mount -o loop,user_subvol_rm_allowed btrfs.loop roots
+sudo chown -R $(id -u):$(id -g) roots
+```
+
 ### Kernel Version
 
 To use unprivileged stacker, you will need a kernel with user namespaces
