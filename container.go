@@ -96,7 +96,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		}
 
 		for _, lxcConfig := range IdmapSet.ToLxcString() {
-			err = c.setConfig("lxc.id_map", lxcConfig)
+			err = c.setConfig("lxc.idmap", lxcConfig)
 			if err != nil {
 				return nil, err
 			}
