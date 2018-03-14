@@ -127,6 +127,27 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		return nil, err
 	}
 
+	for _, k := range []string{"http_proxy", "https_proxy", "no_proxy"} {
+		v := os.Getenv(k)
+		if v != "" {
+			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// The proxy vars are special, because some things e.g. curl
+		// and python like lower case, while golang likes upper case.
+		k = strings.ToUpper(k)
+		v = os.Getenv(k)
+		if v != "" {
+			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	rootfs := path.Join(sc.RootFSDir, name, "rootfs")
 	err = c.setConfig("lxc.rootfs.path", fmt.Sprintf("dir:%s", rootfs))
 	if err != nil {
