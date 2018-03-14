@@ -91,16 +91,10 @@ func getDocker(o BaseLayerOpts) error {
 	fmt.Println("unpacking to", target)
 
 	image := fmt.Sprintf("%s:%s", o.Config.OCIDir, tag)
-	cmd = exec.Command(
-		"umoci",
-		"unpack",
-		"--image",
-		image,
-		target)
-
-	output, err = cmd.CombinedOutput()
+	args := []string{"umoci", "unpack", "--image", image, target}
+	err = MaybeRunInUserns(args, "image unpack failed")
 	if err != nil {
-		return fmt.Errorf("error during unpack: %s: %s", err, string(output))
+		return err
 	}
 
 	return nil
@@ -117,6 +111,9 @@ func umociInit(o BaseLayerOpts) error {
 		return fmt.Errorf("umoci layout creation failed: %s: %s", err, string(output))
 	}
 
+	// N.B. This unpack doesn't need to be in a userns because it doesn't
+	// actually do anything: the image is empty, and so it only makes the
+	// rootfs dir and metadata files, which are owned by this user anyway.
 	cmd = exec.Command(
 		"umoci",
 		"unpack",

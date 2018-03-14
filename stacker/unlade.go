@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 
 	"github.com/anuvu/stacker"
@@ -15,7 +14,7 @@ var unladeCmd = cli.Command{
 	Name:    "unlade",
 	Usage:   "unpacks an OCI image to a directory",
 	Aliases: []string{"unpack"},
-	Action:  usernsWrapper(doUnlade),
+	Action:  doUnlade,
 	Flags:   []cli.Flag{},
 }
 
@@ -50,15 +49,16 @@ func doUnlade(ctx *cli.Context) error {
 			return err
 		}
 		fmt.Printf("%d/%d: unpacking %s", idx+1, len(tags), tag)
-		cmd := exec.Command(
+		args := []string{
 			"umoci",
 			"unpack",
 			"--image",
 			fmt.Sprintf("%s:%s", config.OCIDir, tag),
-			path.Join(config.RootFSDir, tag))
-		output, err := cmd.CombinedOutput()
+			path.Join(config.RootFSDir, tag),
+		}
+		err = stacker.MaybeRunInUserns(args, "unpack failed")
 		if err != nil {
-			return fmt.Errorf("umoci unpack: %s: %s", err, string(output))
+			return err
 		}
 		fmt.Printf(" - done.\n")
 	}

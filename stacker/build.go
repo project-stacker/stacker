@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -12,15 +12,15 @@ import (
 
 	"github.com/anuvu/stacker"
 	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/pkg/fseval"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
 var buildCmd = cli.Command{
 	Name:   "build",
 	Usage:  "builds a new OCI image from a stacker yaml file",
-	Action: usernsWrapper(doBuild),
+	Action: doBuild,
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:  "leave-unladen",
@@ -40,6 +40,25 @@ var buildCmd = cli.Command{
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
 	},
+}
+
+func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
+	newName := strings.Replace(newPath.Digest.String(), ":", "_", 1) + ".mtree"
+
+	infos, err := ioutil.ReadDir(rootPath)
+	if err != nil {
+		return err
+	}
+
+	for _, fi := range infos {
+		if !strings.HasSuffix(fi.Name(), ".mtree") {
+			continue
+		}
+
+		return os.Rename(path.Join(rootPath, fi.Name()), path.Join(rootPath, newName))
+	}
+
+	return nil
 }
 
 func doBuild(ctx *cli.Context) error {
@@ -154,20 +173,21 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		fmt.Println("generating layer...")
-		cmd := exec.Command(
+		args := []string{
 			"umoci",
 			"repack",
+			"--refresh-bundle",
 			"--image",
 			fmt.Sprintf("%s:%s", config.OCIDir, name),
-			path.Join(config.RootFSDir, ".working"))
-		output, err := cmd.CombinedOutput()
+			path.Join(config.RootFSDir, ".working")}
+		err = stacker.MaybeRunInUserns(args, "layer generation failed")
 		if err != nil {
-			return fmt.Errorf("error during repack: %s: %s", err, string(output))
+			return err
 		}
 
 		mutator, err := oci.Mutator(name)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "mutator failed")
 		}
 
 		imageConfig, err := mutator.Config(context.Background())
@@ -276,14 +296,11 @@ func doBuild(ctx *cli.Context) error {
 
 		// Now, we need to set the umoci data on the fs to tell it that
 		// it has a layer that corresponds to this fs.
-		mtreeName := strings.Replace(newPath.Descriptor().Digest.String(), ":", "_", 1)
 		bundlePath := path.Join(config.RootFSDir, ".working")
-		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.DefaultFsEval)
+		err = updateBundleMtree(bundlePath, newPath.Descriptor())
 		if err != nil {
 			return err
 		}
-
-		// TODO: delete old mtree file
 
 		umociMeta := umoci.UmociMeta{Version: umoci.UmociMetaVersion, From: newPath}
 		err = umoci.WriteBundleMeta(bundlePath, umociMeta)
