@@ -86,7 +86,7 @@ func doBuild(ctx *cli.Context) error {
 	}
 
 	var oci *umoci.Layout
-	if _, err := os.Stat(config.OCIDir); err != nil {
+	if _, statErr := os.Stat(config.OCIDir); statErr != nil {
 		oci, err = umoci.CreateLayout(config.OCIDir)
 	} else {
 		oci, err = umoci.OpenLayout(config.OCIDir)
