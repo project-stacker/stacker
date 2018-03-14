@@ -39,6 +39,10 @@ var buildCmd = cli.Command{
 			Name:  "substitute",
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
+		cli.StringFlag{
+			Name:  "on-run-failure",
+			Usage: "command to run inside container if run fails (useful for inspection)",
+		},
 	},
 }
 
@@ -151,7 +155,7 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		fmt.Println("running commands...")
-		if err := stacker.Run(config, name, l); err != nil {
+		if err := stacker.Run(config, name, l, ctx.String("on-run-failure")); err != nil {
 			return err
 		}
 

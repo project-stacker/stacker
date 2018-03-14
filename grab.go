@@ -23,5 +23,5 @@ func Grab(sc StackerConfig, name string, source string) error {
 	}
 	defer os.Remove(path.Join(sc.RootFSDir, ".working", "rootfs", "stacker"))
 
-	return c.execute(fmt.Sprintf("cp -a %s /stacker", source))
+	return c.execute(fmt.Sprintf("cp -a %s /stacker", source), nil)
 }

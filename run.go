@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func Run(sc StackerConfig, name string, l *Layer) error {
+func Run(sc StackerConfig, name string, l *Layer, onFailure string) error {
 	run, err := l.getRun()
 	if err != nil {
 		return err
@@ -42,5 +42,16 @@ func Run(sc StackerConfig, name string, l *Layer) error {
 	}
 
 	fmt.Println("running commands for", name)
-	return c.execute("/stacker/.stacker-run.sh")
+
+	// These should all be non-interactive; let's ensure that.
+	err = c.execute("/stacker/.stacker-run.sh", nil)
+	if err != nil {
+		err2 := c.execute(onFailure, os.Stdin)
+		if err2 != nil {
+			fmt.Printf("failed executing %s: %s\n", onFailure, err2)
+		}
+		err = fmt.Errorf("run commands failed: %s", err)
+	}
+
+	return err
 }

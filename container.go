@@ -3,6 +3,7 @@ package stacker
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -231,7 +232,7 @@ func (c *container) containerError(theErr error, msg string) error {
 	return errors.Wrap(theErr, fmt.Sprintf("%s\nLast few LXC errors:\n%s\n", msg, extra))
 }
 
-func (c *container) execute(args string) error {
+func (c *container) execute(args string, stdin io.Reader) error {
 	if err := c.setConfig("lxc.execute.cmd", args); err != nil {
 		return err
 	}
@@ -255,17 +256,11 @@ func (c *container) execute(args string) error {
 		f.Name(),
 	)
 
-	// These should all be non-interactive; let's ensure that.
-	cmd.Stdin = nil
+	cmd.Stdin = stdin
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run commands failed: %s", err)
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 func umociMapOptions() *layer.MapOptions {
@@ -349,7 +344,6 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-
 		return cmd.Run()
 	}
 
