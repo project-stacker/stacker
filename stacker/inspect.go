@@ -47,7 +47,10 @@ func renderManifest(oci *umoci.Layout, name string) error {
 		return err
 	}
 
-	fmt.Printf("%s (%d layers)\n", name, len(man.Layers))
+	fmt.Printf("%s\n", name)
+	for i, l := range man.Layers {
+		fmt.Printf("\tlayer %d: %s\n", i, l.Digest)
+	}
 
 	if len(man.Annotations) > 0 {
 		fmt.Printf("Annotations:\n")
