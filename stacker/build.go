@@ -44,7 +44,7 @@ var buildCmd = cli.Command{
 
 func doBuild(ctx *cli.Context) error {
 	if ctx.Bool("no-cache") {
-		os.Remove(config.StackerDir)
+		os.RemoveAll(config.StackerDir)
 	}
 
 	file := ctx.String("f")
