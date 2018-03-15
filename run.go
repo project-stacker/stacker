@@ -46,9 +46,11 @@ func Run(sc StackerConfig, name string, l *Layer, onFailure string) error {
 	// These should all be non-interactive; let's ensure that.
 	err = c.execute("/stacker/.stacker-run.sh", nil)
 	if err != nil {
-		err2 := c.execute(onFailure, os.Stdin)
-		if err2 != nil {
-			fmt.Printf("failed executing %s: %s\n", onFailure, err2)
+		if onFailure != "" {
+			err2 := c.execute(onFailure, os.Stdin)
+			if err2 != nil {
+				fmt.Printf("failed executing %s: %s\n", onFailure, err2)
+			}
 		}
 		err = fmt.Errorf("run commands failed: %s", err)
 	}
