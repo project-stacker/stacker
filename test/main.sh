@@ -19,6 +19,7 @@ function sha() {
 function cleanup() {
     umount roots >& /dev/null || true
     rm -rf roots oci dest >& /dev/null || true
+    rm link >& /dev/null || true
     if [ -z "$STACKER_KEEP" ]; then
         rm -rf .stacker >& /dev/null || true
     else
@@ -157,5 +158,16 @@ manifest=$(cat oci/index.json | jq -r .manifests[2].digest | cut -f2 -d:)
 config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
 [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Cmd')" = "null" ]
 [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join("")')" = "baz" ]
+
+cleanup
+
+# Does import layer caching work correctly?
+ln -s tree1 link
+stacker build -f caching.yaml
+rm link && ln -s tree2 link
+stacker build -f caching.yaml
+rm link
+umoci unpack --image oci:import-cache dest
+[ "$(sha tree2/foo/foo)" == "$(sha dest/rootfs/foo)" ]
 
 RESULT=success

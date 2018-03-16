@@ -1,5 +1,7 @@
 import-cache:
     from:
-        type: scratch
+        type: docker
+        url: docker://centos:latest
     import:
         - link/foo
+    run: cp /stacker/foo/foo /foo

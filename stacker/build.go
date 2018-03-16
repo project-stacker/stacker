@@ -109,7 +109,24 @@ func doBuild(ctx *cli.Context) error {
 	for _, name := range order {
 		l := sf[name]
 
-		_, ok := buildCache.Lookup(l)
+		fmt.Printf("building image %s...\n", name)
+
+		// We need to run the imports first since we now compare
+		// against imports for caching layers. Since we don't do
+		// network copies if the files are present and we use rsync to
+		// copy things across, hopefully this isn't too expensive.
+		fmt.Println("importing files...")
+		imports, err := l.ParseImport()
+		if err != nil {
+			return err
+		}
+
+		if err := stacker.Import(config, name, imports); err != nil {
+			return err
+		}
+
+		importDir := path.Join(config.StackerDir, "imports", name)
+		_, ok := buildCache.Lookup(l, importDir)
 		if ok {
 			// TODO: for full correctness here we really need to
 			// add a new tag with the current name for this layout,
@@ -119,7 +136,6 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		s.Delete(".working")
-		fmt.Printf("building image %s...\n", name)
 		if l.From.Type == stacker.BuiltType {
 			if err := s.Restore(l.From.Tag, ".working"); err != nil {
 				return err
@@ -144,16 +160,6 @@ func doBuild(ctx *cli.Context) error {
 			}
 		}
 
-		fmt.Println("importing files...")
-		imports, err := l.ParseImport()
-		if err != nil {
-			return err
-		}
-
-		if err := stacker.Import(config, name, imports); err != nil {
-			return err
-		}
-
 		fmt.Println("running commands...")
 		if err := stacker.Run(config, name, l, ctx.String("on-run-failure")); err != nil {
 			return err
@@ -170,7 +176,7 @@ func doBuild(ctx *cli.Context) error {
 			}
 
 			fmt.Println("build only layer, skipping OCI diff generation")
-			if err := buildCache.Put(l, ispec.Descriptor{}); err != nil {
+			if err := buildCache.Put(l, importDir, ispec.Descriptor{}); err != nil {
 				return err
 			}
 			continue
@@ -325,7 +331,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		if err := buildCache.Put(l, manifest.Config); err != nil {
+		if err := buildCache.Put(l, importDir, manifest.Config); err != nil {
 			return err
 		}
 	}
