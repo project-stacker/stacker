@@ -12,6 +12,7 @@ import (
 	"path"
 
 	"github.com/mitchellh/hashstructure"
+	"github.com/openSUSE/umoci"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/vbatts/go-mtree"
@@ -53,7 +54,7 @@ type BuildCache struct {
 	Version int                   `json:"version"`
 }
 
-func OpenCache(dir string) (*BuildCache, error) {
+func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
 	p := path.Join(dir, "build.cache")
 	f, err := os.Open(p)
 	if err != nil {
@@ -78,13 +79,29 @@ func OpenCache(dir string) (*BuildCache, error) {
 	}
 
 	if cache.Version != currentCacheVersion {
-		fmt.Println("old cache version not found, clearing cache and rebuilding from scratch...")
+		fmt.Println("old cache version found, clearing cache and rebuilding from scratch...")
 		os.Remove(p)
 		return &BuildCache{
 			path:    p,
 			Cache:   map[string]CacheEntry{},
 			Version: currentCacheVersion,
 		}, nil
+	}
+
+	pruned := false
+	for hash, ent := range cache.Cache {
+		_, err := oci.LookupManifestByDescriptor(ent.Blob)
+		if err != nil {
+			delete(cache.Cache, hash)
+			pruned = true
+		}
+	}
+
+	if pruned {
+		err := cache.persist()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cache, nil

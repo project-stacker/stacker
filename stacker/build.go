@@ -100,7 +100,7 @@ func doBuild(ctx *cli.Context) error {
 	}
 	defer oci.Close()
 
-	buildCache, err := stacker.OpenCache(config.StackerDir)
+	buildCache, err := stacker.OpenCache(config.StackerDir, oci)
 	if err != nil {
 		return err
 	}
@@ -326,12 +326,12 @@ func doBuild(ctx *cli.Context) error {
 
 		fmt.Printf("filesystem %s built successfully\n", name)
 
-		manifest, err := oci.LookupManifest(name)
+		desc, err := oci.LookupManifestDescriptor(name)
 		if err != nil {
 			return err
 		}
 
-		if err := buildCache.Put(l, importDir, manifest.Config); err != nil {
+		if err := buildCache.Put(l, importDir, desc); err != nil {
 			return err
 		}
 	}
