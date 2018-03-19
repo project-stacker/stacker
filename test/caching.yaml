@@ -1,0 +1,5 @@
+import-cache:
+    from:
+        type: scratch
+    import:
+        - link/foo
