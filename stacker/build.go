@@ -126,12 +126,13 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		importDir := path.Join(config.StackerDir, "imports", name)
-		_, ok := buildCache.Lookup(l, importDir)
+		cachedDesc, ok := buildCache.Lookup(l, importDir)
 		if ok {
-			// TODO: for full correctness here we really need to
-			// add a new tag with the current name for this layout,
-			// in case someone changed the name instead.
 			fmt.Printf("found cached layer %s\n", name)
+			err = oci.UpdateReference(name, cachedDesc)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
