@@ -9,4 +9,7 @@ dependencies.
 
 ### Usage
 
-See the [`stacker.yaml` specification](doc/stacker_yaml.md) for details.
+See the [tutorial](doc/tutorial.md) for a short introduction to how to use stacker.
+
+See the [`stacker.yaml` specification](doc/stacker_yaml.md) for full details on
+the `stacker.yaml` specification.
