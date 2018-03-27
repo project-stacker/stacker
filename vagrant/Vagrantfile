@@ -1,0 +1,24 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/bionic64"
+
+   config.vm.provision "shell", inline: <<-SHELL
+    add-apt-repository -y ppa:projectatomic/ppa
+    add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
+    add-apt-repository -y ppa:gophers/archive
+    sed -i 's/bionic/xenial/' /etc/apt/sources.list.d/projectatomic-ubuntu-ppa-bionic.list
+    apt-get update
+    apt-get install -y skopeo skopeo-containers libgpgme11 libostree-1-1
+    apt-get install -y lxc1 lxc-dev ubuntu-dev-tools golang golang-1.9 golang-glide libacl1-dev
+    mkdir -p /root/go/bin /root/go/src
+    export GOPATH=/root/go
+    export PATH=$PATH:/root/go/bin
+    go get github.com/openSUSE/umoci/cmd/umoci
+    cp /root/go/bin/umoci /usr/bin/
+    go get github.com/anuvu/stacker
+    cd /root/go/src/github.com/anuvu/stacker && make
+    cp /root/go/bin/stacker /usr/bin/
+   SHELL
+end
