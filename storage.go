@@ -132,7 +132,21 @@ func (b *btrfs) Restore(source string, target string) error {
 }
 
 func (b *btrfs) Delete(source string) error {
+	// Since we create snapshots as readonly above, we must re-mark them
+	// writable here before we can delete them.
 	output, err := exec.Command(
+		"btrfs",
+		"property",
+		"set",
+		"-ts",
+		path.Join(b.c.RootFSDir, source),
+		"ro",
+		"false").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("btrfs mark writable: %s: %s", err, output)
+	}
+
+	output, err = exec.Command(
 		"btrfs",
 		"subvolume",
 		"delete",
