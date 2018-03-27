@@ -131,13 +131,17 @@ emitted in the final OCI image. For example:
             type: docker
             url: docker://ubuntu:latest
         run: |
-            apt-add-repository ppa:gophers/archive
             apt update
-            apt install golang-1.9
+            apt install -y software-properties-common git
+            apt-add-repository -y ppa:gophers/archive
+            apt update
+            apt install -y golang-1.9
             export PATH=$PATH:/usr/lib/go-1.9/bin
             export GOPATH=~/go
-            go get github.com/openSUSE/umoci
-            cd $GOPATH/src/github.com/openSUSE/umoci
+            mkdir -p $GOPATH/src/github.com/openSUSE
+            cd $GOPATH/src/github.com/openSUSE
+            git clone https://github.com/openSUSE/umoci
+            cd umoci
             make umoci.static
             cp umoci.static /
         build_only: true
