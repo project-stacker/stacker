@@ -48,7 +48,7 @@ func Run(sc StackerConfig, name string, l *Layer, onFailure string) error {
 
 	for _, bind := range binds {
 		parts := strings.Split(bind, "->")
-		if len(parts) != 1 || len(parts) != 2 {
+		if len(parts) != 1 && len(parts) != 2 {
 			return fmt.Errorf("invalid bind mount %s", bind)
 		}
 

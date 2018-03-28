@@ -105,7 +105,7 @@ func (l *Layer) ParseImport() ([]string, error) {
 }
 
 func (l *Layer) ParseBinds() ([]string, error) {
-	return l.getStringOrStringSlice(l.Import, func(s string) ([]string, error) {
+	return l.getStringOrStringSlice(l.Binds, func(s string) ([]string, error) {
 		return []string{s}, nil
 	})
 }
