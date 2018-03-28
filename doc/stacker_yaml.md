@@ -72,3 +72,14 @@ the full command that will be executed in the image, clearing out any previous
 image. This can be useful in conjunction with an import from this layer in
 another image, if you want to isolate the build environment for a binary but
 not include all of its build dependencies.
+
+#### `binds`
+
+`binds`: specifies bind mounts from the host to the container. There are two formats:
+
+    binds:
+        - /foo/bar -> /bar/baz
+	- /zomg
+
+The first one binds /foo/bar to /bar/baz, and the second host /zomg to
+container /zomg.

@@ -41,6 +41,29 @@ func Run(sc StackerConfig, name string, l *Layer, onFailure string) error {
 		return err
 	}
 
+	binds, err := l.ParseBinds()
+	if err != nil {
+		return err
+	}
+
+	for _, bind := range binds {
+		parts := strings.Split(bind, "->")
+		if len(parts) != 1 || len(parts) != 2 {
+			return fmt.Errorf("invalid bind mount %s", bind)
+		}
+
+		source := strings.TrimSpace(parts[0])
+		target := source
+		if len(parts) == 2 {
+			target = strings.TrimSpace(parts[1])
+		}
+
+		err = c.bindMount(source, target)
+		if err != nil {
+			return err
+		}
+	}
+
 	fmt.Println("running commands for", name)
 
 	// These should all be non-interactive; let's ensure that.

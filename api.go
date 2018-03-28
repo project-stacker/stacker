@@ -77,6 +77,7 @@ type Layer struct {
 	Labels      map[string]string `yaml:"labels"`
 	WorkingDir  string            `yaml:"working_dir"`
 	BuildOnly   bool              `yaml:"build_only"`
+	Binds       interface{}       `yaml:"binds"`
 }
 
 func (l *Layer) ParseCmd() ([]string, error) {
@@ -100,6 +101,12 @@ func (l *Layer) ParseFullCommand() ([]string, error) {
 func (l *Layer) ParseImport() ([]string, error) {
 	return l.getStringOrStringSlice(l.Import, func(s string) ([]string, error) {
 		return strings.Split(s, "\n"), nil
+	})
+}
+
+func (l *Layer) ParseBinds() ([]string, error) {
+	return l.getStringOrStringSlice(l.Import, func(s string) ([]string, error) {
+		return []string{s}, nil
 	})
 }
 
