@@ -83,3 +83,7 @@ not include all of its build dependencies.
 
 The first one binds /foo/bar to /bar/baz, and the second host /zomg to
 container /zomg.
+
+Right now there is no awareness of change for any of these bind mounts, so
+--no-cache should be used to re-build if the content of the bind mount has
+changed.
