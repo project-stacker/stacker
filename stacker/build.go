@@ -100,7 +100,7 @@ func doBuild(ctx *cli.Context) error {
 	}
 	defer oci.Close()
 
-	buildCache, err := stacker.OpenCache(config.StackerDir, oci)
+	buildCache, err := stacker.OpenCache(config, oci)
 	if err != nil {
 		return err
 	}
@@ -126,13 +126,22 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		importDir := path.Join(config.StackerDir, "imports", name)
-		cachedDesc, ok := buildCache.Lookup(l, importDir)
+		cacheEntry, ok := buildCache.Lookup(l, importDir)
 		if ok {
-			fmt.Printf("found cached layer %s\n", name)
-			err = oci.UpdateReference(name, cachedDesc)
-			if err != nil {
-				return err
+			if l.BuildOnly {
+				if cacheEntry.Name != name {
+					err = s.Snapshot(cacheEntry.Name, name)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				err = oci.UpdateReference(name, cacheEntry.Blob)
+				if err != nil {
+					return err
+				}
 			}
+			fmt.Printf("found cached layer %s\n", name)
 			continue
 		}
 
@@ -177,7 +186,12 @@ func doBuild(ctx *cli.Context) error {
 			}
 
 			fmt.Println("build only layer, skipping OCI diff generation")
-			if err := buildCache.Put(l, importDir, ispec.Descriptor{}); err != nil {
+
+			// A small hack: for build only layers, we keep track
+			// of the name, so we can make sure it exists when
+			// there is a cache hit. We should probably make this
+			// into some sort of proper Either type.
+			if err := buildCache.Put(l, importDir, ispec.Descriptor{}, name); err != nil {
 				return err
 			}
 			continue
@@ -332,7 +346,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		if err := buildCache.Put(l, importDir, desc); err != nil {
+		if err := buildCache.Put(l, importDir, desc, name); err != nil {
 			return err
 		}
 	}

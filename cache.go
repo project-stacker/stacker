@@ -18,7 +18,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 2
+const currentCacheVersion = 3
 
 type ImportType int
 
@@ -46,6 +46,12 @@ type CacheEntry struct {
 	// A map of the import url to the base64 encoded result of mtree walk
 	// or sha256 sum of a file, depending on what Type is.
 	Imports map[string]ImportHash
+
+	// The name of this layer as it was built. Useful for the BuildOnly
+	// case to make sure it still exists, and for printing error messages.
+	Name string
+
+	BuildOnly bool
 }
 
 type BuildCache struct {
@@ -54,8 +60,8 @@ type BuildCache struct {
 	Version int                   `json:"version"`
 }
 
-func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
-	p := path.Join(dir, "build.cache")
+func OpenCache(config StackerConfig, oci *umoci.Layout) (*BuildCache, error) {
+	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -90,8 +96,18 @@ func OpenCache(dir string, oci *umoci.Layout) (*BuildCache, error) {
 
 	pruned := false
 	for hash, ent := range cache.Cache {
-		_, err := oci.LookupManifestByDescriptor(ent.Blob)
+		if ent.BuildOnly {
+			// If this is a build only layer, we just rely on the
+			// fact that it's in the rootfs dir (and hope that
+			// nobody has touched it). So, let's stat its dir and
+			// keep going.
+			_, err = os.Stat(path.Join(config.RootFSDir, ent.Name))
+		} else {
+			_, err = oci.LookupManifestByDescriptor(ent.Blob)
+		}
+
 		if err != nil {
+			fmt.Printf("couldn't find %s, pruning it from the cache", ent.Name)
 			delete(cache.Cache, hash)
 			pruned = true
 		}
@@ -131,76 +147,76 @@ func hashFile(path string) (string, error) {
 	return d.String(), nil
 }
 
-func (c *BuildCache) Lookup(l *Layer, importsDir string) (ispec.Descriptor, bool) {
+func (c *BuildCache) Lookup(l *Layer, importsDir string) (*CacheEntry, bool) {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
-		return ispec.Descriptor{}, false
+		return nil, false
 	}
 
 	result, ok := c.Cache[fmt.Sprintf("%d", h)]
 	if !ok {
-		return ispec.Descriptor{}, false
+		return nil, false
 	}
 
 	imports, err := l.ParseImport()
 	if err != nil {
-		return ispec.Descriptor{}, false
+		return nil, false
 	}
 
 	for _, imp := range imports {
 		name := path.Base(imp)
 		cachedImport, ok := result.Imports[name]
 		if !ok {
-			return ispec.Descriptor{}, false
+			return nil, false
 		}
 
 		diskPath := path.Join(importsDir, name)
 		st, err := os.Stat(diskPath)
 		if err != nil {
-			return ispec.Descriptor{}, false
+			return nil, false
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
-			return ispec.Descriptor{}, false
+			return nil, false
 		}
 
 		if st.IsDir() {
 			rawCachedImport, err := base64.StdEncoding.DecodeString(cachedImport.Hash)
 			if err != nil {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 
 			cachedDH, err := mtree.ParseSpec(bytes.NewBuffer(rawCachedImport))
 			if err != nil {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 
 			dh, err := walkImport(diskPath)
 			if err != nil {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 
 			diff, err := mtree.Compare(cachedDH, dh, mtreeKeywords)
 			if err != nil {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 
 			if len(diff) > 0 {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 		} else {
 			h, err := hashFile(diskPath)
 			if err != nil {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 
 			if h != cachedImport.Hash {
-				return ispec.Descriptor{}, false
+				return nil, false
 			}
 		}
 	}
 
-	return result.Blob, true
+	return &result, true
 }
 
 func getEncodedMtree(path string) (string, error) {
@@ -218,15 +234,17 @@ func getEncodedMtree(path string) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
-func (c *BuildCache) Put(l *Layer, importsDir string, blob ispec.Descriptor) error {
+func (c *BuildCache) Put(l *Layer, importsDir string, blob ispec.Descriptor, name string) error {
 	h, err := hashstructure.Hash(l, nil)
 	if err != nil {
 		return err
 	}
 
 	ent := CacheEntry{
-		Blob:    blob,
-		Imports: map[string]ImportHash{},
+		Blob:      blob,
+		Imports:   map[string]ImportHash{},
+		Name:      name,
+		BuildOnly: l.BuildOnly,
 	}
 
 	imports, err := l.ParseImport()
