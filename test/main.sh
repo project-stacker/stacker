@@ -167,4 +167,9 @@ rm link
 umoci unpack --image oci:import-cache dest
 [ "$(sha tree2/foo/foo)" == "$(sha dest/rootfs/foo)" ]
 
+# Does stacker reject files with bad stacker:// imports?
+ok=0
+stacker build -f bad-import.yaml || ok=1
+[ $ok -eq 1 ]
+
 RESULT=success
