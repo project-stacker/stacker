@@ -124,7 +124,7 @@ cleanup
 stacker build -f buildonly.yaml
 umoci unpack --image oci:layer1 dest
 [ "$(sha dest/rootfs/favicon.ico)" == "$(sha dest/rootfs/favicon2.ico)" ]
-[ "$(umoci ls --layout ./oci)" == "$(printf "centos-latest\nlayer1")" ]
+[ "$(umoci ls --layout ./oci)" == "$(printf "layer1")" ]
 
 stacker grab centos:/favicon.ico
 [ -f favicon.ico ]

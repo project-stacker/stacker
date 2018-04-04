@@ -1,5 +1,5 @@
 hash: e0b297447455777d9b12b97627986b562b13ee1a100f090489dd6ae8e1d76082
-updated: 2018-03-19T21:27:19.257423014Z
+updated: 2018-04-03T10:50:27.67956658-06:00
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -18,7 +18,7 @@ imports:
 - name: github.com/gorilla/websocket
   version: eb925808374e5ca90c83401a40d711dc08c0c0f6
 - name: github.com/lxc/lxd
-  version: 343f6ac2e1ee1c5ceb189ed0ac1155330e87accb
+  version: 1d63608fffca051a435e97158a3b6152caf77d4f
   subpackages:
   - shared
   - shared/cancel
@@ -37,7 +37,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: 6be516e2237a6dd377408e455ac8b41faf48bdf6
+  version: d362ed3abe646248f1f84a6e5871d05513f9167b
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -47,7 +47,7 @@ imports:
   - generate/seccomp
   - validate
 - name: github.com/openSUSE/umoci
-  version: 3cb9836b4733a870f4eaec6e1e253bcc0ca0ebea
+  version: ed0be602fda19b984330864ae9f8f9ed1436fc63
   repo: https://github.com/anuvu/umoci
   subpackages:
   - mutate
@@ -80,12 +80,12 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: c3a3ad6d03f7a915c0f7e194b7152974bb73d287
+  version: b2aa35443fbc700ab74c586ae79b81c171851023
   subpackages:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: 92b859f39abd2d91a854c9f9c4621b2f5054a92d
+  version: b68f30494add4df6bd8ef5e82803f308e7f7c59c
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -96,5 +96,5 @@ imports:
 - name: gopkg.in/lxc/go-lxc.v2
   version: 2660c429a942a4a21455765c7046dde612c1baa7
 - name: gopkg.in/yaml.v2
-  version: 7f97868eec74b32b0982dd158a51a446d1da7eb5
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 testImports: []

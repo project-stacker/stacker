@@ -97,6 +97,14 @@ func getDocker(o BaseLayerOpts) error {
 		return err
 	}
 
+	// Delete the tag for the base layer; we're only interested in our
+	// build layer outputs, not in the base layers.
+	fmt.Println("deleting tag %s", tag)
+	err = o.OCI.DeleteTag(tag)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
