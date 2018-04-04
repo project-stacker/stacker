@@ -93,9 +93,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 	if e1.IsDir() {
 		binary := "cp"
-		if haveRsync() == nil {
-			binary = "rsync"
-		}
+		// TODO: use rsync if it is available
 		output, err := exec.Command(binary, "-a", imp, cacheDir).CombinedOutput()
 		if err != nil {
 			return "", fmt.Errorf("%s", string(output))
