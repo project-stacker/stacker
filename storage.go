@@ -105,7 +105,6 @@ func (b *btrfs) Snapshot(source string, target string) error {
 }
 
 func (b *btrfs) Restore(source string, target string) error {
-	fmt.Printf("restoring %s to %s\n", source, target)
 	output, err := exec.Command(
 		"btrfs",
 		"subvolume",
