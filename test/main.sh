@@ -41,10 +41,7 @@ function on_exit() {
 }
 trap on_exit EXIT HUP INT TERM
 
-# clean up old logs if they exist
-if [ -n "$STACKER_KEEP" ]; then
-    rm -rf .stacker/logs .stacker/btrfs.loop
-fi
+cleanup
 
 set -x
 
