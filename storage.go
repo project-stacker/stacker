@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -131,7 +133,89 @@ func (b *btrfs) Restore(source string, target string) error {
 	return nil
 }
 
-func (b *btrfs) Delete(source string) error {
+// These next three functions are lifted from LXD, which is also under the
+// apache2 license.
+
+// isBtrfsSubVolume returns true if the given Path is a btrfs subvolume else
+// false.
+func isBtrfsSubVolume(subvolPath string) bool {
+	fs := syscall.Stat_t{}
+	err := syscall.Lstat(subvolPath, &fs)
+	if err != nil {
+		return false
+	}
+
+	// Check if BTRFS_FIRST_FREE_OBJECTID
+	if fs.Ino != 256 {
+		return false
+	}
+
+	return true
+}
+
+func btrfsSubVolumesGet(path string) ([]string, error) {
+	result := []string{}
+
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
+
+	// Unprivileged users can't get to fs internals
+	filepath.Walk(path, func(fpath string, fi os.FileInfo, err error) error {
+		// Skip walk errors
+		if err != nil {
+			return nil
+		}
+
+		// Ignore the base path
+		if strings.TrimRight(fpath, "/") == strings.TrimRight(path, "/") {
+			return nil
+		}
+
+		// Subvolumes can only be directories
+		if !fi.IsDir() {
+			return nil
+		}
+
+		// Check if a btrfs subvolume
+		if isBtrfsSubVolume(fpath) {
+			result = append(result, strings.TrimPrefix(fpath, path))
+		}
+
+		return nil
+	})
+
+	return result, nil
+}
+
+// btrfsPoolVolumesDelete is the recursive variant on btrfsPoolVolumeDelete,
+// it first deletes subvolumes of the subvolume and then the
+// subvolume itself.
+func btrfsSubVolumesDelete(subvol string) error {
+	// Delete subsubvols.
+	subsubvols, err := btrfsSubVolumesGet(subvol)
+	if err != nil {
+		return err
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(subsubvols)))
+
+	for _, subsubvol := range subsubvols {
+		err := btrfsSubVolumeDelete(path.Join(subvol, subsubvol))
+		if err != nil {
+			return err
+		}
+	}
+
+	// Delete the subvol itself
+	err = btrfsSubVolumeDelete(subvol)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func btrfsSubVolumeDelete(subvol string) error {
 	// Since we create snapshots as readonly above, we must re-mark them
 	// writable here before we can delete them.
 	output, err := exec.Command(
@@ -139,7 +223,7 @@ func (b *btrfs) Delete(source string) error {
 		"property",
 		"set",
 		"-ts",
-		path.Join(b.c.RootFSDir, source),
+		subvol,
 		"ro",
 		"false").CombinedOutput()
 	if err != nil {
@@ -150,12 +234,16 @@ func (b *btrfs) Delete(source string) error {
 		"btrfs",
 		"subvolume",
 		"delete",
-		path.Join(b.c.RootFSDir, source)).CombinedOutput()
+		subvol).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("btrfs delete: %s: %s", err, output)
 	}
 
-	return os.RemoveAll(path.Join(b.c.RootFSDir, source))
+	return os.RemoveAll(subvol)
+}
+
+func (b *btrfs) Delete(source string) error {
+	return btrfsSubVolumesDelete(path.Join(b.c.RootFSDir, source))
 }
 
 func (b *btrfs) Detach() error {
