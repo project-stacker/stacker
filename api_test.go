@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func parse(t *testing.T, content string) Stackerfile {
+func parse(t *testing.T, content string) *Stackerfile {
 	tf, err := ioutil.TempFile("", "stacker_test_")
 	if err != nil {
 		t.Fatalf("couldn't create tempfile: %s", err)
@@ -33,7 +33,7 @@ func TestDockerFrom(t *testing.T) {
         type: docker
 `
 	sf := parse(t, content)
-	l, ok := sf["meshuggah"]
+	l, ok := sf.Get("meshuggah")
 	if !ok {
 		t.Fatalf("missing meshuggah layer")
 	}
