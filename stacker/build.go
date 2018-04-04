@@ -106,7 +106,6 @@ func doBuild(ctx *cli.Context) error {
 	}
 
 	s.Delete(".working")
-	defer s.Delete(".working")
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {
