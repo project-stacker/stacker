@@ -108,7 +108,10 @@ func doBuild(ctx *cli.Context) error {
 	s.Delete(".working")
 	defer s.Delete(".working")
 	for _, name := range order {
-		l := sf[name]
+		l, ok := sf.Get(name)
+		if !ok {
+			return fmt.Errorf("%s not present in stackerfile?", name)
+		}
 
 		fmt.Printf("building image %s...\n", name)
 

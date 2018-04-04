@@ -23,7 +23,24 @@ type StackerConfig struct {
 	RootFSDir  string
 }
 
-type Stackerfile map[string]*Layer
+type Stackerfile struct {
+	// internal is the actual representation of the stackerfile as a map.
+	internal map[string]*Layer
+
+	// fileOrder is the order of elements as they appear in the stackerfile.
+	fileOrder []string
+}
+
+func (sf *Stackerfile) Get(name string) (*Layer, bool) {
+	// This is dumb, but if we do a direct return here, golang doesn't
+	// resolve the "ok", and compilation fails.
+	layer, ok := sf.internal[name]
+	return layer, ok
+}
+
+func (sf *Stackerfile) Len() int {
+	return len(sf.internal)
+}
 
 const (
 	DockerType  = "docker"
@@ -164,7 +181,7 @@ func (l *Layer) getStringOrStringSlice(iface interface{}, xform func(string) ([]
 // is a list of KEY=VALUE pairs of things to substitute. Note that this is
 // explicitly not a map, because the substitutions are performed one at a time
 // in the order that they are given.
-func NewStackerfile(stackerfile string, substitutions []string) (Stackerfile, error) {
+func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, error) {
 	sf := Stackerfile{}
 
 	raw, err := ioutil.ReadFile(stackerfile)
@@ -188,18 +205,31 @@ func NewStackerfile(stackerfile string, substitutions []string) (Stackerfile, er
 		content = strings.Replace(content, from, to, -1)
 	}
 
-	if err := yaml.Unmarshal([]byte(content), &sf); err != nil {
+	if err := yaml.Unmarshal([]byte(content), &sf.internal); err != nil {
 		return nil, err
 	}
 
-	return sf, err
+	// Parse a second time so that we can remember the file order.
+	ms := yaml.MapSlice{}
+	if err := yaml.Unmarshal([]byte(content), &ms); err != nil {
+		return nil, err
+	}
+
+	sf.fileOrder = []string{}
+	for _, e := range ms {
+		sf.fileOrder = append(sf.fileOrder, e.Key.(string))
+	}
+
+	return &sf, err
 }
 
 func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	ret := []string{}
 
-	for i := 0; i < len(*s); i++ {
-		for name, layer := range *s {
+	for i := 0; i < s.Len(); i++ {
+		for _, name := range s.fileOrder {
+			layer := s.internal[name]
+
 			have := false
 			haveTag := false
 			for _, l := range ret {
@@ -230,7 +260,7 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 		}
 	}
 
-	if len(ret) != len(*s) {
+	if len(ret) != s.Len() {
 		return nil, fmt.Errorf("couldn't resolve some dependencies")
 	}
 
