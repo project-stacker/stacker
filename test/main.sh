@@ -172,4 +172,9 @@ ok=0
 stacker build -f bad-import.yaml || ok=1
 [ $ok -eq 1 ]
 
+# Do invalid yaml entries get rejected?
+ok=0
+stacker build -f bad-yaml.yaml || ok=1
+[ $ok -eq 1 ]
+
 RESULT=success

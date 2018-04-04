@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"path"
+	"reflect"
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
@@ -177,6 +178,27 @@ func (l *Layer) getStringOrStringSlice(iface interface{}, xform func(string) ([]
 	return nil, fmt.Errorf("unknown directive type: %T", l.Run)
 }
 
+var (
+	layerFields       []string
+	imageSourceFields []string
+)
+
+func init() {
+	layerFields = []string{}
+	layerType := reflect.TypeOf(Layer{})
+	for i := 0; i < layerType.NumField(); i++ {
+		tag := layerType.Field(i).Tag.Get("yaml")
+		layerFields = append(layerFields, tag)
+	}
+
+	imageSourceFields = []string{}
+	imageSourceType := reflect.TypeOf(ImageSource{})
+	for i := 0; i < imageSourceType.NumField(); i++ {
+		tag := imageSourceType.Field(i).Tag.Get("yaml")
+		imageSourceFields = append(imageSourceFields, tag)
+	}
+}
+
 // NewStackerfile creates a new stackerfile from the given path. substitutions
 // is a list of KEY=VALUE pairs of things to substitute. Note that this is
 // explicitly not a map, because the substitutions are performed one at a time
@@ -218,6 +240,40 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	sf.fileOrder = []string{}
 	for _, e := range ms {
 		sf.fileOrder = append(sf.fileOrder, e.Key.(string))
+	}
+
+	// Now, let's make sure that all the things people supplied are
+	// actually things this stacker understands.
+	for _, e := range ms {
+		for _, directive := range e.Value.(yaml.MapSlice) {
+			found := false
+			for _, field := range layerFields {
+				if directive.Key.(string) == field {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return nil, fmt.Errorf("unknown directive %s", directive.Key.(string))
+			}
+
+			if directive.Key.(string) == "from" {
+				for _, sourceDirective := range directive.Value.(yaml.MapSlice) {
+					found = false
+					for _, field := range imageSourceFields {
+						if sourceDirective.Key.(string) == field {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						return nil, fmt.Errorf("unknown image source directive %s", sourceDirective.Key.(string))
+					}
+				}
+			}
+		}
 	}
 
 	return &sf, err
