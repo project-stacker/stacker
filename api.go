@@ -225,37 +225,28 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 
 func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	ret := []string{}
+	processed := map[string]bool{}
 
 	for i := 0; i < s.Len(); i++ {
 		for _, name := range s.fileOrder {
-			layer := s.internal[name]
-
-			have := false
-			haveTag := false
-			for _, l := range ret {
-				if l == name {
-					have = true
-				}
-
-				if l == layer.From.Tag {
-					haveTag = true
-				}
+			_, ok := processed[name]
+			if ok {
+				continue
 			}
 
-			// do we have this layer yet?
-			if !have {
-				if layer.From == nil {
-					return nil, fmt.Errorf("invalid layer: no base (from directive)")
-				}
-				// all imported layers have no deps
-				if layer.From.Type != BuiltType {
-					ret = append(ret, name)
-				}
+			layer := s.internal[name]
 
-				// otherwise, we need to have the tag
-				if haveTag {
-					ret = append(ret, name)
-				}
+			if layer.From == nil {
+				return nil, fmt.Errorf("invalid layer: no base (from directive)")
+			}
+
+			_, haveBaseTag := processed[layer.From.Tag]
+
+			// all imported layers have no deps, or if it's not
+			// imported and we have the base tag, that's ok too.
+			if layer.From.Type != BuiltType || haveBaseTag {
+				ret = append(ret, name)
+				processed[name] = true
 			}
 		}
 	}
