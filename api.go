@@ -242,9 +242,32 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 
 			_, haveBaseTag := processed[layer.From.Tag]
 
+			imports, err := layer.ParseImport()
+			if err != nil {
+				return nil, err
+			}
+
+			haveStackerImports := true
+			for _, imp := range imports {
+				url, err := url.Parse(imp)
+				if err != nil {
+					return nil, err
+				}
+
+				if url.Scheme != "stacker" {
+					continue
+				}
+
+				_, ok := processed[url.Host]
+				if !ok {
+					haveStackerImports = false
+					break
+				}
+			}
+
 			// all imported layers have no deps, or if it's not
 			// imported and we have the base tag, that's ok too.
-			if layer.From.Type != BuiltType || haveBaseTag {
+			if haveStackerImports && (layer.From.Type != BuiltType || haveBaseTag) {
 				ret = append(ret, name)
 				processed[name] = true
 			}
