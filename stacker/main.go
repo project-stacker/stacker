@@ -21,6 +21,7 @@ func main() {
 	app.Version = version
 	app.Commands = []cli.Command{
 		buildCmd,
+		chrootCmd,
 		unladeCmd,
 		cleanCmd,
 		inspectCmd,
