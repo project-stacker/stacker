@@ -25,7 +25,6 @@ function cleanup() {
     else
         rm -rf .stacker/logs .stacker/btrfs.loop .stacker/build.cache
     fi
-    echo done with testing: $RESULT
 }
 
 function on_exit() {
@@ -38,6 +37,7 @@ function on_exit() {
         RESULT=failure
     fi
     cleanup
+    echo done with testing: $RESULT
 }
 trap on_exit EXIT HUP INT TERM
 
