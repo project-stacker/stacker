@@ -127,7 +127,7 @@ func (l *Layer) ParseBinds() ([]string, error) {
 	})
 }
 
-func (l *Layer) getRun() ([]string, error) {
+func (l *Layer) ParseRun() ([]string, error) {
 	return l.getStringOrStringSlice(l.Run, func(s string) ([]string, error) {
 		return []string{s}, nil
 	})

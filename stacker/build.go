@@ -175,8 +175,24 @@ func doBuild(ctx *cli.Context) error {
 		}
 
 		fmt.Println("running commands...")
-		if err := stacker.Run(config, name, l, ctx.String("on-run-failure")); err != nil {
+
+		run, err := l.ParseRun()
+		if err != nil {
 			return err
+		}
+
+		if len(run) != 0 {
+			importsDir := path.Join(config.StackerDir, "imports", name)
+
+			script := fmt.Sprintf("#!/bin/bash -xe\n%s", strings.Join(run, "\n"))
+			if err := ioutil.WriteFile(path.Join(importsDir, ".stacker-run.sh"), []byte(script), 0755); err != nil {
+				return err
+			}
+
+			fmt.Println("running commands for", name)
+			if err := stacker.Run(config, name, "/stacker/.stacker-run.sh", l, ctx.String("on-run-failure"), nil); err != nil {
+				return err
+			}
 		}
 
 		// This is a build only layer, meaning we don't need to include

@@ -2,34 +2,19 @@ package stacker
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 	"strings"
 )
 
-func Run(sc StackerConfig, name string, l *Layer, onFailure string) error {
-	run, err := l.getRun()
-	if err != nil {
-		return err
-	}
-
-	if len(run) == 0 {
-		return nil
-	}
-
+func Run(sc StackerConfig, name string, command string, l *Layer, onFailure string, stdin io.Reader) error {
 	c, err := newContainer(sc, ".working")
 	if err != nil {
 		return err
 	}
 
 	importsDir := path.Join(sc.StackerDir, "imports", name)
-
-	script := fmt.Sprintf("#!/bin/bash -xe\n%s", strings.Join(run, "\n"))
-	if err := ioutil.WriteFile(path.Join(importsDir, ".stacker-run.sh"), []byte(script), 0755); err != nil {
-		return err
-	}
-
 	err = c.bindMount(importsDir, "/stacker")
 	if err != nil {
 		return err
@@ -64,10 +49,8 @@ func Run(sc StackerConfig, name string, l *Layer, onFailure string) error {
 		}
 	}
 
-	fmt.Println("running commands for", name)
-
 	// These should all be non-interactive; let's ensure that.
-	err = c.execute("/stacker/.stacker-run.sh", nil)
+	err = c.execute(command, stdin)
 	if err != nil {
 		if onFailure != "" {
 			err2 := c.execute(onFailure, os.Stdin)
