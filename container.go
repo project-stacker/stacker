@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path"
 	"strings"
+	"syscall"
 
 	"github.com/lxc/lxd/shared/idmap"
 	"github.com/openSUSE/umoci/oci/layer"
@@ -257,10 +259,47 @@ func (c *container) execute(args string, stdin io.Reader) error {
 	)
 
 	cmd.Stdin = stdin
-
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	signals := make(chan os.Signal)
+	signal.Notify(signals)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case sg := <-signals:
+				// ignore SIGCHLD, we can't forward it and it's
+				// meaningless anyway
+				if sg == syscall.SIGCHLD {
+					continue
+				}
+
+				// upgrade SIGINT to SIGKILL. bash exits when
+				// it receives SIGINT, but doesn't kill its
+				// children, meaning the currently executing
+				// command will keep executing until it
+				// completes, and *then* things will die.
+				// Instead, let's just force kill it.
+				if sg == syscall.SIGINT {
+					sg = syscall.SIGKILL
+				}
+
+				err = syscall.Kill(c.c.InitPid(), sg.(syscall.Signal))
+				if err != nil {
+					fmt.Println("failed to send signal", sg, err)
+				}
+			}
+		}
+	}()
+
+	cmdErr := cmd.Run()
+	done <- true
+
+	return cmdErr
 }
 
 func umociMapOptions() *layer.MapOptions {
