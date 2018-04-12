@@ -167,6 +167,8 @@ rm link
 umoci unpack --image oci:import-cache dest
 [ "$(sha tree2/foo/foo)" == "$(sha dest/rootfs/foo)" ]
 
+cleanup
+
 # Does stacker reject files with bad stacker:// imports?
 ok=0
 stacker build -f bad-import.yaml || ok=1
@@ -176,5 +178,10 @@ stacker build -f bad-import.yaml || ok=1
 ok=0
 stacker build -f bad-yaml.yaml || ok=1
 [ $ok -eq 1 ]
+
+# Can we import OCI layers?
+skopeo --insecure-policy copy oci:.stacker/layer-bases/oci:centos oci:dest:centos
+stacker build -f oci-import.yaml
+[ "$(umoci ls --layout ./oci)" == "$(printf "centos2")" ]
 
 RESULT=success
