@@ -19,9 +19,8 @@ Hub.
 
 `tar`: `url` is required, everything else is ignored.
 
-`oci`: `url` is required, `tag` is required. This uses the OCI image at `url`
-(which may be a local path) and the tag `tag` as the base layer. Note: this is
-not implemented currently.
+`oci`: `url` is required, of the form `path:tag`. This uses the OCI image at
+`url` (which may be a local path).
 
 `built`: `tag` is required, everything else is ignored. `built` bases this
 layer on a previously specified layer in the stacker file.
