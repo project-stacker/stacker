@@ -36,7 +36,7 @@ func GetBaseLayer(o BaseLayerOpts) error {
 	}
 }
 
-func getDocker(o BaseLayerOpts) error {
+func runSkopeo(toImport string, o BaseLayerOpts) error {
 	tag, err := o.Layer.From.ParseTag()
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func getDocker(o BaseLayerOpts) error {
 		skopeoArgs = append(skopeoArgs, "--src-tls-verify=false")
 	}
 
-	skopeoArgs = append(skopeoArgs, o.Layer.From.Url, fmt.Sprintf("oci:%s:%s", cacheDir, tag))
+	skopeoArgs = append(skopeoArgs, toImport, fmt.Sprintf("oci:%s:%s", cacheDir, tag))
 
 	cmd := exec.Command("skopeo", skopeoArgs...)
 	cmd.Stdout = os.Stdout
@@ -114,6 +114,10 @@ func getDocker(o BaseLayerOpts) error {
 	}
 
 	return nil
+}
+
+func getDocker(o BaseLayerOpts) error {
+	return runSkopeo(o.Layer.From.Url, o)
 }
 
 func umociInit(o BaseLayerOpts) error {
