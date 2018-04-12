@@ -96,7 +96,15 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		return nil, err
 	}
 
-	err = c.c.SetLogFile(path.Join(sc.StackerDir, "logs", name))
+	logFile := path.Join(sc.StackerDir, "lxc.log")
+	err = c.c.SetLogFile(logFile)
+	if err != nil {
+		return nil, err
+	}
+
+	// Truncate the log file by hand, so people don't get confused by
+	// previous runs.
+	err = os.Truncate(logFile, 0)
 	if err != nil {
 		return nil, err
 	}
