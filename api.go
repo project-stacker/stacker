@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"path"
 	"reflect"
 	"strings"
 
@@ -69,14 +68,18 @@ func (is *ImageSource) ParseTag() (string, error) {
 		}
 
 		if url.Path != "" {
-			tag := path.Base(strings.Replace(url.Path, ":", "-", -1))
-			return tag, nil
+			return strings.Split(url.Path, ":")[0], nil
 		}
 
 		// skopeo allows docker://centos:latest or
 		// docker://docker.io/centos:latest; if we don't have a
 		// url path, let's use the host as the image tag
-		return strings.Replace(url.Host, ":", "-", -1), nil
+		return strings.Split(url.Host, ":")[0], nil
+	case OCIType:
+		pieces := strings.Split(is.Url, ":")
+		if len(pieces) != 2 {
+			return "", fmt.Errorf("bad OCI tag: %s", is.Type)
+		}
 
 	default:
 		return "", fmt.Errorf("unsupported type: %s", is.Type)
