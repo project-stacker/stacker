@@ -43,7 +43,27 @@ var buildCmd = cli.Command{
 			Name:  "on-run-failure",
 			Usage: "command to run inside container if run fails (useful for inspection)",
 		},
+		cli.BoolFlag{
+			Name:  "shell-fail",
+			Usage: "exec /bin/sh inside the container if run fails (alias for --on-run-failure=/bin/sh)",
+		},
 	},
+	Before: beforeBuild,
+}
+
+func beforeBuild(ctx *cli.Context) error {
+	if ctx.Bool("shell-fail") {
+		askedFor := ctx.String("on-run-failure")
+		if askedFor != "" && askedFor != "/bin/sh" {
+			return fmt.Errorf("--shell-fail is incompatible with --on-run-failure=%s", askedFor)
+		}
+		err := ctx.Set("on-run-failure", "/bin/sh")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
