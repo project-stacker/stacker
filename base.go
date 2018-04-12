@@ -44,12 +44,21 @@ func getDocker(o BaseLayerOpts) error {
 
 	// Note that we can do tihs over the top of the cache every time, since
 	// skopeo should be smart enough to only copy layers that have changed.
-	// Perhaps we want to do an `umoci gc` at some point, but for now we
-	// don't bother.
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return err
 	}
+
+	defer func() {
+		oci, err := umoci.OpenLayout(cacheDir)
+		if err != nil {
+			// Some error might have occurred, in which case we
+			// don't have a valid OCI layout, which is fine.
+			return
+		}
+
+		oci.GC()
+	}()
 
 	skopeoArgs := []string{
 		// So we don't have to make everyone install an
