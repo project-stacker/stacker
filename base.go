@@ -26,7 +26,7 @@ func GetBaseLayer(o BaseLayerOpts) error {
 	case TarType:
 		return getTar(o)
 	case OCIType:
-		return fmt.Errorf("not implemented")
+		return getOCI(o)
 	case DockerType:
 		return getDocker(o)
 	case ScratchType:
@@ -181,4 +181,8 @@ func getTar(o BaseLayerOpts) error {
 
 func getScratch(o BaseLayerOpts) error {
 	return umociInit(o)
+}
+
+func getOCI(o BaseLayerOpts) error {
+	return runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o)
 }

@@ -81,6 +81,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 			return "", fmt.Errorf("bad OCI tag: %s", is.Type)
 		}
 
+		return pieces[1], nil
 	default:
 		return "", fmt.Errorf("unsupported type: %s", is.Type)
 	}
