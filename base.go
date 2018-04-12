@@ -46,7 +46,7 @@ func getDocker(o BaseLayerOpts) error {
 	// skopeo should be smart enough to only copy layers that have changed.
 	// Perhaps we want to do an `umoci gc` at some point, but for now we
 	// don't bother.
-	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", tag)
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return err
 	}
