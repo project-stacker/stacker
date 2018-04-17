@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"path"
 	"reflect"
 	"strings"
 
@@ -68,7 +69,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 		}
 
 		if url.Path != "" {
-			return strings.Split(url.Path, ":")[0], nil
+			return path.Base(strings.Split(url.Path, ":")[0]), nil
 		}
 
 		// skopeo allows docker://centos:latest or
