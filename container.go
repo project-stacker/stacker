@@ -233,8 +233,11 @@ func (c *container) containerError(theErr error, msg string) error {
 		}
 	}
 
-	extra := strings.Join(lxcErrors, "\n")
-	return errors.Errorf("%s\nLast few LXC errors:\n%s", msg, extra)
+	if len(lxcErrors) > 0 {
+		extra := strings.Join(lxcErrors, "\n")
+		return errors.Errorf("%s\nLast few LXC errors:\n%s", msg, extra)
+	}
+	return errors.Wrapf(theErr, msg)
 }
 
 func (c *container) execute(args string, stdin io.Reader) error {
