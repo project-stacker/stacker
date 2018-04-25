@@ -47,23 +47,23 @@ static int spawn_container(char *name, char *lxcpath, char *config)
 // stacker internal <container_name> <lxcpath> <config_path>
 __attribute__((constructor)) void internal(void)
 {
-        int ret, status;
-        char buf[4096];
-        ssize_t size;
-        char *cur, *name, *lxcpath, *config_path;
+	int ret, status;
+	char buf[4096];
+	ssize_t size;
+	char *cur, *name, *lxcpath, *config_path;
 
-        ret = open("/proc/self/cmdline", O_RDONLY);
-        if (ret < 0) {
-                perror("error: open");
-                exit(96);
-        }
+	ret = open("/proc/self/cmdline", O_RDONLY);
+	if (ret < 0) {
+		perror("error: open");
+		exit(96);
+	}
 
-        if ((size = read(ret, buf, sizeof(buf)-1)) < 0) {
-                close(ret);
-                perror("error: read");
-                exit(96);
-        }
-        close(ret);
+	if ((size = read(ret, buf, sizeof(buf)-1)) < 0) {
+		close(ret);
+		perror("error: read");
+		exit(96);
+	}
+	close(ret);
 
 	// /proc/self/cmdline is null separated, but let's be real safe
 	buf[size] = 0;
