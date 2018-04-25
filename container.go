@@ -268,6 +268,26 @@ func (c *container) execute(args string, stdin io.Reader) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	// If this is non-interactive, we're going to setsid() later, so we
+	// need to make sure we capture the output somehow.
+	if stdin == nil {
+		fmt.Println("setting up stdout pipe")
+		reader, writer := io.Pipe()
+		defer writer.Close()
+
+		cmd.Stdout = writer
+		cmd.Stderr = writer
+
+		go func() {
+			defer reader.Close()
+			_, err := io.Copy(os.Stdout, reader)
+			if err != nil {
+				fmt.Println("err from stdout copy:", err)
+			}
+		}()
+
+	}
+
 	signals := make(chan os.Signal)
 	signal.Notify(signals)
 	done := make(chan bool)

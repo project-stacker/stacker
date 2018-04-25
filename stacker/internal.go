@@ -91,6 +91,17 @@ __attribute__((constructor)) void internal(void)
 	ADVANCE_ARG;
 	config_path = cur;
 
+	ret = isatty(STDIN_FILENO);
+	if (ret < 0) {
+		perror("isatty");
+		exit(96);
+	}
+
+	// If this is non interactive, get rid of our controlling terminal,
+	// since we don't want lxc's setting of ISIG to ignore user's ^Cs.
+	if (!ret)
+		setsid();
+
 	status = spawn_container(name, lxcpath, config_path);
 
 	// Try and propagate the container's exit code.
