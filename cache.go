@@ -18,7 +18,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 3
+const currentCacheVersion = 4
 
 type ImportType int
 
@@ -51,25 +51,38 @@ type CacheEntry struct {
 	// case to make sure it still exists, and for printing error messages.
 	Name string
 
-	BuildOnly bool
+	// The layer to cache
+	Layer *Layer
+
+	// If the layer is of type "built", this is a hash of the base layer's
+	// CacheEntry, which contains a hash of its imports. If there is a
+	// mismatch with the current base layer's CacheEntry, the layer should
+	// be rebuilt.
+	Base string
 }
 
 type BuildCache struct {
-	path    string
-	Cache   map[string]CacheEntry `json:"cache"`
-	Version int                   `json:"version"`
+	path       string
+	importsDir string
+	sf         *Stackerfile
+	Cache      map[string]CacheEntry `json:"cache"`
+	Version    int                   `json:"version"`
 }
 
-func OpenCache(config StackerConfig, oci *umoci.Layout) (*BuildCache, error) {
+func OpenCache(config StackerConfig, oci *umoci.Layout, sf *Stackerfile) (*BuildCache, error) {
 	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
+	cache := &BuildCache{
+		path:       p,
+		importsDir: path.Join(config.StackerDir, "imports"),
+		sf:         sf,
+	}
+
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &BuildCache{
-				path:    p,
-				Cache:   map[string]CacheEntry{},
-				Version: currentCacheVersion,
-			}, nil
+			cache.Cache = map[string]CacheEntry{}
+			cache.Version = currentCacheVersion
+			return cache, nil
 		}
 		return nil, err
 	}
@@ -79,7 +92,6 @@ func OpenCache(config StackerConfig, oci *umoci.Layout) (*BuildCache, error) {
 		return nil, err
 	}
 
-	cache := &BuildCache{path: p}
 	if err := json.Unmarshal(content, cache); err != nil {
 		return nil, err
 	}
@@ -87,16 +99,14 @@ func OpenCache(config StackerConfig, oci *umoci.Layout) (*BuildCache, error) {
 	if cache.Version != currentCacheVersion {
 		fmt.Println("old cache version found, clearing cache and rebuilding from scratch...")
 		os.Remove(p)
-		return &BuildCache{
-			path:    p,
-			Cache:   map[string]CacheEntry{},
-			Version: currentCacheVersion,
-		}, nil
+		cache.Cache = map[string]CacheEntry{}
+		cache.Version = currentCacheVersion
+		return cache, nil
 	}
 
 	pruned := false
 	for hash, ent := range cache.Cache {
-		if ent.BuildOnly {
+		if ent.Layer.BuildOnly {
 			// If this is a build only layer, we just rely on the
 			// fact that it's in the rootfs dir (and hope that
 			// nobody has touched it). So, let's stat its dir and
@@ -147,14 +157,23 @@ func hashFile(path string) (string, error) {
 	return d.String(), nil
 }
 
-func (c *BuildCache) Lookup(l *Layer, importsDir string) (*CacheEntry, bool) {
-	h, err := hashstructure.Hash(l, nil)
+func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
+	l, ok := c.sf.Get(name)
+	if !ok {
+		return nil, false
+	}
+
+	result, ok := c.Cache[name]
+	if !ok {
+		return nil, false
+	}
+
+	baseHash, err := c.getBaseHash(name)
 	if err != nil {
 		return nil, false
 	}
 
-	result, ok := c.Cache[fmt.Sprintf("%d", h)]
-	if !ok {
+	if baseHash != result.Base {
 		return nil, false
 	}
 
@@ -164,13 +183,13 @@ func (c *BuildCache) Lookup(l *Layer, importsDir string) (*CacheEntry, bool) {
 	}
 
 	for _, imp := range imports {
-		name := path.Base(imp)
-		cachedImport, ok := result.Imports[name]
+		fname := path.Base(imp)
+		cachedImport, ok := result.Imports[fname]
 		if !ok {
 			return nil, false
 		}
 
-		diskPath := path.Join(importsDir, name)
+		diskPath := path.Join(c.importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			return nil, false
@@ -234,17 +253,46 @@ func getEncodedMtree(path string) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
-func (c *BuildCache) Put(l *Layer, importsDir string, blob ispec.Descriptor, name string) error {
-	h, err := hashstructure.Hash(l, nil)
+func (c *BuildCache) getBaseHash(name string) (string, error) {
+	l, ok := c.sf.Get(name)
+	if !ok {
+		return "", fmt.Errorf("%s missing from stackerfile?", name)
+	}
+
+	if l.From.Type != BuiltType {
+		return "", nil
+	}
+
+	baseEnt, ok := c.Lookup(l.From.Tag)
+	if !ok {
+		return "", fmt.Errorf("couldn't find a cache of base layer")
+	}
+
+	baseHash, err := hashstructure.Hash(baseEnt, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%d", baseHash), nil
+}
+
+func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
+	l, ok := c.sf.Get(name)
+	if !ok {
+		return fmt.Errorf("%s missing from stackerfile?", name)
+	}
+
+	baseHash, err := c.getBaseHash(name)
 	if err != nil {
 		return err
 	}
 
 	ent := CacheEntry{
-		Blob:      blob,
-		Imports:   map[string]ImportHash{},
-		Name:      name,
-		BuildOnly: l.BuildOnly,
+		Blob:    blob,
+		Imports: map[string]ImportHash{},
+		Name:    name,
+		Layer:   l,
+		Base:    baseHash,
 	}
 
 	imports, err := l.ParseImport()
@@ -253,8 +301,8 @@ func (c *BuildCache) Put(l *Layer, importsDir string, blob ispec.Descriptor, nam
 	}
 
 	for _, imp := range imports {
-		name := path.Base(imp)
-		diskPath := path.Join(importsDir, name)
+		fname := path.Base(imp)
+		diskPath := path.Join(c.importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			return err
@@ -275,10 +323,10 @@ func (c *BuildCache) Put(l *Layer, importsDir string, blob ispec.Descriptor, nam
 			}
 		}
 
-		ent.Imports[name] = ih
+		ent.Imports[fname] = ih
 	}
 
-	c.Cache[fmt.Sprintf("%d", h)] = ent
+	c.Cache[name] = ent
 	return c.persist()
 }
 

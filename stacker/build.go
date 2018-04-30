@@ -120,7 +120,7 @@ func doBuild(ctx *cli.Context) error {
 	}
 	defer oci.Close()
 
-	buildCache, err := stacker.OpenCache(config, oci)
+	buildCache, err := stacker.OpenCache(config, oci, sf)
 	if err != nil {
 		return err
 	}
@@ -148,8 +148,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		importDir := path.Join(config.StackerDir, "imports", name)
-		cacheEntry, ok := buildCache.Lookup(l, importDir)
+		cacheEntry, ok := buildCache.Lookup(name)
 		if ok {
 			if l.BuildOnly {
 				if cacheEntry.Name != name {
@@ -230,7 +229,7 @@ func doBuild(ctx *cli.Context) error {
 			// of the name, so we can make sure it exists when
 			// there is a cache hit. We should probably make this
 			// into some sort of proper Either type.
-			if err := buildCache.Put(l, importDir, ispec.Descriptor{}, name); err != nil {
+			if err := buildCache.Put(name, ispec.Descriptor{}); err != nil {
 				return err
 			}
 			continue
@@ -385,7 +384,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		if err := buildCache.Put(l, importDir, desc, name); err != nil {
+		if err := buildCache.Put(name, desc); err != nil {
 			return err
 		}
 	}
