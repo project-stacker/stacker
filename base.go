@@ -96,6 +96,15 @@ func runSkopeo(toImport string, o BaseLayerOpts) error {
 		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
 	}
 
+	return nil
+}
+
+func extractOutput(o BaseLayerOpts) error {
+	tag, err := o.Layer.From.ParseTag()
+	if err != nil {
+		return err
+	}
+
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
 
@@ -117,7 +126,12 @@ func runSkopeo(toImport string, o BaseLayerOpts) error {
 }
 
 func getDocker(o BaseLayerOpts) error {
-	return runSkopeo(o.Layer.From.Url, o)
+	err := runSkopeo(o.Layer.From.Url, o)
+	if err != nil {
+		return err
+	}
+
+	return extractOutput(o)
 }
 
 func umociInit(o BaseLayerOpts) error {
@@ -184,5 +198,10 @@ func getScratch(o BaseLayerOpts) error {
 }
 
 func getOCI(o BaseLayerOpts) error {
-	return runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o)
+	err := runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o)
+	if err != nil {
+		return err
+	}
+
+	return extractOutput(o)
 }
