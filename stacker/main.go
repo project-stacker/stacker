@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/anuvu/stacker"
+	"github.com/apex/log"
 	"github.com/urfave/cli"
 )
 
@@ -64,6 +65,8 @@ func main() {
 
 		return nil
 	}
+
+	log.SetLevel(log.WarnLevel)
 
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
