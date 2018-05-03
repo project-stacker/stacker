@@ -266,7 +266,6 @@ func (c *container) execute(args string, stdin io.Reader) error {
 	// If this is non-interactive, we're going to setsid() later, so we
 	// need to make sure we capture the output somehow.
 	if stdin == nil {
-		fmt.Println("setting up stdout pipe")
 		reader, writer := io.Pipe()
 		defer writer.Close()
 
