@@ -101,6 +101,7 @@ type Layer struct {
 	WorkingDir  string            `yaml:"working_dir"`
 	BuildOnly   bool              `yaml:"build_only"`
 	Binds       interface{}       `yaml:"binds"`
+	Apply       []string          `yaml:"apply"`
 }
 
 func (l *Layer) ParseCmd() ([]string, error) {

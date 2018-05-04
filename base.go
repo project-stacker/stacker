@@ -2,9 +2,11 @@ package stacker
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/openSUSE/umoci"
 )
@@ -36,8 +38,35 @@ func GetBaseLayer(o BaseLayerOpts) error {
 	}
 }
 
-func runSkopeo(toImport string, o BaseLayerOpts) error {
-	tag, err := o.Layer.From.ParseTag()
+func tagFromSkopeoUrl(thing string) (string, error) {
+	if strings.HasPrefix(thing, "docker") {
+		url, err := url.Parse(thing)
+		if err != nil {
+			return "", err
+		}
+
+		if url.Path != "" {
+			return path.Base(strings.Split(url.Path, ":")[0]), nil
+		}
+
+		// skopeo allows docker://centos:latest or
+		// docker://docker.io/centos:latest; if we don't have a
+		// url path, let's use the host as the image tag
+		return strings.Split(url.Host, ":")[0], nil
+	} else if strings.HasPrefix(thing, "oci") {
+		pieces := strings.Split(thing, ":")
+		if len(pieces) != 3 {
+			return "", fmt.Errorf("bad OCI tag: %s", thing)
+		}
+
+		return pieces[2], nil
+	} else {
+		return "", fmt.Errorf("invalid image url: %s", thing)
+	}
+}
+
+func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
+	tag, err := tagFromSkopeoUrl(toImport)
 	if err != nil {
 		return err
 	}
@@ -82,6 +111,10 @@ func runSkopeo(toImport string, o BaseLayerOpts) error {
 		return fmt.Errorf("skopeo copy: %s", err)
 	}
 
+	if !copyToOutput {
+		return nil
+	}
+
 	// We just copied it to the cache, now let's copy that over to our image.
 	cmd = exec.Command(
 		"skopeo",
@@ -108,7 +141,7 @@ func extractOutput(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
 
-	image := fmt.Sprintf("%s:%s", o.Config.OCIDir, tag)
+	image := fmt.Sprintf("%s:%s", path.Join(o.Config.StackerDir, "layer-bases", "oci"), tag)
 	args := []string{"umoci", "unpack", "--image", image, target}
 	err = MaybeRunInUserns(args, "image unpack failed")
 	if err != nil {
@@ -126,7 +159,7 @@ func extractOutput(o BaseLayerOpts) error {
 }
 
 func getDocker(o BaseLayerOpts) error {
-	err := runSkopeo(o.Layer.From.Url, o)
+	err := runSkopeo(o.Layer.From.Url, o, true)
 	if err != nil {
 		return err
 	}
@@ -198,7 +231,7 @@ func getScratch(o BaseLayerOpts) error {
 }
 
 func getOCI(o BaseLayerOpts) error {
-	err := runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o)
+	err := runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o, true)
 	if err != nil {
 		return err
 	}

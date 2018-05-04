@@ -167,6 +167,15 @@ func doBuild(ctx *cli.Context) error {
 			continue
 		}
 
+		os := stacker.BaseLayerOpts{
+			Config: config,
+			Name:   name,
+			Target: ".working",
+			Layer:  l,
+			Cache:  buildCache,
+			OCI:    oci,
+		}
+
 		s.Delete(".working")
 		if l.From.Type == stacker.BuiltType {
 			if err := s.Restore(l.From.Tag, ".working"); err != nil {
@@ -177,16 +186,20 @@ func doBuild(ctx *cli.Context) error {
 				return err
 			}
 
-			os := stacker.BaseLayerOpts{
-				Config: config,
-				Name:   name,
-				Target: ".working",
-				Layer:  l,
-				Cache:  buildCache,
-				OCI:    oci,
-			}
-
 			err := stacker.GetBaseLayer(os)
+			if err != nil {
+				return err
+			}
+		}
+
+		apply, err := stacker.NewApply(os)
+		if err != nil {
+			return err
+		}
+
+		for _, image := range l.Apply {
+			fmt.Println("merging in layers from", image)
+			err = apply.ApplyLayer(image)
 			if err != nil {
 				return err
 			}

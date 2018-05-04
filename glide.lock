@@ -1,5 +1,5 @@
 hash: e0b297447455777d9b12b97627986b562b13ee1a100f090489dd6ae8e1d76082
-updated: 2018-04-03T10:50:27.67956658-06:00
+updated: 2018-05-01T17:14:16.799273219Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -16,9 +16,19 @@ imports:
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
 - name: github.com/gorilla/websocket
-  version: eb925808374e5ca90c83401a40d711dc08c0c0f6
+  version: 21ab95fa12b9bdd8fecf5fa3586aad941cc98785
+- name: github.com/klauspost/compress
+  version: 5fb1f31b0a61e9858f12f39266e059848a5f1cea
+  subpackages:
+  - flate
+- name: github.com/klauspost/cpuid
+  version: e7e905edc00ea8827e58662220139109efea09db
+- name: github.com/klauspost/crc32
+  version: bab58d77464aa9cf4e84200c3276da0831fe0c03
+- name: github.com/klauspost/pgzip
+  version: cf5d6687abbc66239e5dc605e63411939c7370fc
 - name: github.com/lxc/lxd
-  version: 1d63608fffca051a435e97158a3b6152caf77d4f
+  version: 768e6eaf9101efcba58aceaa50907eb98e811530
   subpackages:
   - shared
   - shared/cancel
@@ -26,18 +36,18 @@ imports:
   - shared/ioprogress
   - shared/logger
 - name: github.com/mattn/go-runewidth
-  version: a9d6d1e4dc51df2130326793d49971f238839169
+  version: ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb
 - name: github.com/mitchellh/hashstructure
   version: 2bca23e0e452137f789efbc8610126fd8b94f73b
 - name: github.com/opencontainers/go-digest
-  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+  version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
-  version: 8e82844449a093ef49d824afad963a5e0a76b63b
+  version: e562b04403929d582d449ae5386ff79dd7961a11
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: d362ed3abe646248f1f84a6e5871d05513f9167b
+  version: a1998ecf27964b493231626886dea534e2cfadc2
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -47,7 +57,7 @@ imports:
   - generate/seccomp
   - validate
 - name: github.com/openSUSE/umoci
-  version: ed0be602fda19b984330864ae9f8f9ed1436fc63
+  version: ba8bcfeec88e587e5704aff4f65001d03eda23b5
   repo: https://github.com/anuvu/umoci
   subpackages:
   - mutate
@@ -80,12 +90,12 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: b2aa35443fbc700ab74c586ae79b81c171851023
+  version: 613d6eafa307c6881a737a3c35c0e312e8d3a8c5
   subpackages:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: b68f30494add4df6bd8ef5e82803f308e7f7c59c
+  version: 5f9ae10d9af5b1c89ae6904293b14b064d4ada23
   subpackages:
   - context
 - name: golang.org/x/sys
