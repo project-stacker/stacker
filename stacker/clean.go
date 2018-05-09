@@ -31,12 +31,6 @@ func doClean(ctx *cli.Context) error {
 	fail := false
 
 	if !ctx.Bool("all") {
-		if err := os.RemoveAll(path.Join(config.StackerDir, "logs")); err != nil {
-			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "error deleting logs dir: %v", err)
-				fail = true
-			}
-		}
 		if err := os.Remove(path.Join(config.StackerDir, "build.cache")); err != nil {
 			if !os.IsNotExist(err) {
 				fmt.Fprintf(os.Stderr, "error deleting logs dir: %v", err)

@@ -87,11 +87,6 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 	}
 	c := &container{sc: sc, c: lxcC}
 
-	err = os.MkdirAll(path.Join(sc.StackerDir, "logs"), 0755)
-	if err != nil {
-		return nil, err
-	}
-
 	if err := c.c.SetLogLevel(lxc.TRACE); err != nil {
 		return nil, err
 	}
