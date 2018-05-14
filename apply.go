@@ -230,11 +230,11 @@ func insertOneFile(hdr *tar.Header, target string, te *layer.TarExtractor, tr io
 	}
 
 	if sysStat.Uid != uint32(hdr.Uid) {
-		return false, fmt.Errorf("two different uids on %s: %v %v", sysStat.Uid, hdr.Uid)
+		return false, fmt.Errorf("two different uids on %s: %v %v", hdr.Name, sysStat.Uid, hdr.Uid)
 	}
 
 	if sysStat.Gid != uint32(hdr.Gid) {
-		return false, fmt.Errorf("two different gids on %s: %v %v", sysStat.Gid, hdr.Gid)
+		return false, fmt.Errorf("two different gids on %s: %v %v", hdr.Name, sysStat.Gid, hdr.Gid)
 	}
 
 	sz, err := syscall.Listxattr(path.Join(target, hdr.Name), nil)
