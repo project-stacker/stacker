@@ -1,5 +1,5 @@
 hash: e0b297447455777d9b12b97627986b562b13ee1a100f090489dd6ae8e1d76082
-updated: 2018-05-01T17:14:16.799273219Z
+updated: 2018-05-14T23:47:02.573925077Z
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -8,7 +8,7 @@ imports:
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cheggaaa/pb
-  version: 75a8cbd866a7bad0d4a3b2b8cb6cab48a1475155
+  version: d931a9997fe189609982aeb8eaa8a11b9ce5e013
 - name: github.com/cyphar/filepath-securejoin
   version: ae69057f2299fb9e5ba2df738607e6a505b74ab6
 - name: github.com/docker/go-units
@@ -28,7 +28,7 @@ imports:
 - name: github.com/klauspost/pgzip
   version: cf5d6687abbc66239e5dc605e63411939c7370fc
 - name: github.com/lxc/lxd
-  version: 768e6eaf9101efcba58aceaa50907eb98e811530
+  version: 1aabbec04f306b3c817bce26f40f2834ebe6e252
   subpackages:
   - shared
   - shared/cancel
@@ -47,7 +47,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: a1998ecf27964b493231626886dea534e2cfadc2
+  version: c102f0954e4a4faace7e5e4bc7054300788bc0a3
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -74,6 +74,10 @@ imports:
   - third_party/user
 - name: github.com/pkg/errors
   version: 816c9085562cd7ee03e7f8188a1cfd942858cded
+- name: github.com/sergi/go-diff
+  version: da645544ed44df016359bd4c0e3dc60ee3a0da43
+  subpackages:
+  - diffmatchpatch
 - name: github.com/sirupsen/logrus
   version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/syndtr/gocapability
@@ -90,12 +94,12 @@ imports:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 613d6eafa307c6881a737a3c35c0e312e8d3a8c5
+  version: 425cc7d9a76e079f290e1d4bd1250d7b5b235cfa
   subpackages:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: 5f9ae10d9af5b1c89ae6904293b14b064d4ada23
+  version: 2491c5de3490fced2f6cff376127c667efeed857
   subpackages:
   - context
 - name: golang.org/x/sys

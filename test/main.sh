@@ -184,4 +184,13 @@ skopeo --insecure-policy copy oci:.stacker/layer-bases/oci:centos oci:dest:cento
 stacker build -f oci-import.yaml
 [ "$(umoci ls --layout ./oci)" == "$(printf "centos2")" ]
 
+cleanup
+
+# Test the `apply` logic
+stacker build -f ./apply.yaml
+umoci unpack --image oci:both dest
+[ -f dest/rootfs/a ]
+[ -f dest/rootfs/b ]
+[ "$(cat dest/rootfs/foo)" == "$(printf "world\nhello\n")" ]
+
 RESULT=success

@@ -192,17 +192,14 @@ func doBuild(ctx *cli.Context) error {
 			}
 		}
 
-		apply, err := stacker.NewApply(os)
+		apply, err := stacker.NewApply(os, s)
 		if err != nil {
 			return err
 		}
 
-		for _, image := range l.Apply {
-			fmt.Println("merging in layers from", image)
-			err = apply.ApplyLayer(image)
-			if err != nil {
-				return err
-			}
+		err = apply.DoApply()
+		if err != nil {
+			return err
 		}
 
 		fmt.Println("running commands...")

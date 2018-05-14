@@ -19,17 +19,18 @@ import (
 	"github.com/openSUSE/umoci/oci/layer"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/sys/unix"
 )
 
 type Apply struct {
 	layers  []ispec.Descriptor
 	opts    BaseLayerOpts
-	baseOCI *umoci.Layout
+	storage Storage
 }
 
-func NewApply(opts BaseLayerOpts) (*Apply, error) {
-	a := &Apply{layers: []ispec.Descriptor{}, opts: opts}
+func NewApply(opts BaseLayerOpts, storage Storage) (*Apply, error) {
+	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
 	var source *umoci.Layout
 
@@ -63,7 +64,25 @@ func NewApply(opts BaseLayerOpts) (*Apply, error) {
 	return a, nil
 }
 
-func (a *Apply) ApplyLayer(layer string) error {
+func (a *Apply) DoApply() error {
+	err := a.storage.Snapshot(a.opts.Target, "stacker-apply-base")
+	if err != nil {
+		return err
+	}
+	defer a.storage.Delete("stacker-apply-base")
+
+	for _, image := range a.opts.Layer.Apply {
+		fmt.Println("merging in layers from", image)
+		err = a.applyImage(image)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *Apply) applyImage(layer string) error {
 	err := runSkopeo(layer, a.opts, false)
 	if err != nil {
 		return err
@@ -105,7 +124,7 @@ func (a *Apply) ApplyLayer(layer string) error {
 		// layer is strictly additive or doesn't otherwise require
 		// merging, we could realize that and add it directly to the
 		// OCI output, so that it is kept as its own layer.
-		err := applyLayer(oci, l, path.Join(a.opts.Config.RootFSDir, a.opts.Target, "rootfs"))
+		err := a.applyLayer(oci, l, path.Join(a.opts.Config.RootFSDir, a.opts.Target, "rootfs"))
 		if err != nil {
 			return err
 		}
@@ -116,7 +135,7 @@ func (a *Apply) ApplyLayer(layer string) error {
 	return nil
 }
 
-func applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target string) error {
+func (a *Apply) applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target string) error {
 	blob, err := oci.LookupBlob(desc)
 	if err != nil {
 		return err
@@ -158,7 +177,7 @@ func applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target string) error {
 			continue
 		}
 
-		merged, err := insertOneFile(hdr, target, te, tr)
+		merged, err := a.insertOneFile(hdr, target, te, tr)
 		if err != nil {
 			return err
 		}
@@ -189,7 +208,7 @@ func applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target string) error {
 	return nil
 }
 
-func insertOneFile(hdr *tar.Header, target string, te *layer.TarExtractor, tr io.Reader) (bool, error) {
+func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtractor, tr io.Reader) (bool, error) {
 	fi, err := os.Lstat(path.Join(target, hdr.Name))
 	if os.IsNotExist(err) {
 		// if it didn't already exist, that's fine, just
@@ -203,30 +222,37 @@ func insertOneFile(hdr *tar.Header, target string, te *layer.TarExtractor, tr io
 		return false, fmt.Errorf("apply can't merge files of different types: %s", hdr.Name)
 	}
 
-	// zero is allowed, since umoci just picks time.Now(), they
-	// probably won't match.
-	if fi.ModTime() != hdr.ModTime && !hdr.ModTime.IsZero() {
-
-		// liblxc impolitely binds its own init into /tmp/.lxc-init,
-		// which changes the mtime on /tmp
-		if hdr.Name == "tmp/" {
-			return false, nil
-		}
-
-		// we bind the host's /etc/resolv.conf to inside the container
-		if hdr.Name == "etc/" || hdr.Name == "etc/resolv.conf" {
-			return false, nil
-		}
-
-		return false, fmt.Errorf("two different mod times on %s %v %v", hdr.Name, fi.ModTime(), hdr.ModTime)
-	}
-
 	sysStat := fi.Sys().(*syscall.Stat_t)
-	// explicitly don't consider access time
-	cSec, cNsec := sysStat.Ctim.Unix()
-	ctime := time.Unix(cSec, cNsec)
-	if ctime != hdr.ChangeTime && !hdr.ChangeTime.IsZero() {
-		return false, fmt.Errorf("changed times differ on %s", hdr.Name)
+
+	// For everything that's not a file, we want to be sure their times are
+	// identical. For files, we allow some slack in case two different
+	// layers edit the file, their mtimes will be different. The merging of
+	// the result is handled below.
+	if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
+		// zero is allowed, since umoci just picks time.Now(), they
+		// probably won't match.
+		if fi.ModTime() != hdr.ModTime && !hdr.ModTime.IsZero() {
+
+			// liblxc impolitely binds its own init into /tmp/.lxc-init,
+			// which changes the mtime on /tmp
+			if hdr.Name == "tmp/" {
+				return false, nil
+			}
+
+			// we bind the host's /etc/resolv.conf to inside the container
+			if hdr.Name == "etc/" {
+				return false, nil
+			}
+
+			return false, fmt.Errorf("two different mod times on %s %v %v", hdr.Name, fi.ModTime(), hdr.ModTime)
+		}
+
+		// explicitly don't consider access time
+		cSec, cNsec := sysStat.Ctim.Unix()
+		ctime := time.Unix(cSec, cNsec)
+		if ctime != hdr.ChangeTime && !hdr.ChangeTime.IsZero() {
+			return false, fmt.Errorf("changed times differ on %s", hdr.Name)
+		}
 	}
 
 	if sysStat.Uid != uint32(hdr.Uid) {
@@ -374,7 +400,7 @@ func insertOneFile(hdr *tar.Header, target string, te *layer.TarExtractor, tr io
 		// try that hard to diff things, so let's make sure we
 		// only diff text files.
 		buf := make([]byte, 512)
-		_, err = existing.Read(buf)
+		sz, err = existing.Read(buf)
 		if err != nil {
 			return false, err
 		}
@@ -384,13 +410,89 @@ func insertOneFile(hdr *tar.Header, target string, te *layer.TarExtractor, tr io
 			return false, err
 		}
 
-		contentType := http.DetectContentType(buf)
+		contentType := http.DetectContentType(buf[:sz])
 		if !strings.HasPrefix(contentType, "text") {
 			return false, fmt.Errorf("existing file different, can't diff %s of type %s", hdr.Name, contentType)
 		}
 
-		return true, fmt.Errorf("merging not implemented right now: %s", hdr.Name)
+		// TODO: we've mutated the mtime of the directory, we should
+		// probably restore it (future applies are unlikely to work if
+		// we don't).
+		return true, a.diffFile(hdr, f.Name())
 	default:
 		return false, fmt.Errorf("unknown tar typeflag for %s", hdr.Name)
 	}
+}
+
+// diffFile diffs the file "temp" with the file in the original snapshot
+// referred to by hdr. It returns an error if there are conflicts with a
+// previous layer change, or nil if there is not. diffFile has applied the diff
+// if it returns nil.
+func (a *Apply) diffFile(hdr *tar.Header, temp string) error {
+	// first, get the delta from the original to the layer's version
+	p, err := genPatch(path.Join(a.opts.Config.RootFSDir, "stacker-apply-base/rootfs", hdr.Name), temp)
+	if err != nil {
+		return err
+	}
+
+	// now, apply it on top of all the other layer deltas. if it works,
+	// great, if not, we bail.
+	return applyPatch(path.Join(a.opts.Config.RootFSDir, a.opts.Target, "rootfs", hdr.Name), p)
+}
+
+func genPatch(p1 string, p2 string) ([]diffmatchpatch.Patch, error) {
+	c1, err := ioutil.ReadFile(p1)
+	if err != nil {
+		// it's ok for the source file to not exist: that just means
+		// that two layers added a file that didn't exist in the base
+		// layer. we render it as an empty file, so both diffs will be
+		// additive.
+		if !os.IsNotExist(err) {
+			return nil, errors.Wrapf(err, "couldn't read %s", p1)
+		}
+		c1 = []byte{}
+	}
+
+	c2, err := ioutil.ReadFile(p2)
+	if err != nil {
+		return nil, err
+	}
+
+	// This function does various things based on what type of arguments it
+	// is passed. Buyer beware.
+	return diffmatchpatch.New().PatchMake(string(c1), string(c2)), nil
+}
+
+func applyPatch(file string, patch []diffmatchpatch.Patch) error {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		// again it's fine for it not to exist -- we just apply the
+		// patche against an empty file
+		if !os.IsNotExist(err) {
+			return errors.Wrapf(err, "couldn't read original file %s", file)
+		}
+		content = []byte{}
+	}
+
+	result, applied := diffmatchpatch.New().PatchApply(patch, string(content))
+	for i, app := range applied {
+		if !app {
+			return fmt.Errorf("couldn't merge %s, specifically hunk:\n%s", file, patch[i].String())
+		}
+	}
+
+	// let's open it and truncate rather than create a new one, so we keep
+	// mode/xattrs, etc.
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't create patched file %s", file)
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(result)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
