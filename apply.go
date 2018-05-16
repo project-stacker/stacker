@@ -29,7 +29,7 @@ type Apply struct {
 	storage Storage
 }
 
-func NewApply(opts BaseLayerOpts, storage Storage) (*Apply, error) {
+func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
 	var source *umoci.Layout
@@ -42,7 +42,24 @@ func NewApply(opts BaseLayerOpts, storage Storage) (*Apply, error) {
 		}
 		defer source.Close()
 	} else if opts.Layer.From.Type == BuiltType {
-		source = opts.OCI
+		base, ok := sf.Get(opts.Layer.From.Tag)
+		if !ok {
+			return nil, fmt.Errorf("missing base layer?")
+		}
+
+		if base.BuildOnly {
+			// XXX: this isn't actually that hard to support if we
+			// need to, but I suspect we don't really. The problem
+			// is that no OCI layers are generated for build-only
+			// layers by design, so we can't compare which layers
+			// are already used. We're smart enough to handle this
+			// well, but it'll take a _lot_ longer, since we
+			// re-extract everything the build-only layer is based
+			// on. Anyway, let's warn people.
+			fmt.Println("WARNING: build-only base layers with apply statements may be wonky")
+		} else {
+			source = opts.OCI
+		}
 	}
 
 	if source != nil {
@@ -65,6 +82,10 @@ func NewApply(opts BaseLayerOpts, storage Storage) (*Apply, error) {
 }
 
 func (a *Apply) DoApply() error {
+	if len(a.opts.Layer.Apply) == 0 {
+		return nil
+	}
+
 	err := a.storage.Snapshot(a.opts.Target, "stacker-apply-base")
 	if err != nil {
 		return err

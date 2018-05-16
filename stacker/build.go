@@ -192,7 +192,7 @@ func doBuild(ctx *cli.Context) error {
 			}
 		}
 
-		apply, err := stacker.NewApply(os, s)
+		apply, err := stacker.NewApply(sf, os, s)
 		if err != nil {
 			return err
 		}
