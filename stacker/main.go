@@ -13,6 +13,7 @@ import (
 var (
 	config  stacker.StackerConfig
 	version = ""
+	debug   = false
 )
 
 func main() {
@@ -45,6 +46,10 @@ func main() {
 			Usage: "set the directory for the rootfs output",
 			Value: "roots",
 		},
+		cli.BoolFlag{
+			Name:  "debug",
+			Usage: "enable stacker debug mode",
+		},
 	}
 
 	app.Before = func(ctx *cli.Context) error {
@@ -63,13 +68,20 @@ func main() {
 			return err
 		}
 
+		debug = ctx.Bool("debug")
+
 		return nil
 	}
 
 	log.SetLevel(log.WarnLevel)
 
 	if err := app.Run(os.Args); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		format := "error: %v\n"
+		if debug {
+			format = "error: %+v\n"
+		}
+
+		fmt.Fprintf(os.Stderr, format, err)
 		os.Exit(1)
 	}
 }
