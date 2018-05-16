@@ -9,13 +9,11 @@ default: vendor $(GO_SRC)
 vendor: glide.lock
 	glide install --strip-vendor
 
+# make test TEST=basic will run only the basic test.
 .PHONY: check
 check:
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
 	go test ./...
-
-.PHONY: test
-test:
 	sudo -E bats -t $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup
