@@ -168,6 +168,20 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 		return nil, false
 	}
 
+	h1, err := hashstructure.Hash(result.Layer, nil)
+	if err != nil {
+		return nil, false
+	}
+
+	h2, err := hashstructure.Hash(l, nil)
+	if err != nil {
+		return nil, false
+	}
+
+	if h1 != h2 {
+		return nil, false
+	}
+
 	baseHash, err := c.getBaseHash(name)
 	if err != nil {
 		return nil, false
