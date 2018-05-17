@@ -1,6 +1,0 @@
-bad:
-    from:
-        type: docker
-        url: docker://centos:latest
-    import:
-        - stacker://idontexist/file

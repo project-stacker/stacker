@@ -1,4 +1,0 @@
-centos2:
-    from:
-        type: oci
-        url: dest:centos

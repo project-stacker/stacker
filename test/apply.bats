@@ -1,3 +1,7 @@
+load helpers
+
+function setup() {
+    cat > stacker.yaml <<EOF
 a:
     from:
         type: docker
@@ -20,3 +24,17 @@ both:
     apply:
         - oci:oci:a
         - oci:oci:b
+EOF
+}
+
+function teardown() {
+    cleanup
+}
+
+@test "apply logic" {
+    stacker build
+    umoci unpack --image oci:both dest
+    [ -f dest/rootfs/a ]
+    [ -f dest/rootfs/b ]
+    [ "$(cat dest/rootfs/foo)" == "$(printf "world\nhello\n")" ]
+}

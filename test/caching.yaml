@@ -1,7 +1,0 @@
-import-cache:
-    from:
-        type: docker
-        url: docker://centos:latest
-    import:
-        - link/foo
-    run: cp /stacker/foo/foo /foo
