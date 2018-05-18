@@ -56,7 +56,9 @@ func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage) (*Apply, err
 			// well, but it'll take a _lot_ longer, since we
 			// re-extract everything the build-only layer is based
 			// on. Anyway, let's warn people.
-			fmt.Println("WARNING: build-only base layers with apply statements may be wonky")
+			if len(opts.Layer.Apply) > 0 {
+				fmt.Println("WARNING: build-only base layers with apply statements may be wonky")
+			}
 		} else {
 			source = opts.OCI
 		}
