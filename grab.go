@@ -17,7 +17,7 @@ func Grab(sc StackerConfig, name string, source string) error {
 		return err
 	}
 
-	err = c.bindMount(cwd, "/stacker")
+	err = c.bindMount(cwd, "/stacker", "")
 	if err != nil {
 		return err
 	}

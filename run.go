@@ -16,14 +16,14 @@ func Run(sc StackerConfig, name string, command string, l *Layer, onFailure stri
 
 	importsDir := path.Join(sc.StackerDir, "imports", name)
 	if _, err := os.Stat(importsDir); err == nil {
-		err = c.bindMount(importsDir, "/stacker")
+		err = c.bindMount(importsDir, "/stacker", "ro")
 		if err != nil {
 			return err
 		}
 		defer os.Remove(path.Join(sc.RootFSDir, ".working", "rootfs", "stacker"))
 	}
 
-	err = c.bindMount("/etc/resolv.conf", "/etc/resolv.conf")
+	err = c.bindMount("/etc/resolv.conf", "/etc/resolv.conf", "")
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func Run(sc StackerConfig, name string, command string, l *Layer, onFailure stri
 			target = strings.TrimSpace(parts[1])
 		}
 
-		err = c.bindMount(source, target)
+		err = c.bindMount(source, target, "")
 		if err != nil {
 			return err
 		}

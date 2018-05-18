@@ -164,7 +164,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		}
 	}
 
-	err = c.bindMount("/sys", "/sys")
+	err = c.bindMount("/sys", "/sys", "")
 	if err != nil {
 		return nil, err
 	}
@@ -178,14 +178,14 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 	return c, nil
 }
 
-func (c *container) bindMount(source string, dest string) error {
+func (c *container) bindMount(source string, dest string, extraOpts string) error {
 	createOpt := "create=dir"
 	stat, err := os.Lstat(source)
 	if err == nil && !stat.IsDir() {
 		createOpt = "create=file"
 	}
 
-	val := fmt.Sprintf("%s %s none rbind,%s", source, strings.TrimPrefix(dest, "/"), createOpt)
+	val := fmt.Sprintf("%s %s none rbind,%s,%s", source, strings.TrimPrefix(dest, "/"), createOpt, extraOpts)
 	return c.setConfig("lxc.mount.entry", val)
 }
 
