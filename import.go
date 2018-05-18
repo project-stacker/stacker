@@ -176,7 +176,7 @@ func Import(c StackerConfig, name string, imports []string) error {
 
 	// Now, delete all the old imports.
 	for _, ext := range existing {
-		err = os.Remove(path.Join(dir, ext.Name()))
+		err = os.RemoveAll(path.Join(dir, ext.Name()))
 		if err != nil {
 			return err
 		}
