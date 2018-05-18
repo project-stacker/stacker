@@ -167,7 +167,7 @@ func Import(c StackerConfig, name string, imports []string) error {
 		}
 
 		for i, ext := range existing {
-			if ext.Name() == name {
+			if ext.Name() == path.Base(name) {
 				existing = append(existing[:i], existing[i+1:]...)
 				break
 			}
