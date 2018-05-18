@@ -3,6 +3,7 @@ package stacker
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -154,8 +155,28 @@ func Import(c StackerConfig, name string, imports []string) error {
 		return err
 	}
 
+	existing, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
 	for _, i := range imports {
-		_, err := acquireUrl(c, i, dir)
+		name, err := acquireUrl(c, i, dir)
+		if err != nil {
+			return err
+		}
+
+		for i, ext := range existing {
+			if ext.Name() == name {
+				existing = append(existing[:i], existing[i+1:]...)
+				break
+			}
+		}
+	}
+
+	// Now, delete all the old imports.
+	for _, ext := range existing {
+		err = os.Remove(path.Join(dir, ext.Name()))
 		if err != nil {
 			return err
 		}
