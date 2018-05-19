@@ -20,11 +20,10 @@ type BaseLayerOpts struct {
 	OCI    *umoci.Layout
 }
 
-func GetBaseLayer(o BaseLayerOpts) error {
+func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
 	switch o.Layer.From.Type {
 	case BuiltType:
-		/* nothing to do assuming layers are imported in dependency order */
-		return nil
+		return getBuilt(o, sf)
 	case TarType:
 		return getTar(o)
 	case OCIType:
@@ -159,7 +158,7 @@ func extractOutput(o BaseLayerOpts) error {
 }
 
 func getDocker(o BaseLayerOpts) error {
-	err := runSkopeo(o.Layer.From.Url, o, true)
+	err := runSkopeo(o.Layer.From.Url, o, !o.Layer.BuildOnly)
 	if err != nil {
 		return err
 	}
@@ -231,10 +230,54 @@ func getScratch(o BaseLayerOpts) error {
 }
 
 func getOCI(o BaseLayerOpts) error {
-	err := runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o, true)
+	err := runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o, !o.Layer.BuildOnly)
 	if err != nil {
 		return err
 	}
 
 	return extractOutput(o)
+}
+
+func getBuilt(o BaseLayerOpts, sf *Stackerfile) error {
+	// We need to copy any base OCI layers to the output dir, since they
+	// may not have been copied before and the final `umoci repack` expects
+	// them to be there.
+	base := o.Layer
+	for {
+		var ok bool
+		base, ok = sf.Get(base.From.Tag)
+		if !ok {
+			return fmt.Errorf("missing base layer %s?", o.Layer.From.Tag)
+		}
+
+		if base.From.Type != BuiltType {
+			break
+		}
+	}
+
+	// Nothing to do here -- we didn't import any base layers.
+	if base.From.Type != DockerType && base.From.Type != OCIType {
+		return nil
+	}
+
+	tag, err := base.From.ParseTag()
+	if err != nil {
+		return err
+	}
+
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
+	cmd := exec.Command(
+		"skopeo",
+		"--insecure-policy",
+		"copy",
+		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
+	}
+
+	return o.OCI.DeleteTag(tag)
 }

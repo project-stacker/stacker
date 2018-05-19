@@ -185,11 +185,11 @@ func doBuild(ctx *cli.Context) error {
 			if err := s.Create(".working"); err != nil {
 				return err
 			}
+		}
 
-			err := stacker.GetBaseLayer(os)
-			if err != nil {
-				return err
-			}
+		err = stacker.GetBaseLayer(os, sf)
+		if err != nil {
+			return err
 		}
 
 		apply, err := stacker.NewApply(sf, os, s)
