@@ -12,6 +12,11 @@ var grabCmd = cli.Command{
 	Name:   "grab",
 	Usage:  "grabs a file from the layer's filesystem",
 	Action: doGrab,
+	ArgsUsage: `<tag>:<path>
+
+<tag> is the tag in a built stacker image to extract the file from.
+
+<path> is the path to extract (relative to /) in the image's rootfs.`,
 }
 
 func doGrab(ctx *cli.Context) error {
