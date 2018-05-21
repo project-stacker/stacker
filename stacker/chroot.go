@@ -21,6 +21,13 @@ var chrootCmd = cli.Command{
 			Value: "stacker.yaml",
 		},
 	},
+	ArgsUsage: `[tag] [cmd]
+
+<tag> is the built tag in the stackerfile to chroot to, or the first tag if
+none is specified.
+
+<cmd> is the command to run, or /bin/sh if none is specified. To specify cmd,
+you must specify a tag.`,
 }
 
 func doChroot(ctx *cli.Context) error {
