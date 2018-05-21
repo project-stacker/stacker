@@ -13,6 +13,10 @@ var inspectCmd = cli.Command{
 	Usage:  "print the json representation of an OCI image",
 	Action: doInspect,
 	Flags:  []cli.Flag{},
+	ArgsUsage: `[tag]
+
+<tag> is the tag in the stackerfile to inspect. If none is supplied, inspect
+prints the information on all tags.`,
 }
 
 func doInspect(ctx *cli.Context) error {
