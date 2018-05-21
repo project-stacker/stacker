@@ -256,7 +256,14 @@ func getBuilt(o BaseLayerOpts, sf *Stackerfile) error {
 	}
 
 	// Nothing to do here -- we didn't import any base layers.
-	if base.From.Type != DockerType && base.From.Type != OCIType {
+	if (base.From.Type != DockerType && base.From.Type != OCIType) || !base.BuildOnly {
+		return nil
+	}
+
+	// Nothing to do here either -- the previous step emitted a layer with
+	// the base's tag name. We don't want to overwrite that with a stock
+	// base layer.
+	if !base.BuildOnly {
 		return nil
 	}
 
