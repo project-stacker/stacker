@@ -1,11 +1,13 @@
 package stacker
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/url"
 	"path"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
@@ -205,6 +207,57 @@ func init() {
 	}
 }
 
+func substitute(content string, substitutions []string) (string, error) {
+	for _, subst := range substitutions {
+		membs := strings.SplitN(subst, "=", 2)
+		if len(membs) != 2 {
+			return "", fmt.Errorf("invalid substition %s", subst)
+		}
+
+		from := fmt.Sprintf("$%s", membs[0])
+		to := membs[1]
+
+		fmt.Printf("substituting %s to %s\n", from, to)
+
+		content = strings.Replace(content, from, to, -1)
+
+		re, err := regexp.Compile(fmt.Sprintf(`\$\{%s[^\}]*\}`, membs[0]))
+		if err != nil {
+			return "", err
+		}
+
+		content = re.ReplaceAllString(content, to)
+		fmt.Println(content)
+	}
+
+	// now, anything that's left we can just use its value
+	re, err := regexp.Compile("\\$\\{[^\\}]*\\}")
+	indexes := re.FindAllStringIndex(content, -1)
+	for _, idx := range indexes {
+		// get content without ${}
+		variable := content[idx[0]+2 : idx[1]-1]
+
+		membs := strings.SplitN(variable, ":", 2)
+		if len(membs) != 2 {
+			return "", fmt.Errorf("no value for substitution %s", variable)
+		}
+
+		buf := bytes.NewBufferString(content[:idx[0]])
+		_, err = buf.WriteString(membs[1])
+		if err != nil {
+			return "", err
+		}
+		_, err = buf.WriteString(content[idx[1]:])
+		if err != nil {
+			return "", err
+		}
+
+		content = buf.String()
+	}
+
+	return content, nil
+}
+
 // NewStackerfile creates a new stackerfile from the given path. substitutions
 // is a list of KEY=VALUE pairs of things to substitute. Note that this is
 // explicitly not a map, because the substitutions are performed one at a time
@@ -218,20 +271,6 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	}
 
 	content := string(raw)
-
-	for _, subst := range substitutions {
-		membs := strings.SplitN(subst, "=", 2)
-		if len(membs) != 2 {
-			return nil, fmt.Errorf("invalid substition %s", subst)
-		}
-
-		from := fmt.Sprintf("$%s", membs[0])
-		to := membs[1]
-
-		fmt.Printf("substituting %s to %s\n", from, to)
-
-		content = strings.Replace(content, from, to, -1)
-	}
 
 	if err := yaml.Unmarshal([]byte(content), &sf.internal); err != nil {
 		return nil, err
