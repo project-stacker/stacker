@@ -221,7 +221,7 @@ func substitute(content string, substitutions []string) (string, error) {
 
 		content = strings.Replace(content, from, to, -1)
 
-		re, err := regexp.Compile(fmt.Sprintf(`\$\{%s[^\}]*\}`, membs[0]))
+		re, err := regexp.Compile(fmt.Sprintf(`\$\{%s(:[^\}]*)?\}`, membs[0]))
 		if err != nil {
 			return "", err
 		}
@@ -231,8 +231,14 @@ func substitute(content string, substitutions []string) (string, error) {
 
 	// now, anything that's left we can just use its value
 	re, err := regexp.Compile("\\$\\{[^\\}]*\\}")
-	indexes := re.FindAllStringIndex(content, -1)
-	for _, idx := range indexes {
+	for {
+		indexes := re.FindAllStringIndex(content, -1)
+		if len(indexes) == 0 {
+			break
+		}
+
+		idx := indexes[0]
+
 		// get content without ${}
 		variable := content[idx[0]+2 : idx[1]-1]
 
