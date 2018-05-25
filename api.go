@@ -270,7 +270,10 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 		return nil, err
 	}
 
-	content := string(raw)
+	content, err := substitute(string(raw), substitutions)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := yaml.Unmarshal([]byte(content), &sf.internal); err != nil {
 		return nil, err
