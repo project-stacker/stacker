@@ -227,7 +227,6 @@ func substitute(content string, substitutions []string) (string, error) {
 		}
 
 		content = re.ReplaceAllString(content, to)
-		fmt.Println(content)
 	}
 
 	// now, anything that's left we can just use its value
