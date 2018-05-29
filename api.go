@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	MediaTypeImageBtrfsLayer = "application/vnd.cisco.image.layer.btrfs"
+	MediaTypeImageBtrfsLayer  = "application/vnd.cisco.image.layer.btrfs"
+	GitVersionAnnotation      = "ws.tycho.stacker.git_version"
+	StackerContentsAnnotation = "ws.tycho.stacker.stacker_yaml"
 )
 
 // StackerConfig is a struct that contains global (or widely used) stacker
@@ -27,6 +29,10 @@ type StackerConfig struct {
 }
 
 type Stackerfile struct {
+	// AfterSubstitutions is the contents of the stacker file after
+	// substitutions (i.e., the content that is actually used by stacker).
+	AfterSubstitutions string
+
 	// internal is the actual representation of the stackerfile as a map.
 	internal map[string]*Layer
 
@@ -279,6 +285,8 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	if err != nil {
 		return nil, err
 	}
+
+	sf.AfterSubstitutions = content
 
 	if err := yaml.Unmarshal([]byte(content), &sf.internal); err != nil {
 		return nil, err

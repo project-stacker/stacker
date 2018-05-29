@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -124,6 +125,17 @@ func doBuild(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	dir, err := filepath.Abs(path.Dir(ctx.String("f")))
+	if err != nil {
+		return err
+	}
+
+	// compute the git version for the directory that the stacker file is
+	// in. we don't care if it's not a git directory, because in that case
+	// we'll fall back to putting the whole stacker file contents in the
+	// metadata.
+	gitVersion, _ := stacker.GitVersion(dir)
 
 	s.Delete(".working")
 	for _, name := range order {
@@ -344,6 +356,13 @@ func doBuild(ctx *cli.Context) error {
 		annotations, err := mutator.Annotations(context.Background())
 		if err != nil {
 			return err
+		}
+
+		if gitVersion != "" {
+			fmt.Println("setting git version annotation to", gitVersion)
+			annotations[stacker.GitVersionAnnotation] = gitVersion
+		} else {
+			annotations[stacker.StackerContentsAnnotation] = sf.AfterSubstitutions
 		}
 
 		history := ispec.History{
