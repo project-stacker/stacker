@@ -418,5 +418,10 @@ func doBuild(ctx *cli.Context) error {
 		}
 	}
 
+	err = oci.GC()
+	if err != nil {
+		fmt.Printf("final OCI GC failed: %v", err)
+	}
+
 	return nil
 }
