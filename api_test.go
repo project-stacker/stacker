@@ -80,13 +80,25 @@ third:
 }
 
 func TestSubstitute(t *testing.T) {
-	s := "$ONE $TWO ${TWO} ${TWO:} ${TWO:3} ${TWO2:22} ${THREE:3}"
+	s := "$ONE $TWO ${{TWO}} ${{TWO:}} ${{TWO:3}} ${{TWO2:22}} ${{THREE:3}}"
 	result, err := substitute(s, []string{"ONE=1", "TWO=2"})
 	if err != nil {
 		t.Fatalf("failed substitutition: %s", err)
 	}
 
 	expected := "1 2 2 2 2 22 3"
+	if result != expected {
+		t.Fatalf("bad substitution result, expected %s got %s", expected, result)
+	}
+
+	// ${PRODUCT} is ok
+	s = "$PRODUCT ${PRODUCT//x} ${{PRODUCT}}"
+	result, err = substitute(s, []string{"PRODUCT=foo"})
+	if err != nil {
+		t.Fatalf("failed substitution: %s", err)
+	}
+
+	expected = "foo ${PRODUCT//x} foo"
 	if result != expected {
 		t.Fatalf("bad substitution result, expected %s got %s", expected, result)
 	}

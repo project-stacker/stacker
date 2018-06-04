@@ -4,7 +4,7 @@ When doing a `stacker build`, the behavior of stacker is specified by the yaml
 directives below. In addition to these, stacker allows variable substitions of
 several forms. For example, a line like:
 
-    $ONE ${TWO} ${THREE:3}
+    $ONE ${{TWO}} ${{THREE:3}}
 
 When run with `stacker build --substitute ONE=1 --substitute TWO=2` is
 processed in stacker as:
