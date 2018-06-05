@@ -180,7 +180,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 
 func (c *container) bindMount(source string, dest string, extraOpts string) error {
 	createOpt := "create=dir"
-	stat, err := os.Lstat(source)
+	stat, err := os.Stat(source)
 	if err == nil && !stat.IsDir() {
 		createOpt = "create=file"
 	}
