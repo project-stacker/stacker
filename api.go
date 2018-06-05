@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path"
 	"reflect"
@@ -276,7 +277,27 @@ func substitute(content string, substitutions []string) (string, error) {
 func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, error) {
 	sf := Stackerfile{}
 
-	raw, err := ioutil.ReadFile(stackerfile)
+	url, err := url.Parse(stackerfile)
+	if err != nil {
+		return nil, err
+	}
+
+	var raw []byte
+	if url.Scheme == "" {
+		raw, err = ioutil.ReadFile(stackerfile)
+	} else {
+		resp, err := http.Get(stackerfile)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("couldn't download %s: %s", stackerfile, resp.Status)
+		}
+
+		raw, err = ioutil.ReadAll(resp.Body)
+	}
 	if err != nil {
 		return nil, err
 	}
