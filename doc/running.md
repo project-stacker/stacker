@@ -6,7 +6,7 @@ Code for installing these on ubuntu is below:
     sudo apt-add-repository ppa:projectatomic/ppa
     sudo apt update
     sudo apt install skopeo
-    go install github.com/openSUSE/umoci
+    go install github.com/openSUSE/umoci/cmd/umoci
 
 ### Kernel Version
 
