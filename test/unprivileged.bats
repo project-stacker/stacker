@@ -31,6 +31,8 @@ function teardown() {
 }
 
 @test "unprivileged stacker" {
+    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+
     sudo -u $SUDO_USER $GOPATH/bin/stacker build
     umoci unpack --image oci:layer1 dest
 
