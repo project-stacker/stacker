@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -136,6 +137,24 @@ func doBuild(ctx *cli.Context) error {
 	// we'll fall back to putting the whole stacker file contents in the
 	// metadata.
 	gitVersion, _ := stacker.GitVersion(dir)
+
+	username := os.Getenv("SUDO_USER")
+
+	if username == "" {
+		user, err := user.Current()
+		if err != nil {
+			return err
+		}
+
+		username = user.Username
+	}
+
+	host, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+
+	author := fmt.Sprintf("%s@%s", username, host)
 
 	s.Delete(".working")
 	for _, name := range order {
@@ -352,6 +371,7 @@ func doBuild(ctx *cli.Context) error {
 		meta.Created = time.Now()
 		meta.Architecture = runtime.GOARCH
 		meta.OS = runtime.GOOS
+		meta.Author = author
 
 		annotations, err := mutator.Annotations(context.Background())
 		if err != nil {
@@ -369,6 +389,7 @@ func doBuild(ctx *cli.Context) error {
 			EmptyLayer: true, // this is only the history for imageConfig edit
 			Created:    &meta.Created,
 			CreatedBy:  "stacker build",
+			Author:     author,
 		}
 
 		err = mutator.Set(context.Background(), imageConfig, meta, annotations, history)

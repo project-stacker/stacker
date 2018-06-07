@@ -69,6 +69,7 @@ function teardown() {
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Labels["foo"]')" = "bar" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Labels["bar"]')" = "baz" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.WorkingDir')" = "/meshuggah/rocks" ]
+    [ "$(cat oci/blobs/sha256/$config | jq -r '.author')" = "$SUDO_USER@$(hostname)" ]
 
     manifest2=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     [ "$manifest" = "$manifest2" ]
