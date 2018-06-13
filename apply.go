@@ -16,7 +16,10 @@ import (
 
 	"github.com/klauspost/pgzip"
 	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/openSUSE/umoci/oci/layer"
+	"github.com/openSUSE/umoci/pkg/fseval"
+	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -112,23 +115,49 @@ func (a *Apply) applyImage(layer string) error {
 		return err
 	}
 
-	oci, err := umoci.OpenLayout(path.Join(a.opts.Config.StackerDir, "layer-bases", "oci"))
+	layerBases, err := umoci.OpenLayout(path.Join(a.opts.Config.StackerDir, "layer-bases", "oci"))
 	if err != nil {
 		return err
 	}
-	defer oci.Close()
+	defer layerBases.Close()
 
 	tag, err := tagFromSkopeoUrl(layer)
 	if err != nil {
 		return err
 	}
 
-	manifest, err := oci.LookupManifest(tag)
+	manifest, err := layerBases.LookupManifest(tag)
 	if err != nil {
 		return err
 	}
 
-	for _, l := range manifest.Layers {
+	config, err := layerBases.LookupConfig(manifest.Config)
+	if err != nil {
+		return err
+	}
+
+	baseTag, err := a.opts.Layer.From.ParseTag()
+	if err != nil {
+		return err
+	}
+
+	baseManifest, err := a.opts.OCI.LookupManifest(a.opts.Name)
+	if err != nil {
+		baseManifest, err = layerBases.LookupManifest(baseTag)
+		if err != nil {
+			return err
+		}
+	}
+
+	baseConfig, err := a.opts.OCI.LookupConfig(baseManifest.Config)
+	if err != nil {
+		baseConfig, err = layerBases.LookupConfig(baseManifest.Config)
+		if err != nil {
+			return err
+		}
+	}
+
+	for i, l := range manifest.Layers {
 		// did we already extract this layer in this image?
 		found := false
 		for _, l2 := range a.layers {
@@ -148,25 +177,105 @@ func (a *Apply) applyImage(layer string) error {
 		// layer is strictly additive or doesn't otherwise require
 		// merging, we could realize that and add it directly to the
 		// OCI output, so that it is kept as its own layer.
-		err := a.applyLayer(oci, l, path.Join(a.opts.Config.RootFSDir, a.opts.Target, "rootfs"))
+		err := a.applyLayer(layerBases, l, path.Join(a.opts.Config.RootFSDir, a.opts.Target))
 		if err != nil {
 			return err
 		}
 
 		a.layers = append(a.layers, l)
+
+		// Let's be slightly intelligent here: we can share exactly the layers,
+		// since either 1. it is identical because we didn't do any merges, or
+		// 2. there is a tiny delta, which we will generate in the final build
+		// step. But in either case, we can insert this layer into the image
+		// and update umoci's metadata, since we have applied it.
+
+		// Insert the blob if it doesn't exist; note that we don't use umoci's
+		// mutator here, because it wants an uncompressed blob, and we don't
+		// want to uncompress the blob just to decompress it again. We could
+		// restructure this so we only have to read the blob once, though.
+		if _, err := a.opts.OCI.LookupBlob(l); err != nil {
+			blob, err := layerBases.LookupBlob(l)
+			if err != nil {
+				return errors.Wrapf(err, "huh? found layer before but not second time")
+			}
+			defer blob.Close()
+
+			reader, needsClose, err := getReader(blob)
+			if err != nil {
+				return err
+			}
+			if needsClose {
+				defer reader.Close()
+			}
+
+			digest, size, err := a.opts.OCI.PutBlob(reader)
+			if err != nil {
+				return errors.Wrapf(err, "error putting apply blob in oci output")
+			}
+
+			if digest != l.Digest || size != l.Size {
+				return errors.Errorf("apply layer mismatch %s %s", digest, size)
+			}
+		}
+
+		baseManifest.Layers = append(baseManifest.Layers, l)
+		baseConfig.RootFS.DiffIDs = append(baseConfig.RootFS.DiffIDs, config.RootFS.DiffIDs[i])
+	}
+
+	// Add the layer to the image.
+	digest, size, err := a.opts.OCI.PutBlobJSON(baseConfig)
+	if err != nil {
+		return err
+	}
+
+	baseManifest.Config = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageConfig,
+		Digest:    digest,
+		Size:      size,
+	}
+
+	digest, size, err = a.opts.OCI.PutBlobJSON(baseManifest)
+	if err != nil {
+		return err
+	}
+
+	manifestDesc := ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageManifest,
+		Digest:    digest,
+		Size:      size,
+	}
+	err = a.opts.OCI.UpdateReference(a.opts.Name, manifestDesc)
+	if err != nil {
+		return err
+	}
+
+	// Calculate a new mtree with our current manifest.
+	newMtreeName := strings.Replace(manifestDesc.Digest.String(), ":", "_", 1)
+	err = umoci.GenerateBundleManifest(newMtreeName, path.Join(a.opts.Config.RootFSDir, a.opts.Target), fseval.DefaultFsEval)
+	if err != nil {
+		return err
+	}
+
+	// Update umoci's metadata.
+	umociMeta := umoci.UmociMeta{Version: umoci.UmociMetaVersion, From: casext.DescriptorPath{
+		Walk: []ispec.Descriptor{manifestDesc},
+	}}
+
+	bundlePath := path.Join(a.opts.Config.RootFSDir, a.opts.Target)
+	err = umoci.WriteBundleMeta(bundlePath, umociMeta)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (a *Apply) applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target string) error {
-	blob, err := oci.LookupBlob(desc)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't find blob %s", desc.Digest)
-	}
-	defer blob.Close()
-
+func getReader(blob *casext.Blob) (io.ReadCloser, bool, error) {
 	var reader io.ReadCloser
+	var err error
+	needsClose := false
+
 	switch blob.MediaType {
 	case ispec.MediaTypeImageLayer:
 		reader = blob.Data.(io.ReadCloser)
@@ -174,15 +283,35 @@ func (a *Apply) applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target stri
 	case ispec.MediaTypeImageLayerGzip:
 		reader, err = pgzip.NewReader(blob.Data.(io.ReadCloser))
 		if err != nil {
-			return err
+			return nil, false, err
 		}
-		defer reader.Close()
+		needsClose = true
 	default:
-		return fmt.Errorf("unknown layer type %s", blob.MediaType)
+		return nil, false, fmt.Errorf("unknown layer type %s", blob.MediaType)
 	}
 
+	return reader, needsClose, nil
+}
+
+func (a *Apply) applyLayer(cacheOCI *umoci.Layout, desc ispec.Descriptor, target string) error {
+	blob, err := cacheOCI.LookupBlob(desc)
+	if err != nil {
+		return err
+	}
+	defer blob.Close()
+
+	reader, needsClose, err := getReader(blob)
+	if err != nil {
+		return err
+	}
+	if needsClose {
+		defer reader.Close()
+	}
+
+	diffID := digest.SHA256.Digester()
+
 	didMerge := false
-	tr := tar.NewReader(reader)
+	tr := tar.NewReader(io.TeeReader(reader, diffID.Hash()))
 	te := layer.NewTarExtractor(layer.MapOptions{})
 	for {
 		hdr, err := tr.Next()
@@ -201,32 +330,12 @@ func (a *Apply) applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target stri
 			continue
 		}
 
-		merged, err := a.insertOneFile(hdr, target, te, tr)
+		merged, err := a.insertOneFile(hdr, path.Join(target, "rootfs"), te, tr)
 		if err != nil {
 			return err
 		}
 
 		didMerge = didMerge || merged
-	}
-
-	if !didMerge {
-		// TODO: here we can be very smart: we didn't need to merge
-		// anything, so all the files were either new, or their
-		// contents exactly matched the layers below. So we can just
-		// inject the source layer above for this into the image,
-		// instead of piling it on and generating a giant layer with
-		// all of these merged files combined.
-		//
-		// Indeed, even if we did a merge, we could still inject this
-		// old layer, since our rootfs reflects the merge when it is
-		// repacked by umoci it will generate a new layer with the
-		// right file content. Of course, this means the mostly same
-		// file will occur multiple times in the archive, but since we
-		// only do simple merging of text files, the files are
-		// presumably small, and this is very cheap.
-		//
-		// But anyway, for now we just generate one giant blob because
-		// it's less code.
 	}
 
 	return nil
@@ -420,6 +529,11 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 			}
 		}
 
+		// Disable this merging code for now. In particular, we have a
+		// problem with the layer merging and layer intelligence code
+		// conflicting. layer intelligence seems more important, so we
+		// disable this.
+		return false, fmt.Errorf("Merging of files (%s) is currently disabled.", hdr.Name)
 		// Now we know the files aren't equal. We don't want to
 		// try that hard to diff things, so let's make sure we
 		// only diff text files.
