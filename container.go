@@ -39,7 +39,7 @@ func init() {
 		// delegations. The only thing we can do is panic, and if we're
 		// re-execing inside a user namespace we don't want to do that.
 		// So let's just ignore the error and let future code handle it.
-		IdmapSet, _ = idmap.DefaultIdmapSet(currentUser.Username)
+		IdmapSet, _ = idmap.DefaultIdmapSet("", currentUser.Username)
 
 		if IdmapSet != nil {
 			/* Let's make our current user the root user in the ns, so that when

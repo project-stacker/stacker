@@ -1,5 +1,5 @@
 hash: e0b297447455777d9b12b97627986b562b13ee1a100f090489dd6ae8e1d76082
-updated: 2018-05-14T23:47:02.573925077Z
+updated: 2018-06-29T11:29:40.324455183-06:00
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
@@ -8,17 +8,19 @@ imports:
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cheggaaa/pb
-  version: d931a9997fe189609982aeb8eaa8a11b9ce5e013
+  version: 2af8bbdea9e99e83b3ac400d8f6b6d1b8cbbf338
 - name: github.com/cyphar/filepath-securejoin
   version: ae69057f2299fb9e5ba2df738607e6a505b74ab6
 - name: github.com/docker/go-units
   version: 47565b4f722fb6ceae66b95f853feed578a4a51c
+- name: github.com/dustin/go-humanize
+  version: 02af3965c54e8cacf948b97fef38925c4120652c
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
 - name: github.com/gorilla/websocket
-  version: 21ab95fa12b9bdd8fecf5fa3586aad941cc98785
+  version: 5ed622c449da6d44c3c8329331ff47a9e5844f71
 - name: github.com/klauspost/compress
-  version: 5fb1f31b0a61e9858f12f39266e059848a5f1cea
+  version: a17685a03bf4c0a9219e110eb90e028b36193570
   subpackages:
   - flate
 - name: github.com/klauspost/cpuid
@@ -26,9 +28,9 @@ imports:
 - name: github.com/klauspost/crc32
   version: bab58d77464aa9cf4e84200c3276da0831fe0c03
 - name: github.com/klauspost/pgzip
-  version: cf5d6687abbc66239e5dc605e63411939c7370fc
+  version: 90b2c57fba35a1dd05cb40f9200722763808d99b
 - name: github.com/lxc/lxd
-  version: 1aabbec04f306b3c817bce26f40f2834ebe6e252
+  version: 919d9bb458c0596d10df9d50741892aab53015bd
   subpackages:
   - shared
   - shared/cancel
@@ -47,7 +49,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runtime-spec
-  version: c102f0954e4a4faace7e5e4bc7054300788bc0a3
+  version: 7c4c8f63a63693f75cfa0f3f397151fb8d9732ad
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
@@ -57,7 +59,7 @@ imports:
   - generate/seccomp
   - validate
 - name: github.com/openSUSE/umoci
-  version: ba8bcfeec88e587e5704aff4f65001d03eda23b5
+  version: 309d6cbb329d852e01818370ad86f5c5aac460fe
   repo: https://github.com/anuvu/umoci
   subpackages:
   - mutate
@@ -89,17 +91,17 @@ imports:
 - name: github.com/urfave/cli
   version: 8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff
 - name: github.com/vbatts/go-mtree
-  version: 16da0f86ee549d8949775bf3d555e7921a9caca9
+  version: 1bcf4de08ff771c9b288e3a25348f195d404c17b
   subpackages:
   - pkg/govis
   - xattr
 - name: golang.org/x/crypto
-  version: 425cc7d9a76e079f290e1d4bd1250d7b5b235cfa
+  version: a49355c7e3f8fe157a85be2f77e6e269a0f89602
   subpackages:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: 2491c5de3490fced2f6cff376127c667efeed857
+  version: 4cb1c02c05b0e749b0365f61ae859a8e0cfceed9
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -108,7 +110,7 @@ imports:
   - unix
   - windows
 - name: gopkg.in/lxc/go-lxc.v2
-  version: 2660c429a942a4a21455765c7046dde612c1baa7
+  version: 1c13b43ccb43defbf04a8b4b931e4bb18fd481e6
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 testImports: []

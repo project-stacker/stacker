@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/dustin/go-humanize"
 	"github.com/openSUSE/umoci"
 	"github.com/urfave/cli"
 )
@@ -53,7 +54,7 @@ func renderManifest(oci *umoci.Layout, name string) error {
 
 	fmt.Printf("%s\n", name)
 	for i, l := range man.Layers {
-		fmt.Printf("\tlayer %d: %s\n", i, l.Digest)
+		fmt.Printf("\tlayer %d: %s (%s)\n", i, l.Digest, humanize.Bytes(uint64(l.Size)))
 	}
 
 	if len(man.Annotations) > 0 {
