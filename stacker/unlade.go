@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -34,7 +35,7 @@ func doUnlade(ctx *cli.Context) error {
 	}
 	defer oci.Close()
 
-	tags, err := oci.ListTags()
+	tags, err := oci.ListReferences(context.Background())
 	if err != nil {
 		return err
 	}

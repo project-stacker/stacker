@@ -14,6 +14,8 @@ import (
 
 	"github.com/anuvu/stacker"
 	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/mutate"
+	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -115,7 +117,7 @@ func doBuild(ctx *cli.Context) error {
 		return err
 	}
 
-	var oci *umoci.Layout
+	var oci casext.Engine
 	if _, statErr := os.Stat(config.OCIDir); statErr != nil {
 		oci, err = umoci.CreateLayout(config.OCIDir)
 	} else {
@@ -193,7 +195,7 @@ func doBuild(ctx *cli.Context) error {
 					}
 				}
 			} else {
-				err = oci.UpdateReference(name, cacheEntry.Blob)
+				err = oci.UpdateReference(context.Background(), name, cacheEntry.Blob)
 				if err != nil {
 					return err
 				}
@@ -293,7 +295,12 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		mutator, err := oci.Mutator(name)
+		descPaths, err := oci.ResolveReference(context.Background(), name)
+		if err != nil {
+			return err
+		}
+
+		mutator, err := mutate.New(oci, descPaths[0])
 		if err != nil {
 			return errors.Wrapf(err, "mutator failed")
 		}
@@ -406,7 +413,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		err = oci.UpdateReference(name, newPath.Root())
+		err = oci.UpdateReference(context.Background(), name, newPath.Root())
 		if err != nil {
 			return err
 		}
@@ -419,7 +426,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		umociMeta := umoci.UmociMeta{Version: umoci.UmociMetaVersion, From: newPath}
+		umociMeta := umoci.Meta{Version: umoci.MetaVersion, From: newPath}
 		err = umoci.WriteBundleMeta(bundlePath, umociMeta)
 		if err != nil {
 			return err
@@ -433,17 +440,17 @@ func doBuild(ctx *cli.Context) error {
 
 		fmt.Printf("filesystem %s built successfully\n", name)
 
-		desc, err := oci.LookupManifestDescriptor(name)
+		descPaths, err = oci.ResolveReference(context.Background(), name)
 		if err != nil {
 			return err
 		}
 
-		if err := buildCache.Put(name, desc); err != nil {
+		if err := buildCache.Put(name, descPaths[0].Descriptor()); err != nil {
 			return err
 		}
 	}
 
-	err = oci.GC()
+	err = oci.GC(context.Background())
 	if err != nil {
 		fmt.Printf("final OCI GC failed: %v", err)
 	}

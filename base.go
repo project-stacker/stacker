@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/oci/casext"
 )
 
 type BaseLayerOpts struct {
@@ -17,12 +19,12 @@ type BaseLayerOpts struct {
 	Target string
 	Layer  *Layer
 	Cache  *BuildCache
-	OCI    *umoci.Layout
+	OCI    casext.Engine
 }
 
 func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
 	// delete the tag if it exists
-	o.OCI.DeleteTag(o.Name)
+	o.OCI.DeleteReference(context.Background(), o.Name)
 
 	switch o.Layer.From.Type {
 	case BuiltType:
@@ -88,7 +90,7 @@ func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
 			return
 		}
 
-		oci.GC()
+		oci.GC(context.Background())
 	}()
 
 	skopeoArgs := []string{
@@ -152,7 +154,7 @@ func extractOutput(o BaseLayerOpts) error {
 
 	// Delete the tag for the base layer; we're only interested in our
 	// build layer outputs, not in the base layers.
-	err = o.OCI.DeleteTag(tag)
+	err = o.OCI.DeleteReference(context.Background(), tag)
 	if err != nil {
 		return err
 	}
@@ -289,5 +291,5 @@ func getBuilt(o BaseLayerOpts, sf *Stackerfile) error {
 		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
 	}
 
-	return o.OCI.DeleteTag(tag)
+	return o.OCI.DeleteReference(context.Background(), tag)
 }

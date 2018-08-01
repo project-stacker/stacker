@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/anuvu/stacker"
 	"github.com/dustin/go-humanize"
 	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/oci/casext"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/urfave/cli"
 )
 
@@ -31,7 +35,7 @@ func doInspect(ctx *cli.Context) error {
 		return renderManifest(oci, arg)
 	}
 
-	tags, err := oci.ListTags()
+	tags, err := oci.ListReferences(context.Background())
 	if err != nil {
 		return err
 	}
@@ -46,8 +50,8 @@ func doInspect(ctx *cli.Context) error {
 	return nil
 }
 
-func renderManifest(oci *umoci.Layout, name string) error {
-	man, err := oci.LookupManifest(name)
+func renderManifest(oci casext.Engine, name string) error {
+	man, err := stacker.LookupManifest(oci, name)
 	if err != nil {
 		return err
 	}
@@ -64,10 +68,16 @@ func renderManifest(oci *umoci.Layout, name string) error {
 		}
 	}
 
-	config, err := oci.LookupConfig(man.Config)
+	configBlob, err := oci.FromDescriptor(context.Background(), man.Config)
 	if err != nil {
 		return err
 	}
+
+	if configBlob.MediaType != ispec.MediaTypeImageConfig {
+		return fmt.Errorf("bad image config type: %s", configBlob.MediaType)
+	}
+
+	config := configBlob.Data.(ispec.Image)
 
 	fmt.Printf("Image config:\n")
 	pretty, err := json.MarshalIndent(config, "", "  ")

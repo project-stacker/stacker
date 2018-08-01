@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -12,7 +13,7 @@ import (
 	"path"
 
 	"github.com/mitchellh/hashstructure"
-	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/vbatts/go-mtree"
@@ -69,7 +70,7 @@ type BuildCache struct {
 	Version    int                   `json:"version"`
 }
 
-func OpenCache(config StackerConfig, oci *umoci.Layout, sf *Stackerfile) (*BuildCache, error) {
+func OpenCache(config StackerConfig, oci casext.Engine, sf *Stackerfile) (*BuildCache, error) {
 	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
 	cache := &BuildCache{
@@ -113,7 +114,7 @@ func OpenCache(config StackerConfig, oci *umoci.Layout, sf *Stackerfile) (*Build
 			// keep going.
 			_, err = os.Stat(path.Join(config.RootFSDir, ent.Name))
 		} else {
-			_, err = oci.LookupManifestByDescriptor(ent.Blob)
+			_, err = oci.FromDescriptor(context.Background(), ent.Blob)
 		}
 
 		if err != nil {

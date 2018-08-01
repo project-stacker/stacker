@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -36,7 +37,7 @@ func TestLayerHashing(t *testing.T) {
 		},
 	}
 
-	cache, err := OpenCache(config, nil, sf)
+	cache, err := OpenCache(config, casext.Engine{}, sf)
 	if err != nil {
 		t.Fatalf("couldn't open cache %v", err)
 	}
@@ -57,7 +58,7 @@ func TestLayerHashing(t *testing.T) {
 	layer.Run = []string{"jmh"}
 
 	// ok, now re-load the persisted cache
-	cache, err = OpenCache(config, nil, sf)
+	cache, err = OpenCache(config, casext.Engine{}, sf)
 	if err != nil {
 		t.Fatalf("couldn't re-load cache %v", err)
 	}

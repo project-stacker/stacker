@@ -3,6 +3,7 @@ package stacker
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -26,6 +27,29 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func LookupManifest(oci casext.Engine, tag string) (ispec.Manifest, error) {
+	descriptorPaths, err := oci.ResolveReference(context.Background(), tag)
+	if err != nil {
+		return ispec.Manifest{}, err
+	}
+
+	if len(descriptorPaths) != 1 {
+		return ispec.Manifest{}, errors.Errorf("bad descriptor %s", tag)
+	}
+
+	blob, err := oci.FromDescriptor(context.Background(), descriptorPaths[0].Descriptor())
+	if err != nil {
+		return ispec.Manifest{}, err
+	}
+	defer blob.Close()
+
+	if blob.MediaType != ispec.MediaTypeImageManifest {
+		return ispec.Manifest{}, errors.Errorf("descriptor does not point to a manifest: %s", blob.MediaType)
+	}
+
+	return blob.Data.(ispec.Manifest), nil
+}
+
 type Apply struct {
 	layers             []ispec.Descriptor
 	opts               BaseLayerOpts
@@ -36,7 +60,7 @@ type Apply struct {
 func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage, considerTimestamps bool) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
-	var source *umoci.Layout
+	var source casext.Engine
 
 	if opts.Layer.From.Type == DockerType || opts.Layer.From.Type == OCIType {
 		var err error
@@ -68,13 +92,13 @@ func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage, considerTime
 		}
 	}
 
-	if source != nil {
+	if source.Engine != nil {
 		tag, err := opts.Layer.From.ParseTag()
 		if err != nil {
 			return nil, err
 		}
 
-		manifest, err := source.LookupManifest(tag)
+		manifest, err := LookupManifest(source, tag)
 		if err != nil {
 			return nil, err
 		}
@@ -109,6 +133,20 @@ func (a *Apply) DoApply() error {
 	return nil
 }
 
+func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error) {
+	configBlob, err := oci.FromDescriptor(context.Background(), desc)
+	if err != nil {
+		return ispec.Image{}, err
+	}
+
+	if configBlob.MediaType != ispec.MediaTypeImageConfig {
+		return ispec.Image{}, fmt.Errorf("bad image config type: %s", configBlob.MediaType)
+	}
+
+	return configBlob.Data.(ispec.Image), nil
+
+}
+
 func (a *Apply) applyImage(layer string) error {
 	err := runSkopeo(layer, a.opts, false)
 	if err != nil {
@@ -126,12 +164,12 @@ func (a *Apply) applyImage(layer string) error {
 		return err
 	}
 
-	manifest, err := layerBases.LookupManifest(tag)
+	manifest, err := LookupManifest(layerBases, tag)
 	if err != nil {
 		return err
 	}
 
-	config, err := layerBases.LookupConfig(manifest.Config)
+	config, err := LookupConfig(layerBases, manifest.Config)
 	if err != nil {
 		return err
 	}
@@ -141,17 +179,17 @@ func (a *Apply) applyImage(layer string) error {
 		return err
 	}
 
-	baseManifest, err := a.opts.OCI.LookupManifest(a.opts.Name)
+	baseManifest, err := LookupManifest(a.opts.OCI, a.opts.Name)
 	if err != nil {
-		baseManifest, err = layerBases.LookupManifest(baseTag)
+		baseManifest, err = LookupManifest(layerBases, baseTag)
 		if err != nil {
 			return err
 		}
 	}
 
-	baseConfig, err := a.opts.OCI.LookupConfig(baseManifest.Config)
+	baseConfig, err := LookupConfig(a.opts.OCI, baseManifest.Config)
 	if err != nil {
-		baseConfig, err = layerBases.LookupConfig(baseManifest.Config)
+		baseConfig, err = LookupConfig(layerBases, baseManifest.Config)
 		if err != nil {
 			return err
 		}
@@ -194,8 +232,8 @@ func (a *Apply) applyImage(layer string) error {
 		// mutator here, because it wants an uncompressed blob, and we don't
 		// want to uncompress the blob just to decompress it again. We could
 		// restructure this so we only have to read the blob once, though.
-		if _, err := a.opts.OCI.LookupBlob(l); err != nil {
-			blob, err := layerBases.LookupBlob(l)
+		if _, err := a.opts.OCI.FromDescriptor(context.Background(), l); err != nil {
+			blob, err := layerBases.FromDescriptor(context.Background(), l)
 			if err != nil {
 				return errors.Wrapf(err, "huh? found layer before but not second time")
 			}
@@ -209,7 +247,7 @@ func (a *Apply) applyImage(layer string) error {
 				defer reader.Close()
 			}
 
-			digest, size, err := a.opts.OCI.PutBlob(reader)
+			digest, size, err := a.opts.OCI.PutBlob(context.Background(), reader)
 			if err != nil {
 				return errors.Wrapf(err, "error putting apply blob in oci output")
 			}
@@ -224,7 +262,7 @@ func (a *Apply) applyImage(layer string) error {
 	}
 
 	// Add the layer to the image.
-	digest, size, err := a.opts.OCI.PutBlobJSON(baseConfig)
+	digest, size, err := a.opts.OCI.PutBlobJSON(context.Background(), baseConfig)
 	if err != nil {
 		return err
 	}
@@ -235,7 +273,7 @@ func (a *Apply) applyImage(layer string) error {
 		Size:      size,
 	}
 
-	digest, size, err = a.opts.OCI.PutBlobJSON(baseManifest)
+	digest, size, err = a.opts.OCI.PutBlobJSON(context.Background(), baseManifest)
 	if err != nil {
 		return err
 	}
@@ -245,7 +283,7 @@ func (a *Apply) applyImage(layer string) error {
 		Digest:    digest,
 		Size:      size,
 	}
-	err = a.opts.OCI.UpdateReference(a.opts.Name, manifestDesc)
+	err = a.opts.OCI.UpdateReference(context.Background(), a.opts.Name, manifestDesc)
 	if err != nil {
 		return err
 	}
@@ -258,7 +296,7 @@ func (a *Apply) applyImage(layer string) error {
 	}
 
 	// Update umoci's metadata.
-	umociMeta := umoci.UmociMeta{Version: umoci.UmociMetaVersion, From: casext.DescriptorPath{
+	umociMeta := umoci.Meta{Version: umoci.MetaVersion, From: casext.DescriptorPath{
 		Walk: []ispec.Descriptor{manifestDesc},
 	}}
 
@@ -293,8 +331,8 @@ func getReader(blob *casext.Blob) (io.ReadCloser, bool, error) {
 	return reader, needsClose, nil
 }
 
-func (a *Apply) applyLayer(cacheOCI *umoci.Layout, desc ispec.Descriptor, target string) error {
-	blob, err := cacheOCI.LookupBlob(desc)
+func (a *Apply) applyLayer(cacheOCI casext.Engine, desc ispec.Descriptor, target string) error {
+	blob, err := cacheOCI.FromDescriptor(context.Background(), desc)
 	if err != nil {
 		return err
 	}
