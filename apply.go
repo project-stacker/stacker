@@ -24,12 +24,13 @@ import (
 )
 
 type Apply struct {
-	layers  []ispec.Descriptor
-	opts    BaseLayerOpts
-	storage Storage
+	layers             []ispec.Descriptor
+	opts               BaseLayerOpts
+	storage            Storage
+	considerTimestamps bool
 }
 
-func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage) (*Apply, error) {
+func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage, considerTimestamps bool) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
 	var source *umoci.Layout
@@ -248,10 +249,10 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 	sysStat := fi.Sys().(*syscall.Stat_t)
 
 	// For everything that's not a file, we want to be sure their times are
-	// identical. For files, we allow some slack in case two different
-	// layers edit the file, their mtimes will be different. The merging of
-	// the result is handled below.
-	if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
+	// identical if the user has asked for it. For files, we allow some
+	// slack in case two different layers edit the file, their mtimes will
+	// be different. The merging of the result is handled below.
+	if a.considerTimestamps && hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
 		// zero is allowed, since umoci just picks time.Now(), they
 		// probably won't match.
 		if fi.ModTime() != hdr.ModTime && !hdr.ModTime.IsZero() {

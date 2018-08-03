@@ -49,6 +49,10 @@ var buildCmd = cli.Command{
 			Name:  "shell-fail",
 			Usage: "exec /bin/sh inside the container if run fails (alias for --on-run-failure=/bin/sh)",
 		},
+		cli.BoolFlag{
+			Name:  "apply-consider-timestamps",
+			Usage: "for apply layer merging, fail if timestamps on files don't match",
+		},
 	},
 	Before: beforeBuild,
 }
@@ -223,7 +227,7 @@ func doBuild(ctx *cli.Context) error {
 			return err
 		}
 
-		apply, err := stacker.NewApply(sf, os, s)
+		apply, err := stacker.NewApply(sf, os, s, ctx.Bool("apply-consider-timestamps"))
 		if err != nil {
 			return err
 		}
