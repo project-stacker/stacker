@@ -162,7 +162,7 @@ func (a *Apply) applyImage(layer string) error {
 func (a *Apply) applyLayer(oci *umoci.Layout, desc ispec.Descriptor, target string) error {
 	blob, err := oci.LookupBlob(desc)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "couldn't find blob %s", desc.Digest)
 	}
 	defer blob.Close()
 
@@ -398,7 +398,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 
 		existing, err := os.Open(path.Join(target, hdr.Name))
 		if err != nil {
-			return false, err
+			return false, errors.Wrapf(err, "couldn't open existing file %s", path.Join(target, hdr.Name))
 		}
 		defer existing.Close()
 
