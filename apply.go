@@ -287,12 +287,12 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		return false, fmt.Errorf("two different gids on %s: %v %v", hdr.Name, sysStat.Gid, hdr.Gid)
 	}
 
-	sz, err := syscall.Listxattr(path.Join(target, hdr.Name), nil)
+	sz, err := unix.Llistxattr(path.Join(target, hdr.Name), nil)
 	if err == nil {
 		xattrBuf := make([]byte, sz)
-		_, err = syscall.Listxattr(path.Join(target, hdr.Name), xattrBuf)
+		_, err = unix.Llistxattr(path.Join(target, hdr.Name), xattrBuf)
 		if err != nil {
-			return false, err
+			return false, errors.Wrap(err, "error listing xattrs")
 		}
 
 		start := 0
