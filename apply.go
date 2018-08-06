@@ -237,7 +237,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 	if os.IsNotExist(err) {
 		// if it didn't already exist, that's fine, just
 		// process it normally
-		return false, te.UnpackEntry(target, hdr, tr)
+		return false, errors.Wrapf(te.UnpackEntry(target, hdr, tr), "unpacking %s", hdr.Name)
 	} else if err != nil {
 		return false, errors.Wrapf(err, "stat %s", path.Join(target, hdr.Name))
 	}
@@ -323,7 +323,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		}
 
 	} else if err != syscall.ENODATA {
-		return false, err
+		return false, errors.Wrapf(err, "problem getting xattrs for %s", hdr.Name)
 	}
 
 	switch hdr.Typeflag {
@@ -344,7 +344,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		// place as the existing one.
 		targetFI, err := os.Lstat(path.Join(target, hdr.Linkname))
 		if err != nil {
-			return false, err
+			return false, errors.Wrapf(err, "couldn't stat link %s", hdr.Linkname)
 		}
 
 		targetIno := targetFI.Sys().(*syscall.Stat_t).Ino
@@ -359,7 +359,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		// as the existing one.
 		linkname, err := os.Readlink(path.Join(target, hdr.Name))
 		if err != nil {
-			return false, err
+			return false, errors.Wrapf(err, "couldn't readlink %s", hdr.Name)
 		}
 
 		if linkname != hdr.Linkname {
