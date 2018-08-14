@@ -215,7 +215,7 @@ func (a *Apply) applyImage(layer string) error {
 			}
 
 			if digest != l.Digest || size != l.Size {
-				return errors.Errorf("apply layer mismatch %s %s", digest, size)
+				return errors.Errorf("apply layer mismatch %s %d", digest, size)
 			}
 		}
 
