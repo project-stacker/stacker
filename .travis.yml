@@ -11,7 +11,7 @@ before_install:
     - sudo add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
     - sudo add-apt-repository -y ppa:projectatomic/ppa
     - sudo apt-get update
-    - sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq
+    - sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq libcap-dev
     - go get github.com/openSUSE/umoci/cmd/umoci
     - curl https://glide.sh/get | sh
     - sudo cp $GOPATH/bin/umoci /usr/bin
