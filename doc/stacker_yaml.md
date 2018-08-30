@@ -51,7 +51,7 @@ today:
 
     /path/to/file
 
-Will import a file from the local filesystem. If the file changes between
+Will import a file or directory from the local filesystem. If the file changes between
 stacker builds, it will be hashed and the new file will be imported on
 subsequent builds.
 
