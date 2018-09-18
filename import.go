@@ -9,7 +9,9 @@ import (
 	"os/exec"
 	"path"
 
+	"github.com/pkg/errors"
 	"github.com/udhos/equalfile"
+	"github.com/vbatts/go-mtree"
 )
 
 func fileCopy(dest string, source string) error {
@@ -92,40 +94,79 @@ func importFile(imp string, cacheDir string) (string, error) {
 		return "", err
 	}
 
-	if e1.IsDir() {
-		binary := "cp"
-		// TODO: use rsync if it is available
-		output, err := exec.Command(binary, "-a", imp, cacheDir).CombinedOutput()
+	if !e1.IsDir() {
+		needsCopy := false
+		dest := path.Join(cacheDir, path.Base(imp))
+		e2, err := os.Stat(dest)
 		if err != nil {
-			return "", fmt.Errorf("%s", string(output))
+			needsCopy = true
+		} else {
+			differ, err := filesDiffer(imp, e1, dest, e2)
+			if err != nil {
+				return "", err
+			}
+
+			needsCopy = differ
 		}
-		return path.Join(cacheDir, path.Base(imp)), nil
+
+		if needsCopy {
+			fmt.Printf("copying %s\n", imp)
+			if err := fileCopy(dest, imp); err != nil {
+				return "", errors.Wrapf(err, "couldn't copy import %s", imp)
+			}
+		} else {
+			fmt.Println("using cached copy of", imp)
+		}
+
+		return dest, nil
 	}
 
-	needsCopy := false
-	dest := path.Join(cacheDir, path.Base(imp))
-	e2, err := os.Stat(dest)
+	existing, err := walkImport(cacheDir)
 	if err != nil {
-		needsCopy = true
-	} else {
-		differ, err := filesDiffer(imp, e1, dest, e2)
-		if err != nil {
-			return "", err
-		}
-
-		needsCopy = differ
+		return "", errors.Wrapf(err, "failed walking existing import dir")
 	}
 
-	if needsCopy {
-		fmt.Printf("copying %s\n", imp)
-		if err := fileCopy(dest, imp); err != nil {
-			return "", err
+	dest := path.Join(cacheDir, path.Base(imp))
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return "", err
+	}
+
+	toImport, err := walkImport(imp)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed walking dir to import")
+	}
+
+	diff, err := mtree.Compare(existing, toImport, mtreeKeywords)
+	if err != nil {
+		return "", err
+	}
+
+	for _, d := range diff {
+		switch d.Type() {
+		case mtree.Missing:
+			err := os.RemoveAll(path.Join(dest, d.Path()))
+			if err != nil {
+				return "", err
+			}
+		case mtree.Modified:
+			fallthrough
+		case mtree.Extra:
+			err := os.RemoveAll(path.Join(dest, d.Path()))
+			if err != nil && !os.IsNotExist(err) {
+				return "", err
+			}
+
+			output, err := exec.Command("cp", "-a", path.Join(imp, d.Path()), path.Join(dest, d.Path())).CombinedOutput()
+			if err != nil {
+				return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
+			}
+		case mtree.ErrorDifference:
+			return "", errors.Errorf("failed to diff %s", d.Path())
 		}
-	} else {
-		fmt.Println("using cached copy of", imp)
 	}
 
 	return dest, nil
+
 }
 
 func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
