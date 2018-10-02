@@ -156,6 +156,17 @@ func importFile(imp string, cacheDir string) (string, error) {
 				return "", err
 			}
 
+			sdirinfo, err := os.Stat(path.Join(imp, path.Dir(d.Path())))
+			if err != nil {
+				return "", err
+			}
+
+			destdir := path.Join(dest, path.Dir(d.Path()))
+			derr := os.MkdirAll(destdir, sdirinfo.Mode())
+			if derr != nil {
+				return "", errors.Errorf("failed to create dir %s", destdir)
+			}
+
 			output, err := exec.Command("cp", "-a", path.Join(imp, d.Path()), path.Join(dest, d.Path())).CombinedOutput()
 			if err != nil {
 				return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
