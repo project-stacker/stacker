@@ -4,8 +4,12 @@
  * environments (i.e. golang), with go-lxc. So instead, we embed some C into
  * our program that catches execution before golang starts. This way, we can do
  * a tiny C program to actually spawn the container.
+ *
+ * We do this in the "stacker" package so that if anyone uses the library, the
+ * re-exec will actually work. Of course, this is slightly impolite, but what
+ * can you do.
  */
-package main
+package stacker
 
 // #cgo LDFLAGS: -llxc
 /*
