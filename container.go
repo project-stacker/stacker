@@ -251,8 +251,15 @@ func (c *container) execute(args string, stdin io.Reader) error {
 		return err
 	}
 
+	// Just in case the binary has chdir'd somewhere since it started,
+	// let's readlink /proc/self/exe to figure out what to exec.
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
 	cmd := exec.Command(
-		os.Args[0],
+		binary,
 		"internal",
 		c.c.Name(),
 		c.sc.RootFSDir,
