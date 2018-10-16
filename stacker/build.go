@@ -66,7 +66,7 @@ func doBuild(ctx *cli.Context) error {
 		LeaveUnladen:            ctx.Bool("leave-unladen"),
 		StackerFile:             ctx.String("stacker-file"),
 		NoCache:                 ctx.Bool("no-cache"),
-		Substitute:              ctx.StringSlice("substitue"),
+		Substitute:              ctx.StringSlice("substitute"),
 		OnRunFailure:            ctx.String("on-run-failure"),
 		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
 	}
