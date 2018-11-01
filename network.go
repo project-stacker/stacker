@@ -11,7 +11,7 @@ import (
 )
 
 // download with caching support in the specified cache dir.
-func download(cacheDir string, url string) (string, error) {
+func Download(cacheDir string, url string) (string, error) {
 	name := path.Join(cacheDir, path.Base(url))
 	out, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {

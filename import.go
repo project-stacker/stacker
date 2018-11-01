@@ -191,7 +191,7 @@ func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
 		return importFile(i, cache)
 	} else if url.Scheme == "http" || url.Scheme == "https" {
 		// otherwise, we need to download it
-		return download(cache, i)
+		return Download(cache, i)
 	} else if url.Scheme == "stacker" {
 		p := path.Join(c.RootFSDir, url.Host, "rootfs", url.Path)
 		return importFile(p, cache)
