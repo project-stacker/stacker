@@ -14,7 +14,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-func fileCopy(dest string, source string) error {
+func FileCopy(dest string, source string) error {
 	s, err := os.Open(source)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 		if needsCopy {
 			fmt.Printf("copying %s\n", imp)
-			if err := fileCopy(dest, imp); err != nil {
+			if err := FileCopy(dest, imp); err != nil {
 				return "", errors.Wrapf(err, "couldn't copy import %s", imp)
 			}
 		} else {
