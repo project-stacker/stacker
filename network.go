@@ -34,11 +34,13 @@ func Download(cacheDir string, url string) (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
+		os.RemoveAll(name)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		os.RemoveAll(name)
 		return "", fmt.Errorf("couldn't download %s: %s", url, resp.Status)
 	}
 
