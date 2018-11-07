@@ -2,44 +2,17 @@ package stacker
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
 	"path"
 
+	"github.com/anuvu/stacker/lib"
 	"github.com/pkg/errors"
 	"github.com/udhos/equalfile"
 	"github.com/vbatts/go-mtree"
 )
-
-func FileCopy(dest string, source string) error {
-	s, err := os.Open(source)
-	if err != nil {
-		return err
-	}
-	defer s.Close()
-
-	fi, err := s.Stat()
-	if err != nil {
-		return err
-	}
-
-	d, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer d.Close()
-
-	err = d.Chmod(fi.Mode())
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(d, s)
-	return err
-}
 
 // filesDiffer returns true if the files are different, false if they are the same.
 func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bool, error) {
@@ -111,7 +84,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 		if needsCopy {
 			fmt.Printf("copying %s\n", imp)
-			if err := FileCopy(dest, imp); err != nil {
+			if err := lib.FileCopy(dest, imp); err != nil {
 				return "", errors.Wrapf(err, "couldn't copy import %s", imp)
 			}
 		} else {
