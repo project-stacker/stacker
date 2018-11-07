@@ -358,7 +358,7 @@ func Build(opts *BuildArgs) error {
 			Author:     author,
 		}
 
-		err = mutator.Set(context.Background(), imageConfig, meta, annotations, history)
+		err = mutator.Set(context.Background(), imageConfig, meta, annotations, &history)
 		if err != nil {
 			return err
 		}
