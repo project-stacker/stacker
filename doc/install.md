@@ -14,7 +14,7 @@ curl piped to sh as follows:
 
 Stacker also has the following build dependencies:
 
-    sudo apt install lxc-dev libacl1-dev
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev
 
 Finally, once you have the build dependencies, stacker can be built with a
 simple `make`. The stacker binary will be output to `$GOPATH/bin/stacker`.

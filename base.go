@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/anuvu/stacker/lib"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 )
@@ -93,26 +94,14 @@ func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
 		oci.GC(context.Background())
 	}()
 
-	skopeoArgs := []string{
-		// So we don't have to make everyone install an
-		// /etc/containers/policy.json too. Alternatively, we could
-		// write a default policy out to /tmp and use --policy.
-		"--insecure-policy",
-		"copy",
-	}
-
-	if o.Layer.From.Insecure {
-		skopeoArgs = append(skopeoArgs, "--src-tls-verify=false")
-	}
-
-	skopeoArgs = append(skopeoArgs, toImport, fmt.Sprintf("oci:%s:%s", cacheDir, tag))
-
-	cmd := exec.Command("skopeo", skopeoArgs...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	err = lib.ImageCopy(lib.ImageCopyOpts{
+		Src:      toImport,
+		Dest:     fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		SkipTLS:  o.Layer.From.Insecure,
+		Progress: os.Stdout,
+	})
 	if err != nil {
-		return fmt.Errorf("skopeo copy: %s", err)
+		return err
 	}
 
 	if !copyToOutput {
@@ -120,20 +109,11 @@ func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
 	}
 
 	// We just copied it to the cache, now let's copy that over to our image.
-	cmd = exec.Command(
-		"skopeo",
-		"--insecure-policy",
-		"copy",
-		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
-	)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
-	}
-
-	return nil
+	err = lib.ImageCopy(lib.ImageCopyOpts{
+		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+	})
+	return err
 }
 
 func extractOutput(o BaseLayerOpts) error {
@@ -278,17 +258,12 @@ func getBuilt(o BaseLayerOpts, sf *Stackerfile) error {
 	}
 
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
-	cmd := exec.Command(
-		"skopeo",
-		"--insecure-policy",
-		"copy",
-		fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
-	)
-
-	output, err := cmd.CombinedOutput()
+	err = lib.ImageCopy(lib.ImageCopyOpts{
+		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+	})
 	if err != nil {
-		return fmt.Errorf("skopeo copy from cache to ocidir: %s: %s", err, string(output))
+		return err
 	}
 
 	return o.OCI.DeleteReference(context.Background(), tag)

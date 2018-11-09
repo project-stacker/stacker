@@ -1,11 +1,8 @@
 ### Runtime dependencies
 
-Stacker has a few runtime dependencies as well, namely, `skopeo` and `umoci`.
-Code for installing these on ubuntu is below:
+Stacker has a few a runtime dependency as well, namely, `umoci`. You can
+install it with:
 
-    sudo apt-add-repository ppa:projectatomic/ppa
-    sudo apt update
-    sudo apt install skopeo
     go install github.com/openSUSE/umoci/cmd/umoci
 
 ### Kernel Version

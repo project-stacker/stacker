@@ -1,26 +1,101 @@
 hash: cd7bdb6009fe8b22e3e62993a1d7e841a3b10cc034a5e0d3b42e5e4522ef8816
-updated: 2018-11-07T08:17:39.277846071-07:00
+updated: 2018-11-09T08:58:16.6798364-07:00
 imports:
 - name: github.com/anmitsu/go-shlex
   version: 648efa622239a2f6ff949fed78ee37b48d499ba4
 - name: github.com/apex/log
   version: d6c5facec1f2ae23a97782ab0ee18af58734346f
+- name: github.com/beorn7/perks
+  version: 3a771d992973f24aa725d07868b467d1ddfceafb
+  subpackages:
+  - quantile
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cheggaaa/pb
   version: 751f9183c336d1bb8ef77beb95243f367d1d90e1
+- name: github.com/containerd/continuity
+  version: bea7585dbfac2847dbf49a6b8e7738a36c09bc75
+  subpackages:
+  - pathdriver
+- name: github.com/containers/image
+  version: 4b6d9cf918c1e79a605265568c93cb35185ad25d
+  subpackages:
+  - copy
+  - directory/explicitfilepath
+  - docker
+  - docker/policyconfiguration
+  - docker/reference
+  - image
+  - manifest
+  - oci/internal
+  - oci/layout
+  - pkg/compression
+  - pkg/docker/config
+  - pkg/strslice
+  - pkg/tlsclientconfig
+  - signature
+  - transports
+  - types
+  - version
+- name: github.com/containers/storage
+  version: 43030273086ad8be51836ff2317d5e07587e48df
+  subpackages:
+  - pkg/fileutils
+  - pkg/homedir
+  - pkg/idtools
+  - pkg/mount
+  - pkg/system
 - name: github.com/cyphar/filepath-securejoin
   version: 7be40bd7da2b783ab7a251a4f05525536beaf445
+- name: github.com/docker/distribution
+  version: 93e082742a009850ac46962150b2f652a822c5ff
+  subpackages:
+  - digestset
+  - metrics
+  - reference
+  - registry/api/errcode
+  - registry/api/v2
+  - registry/client
+  - registry/client/auth/challenge
+  - registry/client/transport
+  - registry/storage/cache
+  - registry/storage/cache/memory
+- name: github.com/docker/docker
+  version: 1e7c43dfae3f2edd063b71f9dbb79e6dd7efc9a9
+  subpackages:
+  - api/types/versions
+  - pkg/homedir
+  - pkg/idtools
+  - pkg/mount
+  - pkg/system
+- name: github.com/docker/docker-credential-helpers
+  version: 123ba1b7cd646aaee13ba2e028b7c268db72e2b2
+  subpackages:
+  - client
+  - credentials
+- name: github.com/docker/go-connections
+  version: 97c2040d34dfae1d1b1275fa3a78dbdd2f41cf7e
+  subpackages:
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-metrics
+  version: 399ea8c73916000c64c2c76e8da00ca82f8387ab
 - name: github.com/docker/go-units
   version: 2fb04c6466a548a03cb009c5569ee1ab1e35398e
+- name: github.com/docker/libtrust
+  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
 - name: github.com/dustin/go-humanize
   version: 9f541cc9db5d55bce703bd99987c9d5cb8eea45e
 - name: github.com/freddierice/go-losetup
   version: fc9adea44124401d8bfef3a97eaf61b5d44cc2c6
+- name: github.com/ghodss/yaml
+  version: c7ce16629ff4cd059ed96ed06419dd3856fd3577
 - name: github.com/golang/protobuf
-  version: 75dceb112b174be156fa9952e66d3e99945572b4
+  version: 951a149f90371fb8858c6c979d03bb2583611052
   subpackages:
   - proto
+- name: github.com/gorilla/mux
+  version: 3d80bc801bb034e17cae38591335b3b1110f1c47
 - name: github.com/gorilla/websocket
   version: 483fb8d7c32fcb4b5636cd293a92e3935932e2f4
 - name: github.com/hashicorp/errwrap
@@ -40,7 +115,7 @@ imports:
 - name: github.com/konsorten/go-windows-terminal-sequences
   version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/lxc/lxd
-  version: ce2c7dbb1383ce2c125abfffae3a7108f7a3b934
+  version: 333713490436c389d88c76c7ebd132f69fca192c
   subpackages:
   - shared
   - shared/api
@@ -50,8 +125,16 @@ imports:
   - shared/logger
 - name: github.com/mattn/go-runewidth
   version: b20a3daf6a39840c202fd42cc23d53607162b045
+- name: github.com/matttproud/golang_protobuf_extensions
+  version: c12348ce28de40eed0136aa2b644d0ee0650e56c
+  subpackages:
+  - pbutil
+- name: github.com/Microsoft/go-winio
+  version: 97e4973ce50b2ff5f09635a57e2b88a037aae829
 - name: github.com/mitchellh/hashstructure
   version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
+- name: github.com/mtrmac/gpgme
+  version: b2432428689ca58c2b8e8dea9449d3295cf96fc9
 - name: github.com/opencontainers/go-digest
   version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
@@ -59,6 +142,10 @@ imports:
   subpackages:
   - specs-go
   - specs-go/v1
+- name: github.com/opencontainers/runc
+  version: 079817cc26ec5292ac375bb9f47f373d33574949
+  subpackages:
+  - libcontainer/user
 - name: github.com/opencontainers/runtime-spec
   version: 31e0d16c1cb7967f2ec8843472874da7accf2202
   subpackages:
@@ -73,7 +160,7 @@ imports:
   - specerror
   - validate
 - name: github.com/openSUSE/umoci
-  version: 4913d870bc28b9100afd822189c37ac94d154d45
+  version: 5d497d0bbf104c187590d88bbb5a6d8f8ced648e
   subpackages:
   - mutate
   - oci/cas
@@ -91,6 +178,28 @@ imports:
   - third_party/user
 - name: github.com/pkg/errors
   version: 059132a15dd08d6704c67711dae0cf35ab991756
+- name: github.com/prometheus/client_golang
+  version: abad2d1bd44235a26707c172eab6bca5bf2dbad3
+  subpackages:
+  - prometheus
+  - prometheus/internal
+  - prometheus/promhttp
+- name: github.com/prometheus/client_model
+  version: 5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f
+  subpackages:
+  - go
+- name: github.com/prometheus/common
+  version: 0b1957f9d949dfa3084171a6ec5642b38055276a
+  subpackages:
+  - expfmt
+  - internal/bitbucket.org/ww/goautoneg
+  - model
+- name: github.com/prometheus/procfs
+  version: 185b4288413d2a0dd0806f78c90dde719829e5ae
+  subpackages:
+  - internal/util
+  - nfs
+  - xfs
 - name: github.com/rootless-containers/proto
   version: 316d7ae30bc5f448f217dc11623047b0f1589e53
   subpackages:
@@ -107,10 +216,16 @@ imports:
   - capability
 - name: github.com/udhos/equalfile
   version: 81e18cfeaeae863f9257f38987894f18cbf995a2
+- name: github.com/ulikunitz/xz
+  version: 590df8077fbcb06ad62d7714da06c00e5dd2316d
+  subpackages:
+  - internal/hash
+  - internal/xlog
+  - lzma
 - name: github.com/urfave/cli
   version: b67dcf995b6a7b7f14fad5fcb7cc5441b05e814b
 - name: github.com/vbatts/go-mtree
-  version: 37d776ac40587b40bca715aef3bfcd95f96f3304
+  version: 4ae4c48dc08b98a4dbbc24e12fe58cbeb1e781ea
   subpackages:
   - pkg/govis
   - xattr
@@ -123,17 +238,28 @@ imports:
 - name: golang.org/x/crypto
   version: e4dc69e5b2fd71dcaf8bd5d054eb936deb78d1fa
   subpackages:
+  - cast5
+  - openpgp
+  - openpgp/armor
+  - openpgp/elgamal
+  - openpgp/errors
+  - openpgp/packet
+  - openpgp/s2k
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: a544f70c90f196e50d198126db0c4cb2b562fec0
+  version: 03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe
   subpackages:
   - context
+  - internal/socks
+  - proxy
 - name: golang.org/x/sys
   version: 8dbc5d05d6edcc104950cc299a1ce6641235bc86
   subpackages:
   - unix
   - windows
+- name: gopkg.in/cheggaaa/pb.v1
+  version: 007b75a044e968336a69a6c0c617251ab62ac14c
 - name: gopkg.in/lxc/go-lxc.v2
   version: 0aadfc37157c2e3f0e63bedd10f8615e66e91cad
 - name: gopkg.in/yaml.v2

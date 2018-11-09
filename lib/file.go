@@ -31,4 +31,3 @@ func FileCopy(dest string, source string) error {
 	_, err = io.Copy(d, s)
 	return err
 }
-
