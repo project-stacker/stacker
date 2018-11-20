@@ -124,25 +124,41 @@ func importFile(imp string, cacheDir string) (string, error) {
 		case mtree.Modified:
 			fallthrough
 		case mtree.Extra:
-			err := os.RemoveAll(path.Join(dest, d.Path()))
-			if err != nil && !os.IsNotExist(err) {
-				return "", err
-			}
+			srcpath := path.Join(imp, d.Path())
+			destpath := path.Join(dest, d.Path())
 
-			sdirinfo, err := os.Stat(path.Join(imp, path.Dir(d.Path())))
+			srcpathinfo, err := os.Stat(srcpath)
 			if err != nil {
 				return "", err
 			}
 
-			destdir := path.Join(dest, path.Dir(d.Path()))
-			derr := os.MkdirAll(destdir, sdirinfo.Mode())
-			if derr != nil {
-				return "", errors.Errorf("failed to create dir %s", destdir)
-			}
+			if srcpathinfo.IsDir() {
+				err = os.MkdirAll(destpath, srcpathinfo.Mode())
+				if err != nil {
+					return "", errors.Errorf("failed to create dir %s", destpath)
+				}
+			} else {
+				err = os.RemoveAll(destpath)
+				if err != nil && !os.IsNotExist(err) {
+					return "", err
+				}
 
-			output, err := exec.Command("cp", "-a", path.Join(imp, d.Path()), path.Join(dest, d.Path())).CombinedOutput()
-			if err != nil {
-				return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
+				sdirinfo, err := os.Stat(path.Dir(srcpath))
+				if err != nil {
+					return "", err
+				}
+
+				destdir := path.Dir(destpath)
+
+				derr := os.MkdirAll(destdir, sdirinfo.Mode())
+				if derr != nil {
+					return "", errors.Errorf("failed to create dir %s", destdir)
+				}
+
+				output, err := exec.Command("cp", "-a", srcpath, destdir).CombinedOutput()
+				if err != nil {
+					return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
+				}
 			}
 		case mtree.ErrorDifference:
 			return "", errors.Errorf("failed to diff %s", d.Path())
