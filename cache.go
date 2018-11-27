@@ -118,7 +118,7 @@ func OpenCache(config StackerConfig, oci casext.Engine, sf *Stackerfile) (*Build
 		}
 
 		if err != nil {
-			fmt.Printf("couldn't find %s, pruning it from the cache", ent.Name)
+			fmt.Printf("couldn't find %s, pruning it from the cache\n", ent.Name)
 			delete(cache.Cache, hash)
 			pruned = true
 		}
