@@ -63,7 +63,9 @@ func ImageCopy(opts ImageCopyOpts) error {
 	}
 
 	if opts.SkipTLS {
-		args.SourceCtx = &types.SystemContext{DockerInsecureSkipTLSVerify: true}
+		args.SourceCtx = &types.SystemContext{
+			DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+		}
 	}
 
 	_, err = copy.Image(context.Background(), policy, destRef, srcRef, args)
