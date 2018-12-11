@@ -50,7 +50,7 @@ function teardown() {
     [ "$status" -eq 0 ]
 
     # did we really download the image to the right place?
-    [ -f .stacker/layer-bases/centos.tar.xz ]
+    [ -f .stacker/layer-bases/centos.tar ]
 
     # did run actually copy the favicon to the right place?
     [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
