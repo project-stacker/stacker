@@ -63,7 +63,7 @@ func Build(opts *BuildArgs) error {
 	if err != nil {
 		return err
 	}
-	if opts.LeaveUnladen {
+	if !opts.LeaveUnladen {
 		defer s.Detach()
 	}
 
