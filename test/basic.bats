@@ -5,7 +5,7 @@ function setup() {
 centos:
     from:
         type: tar
-        url: http://files.tycho.ws/centos.tar.xz
+        url: .stacker/layer-bases/centos.tar
     import:
         - ./stacker.yaml
         - https://www.cisco.com/favicon.ico
@@ -40,7 +40,14 @@ function teardown() {
 }
 
 @test "basic workings" {
+    mkdir -p .stacker/layer-bases
+    skopeo --insecure-policy copy docker://centos:latest oci:.stacker/layer-bases/oci:centos
+    umoci unpack --image .stacker/layer-bases/oci:centos dest
+    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    rm -rf dest
+
     stacker build --substitute "FAVICON=favicon.ico" --leave-unladen
+    [ "$status" -eq 0 ]
 
     # did we really download the image to the right place?
     [ -f .stacker/layer-bases/centos.tar.xz ]
