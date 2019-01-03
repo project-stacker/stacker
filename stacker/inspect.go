@@ -29,6 +29,7 @@ func doInspect(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer oci.Close()
 
 	arg := ctx.Args().Get(0)
 	if arg != "" {
