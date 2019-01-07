@@ -41,6 +41,11 @@ var buildCmd = cli.Command{
 			Name:  "apply-consider-timestamps",
 			Usage: "for apply layer merging, fail if timestamps on files don't match",
 		},
+		cli.StringFlag{
+			Name:  "layer-type",
+			Usage: "set the output layer type (supported values: tar)",
+			Value: "tar",
+		},
 	},
 	Before: beforeBuild,
 }
@@ -57,6 +62,13 @@ func beforeBuild(ctx *cli.Context) error {
 		}
 	}
 
+	switch ctx.String("layer-type") {
+	case "tar":
+		break
+	default:
+		return fmt.Errorf("unknown layer type: %s", ctx.String("layer-type"))
+	}
+
 	return nil
 }
 
@@ -69,6 +81,7 @@ func doBuild(ctx *cli.Context) error {
 		Substitute:              ctx.StringSlice("substitute"),
 		OnRunFailure:            ctx.String("on-run-failure"),
 		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
+		LayerType:               ctx.String("layer-type"),
 	}
 
 	return stacker.Build(&args)
