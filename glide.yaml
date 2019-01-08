@@ -13,6 +13,10 @@ import:
 - package: github.com/opencontainers/image-spec
   subpackages:
   - specs-go/v1
+- package: github.com/opencontainers/runtime-spec
+  version: 0ec20f481560cdc5edf60e7e554f51aae4c54a84
+  subpackages:
+  - specs-go
 - package: github.com/opencontainers/runtime-tools
   subpackages:
   - generate
@@ -24,3 +28,9 @@ import:
 - package: golang.org/x/sys
   subpackages:
   - unix
+- package: github.com/vbatts/go-mtree
+  version: compare-same
+  repo: https://github.com/tych0/go-mtree
+  subpackages:
+  - pkg/govis
+  - xattr

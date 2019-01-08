@@ -74,8 +74,8 @@ func renderManifest(oci casext.Engine, name string) error {
 		return err
 	}
 
-	if configBlob.MediaType != ispec.MediaTypeImageConfig {
-		return fmt.Errorf("bad image config type: %s", configBlob.MediaType)
+	if configBlob.Descriptor.MediaType != ispec.MediaTypeImageConfig {
+		return fmt.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
 	}
 
 	config := configBlob.Data.(ispec.Image)

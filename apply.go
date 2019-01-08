@@ -43,8 +43,8 @@ func LookupManifest(oci casext.Engine, tag string) (ispec.Manifest, error) {
 	}
 	defer blob.Close()
 
-	if blob.MediaType != ispec.MediaTypeImageManifest {
-		return ispec.Manifest{}, errors.Errorf("descriptor does not point to a manifest: %s", blob.MediaType)
+	if blob.Descriptor.MediaType != ispec.MediaTypeImageManifest {
+		return ispec.Manifest{}, errors.Errorf("descriptor does not point to a manifest: %s", blob.Descriptor.MediaType)
 	}
 
 	return blob.Data.(ispec.Manifest), nil
@@ -139,8 +139,8 @@ func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error)
 		return ispec.Image{}, err
 	}
 
-	if configBlob.MediaType != ispec.MediaTypeImageConfig {
-		return ispec.Image{}, fmt.Errorf("bad image config type: %s", configBlob.MediaType)
+	if configBlob.Descriptor.MediaType != ispec.MediaTypeImageConfig {
+		return ispec.Image{}, fmt.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
 	}
 
 	return configBlob.Data.(ispec.Image), nil
@@ -314,7 +314,7 @@ func getReader(blob *casext.Blob) (io.ReadCloser, bool, error) {
 	var err error
 	needsClose := false
 
-	switch blob.MediaType {
+	switch blob.Descriptor.MediaType {
 	case ispec.MediaTypeImageLayer:
 		reader = blob.Data.(io.ReadCloser)
 		// closed by blob.Close()
@@ -325,7 +325,7 @@ func getReader(blob *casext.Blob) (io.ReadCloser, bool, error) {
 		}
 		needsClose = true
 	default:
-		return nil, false, fmt.Errorf("unknown layer type %s", blob.MediaType)
+		return nil, false, fmt.Errorf("unknown layer type %s", blob.Descriptor.MediaType)
 	}
 
 	return reader, needsClose, nil
