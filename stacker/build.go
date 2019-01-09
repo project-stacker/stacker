@@ -65,6 +65,8 @@ func beforeBuild(ctx *cli.Context) error {
 	switch ctx.String("layer-type") {
 	case "tar":
 		break
+	case "squashfs":
+		break
 	default:
 		return fmt.Errorf("unknown layer type: %s", ctx.String("layer-type"))
 	}

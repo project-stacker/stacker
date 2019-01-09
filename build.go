@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -15,8 +16,11 @@ import (
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
+	"github.com/openSUSE/umoci/pkg/fseval"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/vbatts/go-mtree"
+	"golang.org/x/sys/unix"
 )
 
 type BuildArgs struct {
@@ -44,6 +48,194 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 		}
 
 		return os.Rename(path.Join(rootPath, fi.Name()), path.Join(rootPath, newName))
+	}
+
+	return nil
+}
+
+func mkSquashfs(config StackerConfig, toExclude []string) (*os.File, error) {
+	var excludesFile string
+	var err error
+
+	if len(toExclude) != 0 {
+		excludes, err := ioutil.TempFile("", "stacker-squashfs-exclude-")
+		if err != nil {
+			return nil, err
+		}
+		defer os.Remove(excludes.Name())
+
+		excludesFile = excludes.Name()
+		_, err = excludes.WriteString(strings.Join(toExclude, "\n") + "\n")
+		excludes.Close()
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	// generate the squashfs in OCIDir, and then open it, read it from
+	// there, and delete it.
+	if err := os.MkdirAll(config.OCIDir, 0755); err != nil {
+		return nil, err
+	}
+
+	tmpSquashfs, err := ioutil.TempFile(config.OCIDir, "stacker-squashfs-img-")
+	if err != nil {
+		return nil, err
+	}
+	tmpSquashfs.Close()
+	os.Remove(tmpSquashfs.Name())
+	defer os.Remove(tmpSquashfs.Name())
+	rootfsPath := path.Join(config.RootFSDir, ".working", "rootfs")
+	args := []string{rootfsPath, tmpSquashfs.Name()}
+	if len(toExclude) != 0 {
+		args = append(args, "-ef", excludesFile)
+	}
+	cmd := exec.Command("mksquashfs", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err = cmd.Run(); err != nil {
+		return nil, errors.Wrap(err, "couldn't build squashfs")
+	}
+
+	return os.Open(tmpSquashfs.Name())
+}
+
+func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *BuildArgs) error {
+	meta, err := umoci.ReadBundleMeta(path.Join(opts.Config.RootFSDir, ".working"))
+	if err != nil {
+		return err
+	}
+
+	mtreeName := strings.Replace(meta.From.Descriptor().Digest.String(), ":", "_", 1)
+	mtreePath := path.Join(opts.Config.RootFSDir, ".working", mtreeName+".mtree")
+
+	mfh, err := os.Open(mtreePath)
+	if err != nil {
+		return err
+	}
+
+	spec, err := mtree.ParseSpec(mfh)
+	if err != nil {
+		return err
+	}
+
+	fsEval := fseval.DefaultFsEval
+	rootfsPath := path.Join(opts.Config.RootFSDir, ".working", "rootfs")
+	newDH, err := mtree.Walk(rootfsPath, nil, umoci.MtreeKeywords, fsEval)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't mtree walk %s", rootfsPath)
+	}
+
+	diffs, err := mtree.CompareSame(spec, newDH, umoci.MtreeKeywords)
+	if err != nil {
+		return err
+	}
+
+	// This is a pretty massive hack, because there's no library for
+	// generating squashfs images. However, mksquashfs does take a list of
+	// files to exclude from the image. So we go through and accumulate a
+	// list of these files.
+	//
+	// For missing files, since we're going to use overlayfs with
+	// squashfs, we use overlayfs' mechanism for whiteouts, which is a
+	// character device with device numbers 0/0. But since there's no
+	// library for generating squashfs images, we have to write these to
+	// the actual filesystem, and then remember what they are so we can
+	// delete them later.
+	missing := []string{}
+	defer func() {
+		for _, f := range missing {
+			os.Remove(f)
+		}
+	}()
+
+	same := []string{}
+	for _, diff := range diffs {
+		switch diff.Type() {
+		case mtree.Modified, mtree.Extra:
+			break
+		case mtree.Missing:
+			p := path.Join(rootfsPath, diff.Path())
+			missing = append(missing, p)
+			if err := unix.Mknod(p, 0, 0); err != nil {
+				return err
+			}
+		case mtree.Same:
+			same = append(same, path.Join(rootfsPath, diff.Path()))
+		}
+	}
+
+	tmpSquashfs, err := mkSquashfs(opts.Config, same)
+	if err != nil {
+		return err
+	}
+	defer tmpSquashfs.Close()
+
+	manifest, err := LookupManifest(oci, name)
+	if err != nil {
+		return err
+	}
+
+	config, err := LookupConfig(oci, manifest.Config)
+	if err != nil {
+		return err
+	}
+
+	blobDigest, blobSize, err := oci.PutBlob(context.Background(), tmpSquashfs)
+	if err != nil {
+		return err
+	}
+
+	desc := ispec.Descriptor{
+		MediaType: MediaTypeLayerSquashfs,
+		Digest:    blobDigest,
+		Size:      blobSize,
+	}
+
+	manifest.Layers = append(manifest.Layers, desc)
+	config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, blobDigest)
+
+	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), config)
+	if err != nil {
+		return err
+	}
+
+	manifest.Config = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageConfig,
+		Digest:    configDigest,
+		Size:      configSize,
+	}
+
+	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), manifest)
+	if err != nil {
+		return err
+	}
+
+	desc = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageManifest,
+		Digest:    manifestDigest,
+		Size:      manifestSize,
+	}
+
+	err = oci.UpdateReference(context.Background(), name, desc)
+	if err != nil {
+		return err
+	}
+
+	newName := strings.Replace(desc.Digest.String(), ":", "_", 1) + ".mtree"
+	err = umoci.GenerateBundleManifest(newName, path.Join(opts.Config.RootFSDir, ".working"), fsEval)
+	if err != nil {
+		return err
+	}
+
+	os.Remove(mtreePath)
+	meta.From = casext.DescriptorPath{
+		Walk: []ispec.Descriptor{desc},
+	}
+	err = umoci.WriteBundleMeta(path.Join(opts.Config.RootFSDir, ".working"), meta)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -161,12 +353,13 @@ func Build(opts *BuildArgs) error {
 		}
 
 		os := BaseLayerOpts{
-			Config: opts.Config,
-			Name:   name,
-			Target: ".working",
-			Layer:  l,
-			Cache:  buildCache,
-			OCI:    oci,
+			Config:    opts.Config,
+			Name:      name,
+			Target:    ".working",
+			Layer:     l,
+			Cache:     buildCache,
+			OCI:       oci,
+			LayerType: opts.LayerType,
 		}
 
 		s.Delete(".working")
@@ -249,6 +442,11 @@ func Build(opts *BuildArgs) error {
 				fmt.Sprintf("%s:%s", opts.Config.OCIDir, name),
 				path.Join(opts.Config.RootFSDir, ".working")}
 			err = MaybeRunInUserns(args, "layer generation failed")
+			if err != nil {
+				return err
+			}
+		case "squashfs":
+			err = generateSquashfsLayer(oci, name, author, opts)
 			if err != nil {
 				return err
 			}

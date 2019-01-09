@@ -12,15 +12,23 @@ import (
 	"github.com/anuvu/stacker/lib"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
+	"github.com/opencontainers/go-digest"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
+)
+
+const (
+	MediaTypeLayerSquashfs = "application/vnd.oci.image.layer.squashfs"
 )
 
 type BaseLayerOpts struct {
-	Config StackerConfig
-	Name   string
-	Target string
-	Layer  *Layer
-	Cache  *BuildCache
-	OCI    casext.Engine
+	Config    StackerConfig
+	Name      string
+	Target    string
+	Layer     *Layer
+	Cache     *BuildCache
+	OCI       casext.Engine
+	LayerType string
 }
 
 func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
@@ -90,6 +98,7 @@ func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
 			// don't have a valid OCI layout, which is fine.
 			return
 		}
+		defer oci.Close()
 
 		oci.GC(context.Background())
 	}()
@@ -108,11 +117,16 @@ func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
 		return nil
 	}
 
-	// We just copied it to the cache, now let's copy that over to our image.
-	err = lib.ImageCopy(lib.ImageCopyOpts{
-		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
-	})
+	// If the layer type is something besides tar, we'll generate the
+	// base layer after it's extracted from the input image.
+	if o.LayerType == "tar" {
+		// We just copied it to the cache, now let's copy that over to our image.
+		err = lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+		})
+	}
+
 	return err
 }
 
@@ -134,9 +148,91 @@ func extractOutput(o BaseLayerOpts) error {
 
 	// Delete the tag for the base layer; we're only interested in our
 	// build layer outputs, not in the base layers.
-	err = o.OCI.DeleteReference(context.Background(), tag)
-	if err != nil {
-		return err
+	o.OCI.DeleteReference(context.Background(), tag)
+
+	// Now, if the layer type is something besides tar, we need to
+	// generate the base layer as whatever type that is.
+	if o.LayerType == "squashfs" {
+		o.OCI.GC(context.Background())
+
+		tmpSquashfs, err := mkSquashfs(o.Config, nil)
+		if err != nil {
+			return err
+		}
+
+		layerDigest, layerSize, err := o.OCI.PutBlob(context.Background(), tmpSquashfs)
+		if err != nil {
+			return err
+		}
+
+		cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
+		cache, err := umoci.OpenLayout(cacheDir)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't open base layer dir")
+		}
+		defer cache.Close()
+
+		manifest, err := LookupManifest(cache, o.Name)
+		if err != nil {
+			return err
+		}
+
+		config, err := LookupConfig(cache, manifest.Config)
+		if err != nil {
+			return err
+		}
+
+		desc := ispec.Descriptor{
+			MediaType: MediaTypeLayerSquashfs,
+			Digest:    layerDigest,
+			Size:      layerSize,
+		}
+
+		manifest.Layers = []ispec.Descriptor{desc}
+		config.RootFS.DiffIDs = []digest.Digest{layerDigest}
+
+		configDigest, configSize, err := o.OCI.PutBlobJSON(context.Background(), config)
+		if err != nil {
+			return err
+		}
+
+		manifest.Config = ispec.Descriptor{
+			MediaType: ispec.MediaTypeImageConfig,
+			Digest:    configDigest,
+			Size:      configSize,
+		}
+
+		manifestDigest, manifestSize, err := o.OCI.PutBlobJSON(context.Background(), manifest)
+		if err != nil {
+			return err
+		}
+
+		desc = ispec.Descriptor{
+			MediaType: ispec.MediaTypeImageManifest,
+			Digest:    manifestDigest,
+			Size:      manifestSize,
+		}
+
+		err = o.OCI.UpdateReference(context.Background(), o.Name, desc)
+		if err != nil {
+			return err
+		}
+
+		bundlePath := path.Join(o.Config.RootFSDir, ".working")
+		err = updateBundleMtree(bundlePath, desc)
+		if err != nil {
+			return err
+		}
+
+		err = umoci.WriteBundleMeta(bundlePath, umoci.Meta{
+			Version: umoci.MetaVersion,
+			From: casext.DescriptorPath{
+				Walk: []ispec.Descriptor{desc},
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
