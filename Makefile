@@ -14,7 +14,7 @@ vendor: glide.lock
 check:
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
 	go test ./...
-	sudo -E bats "PATH=$$PATH" -t $(patsubst %,test/%.bats,$(TEST))
+	sudo -E "PATH=$$PATH" bats -t $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup
 vendorup:
