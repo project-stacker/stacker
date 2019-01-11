@@ -43,7 +43,7 @@ var buildCmd = cli.Command{
 		},
 		cli.StringFlag{
 			Name:  "layer-type",
-			Usage: "set the output layer type (supported values: tar)",
+			Usage: "set the output layer type (supported values: tar, squashfs)",
 			Value: "tar",
 		},
 	},
