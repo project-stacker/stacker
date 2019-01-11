@@ -20,8 +20,11 @@ Stacker also has the following build dependencies:
 
     sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev
 
-To run `make check` you will also  need:
+To run `make check` you will also need:
 
+    sudo add-apt-repository ppa:projectatomic/ppa
+    sudo apt update
+    sudo apt install skopeo
     sudo apt install bats jq
 
 Finally, once you have the build dependencies, stacker can be built with a
