@@ -13,10 +13,6 @@ import:
 - package: github.com/opencontainers/image-spec
   subpackages:
   - specs-go/v1
-- package: github.com/opencontainers/runtime-spec
-  version: 0ec20f481560cdc5edf60e7e554f51aae4c54a84
-  subpackages:
-  - specs-go
 - package: github.com/opencontainers/runtime-tools
   subpackages:
   - generate

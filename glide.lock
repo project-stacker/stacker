@@ -1,5 +1,5 @@
-hash: ec65767b27888e3c17db3c6a4579fc4903374879d40a717115f4416ca0eabbc2
-updated: 2019-01-08T09:17:53.969316214-07:00
+hash: 0237caaf57451b4d948219e459b2002383a3dc5f0ea895754f5d9d544aaa98e6
+updated: 2019-01-11T10:46:19.809499877-07:00
 imports:
 - name: code.cloudfoundry.org/systemcerts
   version: ca00b2f806f2fa1ded784ade357bad1ea3f1fbbe
@@ -24,7 +24,7 @@ imports:
   subpackages:
   - pathdriver
 - name: github.com/containers/image
-  version: f0cbc16b444d729362c78244c715b45bf4019b71
+  version: 3dda079ae672eb11d7b62e6f85a3283c5b560153
   subpackages:
   - copy
   - directory/explicitfilepath
@@ -69,7 +69,7 @@ imports:
   - registry/storage/cache
   - registry/storage/cache/memory
 - name: github.com/docker/docker
-  version: 77df18c24acf62778f132d30a058d559a0b8b2ba
+  version: 295413c9d0e11a74ce64798ea2cf59ed2872013c
   subpackages:
   - api/types/versions
   - pkg/homedir
@@ -101,7 +101,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: c7ce16629ff4cd059ed96ed06419dd3856fd3577
 - name: github.com/golang/protobuf
-  version: 1d3f30b51784bec5aad268e59fd3c2fc1c2fe73f
+  version: 347cf4a86c1cb8d262994d8ef5924d4576c5b331
   subpackages:
   - proto
 - name: github.com/gorilla/mux
@@ -119,13 +119,13 @@ imports:
   subpackages:
   - flate
 - name: github.com/klauspost/cpuid
-  version: c640019ed4bda023bac884990967336803e39e3a
+  version: 0da02118eaa37aa89aea6776b464a4ad00990af1
 - name: github.com/klauspost/pgzip
   version: 083b1c3f84dd6486588802e5ce295de3a7f41a8b
 - name: github.com/konsorten/go-windows-terminal-sequences
   version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/lxc/lxd
-  version: 86f302f66ae8a17121db396132668bfcab50d6cd
+  version: 8f852a1647d4fa1904be0d47b15239cb438d0273
   subpackages:
   - shared
   - shared/api
@@ -140,7 +140,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/Microsoft/go-winio
-  version: 763dedbc189c1354fd7a21c069f8ec0d9af2715b
+  version: a0ca357ef76748c45002d166da81794ab3ee76df
 - name: github.com/mitchellh/hashstructure
   version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mtrmac/gpgme
@@ -157,11 +157,11 @@ imports:
   subpackages:
   - libcontainer/user
 - name: github.com/opencontainers/runtime-spec
-  version: 0ec20f481560cdc5edf60e7e554f51aae4c54a84
+  version: 1722abf79c2f8f2675f47367f827c6491472cf27
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
-  version: f60dccdf95d16f99efb4f753efd0a05ec6109446
+  version: 830bce2e1bf4dad6b04d05cbc80ad625bab77c2e
   subpackages:
   - error
   - filepath
@@ -188,7 +188,7 @@ imports:
   - third_party/shared
   - third_party/user
 - name: github.com/pkg/errors
-  version: c38ea53d8c3f78ac85b9b0f1247abeb6d38f6988
+  version: ffb6e22f01932bf7ac35e0bad9be11f01d1c8685
 - name: github.com/prometheus/client_golang
   version: d2ead25884778582e740573999f7b07f47e171b4
   subpackages:
@@ -196,7 +196,7 @@ imports:
   - prometheus/internal
   - prometheus/promhttp
 - name: github.com/prometheus/client_model
-  version: 5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f
+  version: f287a105a20ec685d797f65cd0ce8fbeaef42da1
   subpackages:
   - go
 - name: github.com/prometheus/common
@@ -260,7 +260,7 @@ imports:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: 395948e2f546cb82afa9e1f6d1a6e87849b9af1d
+  version: 915654e7eabcea33ae277abbecf52f0d8b7a9fdc
   subpackages:
   - context
   - internal/socks
