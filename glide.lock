@@ -1,5 +1,5 @@
-hash: 0237caaf57451b4d948219e459b2002383a3dc5f0ea895754f5d9d544aaa98e6
-updated: 2019-01-11T10:46:19.809499877-07:00
+hash: 788fadb79f936f4d4bf63351370261506a5e59ea59692a93a6fbf03bcb61835e
+updated: 2019-01-21T09:27:09.811387258+13:00
 imports:
 - name: code.cloudfoundry.org/systemcerts
   version: ca00b2f806f2fa1ded784ade357bad1ea3f1fbbe
@@ -24,7 +24,7 @@ imports:
   subpackages:
   - pathdriver
 - name: github.com/containers/image
-  version: 3dda079ae672eb11d7b62e6f85a3283c5b560153
+  version: e42fdf32b63d9b64cc52939b6202b1adc8065609
   subpackages:
   - copy
   - directory/explicitfilepath
@@ -46,7 +46,7 @@ imports:
   - types
   - version
 - name: github.com/containers/storage
-  version: 2e0e1a581257fb1ab2b2298648bc7573d0b4f880
+  version: f749f8535008519d7e5cf9005025bebb8cb6ba67
   subpackages:
   - pkg/fileutils
   - pkg/homedir
@@ -56,7 +56,7 @@ imports:
 - name: github.com/cyphar/filepath-securejoin
   version: 7be40bd7da2b783ab7a251a4f05525536beaf445
 - name: github.com/docker/distribution
-  version: 91b0f0559eb6710c574451049f8c71eb9c3952a7
+  version: b75069ef13a1de846c0cdf964f5917f5b00c1a47
   subpackages:
   - digestset
   - metrics
@@ -69,7 +69,7 @@ imports:
   - registry/storage/cache
   - registry/storage/cache/memory
 - name: github.com/docker/docker
-  version: 295413c9d0e11a74ce64798ea2cf59ed2872013c
+  version: 5ec31380a5d3ea92fc68e53cd1fc96f11ac02e6e
   subpackages:
   - api/types/versions
   - pkg/homedir
@@ -111,7 +111,7 @@ imports:
 - name: github.com/hashicorp/errwrap
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
 - name: github.com/hashicorp/go-multierror
-  version: ed905158d87462226a13fe39ddf685ea65f1c11f
+  version: 886a7fbe3eb1c874d46f623bfa70af45f425b3d1
 - name: github.com/juju/errors
   version: 089d3ea4e4d597bd98acac068193d341983326a3
 - name: github.com/klauspost/compress
@@ -125,7 +125,7 @@ imports:
 - name: github.com/konsorten/go-windows-terminal-sequences
   version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/lxc/lxd
-  version: 8f852a1647d4fa1904be0d47b15239cb438d0273
+  version: 426158f92857e629d0d86a054b91cda351bc1269
   subpackages:
   - shared
   - shared/api
@@ -140,7 +140,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/Microsoft/go-winio
-  version: a0ca357ef76748c45002d166da81794ab3ee76df
+  version: 75bf6ca3d7cb77506c52495e61472c131a254d56
 - name: github.com/mitchellh/hashstructure
   version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mtrmac/gpgme
@@ -148,12 +148,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
-  version: e74bb5aed1c876be723e181895359d8dca9b56a6
+  version: befc3cba3ffdf76e2f72f52a248a20a2727cc4c9
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: bbb17efcb4c0ab986407812a31ba333a7450064c
+  version: c1e454b2a1bfb0f0ebd9e621a1433f98f9a8d4b0
   subpackages:
   - libcontainer/user
 - name: github.com/opencontainers/runtime-spec
@@ -161,7 +161,7 @@ imports:
   subpackages:
   - specs-go
 - name: github.com/opencontainers/runtime-tools
-  version: 830bce2e1bf4dad6b04d05cbc80ad625bab77c2e
+  version: f611b4e1e0a8b3ffd9200b35e0f4159838a1c73a
   subpackages:
   - error
   - filepath
@@ -190,13 +190,13 @@ imports:
 - name: github.com/pkg/errors
   version: ffb6e22f01932bf7ac35e0bad9be11f01d1c8685
 - name: github.com/prometheus/client_golang
-  version: d2ead25884778582e740573999f7b07f47e171b4
+  version: 26e258bb9c9a94c26d4a46ff302ec7e855b82e10
   subpackages:
   - prometheus
   - prometheus/internal
   - prometheus/promhttp
 - name: github.com/prometheus/client_model
-  version: f287a105a20ec685d797f65cd0ce8fbeaef42da1
+  version: 56726106282f1985ea77d5305743db7231b0c0a8
   subpackages:
   - go
 - name: github.com/prometheus/common
@@ -206,7 +206,7 @@ imports:
   - internal/bitbucket.org/ww/goautoneg
   - model
 - name: github.com/prometheus/procfs
-  version: b1a0a9a36d7453ba0f62578b99712f3a6c5f82d1
+  version: bf6a532e95b1f7a62adf0ab5050a5bb2237ad2f4
   subpackages:
   - internal/util
   - nfs
@@ -236,8 +236,7 @@ imports:
 - name: github.com/urfave/cli
   version: b67dcf995b6a7b7f14fad5fcb7cc5441b05e814b
 - name: github.com/vbatts/go-mtree
-  version: 94f5d6e2a36ff292cce7d7f9ca1df0fbccb22343
-  repo: https://github.com/tych0/go-mtree
+  version: 134ba041d7fc9586cb082cc5e8b053910025672e
   subpackages:
   - pkg/govis
   - xattr
@@ -260,7 +259,7 @@ imports:
   - ripemd160
   - ssh/terminal
 - name: golang.org/x/net
-  version: 915654e7eabcea33ae277abbecf52f0d8b7a9fdc
+  version: ed066c81e75eba56dd9bd2139ade88125b855585
   subpackages:
   - context
   - internal/socks
