@@ -24,7 +24,7 @@ function cleanup() {
 }
 
 function stacker {
-    run $GOPATH/bin/stacker "$@"
+    run $GOPATH/bin/stacker --debug "$@"
     echo "$output"
     [ "$status" -eq 0 ]
 }
