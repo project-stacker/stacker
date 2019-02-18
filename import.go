@@ -62,9 +62,9 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 }
 
 func importFile(imp string, cacheDir string) (string, error) {
-	e1, err := os.Stat(imp)
+	e1, err := os.Lstat(imp)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "couldn't stat import %s", imp)
 	}
 
 	if !e1.IsDir() {
@@ -127,7 +127,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 			srcpath := path.Join(imp, d.Path())
 			destpath := path.Join(dest, d.Path())
 
-			srcpathinfo, err := os.Stat(srcpath)
+			srcpathinfo, err := os.Lstat(srcpath)
 			if err != nil {
 				return "", err
 			}
@@ -143,7 +143,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 					return "", err
 				}
 
-				sdirinfo, err := os.Stat(path.Dir(srcpath))
+				sdirinfo, err := os.Lstat(path.Dir(srcpath))
 				if err != nil {
 					return "", err
 				}

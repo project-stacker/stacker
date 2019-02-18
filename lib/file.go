@@ -6,6 +6,23 @@ import (
 )
 
 func FileCopy(dest string, source string) error {
+	os.RemoveAll(dest)
+
+	linkFI, err := os.Lstat(source)
+	if err != nil {
+		return err
+	}
+
+	// If it's a link, it might be broken. In any case, just copy it.
+	if linkFI.Mode()&os.ModeSymlink != 0 {
+		target, err := os.Readlink(source)
+		if err != nil {
+			return err
+		}
+
+		return os.Symlink(target, dest)
+	}
+
 	s, err := os.Open(source)
 	if err != nil {
 		return err
