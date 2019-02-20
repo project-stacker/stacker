@@ -352,7 +352,7 @@ func Build(opts *BuildArgs) error {
 			continue
 		}
 
-		os := BaseLayerOpts{
+		baseOpts := BaseLayerOpts{
 			Config:    opts.Config,
 			Name:      name,
 			Target:    ".working",
@@ -373,12 +373,12 @@ func Build(opts *BuildArgs) error {
 			}
 		}
 
-		err = GetBaseLayer(os, sf)
+		err = GetBaseLayer(baseOpts, sf)
 		if err != nil {
 			return err
 		}
 
-		apply, err := NewApply(sf, os, s, opts.ApplyConsiderTimestamps)
+		apply, err := NewApply(sf, baseOpts, s, opts.ApplyConsiderTimestamps)
 		if err != nil {
 			return err
 		}
@@ -434,13 +434,16 @@ func Build(opts *BuildArgs) error {
 		fmt.Println("generating layer...")
 		switch opts.LayerType {
 		case "tar":
+			binary, err := os.Readlink("/proc/self/exe")
+			if err != nil {
+				return err
+			}
 			args := []string{
-				"umoci",
-				"repack",
-				"--refresh-bundle",
-				"--image",
-				fmt.Sprintf("%s:%s", opts.Config.OCIDir, name),
-				path.Join(opts.Config.RootFSDir, ".working")}
+				binary,
+				"--oci-dir", opts.Config.OCIDir,
+				"--tag", name,
+				"--bundle-path", path.Join(opts.Config.RootFSDir, ".working"),
+				"repack"}
 			err = MaybeRunInUserns(args, "layer generation failed")
 			if err != nil {
 				return err

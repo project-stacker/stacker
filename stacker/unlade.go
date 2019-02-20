@@ -40,10 +40,12 @@ func doUnlade(ctx *cli.Context) error {
 		return err
 	}
 
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
 	fmt.Printf("Unpacking all layers from %s into %s\n", config.OCIDir, config.RootFSDir)
-	// TODO: this should be a lot better, we should use btrfs to do
-	// manifest-by-manifest extracting. But that's more work, so let's do
-	// this for now.
 	for idx, tag := range tags {
 		err = s.Create(tag)
 		if err != nil {
@@ -51,11 +53,12 @@ func doUnlade(ctx *cli.Context) error {
 		}
 		fmt.Printf("%d/%d: unpacking %s", idx+1, len(tags), tag)
 		args := []string{
+			binary,
 			"umoci",
+			"--oci-dir", config.OCIDir,
+			"--tag", tag,
+			"--bundle-path", path.Join(config.RootFSDir, tag),
 			"unpack",
-			"--image",
-			fmt.Sprintf("%s:%s", config.OCIDir, tag),
-			path.Join(config.RootFSDir, tag),
 		}
 		err = stacker.MaybeRunInUserns(args, "unpack failed")
 		if err != nil {

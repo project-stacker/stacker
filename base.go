@@ -12,6 +12,7 @@ import (
 	"github.com/anuvu/stacker/lib"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
+	"github.com/openSUSE/umoci/oci/layer"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -140,7 +141,15 @@ func extractOutput(o BaseLayerOpts) error {
 	fmt.Println("unpacking to", target)
 
 	image := fmt.Sprintf("%s:%s", path.Join(o.Config.StackerDir, "layer-bases", "oci"), tag)
-	args := []string{"umoci", "unpack", "--image", image, target}
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+	args := []string{binary, "umoci",
+		"--oci-dir", image,
+		"--bundle-path", target,
+		"--tag", o.Target,
+		"unpack"}
 	err = MaybeRunInUserns(args, "image unpack failed")
 	if err != nil {
 		return err
@@ -248,28 +257,18 @@ func getDocker(o BaseLayerOpts) error {
 }
 
 func umociInit(o BaseLayerOpts) error {
-	cmd := exec.Command(
-		"umoci",
-		"new",
-		"--image",
-		fmt.Sprintf("%s:%s", o.Config.OCIDir, o.Name))
-	output, err := cmd.CombinedOutput()
+	err := umoci.NewImage(o.OCI, o.Name)
 	if err != nil {
-		return fmt.Errorf("umoci layout creation failed: %s: %s", err, string(output))
+		return errors.Wrapf(err, "umoci tag creation failed")
 	}
 
 	// N.B. This unpack doesn't need to be in a userns because it doesn't
 	// actually do anything: the image is empty, and so it only makes the
 	// rootfs dir and metadata files, which are owned by this user anyway.
-	cmd = exec.Command(
-		"umoci",
-		"unpack",
-		"--image",
-		fmt.Sprintf("%s:%s", o.Config.OCIDir, o.Name),
-		path.Join(o.Config.RootFSDir, ".working"))
-	output, err = cmd.CombinedOutput()
+	opts := layer.MapOptions{KeepDirlinks: true}
+	err = umoci.Unpack(o.OCI, o.Name, path.Join(o.Config.RootFSDir, ".working"), opts)
 	if err != nil {
-		return fmt.Errorf("umoci empty unpack failed: %s: %s", err, string(output))
+		return errors.Wrapf(err, "umoci unpack failed")
 	}
 
 	layerPath := path.Join(o.Config.RootFSDir, o.Target, "rootfs")

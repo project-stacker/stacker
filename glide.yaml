@@ -8,6 +8,8 @@ import:
   - shared/idmap
 - package: github.com/mitchellh/hashstructure
 - package: github.com/openSUSE/umoci
+  repo: https://github.com/tych0/umoci
+  version: hoist-api-functions
   subpackages:
   - oci/config/generate
 - package: github.com/opencontainers/image-spec
@@ -22,6 +24,7 @@ import:
 - package: gopkg.in/lxc/go-lxc.v2
 - package: gopkg.in/yaml.v2
 - package: golang.org/x/sys
+  version: 41f3e6584952
   subpackages:
   - unix
 - package: github.com/vbatts/go-mtree
