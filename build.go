@@ -440,6 +440,7 @@ func Build(opts *BuildArgs) error {
 			}
 			args := []string{
 				binary,
+				"umoci",
 				"--oci-dir", opts.Config.OCIDir,
 				"--tag", name,
 				"--bundle-path", path.Join(opts.Config.RootFSDir, ".working"),

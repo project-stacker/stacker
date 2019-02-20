@@ -44,23 +44,22 @@ var umociCmd = cli.Command{
 }
 
 func doUnpack(ctx *cli.Context) error {
-	fmt.Println("oci-dir", ctx.String("oci-dir"))
-	oci, err := umoci.OpenLayout(ctx.String("oci-dir"))
+	oci, err := umoci.OpenLayout(ctx.GlobalString("oci-dir"))
 	if err != nil {
 		return err
 	}
 
 	opts := layer.MapOptions{KeepDirlinks: true}
-	return umoci.Unpack(oci, ctx.String("tag"), ctx.String("bundle-path"), opts)
+	return umoci.Unpack(oci, ctx.GlobalString("tag"), ctx.GlobalString("bundle-path"), opts)
 }
 
 func doRepack(ctx *cli.Context) error {
-	oci, err := umoci.OpenLayout(ctx.String("oci-dir"))
+	oci, err := umoci.OpenLayout(ctx.GlobalString("oci-dir"))
 	if err != nil {
 		return err
 	}
 
-	bundlePath := ctx.String("bundle-path")
+	bundlePath := ctx.GlobalString("bundle-path")
 	meta, err := umoci.ReadBundleMeta(bundlePath)
 	if err != nil {
 		return err
@@ -84,5 +83,5 @@ func doRepack(ctx *cli.Context) error {
 		EmptyLayer: false,
 	}
 
-	return umoci.Repack(oci, ctx.String("tag"), bundlePath, meta, history, nil, true, mutator)
+	return umoci.Repack(oci, ctx.GlobalString("tag"), bundlePath, meta, history, nil, true, mutator)
 }

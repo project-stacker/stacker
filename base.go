@@ -140,16 +140,17 @@ func extractOutput(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
 
-	image := fmt.Sprintf("%s:%s", path.Join(o.Config.StackerDir, "layer-bases", "oci"), tag)
+	dir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 	binary, err := os.Readlink("/proc/self/exe")
 	if err != nil {
 		return err
 	}
 	args := []string{binary, "umoci",
-		"--oci-dir", image,
+		"--oci-dir", dir,
 		"--bundle-path", target,
-		"--tag", o.Target,
-		"unpack"}
+		"--tag", tag,
+		"unpack",
+	}
 	err = MaybeRunInUserns(args, "image unpack failed")
 	if err != nil {
 		return err
