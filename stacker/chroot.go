@@ -20,6 +20,10 @@ var chrootCmd = cli.Command{
 			Usage: "the input stackerfile",
 			Value: "stacker.yaml",
 		},
+		cli.StringSliceFlag{
+			Name:  "substitute",
+			Usage: "variable substitution in stackerfiles, FOO=bar format",
+		},
 	},
 	ArgsUsage: `[tag] [cmd]
 
