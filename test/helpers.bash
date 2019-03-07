@@ -1,10 +1,7 @@
+ROOT_DIR=$(git rev-parse --show-toplevel)
 if [ "$(id -u)" != "0" ]; then
     echo "you should be root to run this suite"
     exit 1
-fi
-
-if [ -z "$GOPATH" ]; then
-    echo "need to set $GOPATH"
 fi
 
 function sha() {
@@ -24,13 +21,13 @@ function cleanup() {
 }
 
 function stacker {
-    run $GOPATH/bin/stacker --debug "$@"
+    run "${ROOT_DIR}/stacker" --debug "$@"
     echo "$output"
     [ "$status" -eq 0 ]
 }
 
 function bad_stacker {
-    run $GOPATH/bin/stacker --debug "$@"
+    run "${ROOT_DIR}/stacker" --debug "$@"
     echo "$output"
     [ "$status" -ne 0 ]
 }
