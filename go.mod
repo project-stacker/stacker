@@ -75,3 +75,5 @@ require (
 )
 
 replace github.com/vbatts/go-mtree v0.4.4 => github.com/vbatts/go-mtree v0.4.5-0.20190122034725-8b6de6073c1a
+
+replace github.com/openSUSE/umoci v0.0.0-20190209041853-4ad066106584 => github.com/tych0/umoci v0.0.0-20190209041853-4ad066106584
