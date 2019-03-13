@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -53,7 +54,7 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 	return nil
 }
 
-func mkSquashfs(config StackerConfig, toExclude []string) (*os.File, error) {
+func mkSquashfs(config StackerConfig, toExclude string) (*os.File, error) {
 	var excludesFile string
 	var err error
 
@@ -65,12 +66,11 @@ func mkSquashfs(config StackerConfig, toExclude []string) (*os.File, error) {
 		defer os.Remove(excludes.Name())
 
 		excludesFile = excludes.Name()
-		_, err = excludes.WriteString(strings.Join(toExclude, "\n") + "\n")
+		_, err = excludes.WriteString(toExclude)
 		excludes.Close()
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	// generate the squashfs in OCIDir, and then open it, read it from
@@ -99,6 +99,67 @@ func mkSquashfs(config StackerConfig, toExclude []string) (*os.File, error) {
 	}
 
 	return os.Open(tmpSquashfs.Name())
+}
+
+type excludePaths struct {
+	exclude map[string]bool
+	include []string
+}
+
+func (eps *excludePaths) AddExclude(p string) {
+	for _, inc := range eps.include {
+		// If /usr/bin/ls has changed but /usr hasn't, we don't want to list
+		// /usr in the include paths any more, so let's be sure to only
+		// add things which aren't prefixes.
+		if strings.HasPrefix(p, inc) {
+			return
+		}
+	}
+	eps.exclude[p] = true
+}
+
+func (eps *excludePaths) AddInclude(orig string, isDir bool) {
+	// First, remove this thing and all its parents from exclude.
+	p := orig
+
+	// normalize to the first dir
+	if !isDir {
+		p = path.Dir(p)
+	}
+	for {
+		// our paths are all absolute, so this is a base case
+		if p == "/" {
+			break
+		}
+
+		delete(eps.exclude, p)
+		p = path.Dir(p)
+	}
+
+	// now add it to the list of includes, so we don't accidentally re-add
+	// anything above.
+	eps.include = append(eps.include, orig)
+}
+
+func (eps *excludePaths) String() (string, error) {
+	var buf bytes.Buffer
+	for p, _ := range eps.exclude {
+		_, err := buf.WriteString(p)
+		if err != nil {
+			return "", err
+		}
+		_, err = buf.WriteString("\n")
+		if err != nil {
+			return "", err
+		}
+	}
+
+	_, err := buf.WriteString("\n")
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
 
 func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *BuildArgs) error {
@@ -150,7 +211,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		}
 	}()
 
-	same := []string{}
+	paths := &excludePaths{map[string]bool{}, []string{}}
 	for _, diff := range diffs {
 		switch diff.Type() {
 		case mtree.Modified, mtree.Extra:
@@ -158,15 +219,22 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		case mtree.Missing:
 			p := path.Join(rootfsPath, diff.Path())
 			missing = append(missing, p)
-			if err := unix.Mknod(p, 0, 0); err != nil {
-				return err
+			paths.AddInclude(p, diff.Old().IsDir())
+			if err := unix.Mknod(p, unix.S_IFCHR, int(unix.Mkdev(0, 0))); err != nil {
+				if !os.IsNotExist(err) && err != unix.ENOTDIR {
+					return errors.Wrapf(err, "couldn't mknod whiteout for %s", diff.Path())
+				}
 			}
 		case mtree.Same:
-			same = append(same, path.Join(rootfsPath, diff.Path()))
+			paths.AddExclude(path.Join(rootfsPath, diff.Path()))
 		}
 	}
 
-	tmpSquashfs, err := mkSquashfs(opts.Config, same)
+	toExclude, err := paths.String()
+	if err != nil {
+		return err
+	}
+	tmpSquashfs, err := mkSquashfs(opts.Config, toExclude)
 	if err != nil {
 		return err
 	}

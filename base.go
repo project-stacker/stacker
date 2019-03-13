@@ -165,7 +165,7 @@ func extractOutput(o BaseLayerOpts) error {
 	if o.LayerType == "squashfs" {
 		o.OCI.GC(context.Background())
 
-		tmpSquashfs, err := mkSquashfs(o.Config, nil)
+		tmpSquashfs, err := mkSquashfs(o.Config, "")
 		if err != nil {
 			return err
 		}

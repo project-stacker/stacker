@@ -70,10 +70,6 @@ func main() {
 		}
 
 		debug = ctx.Bool("debug")
-		if debug {
-			log.SetLevel(log.DebugLevel)
-		}
-
 		return nil
 	}
 

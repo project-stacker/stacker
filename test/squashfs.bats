@@ -1,6 +1,15 @@
 load helpers
 
-function setup() {
+function teardown() {
+    umount combined || true
+    rm -rf combined || true
+    umount layer0 || true
+    umount layer1 || true
+    rm -rf layer0 layer1 || true
+    cleanup
+}
+
+@test "squashfs layer support" {
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -9,16 +18,7 @@ centos:
     run: |
         touch /1
 EOF
-}
 
-function teardown() {
-    umount layer0 || true
-    umount layer1 || true
-    rm -rf layer0 layer1 || true
-    cleanup
-}
-
-@test "squashfs layer support" {
     stacker build --layer-type=squashfs
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
@@ -32,4 +32,37 @@ function teardown() {
     mkdir layer1
     mount -t squashfs oci/blobs/sha256/$layer1 layer1
     [ -f layer1/1 ]
+}
+
+@test "squashfs file whiteouts" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        rm -rf /etc/selinux
+        rm -f /usr/bin/ls
+EOF
+
+    stacker build --layer-type=squashfs
+
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
+    layer1=$(cat oci/blobs/sha256/$manifest | jq -r .layers[1].digest | cut -f2 -d:)
+
+    # manually make an atomfs
+    mkdir layer0
+    mount -t squashfs oci/blobs/sha256/$layer0 layer0
+
+    mkdir layer1
+    mount -t squashfs oci/blobs/sha256/$layer1 layer1
+    tree layer1
+
+    mkdir combined
+    mount -t overlay -o "lowerdir=layer1:layer0" overlay combined
+
+    # make sure directory and file whiteouts work
+    [ ! -d combined/etc/selinux ]
+    [ ! -f combined/usr/bin/ls ]
 }
