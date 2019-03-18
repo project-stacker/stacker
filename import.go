@@ -135,7 +135,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 			if srcpathinfo.IsDir() {
 				err = os.MkdirAll(destpath, srcpathinfo.Mode())
 				if err != nil {
-					return "", errors.Errorf("failed to create dir %s", destpath)
+					return "", errors.Wrapf(err, "failed to create dir %s", destpath)
 				}
 			} else {
 				err = os.RemoveAll(destpath)
@@ -152,7 +152,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 				derr := os.MkdirAll(destdir, sdirinfo.Mode())
 				if derr != nil {
-					return "", errors.Errorf("failed to create dir %s", destdir)
+					return "", errors.Wrapf(err, "failed to create dir %s", destdir)
 				}
 
 				output, err := exec.Command("cp", "-a", srcpath, destdir).CombinedOutput()
