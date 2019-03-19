@@ -8,7 +8,7 @@ stacker: $(GO_SRC)
 
 # make test TEST=basic will run only the basic test.
 .PHONY: check
-check:
+check: stacker
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
 	go test ./...
 	sudo -E "PATH=$$PATH" bats -t $(patsubst %,test/%.bats,$(TEST))
