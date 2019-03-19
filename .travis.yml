@@ -13,8 +13,7 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq libcap-dev libgpgme11-dev
     - go get github.com/openSUSE/umoci/cmd/umoci
-    - curl https://glide.sh/get | sh
     - sudo cp $GOPATH/bin/umoci /usr/bin
 install: make
 script:
-    - make check
+    - env GO111MODULE=on make check
