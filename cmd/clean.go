@@ -33,20 +33,20 @@ func doClean(ctx *cli.Context) error {
 	if !ctx.Bool("all") {
 		if err := os.Remove(path.Join(config.StackerDir, "build.cache")); err != nil {
 			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "error deleting logs dir: %v", err)
+				fmt.Fprintf(os.Stderr, "error deleting logs dir: %v\n", err)
 				fail = true
 			}
 		}
 		if err := os.Remove(path.Join(config.StackerDir, "btrfs.loop")); err != nil {
 			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "error deleting btrfs loop: %v", err)
+				fmt.Fprintf(os.Stderr, "error deleting btrfs loop: %v\n", err)
 				fail = true
 			}
 		}
 	} else {
 		if err := os.RemoveAll(config.StackerDir); err != nil {
 			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "error deleting stacker dir: %v", err)
+				fmt.Fprintf(os.Stderr, "error deleting stacker dir: %v\n", err)
 				fail = true
 			}
 		}
