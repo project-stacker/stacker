@@ -94,14 +94,14 @@ func importFile(imp string, cacheDir string) (string, error) {
 		return dest, nil
 	}
 
-	existing, err := walkImport(cacheDir)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed walking existing import dir")
-	}
-
 	dest := path.Join(cacheDir, path.Base(imp))
 	if err := os.MkdirAll(dest, 0755); err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed making cache dir")
+	}
+
+	existing, err := walkImport(dest)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed walking existing import dir")
 	}
 
 	toImport, err := walkImport(imp)
@@ -111,54 +111,42 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 	diff, err := mtree.Compare(existing, toImport, mtreeKeywords)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed mtree comparing %s and %s", existing, toImport)
 	}
 
 	for _, d := range diff {
 		switch d.Type() {
 		case mtree.Missing:
-			err := os.RemoveAll(path.Join(dest, d.Path()))
+			err := os.RemoveAll(path.Join(cacheDir, d.Path()))
 			if err != nil {
-				return "", err
+				return "", errors.Wrapf(err, "couldn't remove missing import %s", path.Join(cacheDir, d.Path()))
 			}
 		case mtree.Modified:
 			fallthrough
 		case mtree.Extra:
 			srcpath := path.Join(imp, d.Path())
-			destpath := path.Join(dest, d.Path())
+			destpath := path.Join(cacheDir, path.Base(imp), d.Path())
 
-			srcpathinfo, err := os.Lstat(srcpath)
+			err = os.RemoveAll(destpath)
+			if err != nil && !os.IsNotExist(err) {
+				return "", err
+			}
+
+			sdirinfo, err := os.Lstat(path.Dir(srcpath))
 			if err != nil {
 				return "", err
 			}
 
-			if srcpathinfo.IsDir() {
-				err = os.MkdirAll(destpath, srcpathinfo.Mode())
-				if err != nil {
-					return "", errors.Wrapf(err, "failed to create dir %s", destpath)
-				}
-			} else {
-				err = os.RemoveAll(destpath)
-				if err != nil && !os.IsNotExist(err) {
-					return "", err
-				}
+			destdir := path.Dir(destpath)
 
-				sdirinfo, err := os.Lstat(path.Dir(srcpath))
-				if err != nil {
-					return "", err
-				}
+			derr := os.MkdirAll(destdir, sdirinfo.Mode())
+			if derr != nil {
+				return "", errors.Wrapf(err, "failed to create dir %s", destdir)
+			}
 
-				destdir := path.Dir(destpath)
-
-				derr := os.MkdirAll(destdir, sdirinfo.Mode())
-				if derr != nil {
-					return "", errors.Wrapf(err, "failed to create dir %s", destdir)
-				}
-
-				output, err := exec.Command("cp", "-a", srcpath, destdir).CombinedOutput()
-				if err != nil {
-					return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
-				}
+			output, err := exec.Command("cp", "-a", srcpath, destdir).CombinedOutput()
+			if err != nil {
+				return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
 			}
 		case mtree.ErrorDifference:
 			return "", errors.Errorf("failed to diff %s", d.Path())
@@ -198,7 +186,7 @@ func Import(c StackerConfig, name string, imports []string) error {
 
 	existing, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "couldn't read existing directory")
 	}
 
 	for _, i := range imports {

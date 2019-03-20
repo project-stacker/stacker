@@ -16,7 +16,7 @@ function cleanup() {
     if [ -z "$STACKER_KEEP" ]; then
         rm -rf .stacker >& /dev/null || true
     else
-        rm -rf .stacker/btrfs.loop .stacker/build.cache >& /dev/null || true
+        rm -rf .stacker/btrfs.loop .stacker/build.cache .stacker/imports >& /dev/null || true
     fi
 }
 
