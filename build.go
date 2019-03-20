@@ -111,7 +111,7 @@ func (eps *excludePaths) AddExclude(p string) {
 		// If /usr/bin/ls has changed but /usr hasn't, we don't want to list
 		// /usr in the include paths any more, so let's be sure to only
 		// add things which aren't prefixes.
-		if strings.HasPrefix(p, inc) {
+		if strings.HasPrefix(inc, p) {
 			return
 		}
 	}
