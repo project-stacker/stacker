@@ -41,12 +41,6 @@ func doChroot(ctx *cli.Context) error {
 	}
 	defer s.Detach()
 
-	file := ctx.String("f")
-	sf, err := stacker.NewStackerfile(file, ctx.StringSlice("substitute"))
-	if err != nil {
-		return err
-	}
-
 	tags, err := ioutil.ReadDir(config.RootFSDir)
 	if err != nil {
 		return err
@@ -73,6 +67,13 @@ func doChroot(ctx *cli.Context) error {
 	// we can't figure out easily which filesystem .working came from, we
 	// fake an empty layer.
 	if tag == ".working" {
+		return stacker.Run(config, tag, cmd, &stacker.Layer{}, "", os.Stdin)
+	}
+
+	file := ctx.String("f")
+	sf, err := stacker.NewStackerfile(file, ctx.StringSlice("substitute"))
+	if err != nil {
+		fmt.Printf("couldn't find stacker file, chrooting to %s as best effort\n", tag)
 		return stacker.Run(config, tag, cmd, &stacker.Layer{}, "", os.Stdin)
 	}
 
