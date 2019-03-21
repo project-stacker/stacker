@@ -17,6 +17,7 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
+    rm -rf .stacker || true
     stacker unpriv-setup
 }
 
