@@ -17,13 +17,7 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
-    mkdir -p .stacker
-    truncate -s 100G .stacker/btrfs.loop
-    mkfs.btrfs .stacker/btrfs.loop
-    mkdir -p roots
-    mount -o loop .stacker/btrfs.loop roots
-    chown -R $SUDO_USER:$SUDO_USER roots
-    chown -R $SUDO_USER:$SUDO_USER .stacker
+    stacker unpriv-setup
 }
 
 function teardown() {

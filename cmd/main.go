@@ -29,6 +29,7 @@ func main() {
 		inspectCmd,
 		grabCmd,
 		umociCmd,
+		unprivSetupCmd,
 	}
 
 	app.Flags = []cli.Flag{
