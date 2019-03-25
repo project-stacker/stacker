@@ -37,7 +37,7 @@ func recursiveChown(dir string, uid int) error {
 
 func doUnprivSetup(ctx *cli.Context) error {
 	_, err := os.Stat(config.StackerDir)
-	if err != nil {
+	if err == nil {
 		return fmt.Errorf("stacker dir %s already exists, aborting setup", config.StackerDir)
 	}
 
