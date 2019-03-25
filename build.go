@@ -464,7 +464,7 @@ func Build(opts *BuildArgs) error {
 		}
 
 		if len(run) != 0 {
-			_, err := os.Stat(path.Join(opts.Config.RootFSDir, name, "rootfs/bin/bash"))
+			_, err := os.Stat(path.Join(opts.Config.RootFSDir, ".working/rootfs/bin/bash"))
 			if err != nil {
 				return fmt.Errorf("rootfs for %s does not have a /bin/bash", name)
 			}
