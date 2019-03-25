@@ -329,6 +329,10 @@ func (c *container) execute(args string, stdin io.Reader) error {
 	return c.containerError(cmdErr, "execute failed")
 }
 
+func (c *container) Close() {
+	c.c.Release()
+}
+
 func umociMapOptions() *layer.MapOptions {
 	os := &layer.MapOptions{}
 	if IdmapSet == nil {

@@ -11,6 +11,7 @@ func Grab(sc StackerConfig, name string, source string) error {
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
 	cwd, err := os.Getwd()
 	if err != nil {

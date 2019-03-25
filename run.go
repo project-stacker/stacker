@@ -13,6 +13,7 @@ func Run(sc StackerConfig, name string, command string, l *Layer, onFailure stri
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
 	importsDir := path.Join(sc.StackerDir, "imports", name)
 	if _, err := os.Stat(importsDir); err == nil {
