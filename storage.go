@@ -356,3 +356,8 @@ func haveRsync() error {
 
 	return nil
 }
+
+func CleanRoots(config StackerConfig) {
+	btrfsSubVolumesDelete(config.RootFSDir)
+	syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
+}
