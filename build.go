@@ -464,6 +464,11 @@ func Build(opts *BuildArgs) error {
 		}
 
 		if len(run) != 0 {
+			_, err := os.Stat(path.Join(opts.Config.RootFSDir, name, "rootfs/bin/bash"))
+			if err != nil {
+				return fmt.Errorf("rootfs for %s does not have a /bin/bash", name)
+			}
+
 			importsDir := path.Join(opts.Config.StackerDir, "imports", name)
 
 			script := fmt.Sprintf("#!/bin/bash -xe\n%s", strings.Join(run, "\n"))
