@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"syscall"
 
+	"github.com/anuvu/stacker"
 	"github.com/urfave/cli"
 )
 
@@ -24,7 +24,7 @@ var cleanCmd = cli.Command{
 func doClean(ctx *cli.Context) error {
 	// Explicitly don't check errors. We want to do what we can to just
 	// clean everything up.
-	syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
+	stacker.CleanRoots(config)
 	os.RemoveAll(config.RootFSDir)
 	os.RemoveAll(config.OCIDir)
 
