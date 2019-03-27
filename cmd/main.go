@@ -85,13 +85,13 @@ func main() {
 			}
 		}
 
-		if ctx.String("stacker-dir") != ".stacker" {
+		if config.StackerDir == "" || ctx.IsSet("stacker-dir") {
 			config.StackerDir = ctx.String("stacker-dir")
 		}
-		if ctx.String("oci-dir") != "oci" {
+		if config.OCIDir == "" || ctx.IsSet("oci-dir") {
 			config.OCIDir = ctx.String("oci-dir")
 		}
-		if ctx.String("roots-dir") != "roots" {
+		if config.RootFSDir == "" || ctx.IsSet("roots-dir") {
 			config.RootFSDir = ctx.String("roots-dir")
 		}
 
