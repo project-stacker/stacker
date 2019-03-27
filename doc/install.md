@@ -28,4 +28,4 @@ To run `make check` you will also need:
     sudo apt install bats jq
 
 Finally, once you have the build dependencies, stacker can be built with a
-simple `make`. The stacker binary will be output to `$GOPATH/bin/stacker`.
+simple `make`. The stacker binary will be output as `./stacker`.
