@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/user"
+	"path"
 	"path/filepath"
 
 	"github.com/anuvu/stacker"
 	"github.com/apex/log"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -17,6 +21,17 @@ var (
 )
 
 func main() {
+	user, err := user.Current()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "couldn't get current user: %s", err)
+		os.Exit(1)
+	}
+
+	configDir := os.Getenv("XDG_CONFIG_HOME")
+	if configDir == "" {
+		configDir = path.Join(user.HomeDir, ".config")
+	}
+
 	app := cli.NewApp()
 	app.Name = "stacker"
 	app.Usage = "stacker builds OCI images"
@@ -52,20 +67,44 @@ func main() {
 			Name:  "debug",
 			Usage: "enable stacker debug mode",
 		},
+		cli.StringFlag{
+			Name:  "config",
+			Usage: "stacker config file with defaults",
+			Value: path.Join(configDir, "conf.yaml"),
+		},
 	}
 
 	app.Before = func(ctx *cli.Context) error {
 		var err error
-		config.StackerDir, err = filepath.Abs(ctx.String("stacker-dir"))
+
+		content, err := ioutil.ReadFile(ctx.String("config"))
+		if err == nil {
+			err = yaml.Unmarshal(content, &config)
+			if err != nil {
+				return err
+			}
+		}
+
+		if ctx.String("stacker-dir") != ".stacker" {
+			config.StackerDir = ctx.String("stacker-dir")
+		}
+		if ctx.String("oci-dir") != "oci" {
+			config.OCIDir = ctx.String("oci-dir")
+		}
+		if ctx.String("roots-dir") != "roots" {
+			config.RootFSDir = ctx.String("roots-dir")
+		}
+
+		config.StackerDir, err = filepath.Abs(config.StackerDir)
 		if err != nil {
 			return err
 		}
 
-		config.OCIDir, err = filepath.Abs(ctx.String("oci-dir"))
+		config.OCIDir, err = filepath.Abs(config.OCIDir)
 		if err != nil {
 			return err
 		}
-		config.RootFSDir, err = filepath.Abs(ctx.String("roots-dir"))
+		config.RootFSDir, err = filepath.Abs(config.RootFSDir)
 		if err != nil {
 			return err
 		}

@@ -24,9 +24,9 @@ const (
 // StackerConfig is a struct that contains global (or widely used) stacker
 // config options.
 type StackerConfig struct {
-	StackerDir string
-	OCIDir     string
-	RootFSDir  string
+	StackerDir string `yaml:"stacker_dir"`
+	OCIDir     string `yaml:"oci_dir"`
+	RootFSDir  string `yaml:"rootfs_dir"`
 }
 
 type Stackerfile struct {
