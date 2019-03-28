@@ -42,7 +42,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.1
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c
-	github.com/openSUSE/umoci v0.0.0-20190209041853-4ad066106584
+	github.com/openSUSE/umoci v0.4.4
 	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/opencontainers/image-spec v1.0.0
 	github.com/opencontainers/runc v0.0.0-20190208075259-dd023c457d84
@@ -76,4 +76,4 @@ require (
 
 replace github.com/vbatts/go-mtree v0.4.4 => github.com/vbatts/go-mtree v0.4.5-0.20190122034725-8b6de6073c1a
 
-replace github.com/openSUSE/umoci v0.0.0-20190209041853-4ad066106584 => github.com/tych0/umoci v0.0.0-20190209041853-4ad066106584
+replace github.com/openSUSE/umoci v0.4.4 => github.com/tych0/umoci v0.1.1-0.20190328182805-725265142c7d
