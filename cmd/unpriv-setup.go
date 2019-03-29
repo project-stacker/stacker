@@ -16,6 +16,7 @@ var unprivSetupCmd = cli.Command{
 	Name:   "unpriv-setup",
 	Usage:  "do the necessary unprivileged setup for stacker build to work without root",
 	Action: doUnprivSetup,
+	Before: beforeUnprivSetup,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "uid",
@@ -23,6 +24,14 @@ var unprivSetupCmd = cli.Command{
 			Value: os.Getenv("SUDO_UID"),
 		},
 	},
+}
+
+func beforeUnprivSetup(ctx *cli.Context) error {
+	if ctx.String("uid") == "" {
+		return fmt.Errorf("please specify --uid or run unpriv-setup with sudo")
+	}
+
+	return nil
 }
 
 func recursiveChown(dir string, uid int) error {
