@@ -14,7 +14,7 @@ import (
 
 var unprivSetupCmd = cli.Command{
 	Name:   "unpriv-setup",
-	Usage:  "unpriv-setups up after a `stacker build`",
+	Usage:  "do the necessary unprivileged setup for stacker build to work without root",
 	Action: doUnprivSetup,
 	Flags: []cli.Flag{
 		cli.StringFlag{
