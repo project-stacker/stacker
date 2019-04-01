@@ -19,9 +19,6 @@ var umociCmd = cli.Command{
 	Hidden: true,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "oci-dir",
-		},
-		cli.StringFlag{
 			Name: "bundle-path",
 		},
 		cli.StringFlag{
@@ -51,7 +48,7 @@ var umociCmd = cli.Command{
 
 func doInit(ctx *cli.Context) error {
 	name := ctx.GlobalString("tag")
-	ociDir := ctx.GlobalString("oci-dir")
+	ociDir := config.OCIDir
 	bundlePath := ctx.GlobalString("bundle-path")
 	var oci casext.Engine
 	var err error
@@ -79,7 +76,7 @@ func doInit(ctx *cli.Context) error {
 }
 
 func doUnpack(ctx *cli.Context) error {
-	oci, err := umoci.OpenLayout(ctx.GlobalString("oci-dir"))
+	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
 	}
@@ -89,7 +86,7 @@ func doUnpack(ctx *cli.Context) error {
 }
 
 func doRepack(ctx *cli.Context) error {
-	oci, err := umoci.OpenLayout(ctx.GlobalString("oci-dir"))
+	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
 	}

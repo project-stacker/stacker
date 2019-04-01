@@ -54,8 +54,8 @@ func doUnlade(ctx *cli.Context) error {
 		fmt.Printf("%d/%d: unpacking %s", idx+1, len(tags), tag)
 		args := []string{
 			binary,
-			"umoci",
 			"--oci-dir", config.OCIDir,
+			"umoci",
 			"--tag", tag,
 			"--bundle-path", path.Join(config.RootFSDir, tag),
 			"unpack",

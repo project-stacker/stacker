@@ -144,8 +144,9 @@ func extractOutput(o BaseLayerOpts) error {
 	if err != nil {
 		return err
 	}
-	args := []string{binary, "umoci",
+	args := []string{binary,
 		"--oci-dir", dir,
+		"umoci",
 		"--bundle-path", target,
 		"--tag", tag,
 		"unpack",
@@ -263,8 +264,8 @@ func umociInit(o BaseLayerOpts) error {
 	}
 	args := []string{
 		binary,
-		"umoci",
 		"--oci-dir", o.Config.OCIDir,
+		"umoci",
 		"--tag", o.Name,
 		"--bundle-path", path.Join(o.Config.RootFSDir, ".working"),
 		"init"}
