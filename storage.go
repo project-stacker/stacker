@@ -24,6 +24,7 @@ type Storage interface {
 	Restore(source string, target string) error
 	Delete(path string) error
 	Detach() error
+	Exists(thing string) bool
 }
 
 func NewStorage(c StackerConfig) (Storage, error) {
@@ -260,6 +261,15 @@ func (b *btrfs) Detach() error {
 	}
 
 	return nil
+}
+
+func (b *btrfs) Exists(thing string) bool {
+	_, err := os.Stat(path.Join(b.c.RootFSDir, thing))
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
