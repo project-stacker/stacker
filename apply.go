@@ -290,7 +290,13 @@ func (a *Apply) applyImage(layer string) error {
 
 	// Calculate a new mtree with our current manifest.
 	newMtreeName := strings.Replace(manifestDesc.Digest.String(), ":", "_", 1)
-	err = umoci.GenerateBundleManifest(newMtreeName, path.Join(a.opts.Config.RootFSDir, a.opts.Target), fseval.DefaultFsEval)
+	bundlePath := path.Join(a.opts.Config.RootFSDir, a.opts.Target)
+
+	// Remove the mtree file if it exists: GenerateBundleManifest() fails
+	// if it already exists, and it may exist because we restored from a
+	// previous snapshot.
+	os.RemoveAll(path.Join(bundlePath, newMtreeName+".mtree"))
+	err = umoci.GenerateBundleManifest(newMtreeName, bundlePath, fseval.DefaultFsEval)
 	if err != nil {
 		return err
 	}
@@ -300,7 +306,6 @@ func (a *Apply) applyImage(layer string) error {
 		Walk: []ispec.Descriptor{manifestDesc},
 	}}
 
-	bundlePath := path.Join(a.opts.Config.RootFSDir, a.opts.Target)
 	err = umoci.WriteBundleMeta(bundlePath, umociMeta)
 	if err != nil {
 		return err
