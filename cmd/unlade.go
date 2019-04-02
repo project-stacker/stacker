@@ -47,7 +47,8 @@ func doUnlade(ctx *cli.Context) error {
 
 	fmt.Printf("Unpacking all layers from %s into %s\n", config.OCIDir, config.RootFSDir)
 	for idx, tag := range tags {
-		err = s.Create(tag)
+		s.Delete(".working")
+		err = s.Create(".working")
 		if err != nil {
 			return err
 		}
@@ -57,7 +58,7 @@ func doUnlade(ctx *cli.Context) error {
 			"--oci-dir", config.OCIDir,
 			"umoci",
 			"--tag", tag,
-			"--bundle-path", path.Join(config.RootFSDir, tag),
+			"--bundle-path", path.Join(config.RootFSDir, ".working"),
 			"unpack",
 		}
 		err = stacker.MaybeRunInUserns(args, "unpack failed")
@@ -65,6 +66,10 @@ func doUnlade(ctx *cli.Context) error {
 			return err
 		}
 		fmt.Printf(" - done.\n")
+		err = s.Snapshot(".working", tag)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
