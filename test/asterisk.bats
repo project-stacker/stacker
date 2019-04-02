@@ -16,7 +16,7 @@ function teardown() {
     cleanup
 }
 
-@test "apply logic" {
+@test "wildcards work in run section" {
     stacker build
     umoci unpack --image oci:a dest
     [ "$status" -eq 0 ]
