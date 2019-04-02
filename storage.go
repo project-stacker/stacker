@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/freddierice/go-losetup"
+	"github.com/pkg/errors"
 )
 
 type Storage interface {
@@ -98,7 +99,7 @@ func (b *btrfs) Snapshot(source string, target string) error {
 		path.Join(b.c.RootFSDir, source),
 		path.Join(b.c.RootFSDir, target)).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs snapshot: %s: %s", err, output)
+		return errors.Errorf("btrfs snapshot %s to %s: %s: %s", source, target, err, output)
 	}
 
 	return nil
