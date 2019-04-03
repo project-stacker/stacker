@@ -45,6 +45,7 @@ func main() {
 		grabCmd,
 		umociCmd,
 		unprivSetupCmd,
+		gcCmd,
 	}
 
 	app.Flags = []cli.Flag{
