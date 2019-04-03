@@ -155,7 +155,7 @@ func doUnpack(ctx *cli.Context) error {
 		//
 		// This means the first restore will be slower, but after that
 		// it will be very fast.
-		_, err := os.Stat(path.Join(bundlePath, "config.json"))
+		_, err := os.Stat(path.Join(bundlePath, "umoci.json"))
 		if err != nil {
 			fmt.Println("generating mtree metadata for snapshot (this may take a bit)...")
 			meta := umoci.Meta{
