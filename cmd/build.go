@@ -85,6 +85,7 @@ func doBuild(ctx *cli.Context) error {
 		OnRunFailure:            ctx.String("on-run-failure"),
 		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
 		LayerType:               ctx.String("layer-type"),
+		Debug:                   debug,
 	}
 
 	return stacker.Build(&args)

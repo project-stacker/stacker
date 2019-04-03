@@ -30,6 +30,7 @@ type BaseLayerOpts struct {
 	Cache     *BuildCache
 	OCI       casext.Engine
 	LayerType string
+	Debug     bool
 }
 
 func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
@@ -140,19 +141,18 @@ func extractOutput(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
 
-	dir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-	args := []string{binary,
-		"--oci-dir", dir,
-		"umoci",
+	// This is a bit of a hack; since we want to unpack from the
+	// layer-bases import folder instead of the actual oci dir, we hack
+	// this to make config.OCIDir be our input folder. That's a lie, but it
+	// seems better to do a little lie here than to try and abstract it out
+	// and make everyone else deal with it.
+	modifiedConfig := o.Config
+	modifiedConfig.OCIDir = path.Join(o.Config.StackerDir, "layer-bases", "oci")
+	err = RunUmociSubcommand(modifiedConfig, o.Debug, []string{
 		"--bundle-path", target,
 		"--tag", tag,
 		"unpack",
-	}
-	err = MaybeRunInUserns(args, "image unpack failed")
+	})
 	if err != nil {
 		return err
 	}
@@ -259,23 +259,11 @@ func getDocker(o BaseLayerOpts) error {
 }
 
 func umociInit(o BaseLayerOpts) error {
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-	args := []string{
-		binary,
-		"--oci-dir", o.Config.OCIDir,
-		"umoci",
+	return RunUmociSubcommand(o.Config, o.Debug, []string{
 		"--tag", o.Name,
 		"--bundle-path", path.Join(o.Config.RootFSDir, ".working"),
-		"init"}
-	err = MaybeRunInUserns(args, "layer initialization failed")
-	if err != nil {
-		return err
-	}
-
-	return nil
+		"init",
+	})
 }
 
 func getTar(o BaseLayerOpts) error {
@@ -384,4 +372,26 @@ func ComputeAggregateHash(manifest ispec.Manifest, descriptor ispec.Descriptor) 
 	}
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
+}
+
+func RunUmociSubcommand(config StackerConfig, debug bool, args []string) error {
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{
+		binary,
+		"--oci-dir", config.OCIDir,
+		"--roots-dir", config.RootFSDir,
+		"--stacker-dir", config.StackerDir,
+	}
+
+	if debug {
+		cmd = append(cmd, "--debug")
+	}
+
+	cmd = append(cmd, "umoci")
+	cmd = append(cmd, args...)
+	return MaybeRunInUserns(cmd, "image unpack failed")
 }

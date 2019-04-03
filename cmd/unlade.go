@@ -40,11 +40,6 @@ func doUnlade(ctx *cli.Context) error {
 		return err
 	}
 
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
 	fmt.Printf("Unpacking all layers from %s into %s\n", config.OCIDir, config.RootFSDir)
 	for idx, tag := range tags {
 		s.Delete(".working")
@@ -53,15 +48,11 @@ func doUnlade(ctx *cli.Context) error {
 			return err
 		}
 		fmt.Printf("%d/%d: unpacking %s", idx+1, len(tags), tag)
-		args := []string{
-			binary,
-			"--oci-dir", config.OCIDir,
-			"umoci",
+		err = stacker.RunUmociSubcommand(config, debug, []string{
 			"--tag", tag,
 			"--bundle-path", path.Join(config.RootFSDir, ".working"),
 			"unpack",
-		}
-		err = stacker.MaybeRunInUserns(args, "unpack failed")
+		})
 		if err != nil {
 			return err
 		}

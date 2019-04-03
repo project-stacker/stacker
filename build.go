@@ -33,6 +33,7 @@ type BuildArgs struct {
 	OnRunFailure            string
 	ApplyConsiderTimestamps bool
 	LayerType               string
+	Debug                   bool
 }
 
 func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
@@ -428,6 +429,7 @@ func Build(opts *BuildArgs) error {
 			Cache:     buildCache,
 			OCI:       oci,
 			LayerType: opts.LayerType,
+			Debug:     opts.Debug,
 		}
 
 		s.Delete(".working")
@@ -507,18 +509,11 @@ func Build(opts *BuildArgs) error {
 		fmt.Println("generating layer...")
 		switch opts.LayerType {
 		case "tar":
-			binary, err := os.Readlink("/proc/self/exe")
-			if err != nil {
-				return err
-			}
-			args := []string{
-				binary,
-				"--oci-dir", opts.Config.OCIDir,
-				"umoci",
+			err = RunUmociSubcommand(opts.Config, opts.Debug, []string{
 				"--tag", name,
 				"--bundle-path", path.Join(opts.Config.RootFSDir, ".working"),
-				"repack"}
-			err = MaybeRunInUserns(args, "layer generation failed")
+				"repack",
+			})
 			if err != nil {
 				return err
 			}
