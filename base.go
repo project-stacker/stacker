@@ -251,7 +251,7 @@ func extractOutput(o BaseLayerOpts) error {
 }
 
 func getDocker(o BaseLayerOpts) error {
-	err := runSkopeo(o.Layer.From.Url, o, !o.Layer.BuildOnly)
+	err := runSkopeo(o.Layer.From.Url, o, !o.Layer.BuildOnly && o.LayerType == "tar")
 	if err != nil {
 		return err
 	}
