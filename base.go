@@ -183,7 +183,8 @@ func extractOutput(o BaseLayerOpts) error {
 		}
 		defer cache.Close()
 
-		manifest, err := LookupManifest(cache, o.Name)
+		cacheTag, err := tagFromSkopeoUrl(o.Layer.From.Url)
+		manifest, err := LookupManifest(cache, cacheTag)
 		if err != nil {
 			return err
 		}
