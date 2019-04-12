@@ -162,8 +162,10 @@ func extractOutput(o BaseLayerOpts) error {
 	o.OCI.DeleteReference(context.Background(), tag)
 
 	// Now, if the layer type is something besides tar, we need to
-	// generate the base layer as whatever type that is.
-	if o.LayerType == "squashfs" {
+	// generate the base layer as whatever type that is. Note that we don't
+	// need to this for build only layers, as those are not added to the
+	// output.
+	if o.LayerType == "squashfs" && !o.Layer.BuildOnly {
 		o.OCI.GC(context.Background())
 
 		tmpSquashfs, err := mkSquashfs(o.Config, "")

@@ -65,3 +65,22 @@ EOF
     [ ! -d combined/etc/selinux ]
     [ ! -f combined/usr/bin/ls ]
 }
+
+@test "squashfs + build only layers" {
+    cat > stacker.yaml <<EOF
+build:
+    from:
+        type: docker
+        url: docker://centos:latest
+    build_only: true
+importer:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import:
+        - stacker://build/bin/ls
+    run: |
+        /stacker/ls
+EOF
+    stacker build --layer-type squashfs
+}
