@@ -506,7 +506,7 @@ func Build(opts *BuildArgs) error {
 			continue
 		}
 
-		fmt.Println("generating layer for ", name)
+		fmt.Println("generating layer for", name)
 		switch opts.LayerType {
 		case "tar":
 			err = RunUmociSubcommand(opts.Config, opts.Debug, []string{
