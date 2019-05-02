@@ -9,6 +9,7 @@ import (
 	"github.com/containers/image/docker"
 	"github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
+	"github.com/containers/image/storage"
 	"github.com/containers/image/types"
 	"github.com/pkg/errors"
 )
@@ -24,6 +25,8 @@ func localRefParser(ref string) (types.ImageReference, error) {
 		return layout.ParseReference(parts[1])
 	case "docker":
 		return docker.ParseReference(parts[1])
+	case "containers-storage":
+		return storage.Transport.ParseReference(parts[1])
 	default:
 		return nil, errors.Errorf("unknown image ref type: %s", ref)
 	}
