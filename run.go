@@ -9,7 +9,7 @@ import (
 )
 
 func Run(sc StackerConfig, name string, command string, l *Layer, onFailure string, stdin io.Reader) error {
-	c, err := newContainer(sc, ".working")
+	c, err := newContainer(sc, WorkingContainerName)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func Run(sc StackerConfig, name string, command string, l *Layer, onFailure stri
 		if err != nil {
 			return err
 		}
-		defer os.Remove(path.Join(sc.RootFSDir, ".working", "rootfs", "stacker"))
+		defer os.Remove(path.Join(sc.RootFSDir, WorkingContainerName, "rootfs", "stacker"))
 	}
 
 	err = c.bindMount("/etc/resolv.conf", "/etc/resolv.conf", "")

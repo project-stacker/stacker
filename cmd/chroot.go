@@ -62,11 +62,11 @@ func doChroot(ctx *cli.Context) error {
 		cmd = ctx.Args()[1]
 	}
 
-	// It may be useful to do `stacker chroot .working` in order to inspect
+	// It may be useful to do `stacker chroot _working` in order to inspect
 	// the filesystem that just broke. So, let's try to support this. Since
-	// we can't figure out easily which filesystem .working came from, we
+	// we can't figure out easily which filesystem _working came from, we
 	// fake an empty layer.
-	if tag == ".working" {
+	if tag == stacker.WorkingContainerName {
 		return stacker.Run(config, tag, cmd, &stacker.Layer{}, "", os.Stdin)
 	}
 
@@ -82,8 +82,8 @@ func doChroot(ctx *cli.Context) error {
 		return fmt.Errorf("no layer %s in stackerfile", tag)
 	}
 
-	defer s.Delete(".working")
-	err = s.Restore(tag, ".working")
+	defer s.Delete(stacker.WorkingContainerName)
+	err = s.Restore(tag, stacker.WorkingContainerName)
 	if err != nil {
 		return err
 	}

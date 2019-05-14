@@ -232,7 +232,7 @@ func extractOutput(o BaseLayerOpts) error {
 			return err
 		}
 
-		bundlePath := path.Join(o.Config.RootFSDir, ".working")
+		bundlePath := path.Join(o.Config.RootFSDir, WorkingContainerName)
 		err = updateBundleMtree(bundlePath, desc)
 		if err != nil {
 			return err
@@ -264,7 +264,7 @@ func getDocker(o BaseLayerOpts) error {
 func umociInit(o BaseLayerOpts) error {
 	return RunUmociSubcommand(o.Config, o.Debug, []string{
 		"--tag", o.Name,
-		"--bundle-path", path.Join(o.Config.RootFSDir, ".working"),
+		"--bundle-path", path.Join(o.Config.RootFSDir, WorkingContainerName),
 		"init",
 	})
 }

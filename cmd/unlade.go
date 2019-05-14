@@ -42,22 +42,22 @@ func doUnlade(ctx *cli.Context) error {
 
 	fmt.Printf("Unpacking all layers from %s into %s\n", config.OCIDir, config.RootFSDir)
 	for idx, tag := range tags {
-		s.Delete(".working")
-		err = s.Create(".working")
+		s.Delete(stacker.WorkingContainerName)
+		err = s.Create(stacker.WorkingContainerName)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("%d/%d: unpacking %s", idx+1, len(tags), tag)
 		err = stacker.RunUmociSubcommand(config, debug, []string{
 			"--tag", tag,
-			"--bundle-path", path.Join(config.RootFSDir, ".working"),
+			"--bundle-path", path.Join(config.RootFSDir, stacker.WorkingContainerName),
 			"unpack",
 		})
 		if err != nil {
 			return err
 		}
 		fmt.Printf(" - done.\n")
-		err = s.Snapshot(".working", tag)
+		err = s.Snapshot(stacker.WorkingContainerName, tag)
 		if err != nil {
 			return err
 		}

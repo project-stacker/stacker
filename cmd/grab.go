@@ -31,11 +31,11 @@ func doGrab(ctx *cli.Context) error {
 		return errors.Errorf("invalid grab argument: %s", ctx.Args().First())
 	}
 
-	err = s.Restore(parts[0], ".working")
+	err = s.Restore(parts[0], stacker.WorkingContainerName)
 	if err != nil {
 		return err
 	}
-	defer s.Delete(".working")
+	defer s.Delete(stacker.WorkingContainerName)
 
 	return stacker.Grab(config, parts[0], parts[1])
 }
