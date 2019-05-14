@@ -134,6 +134,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 	configs := map[string]string{
 		"lxc.mount.auto":  "proc:mixed",
 		"lxc.autodev":     "1",
+		"lxc.mount.entry": "none dev/shm tmpfs defaults,create=dir 0 0",
 		"lxc.uts.name":    name,
 		"lxc.net.0.type":  "none",
 		"lxc.environment": fmt.Sprintf("PATH=%s", ReasonableDefaultPath),
