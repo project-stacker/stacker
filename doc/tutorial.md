@@ -28,7 +28,7 @@ With this stacker file as `first.yaml`, we can do a basic stacker build:
      862 B / 862 B [============================================================] 0s
     Writing manifest to image destination
     Storing signatures
-    unpacking to /home/ubuntu/tutorial/roots/.working
+    unpacking to /home/ubuntu/tutorial/roots/_working
     running commands...
     generating layer...
     filesystem first built successfully
@@ -83,7 +83,7 @@ output will look something like:
 	 862 B / 862 B [============================================================] 0s
 	Writing manifest to image destination
 	Storing signatures
-	unpacking to /home/ubuntu/tutorial/roots/.working
+	unpacking to /home/ubuntu/tutorial/roots/_working
 	running commands...
 	running commands for first
 	+ mkdir -p /etc/myapp
