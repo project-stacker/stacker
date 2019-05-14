@@ -22,6 +22,7 @@ import (
 
 const (
 	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	WorkingContainerName  = "_working"
 )
 
 var (

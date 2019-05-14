@@ -87,7 +87,7 @@ func mkSquashfs(config StackerConfig, toExclude string) (*os.File, error) {
 	tmpSquashfs.Close()
 	os.Remove(tmpSquashfs.Name())
 	defer os.Remove(tmpSquashfs.Name())
-	rootfsPath := path.Join(config.RootFSDir, ".working", "rootfs")
+	rootfsPath := path.Join(config.RootFSDir, WorkingContainerName, "rootfs")
 	args := []string{rootfsPath, tmpSquashfs.Name()}
 	if len(toExclude) != 0 {
 		args = append(args, "-ef", excludesFile)
@@ -164,13 +164,13 @@ func (eps *excludePaths) String() (string, error) {
 }
 
 func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *BuildArgs) error {
-	meta, err := umoci.ReadBundleMeta(path.Join(opts.Config.RootFSDir, ".working"))
+	meta, err := umoci.ReadBundleMeta(path.Join(opts.Config.RootFSDir, WorkingContainerName))
 	if err != nil {
 		return err
 	}
 
 	mtreeName := strings.Replace(meta.From.Descriptor().Digest.String(), ":", "_", 1)
-	mtreePath := path.Join(opts.Config.RootFSDir, ".working", mtreeName+".mtree")
+	mtreePath := path.Join(opts.Config.RootFSDir, WorkingContainerName, mtreeName+".mtree")
 
 	mfh, err := os.Open(mtreePath)
 	if err != nil {
@@ -183,7 +183,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	}
 
 	fsEval := fseval.DefaultFsEval
-	rootfsPath := path.Join(opts.Config.RootFSDir, ".working", "rootfs")
+	rootfsPath := path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs")
 	newDH, err := mtree.Walk(rootfsPath, nil, umoci.MtreeKeywords, fsEval)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't mtree walk %s", rootfsPath)
@@ -293,7 +293,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	}
 
 	newName := strings.Replace(desc.Digest.String(), ":", "_", 1) + ".mtree"
-	err = umoci.GenerateBundleManifest(newName, path.Join(opts.Config.RootFSDir, ".working"), fsEval)
+	err = umoci.GenerateBundleManifest(newName, path.Join(opts.Config.RootFSDir, WorkingContainerName), fsEval)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	meta.From = casext.DescriptorPath{
 		Walk: []ispec.Descriptor{desc},
 	}
-	err = umoci.WriteBundleMeta(path.Join(opts.Config.RootFSDir, ".working"), meta)
+	err = umoci.WriteBundleMeta(path.Join(opts.Config.RootFSDir, WorkingContainerName), meta)
 	if err != nil {
 		return err
 	}
@@ -379,7 +379,7 @@ func Build(opts *BuildArgs) error {
 
 	author := fmt.Sprintf("%s@%s", username, host)
 
-	s.Delete(".working")
+	s.Delete(WorkingContainerName)
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {
@@ -424,7 +424,7 @@ func Build(opts *BuildArgs) error {
 		baseOpts := BaseLayerOpts{
 			Config:    opts.Config,
 			Name:      name,
-			Target:    ".working",
+			Target:    WorkingContainerName,
 			Layer:     l,
 			Cache:     buildCache,
 			OCI:       oci,
@@ -432,13 +432,13 @@ func Build(opts *BuildArgs) error {
 			Debug:     opts.Debug,
 		}
 
-		s.Delete(".working")
+		s.Delete(WorkingContainerName)
 		if l.From.Type == BuiltType {
-			if err := s.Restore(l.From.Tag, ".working"); err != nil {
+			if err := s.Restore(l.From.Tag, WorkingContainerName); err != nil {
 				return err
 			}
 		} else {
-			if err := s.Create(".working"); err != nil {
+			if err := s.Create(WorkingContainerName); err != nil {
 				return err
 			}
 		}
@@ -466,7 +466,7 @@ func Build(opts *BuildArgs) error {
 		}
 
 		if len(run) != 0 {
-			_, err := os.Stat(path.Join(opts.Config.RootFSDir, ".working/rootfs/bin/bash"))
+			_, err := os.Stat(path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs/bin/bash"))
 			if err != nil {
 				return fmt.Errorf("rootfs for %s does not have a /bin/bash", name)
 			}
@@ -490,7 +490,7 @@ func Build(opts *BuildArgs) error {
 		// a bogus entry to our cache.
 		if l.BuildOnly {
 			s.Delete(name)
-			if err := s.Snapshot(".working", name); err != nil {
+			if err := s.Snapshot(WorkingContainerName, name); err != nil {
 				return err
 			}
 
@@ -511,7 +511,7 @@ func Build(opts *BuildArgs) error {
 		case "tar":
 			err = RunUmociSubcommand(opts.Config, opts.Debug, []string{
 				"--tag", name,
-				"--bundle-path", path.Join(opts.Config.RootFSDir, ".working"),
+				"--bundle-path", path.Join(opts.Config.RootFSDir, WorkingContainerName),
 				"repack",
 			})
 			if err != nil {
@@ -650,7 +650,7 @@ func Build(opts *BuildArgs) error {
 
 		// Now, we need to set the umoci data on the fs to tell it that
 		// it has a layer that corresponds to this fs.
-		bundlePath := path.Join(opts.Config.RootFSDir, ".working")
+		bundlePath := path.Join(opts.Config.RootFSDir, WorkingContainerName)
 		err = updateBundleMtree(bundlePath, newPath.Descriptor())
 		if err != nil {
 			return err
@@ -664,7 +664,7 @@ func Build(opts *BuildArgs) error {
 
 		// Delete the old snapshot if it existed; we just did a new build.
 		s.Delete(name)
-		if err := s.Snapshot(".working", name); err != nil {
+		if err := s.Snapshot(WorkingContainerName, name); err != nil {
 			return err
 		}
 

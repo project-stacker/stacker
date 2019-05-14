@@ -127,16 +127,16 @@ func doUnpack(ctx *cli.Context) error {
 	if highestHash != "" {
 		// Delete the previously created working snapshot; we're about
 		// to create a new one.
-		err = storage.Delete(".working")
+		err = storage.Delete(stacker.WorkingContainerName)
 		if err != nil {
 			return err
 		}
 
 		// TODO: this is a little wonky: we're assuming that
-		// bundle-path ends in .working. It always does because
+		// bundle-path ends in _working. It always does because
 		// this is an internal API, but we should refactor this
 		// a bit.
-		err = storage.Restore(highestHash, ".working")
+		err = storage.Restore(highestHash, stacker.WorkingContainerName)
 		if err != nil {
 			return err
 		}
@@ -184,7 +184,7 @@ func doUnpack(ctx *cli.Context) error {
 				return err
 			}
 
-			err = storage.Snapshot(".working", highestHash)
+			err = storage.Snapshot(stacker.WorkingContainerName, highestHash)
 			if err != nil {
 				return err
 			}
@@ -206,7 +206,7 @@ func doUnpack(ctx *cli.Context) error {
 			return err
 		}
 
-		return storage.Snapshot(".working", hash)
+		return storage.Snapshot(stacker.WorkingContainerName, hash)
 	}
 
 	opts := layer.MapOptions{KeepDirlinks: true}
