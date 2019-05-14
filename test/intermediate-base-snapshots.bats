@@ -58,7 +58,7 @@ EOF
     umoci gc --layout oci
     btrfs property set -ts "roots/test" ro false
     btrfs subvolume delete "roots/test"
-    btrfs property list -ts roots/.working
+    btrfs property list -ts roots/_working
 
     stacker build --leave-unladen
     [ -f roots/test/rootfs/surgery ]
