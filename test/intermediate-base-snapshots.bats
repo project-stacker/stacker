@@ -1,7 +1,49 @@
 load helpers
 
 function teardown() {
+    rm -rf test-oci dest || true
     cleanup
+}
+
+@test "build only intermediate snapshots don't confuse things" {
+    # get a linux to do stuff on
+    # (double copy so we can take advantage of caching)
+    skopeo --insecure-policy copy docker://centos:latest oci:.stacker/layer-bases/oci:centos
+    skopeo --insecure-policy copy oci:.stacker/layer-bases/oci:centos oci:test-oci:a-linux
+
+    cat > stacker.yaml <<EOF
+# do some stuff
+first:
+    from:
+        type: oci
+        url: test-oci:a-linux
+    run: |
+        echo first
+    build_only: true
+second:
+    from:
+        type: oci
+        url: test-oci:a-linux
+    run: |
+        echo second
+    build_only: true
+EOF
+    stacker build
+
+    # change the manifest so it is different, oh my!
+    umoci config --image test-oci:a-linux --config.workingdir /usr
+    umoci --log info gc --layout test-oci
+
+    # now try it a second time...
+    cat > stacker.yaml <<EOF
+third:
+    from:
+        type: oci
+        url: test-oci:a-linux
+    run: |
+        echo third
+EOF
+    stacker build
 }
 
 @test "intermediate base layers are snapshotted" {
