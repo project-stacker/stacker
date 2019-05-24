@@ -8,6 +8,7 @@ function teardown() {
 @test "build only intermediate snapshots don't confuse things" {
     # get a linux to do stuff on
     # (double copy so we can take advantage of caching)
+    mkdir -p .stacker/layer-bases
     skopeo --insecure-policy copy docker://centos:latest oci:.stacker/layer-bases/oci:centos
     skopeo --insecure-policy copy oci:.stacker/layer-bases/oci:centos oci:test-oci:a-linux
 
