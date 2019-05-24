@@ -10,7 +10,7 @@ stacker: $(GO_SRC)
 .PHONY: check
 check: stacker
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
-	go test ./...
+	go test -tags "exclude_graphdriver_devicemapper" ./...
 	sudo -E "PATH=$$PATH" bats -t $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup
