@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/anuvu/stacker"
@@ -41,16 +40,7 @@ func doChroot(ctx *cli.Context) error {
 	}
 	defer s.Detach()
 
-	tags, err := ioutil.ReadDir(config.RootFSDir)
-	if err != nil {
-		return err
-	}
-
-	if len(tags) == 0 {
-		return fmt.Errorf("no builds present")
-	}
-
-	tag := tags[0].Name()
+	tag := stacker.WorkingContainerName
 
 	if len(ctx.Args()) > 0 {
 		tag = ctx.Args()[0]
