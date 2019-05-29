@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/klauspost/pgzip"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -26,29 +27,6 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/sys/unix"
 )
-
-func LookupManifest(oci casext.Engine, tag string) (ispec.Manifest, error) {
-	descriptorPaths, err := oci.ResolveReference(context.Background(), tag)
-	if err != nil {
-		return ispec.Manifest{}, err
-	}
-
-	if len(descriptorPaths) != 1 {
-		return ispec.Manifest{}, errors.Errorf("bad descriptor %s", tag)
-	}
-
-	blob, err := oci.FromDescriptor(context.Background(), descriptorPaths[0].Descriptor())
-	if err != nil {
-		return ispec.Manifest{}, err
-	}
-	defer blob.Close()
-
-	if blob.Descriptor.MediaType != ispec.MediaTypeImageManifest {
-		return ispec.Manifest{}, errors.Errorf("descriptor does not point to a manifest: %s", blob.Descriptor.MediaType)
-	}
-
-	return blob.Data.(ispec.Manifest), nil
-}
 
 type Apply struct {
 	layers             []ispec.Descriptor
@@ -98,7 +76,7 @@ func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage, considerTime
 			return nil, err
 		}
 
-		manifest, err := LookupManifest(source, tag)
+		manifest, err := stackeroci.LookupManifest(source, tag)
 		if err != nil {
 			return nil, err
 		}
@@ -133,20 +111,6 @@ func (a *Apply) DoApply() error {
 	return nil
 }
 
-func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error) {
-	configBlob, err := oci.FromDescriptor(context.Background(), desc)
-	if err != nil {
-		return ispec.Image{}, err
-	}
-
-	if configBlob.Descriptor.MediaType != ispec.MediaTypeImageConfig {
-		return ispec.Image{}, fmt.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
-	}
-
-	return configBlob.Data.(ispec.Image), nil
-
-}
-
 func (a *Apply) applyImage(layer string) error {
 	err := runSkopeo(layer, a.opts, false)
 	if err != nil {
@@ -164,12 +128,12 @@ func (a *Apply) applyImage(layer string) error {
 		return err
 	}
 
-	manifest, err := LookupManifest(layerBases, tag)
+	manifest, err := stackeroci.LookupManifest(layerBases, tag)
 	if err != nil {
 		return err
 	}
 
-	config, err := LookupConfig(layerBases, manifest.Config)
+	config, err := stackeroci.LookupConfig(layerBases, manifest.Config)
 	if err != nil {
 		return err
 	}
@@ -179,17 +143,17 @@ func (a *Apply) applyImage(layer string) error {
 		return err
 	}
 
-	baseManifest, err := LookupManifest(a.opts.OCI, a.opts.Name)
+	baseManifest, err := stackeroci.LookupManifest(a.opts.OCI, a.opts.Name)
 	if err != nil {
-		baseManifest, err = LookupManifest(layerBases, baseTag)
+		baseManifest, err = stackeroci.LookupManifest(layerBases, baseTag)
 		if err != nil {
 			return err
 		}
 	}
 
-	baseConfig, err := LookupConfig(a.opts.OCI, baseManifest.Config)
+	baseConfig, err := stackeroci.LookupConfig(a.opts.OCI, baseManifest.Config)
 	if err != nil {
-		baseConfig, err = LookupConfig(layerBases, baseManifest.Config)
+		baseConfig, err = stackeroci.LookupConfig(layerBases, baseManifest.Config)
 		if err != nil {
 			return err
 		}

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/anuvu/stacker/lib"
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/opencontainers/go-digest"
@@ -186,12 +187,12 @@ func extractOutput(o BaseLayerOpts) error {
 		defer cache.Close()
 
 		cacheTag, err := tagFromSkopeoUrl(o.Layer.From.Url)
-		manifest, err := LookupManifest(cache, cacheTag)
+		manifest, err := stackeroci.LookupManifest(cache, cacheTag)
 		if err != nil {
 			return err
 		}
 
-		config, err := LookupConfig(cache, manifest.Config)
+		config, err := stackeroci.LookupConfig(cache, manifest.Config)
 		if err != nil {
 			return err
 		}

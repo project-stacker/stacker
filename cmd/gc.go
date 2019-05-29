@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/anuvu/stacker"
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/openSUSE/umoci"
 	"github.com/urfave/cli"
 )
@@ -34,7 +35,7 @@ func gcForOCILayout(s stacker.Storage, layout string, thingsToKeep map[string]bo
 	}
 
 	for _, t := range tags {
-		manifest, err := stacker.LookupManifest(oci, t)
+		manifest, err := stackeroci.LookupManifest(oci, t)
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/anuvu/stacker"
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/dustin/go-humanize"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -52,7 +52,7 @@ func doInspect(ctx *cli.Context) error {
 }
 
 func renderManifest(oci casext.Engine, name string) error {
-	man, err := stacker.LookupManifest(oci, name)
+	man, err := stackeroci.LookupManifest(oci, name)
 	if err != nil {
 		return err
 	}

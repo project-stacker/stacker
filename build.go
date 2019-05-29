@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -241,12 +242,12 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	}
 	defer tmpSquashfs.Close()
 
-	manifest, err := LookupManifest(oci, name)
+	manifest, err := stackeroci.LookupManifest(oci, name)
 	if err != nil {
 		return err
 	}
 
-	config, err := LookupConfig(oci, manifest.Config)
+	config, err := stackeroci.LookupConfig(oci, manifest.Config)
 	if err != nil {
 		return err
 	}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/lib"
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -200,7 +201,7 @@ func doUnpack(ctx *cli.Context) error {
 	tag := ctx.GlobalString("tag")
 	bundlePath := ctx.GlobalString("bundle-path")
 
-	manifest, err := stacker.LookupManifest(oci, tag)
+	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
 		return err
 	}
