@@ -149,6 +149,7 @@ func prepareUmociMetadata(storage stacker.Storage, bundlePath string, dp casext.
 			}
 
 			os.RemoveAll(oldMtreePath)
+			break
 		}
 
 		if !generated {
