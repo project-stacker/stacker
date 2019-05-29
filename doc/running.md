@@ -1,9 +1,9 @@
 ### Runtime dependencies
 
-Stacker has a few a runtime dependency as well, namely, `umoci`. You can
-install it with:
+Stacker has a runtime dependency as well, namely, the btrfs tools. These can be
+installed on ubuntu with:
 
-    go install github.com/openSUSE/umoci/cmd/umoci
+    apt install btrfs-progs
 
 ### Kernel Version
 
