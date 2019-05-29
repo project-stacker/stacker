@@ -4,6 +4,11 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+# now that we have a package named "oci", we can't be in the top level dir, so
+# let's ensure everything is cd'd into the test/ dir. since we run stacker via
+# the abspath below, this works fine.
+cd "$ROOT_DIR/test"
+
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
 }
