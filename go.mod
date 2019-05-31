@@ -60,6 +60,7 @@ require (
 	github.com/sergi/go-diff v0.0.0-20180205163309-da645544ed44
 	github.com/sirupsen/logrus v1.4.0 // indirect
 	github.com/tchap/go-patricia v2.3.0+incompatible // indirect
+	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
 	github.com/ulikunitz/xz v0.5.5 // indirect
 	github.com/urfave/cli v1.20.0
