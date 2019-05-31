@@ -28,13 +28,13 @@ import (
 type BuildArgs struct {
 	Config                  StackerConfig
 	LeaveUnladen            bool
-	StackerFile             string
 	NoCache                 bool
 	Substitute              []string
 	OnRunFailure            string
 	ApplyConsiderTimestamps bool
 	LayerType               string
 	Debug                   bool
+	OrderOnly               bool
 }
 
 func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
@@ -311,12 +311,28 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	return nil
 }
 
-func Build(opts *BuildArgs) error {
+// Builder is responsible for building the layers based on stackerfiles
+type Builder struct {
+	builtStackerfiles []*Stackerfile // Keep track of all the Stackerfiles which were built
+	opts              *BuildArgs     // Build options
+}
+
+// NewBuilder initializes a new Builder struct
+func NewBuilder(opts *BuildArgs) *Builder {
+	return &Builder{
+		builtStackerfiles: []*Stackerfile{},
+		opts:              opts,
+	}
+}
+
+// Build builds a single stackerfile
+func (b *Builder) Build(file string) error {
+	opts := b.opts
+
 	if opts.NoCache {
 		os.RemoveAll(opts.Config.StackerDir)
 	}
 
-	file := opts.StackerFile
 	sf, err := NewStackerfile(file, opts.Substitute)
 	if err != nil {
 		return err
@@ -346,7 +362,9 @@ func Build(opts *BuildArgs) error {
 	}
 	defer oci.Close()
 
-	buildCache, err := OpenCache(opts.Config, oci, sf)
+	// Add this stackerfile to the list of stackerfiles which were built
+	b.builtStackerfiles = append(b.builtStackerfiles, sf)
+	buildCache, err := OpenCache(opts.Config, oci, b.builtStackerfiles)
 	if err != nil {
 		return err
 	}
@@ -381,6 +399,7 @@ func Build(opts *BuildArgs) error {
 	author := fmt.Sprintf("%s@%s", username, host)
 
 	s.Delete(WorkingContainerName)
+
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {
@@ -444,12 +463,12 @@ func Build(opts *BuildArgs) error {
 			}
 		}
 
-		err = GetBaseLayer(baseOpts, sf)
+		err = GetBaseLayer(baseOpts, b.builtStackerfiles)
 		if err != nil {
 			return err
 		}
 
-		apply, err := NewApply(sf, baseOpts, s, opts.ApplyConsiderTimestamps)
+		apply, err := NewApply(b.builtStackerfiles, baseOpts, s, opts.ApplyConsiderTimestamps)
 		if err != nil {
 			return err
 		}
@@ -687,4 +706,50 @@ func Build(opts *BuildArgs) error {
 	}
 
 	return err
+}
+
+// BuildMultiple builds a list of stackerfiles
+func (b *Builder) BuildMultiple(paths []string) error {
+	opts := b.opts
+
+	// Read all the stacker recipes
+	stackerFiles, err := NewStackerFiles(paths, opts.Substitute)
+	if err != nil {
+		return err
+	}
+
+	// Initialize the DAG
+	dag, err := NewStackerFilesDAG(stackerFiles)
+	if err != nil {
+		return err
+	}
+
+	sortedPaths := dag.Sort()
+
+	// Show the serial build order
+	fmt.Printf("stacker build order:\n")
+	for i, p := range sortedPaths {
+		prerequisites, err := dag.GetStackerFile(p).Prerequisites()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%d build %s: requires: %v\n", i, p, prerequisites)
+	}
+
+	if opts.OrderOnly {
+		// User has requested only to see the build order, so skipping the actual build
+		return nil
+	}
+
+	// Build all Stackerfiles
+	for i, p := range sortedPaths {
+		fmt.Printf("building: %d %s\n", i, p)
+
+		err = b.Build(p)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

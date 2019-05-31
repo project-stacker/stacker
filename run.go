@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strings"
 )
 
 func Run(sc StackerConfig, name string, command string, l *Layer, onFailure string, stdin io.Reader) error {
@@ -34,18 +33,7 @@ func Run(sc StackerConfig, name string, command string, l *Layer, onFailure stri
 		return err
 	}
 
-	for _, bind := range binds {
-		parts := strings.Split(bind, "->")
-		if len(parts) != 1 && len(parts) != 2 {
-			return fmt.Errorf("invalid bind mount %s", bind)
-		}
-
-		source := strings.TrimSpace(parts[0])
-		target := source
-		if len(parts) == 2 {
-			target = strings.TrimSpace(parts[1])
-		}
-
+	for source, target := range binds {
 		err = c.bindMount(source, target, "")
 		if err != nil {
 			return err

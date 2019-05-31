@@ -35,13 +35,13 @@ type BaseLayerOpts struct {
 	Debug     bool
 }
 
-func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
+func GetBaseLayer(o BaseLayerOpts, sfs []*Stackerfile) error {
 	// delete the tag if it exists
 	o.OCI.DeleteReference(context.Background(), o.Name)
 
 	switch o.Layer.From.Type {
 	case BuiltType:
-		return getBuilt(o, sf)
+		return getBuilt(o, sfs)
 	case TarType:
 		return getTar(o)
 	case OCIType:
@@ -316,18 +316,27 @@ func getOCI(o BaseLayerOpts) error {
 	return extractOutput(o)
 }
 
-func getBuilt(o BaseLayerOpts, sf *Stackerfile) error {
+func getBuilt(o BaseLayerOpts, sfs []*Stackerfile) error {
 	// We need to copy any base OCI layers to the output dir, since they
 	// may not have been copied before and the final `umoci repack` expects
 	// them to be there.
 	base := o.Layer
 	for {
-		var ok bool
-		base, ok = sf.Get(base.From.Tag)
-		if !ok {
-			return fmt.Errorf("missing base layer %s?", o.Layer.From.Tag)
+		// Iterate through base layers until we find the first one with is not BuiltType
+		ok := false
+		for _, sf := range sfs {
+			// Do not override base just to check if the key exists,
+			// as we may need it for base.From.Tag in the next iteration of the look
+			_, ok = sf.Get(base.From.Tag)
+			if ok {
+				// Since the key exists, override the value of base
+				base, _ = sf.Get(base.From.Tag)
+				break
+			}
 		}
-
+		if !ok {
+			return fmt.Errorf("missing base layer: %s?", o.Layer.From.Tag)
+		}
 		if base.From.Type != BuiltType {
 			break
 		}

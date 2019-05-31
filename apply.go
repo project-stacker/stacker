@@ -35,7 +35,7 @@ type Apply struct {
 	considerTimestamps bool
 }
 
-func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage, considerTimestamps bool) (*Apply, error) {
+func NewApply(sfs []*Stackerfile, opts BaseLayerOpts, storage Storage, considerTimestamps bool) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
 	var source casext.Engine
@@ -48,12 +48,18 @@ func NewApply(sf *Stackerfile, opts BaseLayerOpts, storage Storage, considerTime
 		}
 		defer source.Close()
 	} else if opts.Layer.From.Type == BuiltType {
-		base, ok := sf.Get(opts.Layer.From.Tag)
-		if !ok {
-			return nil, fmt.Errorf("missing base layer?")
+		// Search for the base layer in all of the built stackerfiles
+		var base *Layer
+		ok := false
+		for _, sf := range sfs {
+			base, ok = sf.Get(opts.Layer.From.Tag)
+			if ok {
+				break
+			}
 		}
-
-		if base.BuildOnly {
+		if !ok {
+			return nil, fmt.Errorf("missing base layer: %s?", opts.Layer.From.Tag)
+		} else if base.BuildOnly {
 			// XXX: this isn't actually that hard to support if we
 			// need to, but I suspect we don't really. The problem
 			// is that no OCI layers are generated for build-only
