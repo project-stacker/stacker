@@ -6,8 +6,6 @@ import (
 	"github.com/twmb/algoimpl/go/graph"
 )
 
-// This file is a copy from cube/gobi to avoid deps on cube/gobi
-
 // DAG is responsible to gather all the components and their dependencies,
 // and then returns a list of components sorted from no dependencies to
 // the one with most dependencies. In that way we can prioritize creating the

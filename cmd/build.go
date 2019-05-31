@@ -46,6 +46,10 @@ var buildCmd = cli.Command{
 			Usage: "set the output layer type (supported values: tar, squashfs)",
 			Value: "tar",
 		},
+		cli.BoolFlag{
+			Name:  "order-only",
+			Usage: "show the build order without running the actual build",
+		},
 	},
 	Before: beforeBuild,
 }
@@ -79,14 +83,15 @@ func doBuild(ctx *cli.Context) error {
 	args := stacker.BuildArgs{
 		Config:                  config,
 		LeaveUnladen:            ctx.Bool("leave-unladen"),
-		StackerFile:             ctx.String("stacker-file"),
 		NoCache:                 ctx.Bool("no-cache"),
 		Substitute:              ctx.StringSlice("substitute"),
 		OnRunFailure:            ctx.String("on-run-failure"),
 		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
 		LayerType:               ctx.String("layer-type"),
+		OrderOnly:               ctx.Bool("order-only"),
 		Debug:                   debug,
 	}
 
-	return stacker.Build(&args)
+	builder := stacker.NewBuilder(&args)
+	return builder.BuildMultiple([]string{ctx.String("stacker-file")})
 }

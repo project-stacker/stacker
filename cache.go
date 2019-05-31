@@ -65,18 +65,18 @@ type CacheEntry struct {
 type BuildCache struct {
 	path       string
 	importsDir string
-	sf         *Stackerfile
+	sfs        []*Stackerfile
 	Cache      map[string]CacheEntry `json:"cache"`
 	Version    int                   `json:"version"`
 }
 
-func OpenCache(config StackerConfig, oci casext.Engine, sf *Stackerfile) (*BuildCache, error) {
+func OpenCache(config StackerConfig, oci casext.Engine, sfs []*Stackerfile) (*BuildCache, error) {
 	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
 	cache := &BuildCache{
 		path:       p,
 		importsDir: path.Join(config.StackerDir, "imports"),
-		sf:         sf,
+		sfs:        sfs,
 	}
 
 	if err != nil {
@@ -158,8 +158,18 @@ func hashFile(path string) (string, error) {
 	return d.String(), nil
 }
 
+func (c *BuildCache) lookupLayerDefinition(name string) (*Layer, bool) {
+	for _, sf := range c.sfs {
+		l, found := sf.Get(name)
+		if found {
+			return l, true
+		}
+	}
+	return nil, false
+}
+
 func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
-	l, ok := c.sf.Get(name)
+	l, ok := c.lookupLayerDefinition(name)
 	if !ok {
 		return nil, false
 	}
@@ -269,7 +279,7 @@ func getEncodedMtree(path string) (string, error) {
 }
 
 func (c *BuildCache) getBaseHash(name string) (string, error) {
-	l, ok := c.sf.Get(name)
+	l, ok := c.lookupLayerDefinition(name)
 	if !ok {
 		return "", fmt.Errorf("%s missing from stackerfile?", name)
 	}
@@ -292,7 +302,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 }
 
 func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
-	l, ok := c.sf.Get(name)
+	l, ok := c.lookupLayerDefinition(name)
 	if !ok {
 		return fmt.Errorf("%s missing from stackerfile?", name)
 	}

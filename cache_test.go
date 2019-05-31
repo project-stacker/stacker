@@ -37,7 +37,7 @@ func TestLayerHashing(t *testing.T) {
 		},
 	}
 
-	cache, err := OpenCache(config, casext.Engine{}, sf)
+	cache, err := OpenCache(config, casext.Engine{}, []*Stackerfile{sf})
 	if err != nil {
 		t.Fatalf("couldn't open cache %v", err)
 	}
@@ -58,7 +58,7 @@ func TestLayerHashing(t *testing.T) {
 	layer.Run = []string{"jmh"}
 
 	// ok, now re-load the persisted cache
-	cache, err = OpenCache(config, casext.Engine{}, sf)
+	cache, err = OpenCache(config, casext.Engine{}, []*Stackerfile{sf})
 	if err != nil {
 		t.Fatalf("couldn't re-load cache %v", err)
 	}
