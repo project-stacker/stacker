@@ -4,7 +4,7 @@ COMMIT=$(if $(shell git status --porcelain --untracked-files=no),$(COMMIT_HASH)-
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 
 stacker: $(GO_SRC)
-	go build -tags "exclude_graphdriver_devicemapper" -ldflags "-X main.version=$(COMMIT)" -o stacker ./cmd
+	go build -ldflags "-X main.version=$(COMMIT)" -o stacker ./cmd
 
 # make test TEST=basic will run only the basic test.
 .PHONY: check

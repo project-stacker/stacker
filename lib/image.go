@@ -9,10 +9,25 @@ import (
 	"github.com/containers/image/docker"
 	"github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
-	"github.com/containers/image/storage"
 	"github.com/containers/image/types"
 	"github.com/pkg/errors"
 )
+
+var urlSchemes map[string]func(string) (types.ImageReference, error)
+
+func RegisterURLScheme(scheme string, f func(string) (types.ImageReference, error)) {
+	urlSchemes[scheme] = f
+}
+
+func init() {
+	// These should only be things which have pure go dependencies. Things
+	// with additional C dependencies (e.g. containers/image/storage)
+	// should live in their own package, so people can choose to add those
+	// deps or not.
+	urlSchemes = map[string]func(string) (types.ImageReference, error){}
+	RegisterURLScheme("oci", layout.ParseReference)
+	RegisterURLScheme("docker", docker.ParseReference)
+}
 
 func localRefParser(ref string) (types.ImageReference, error) {
 	parts := strings.SplitN(ref, ":", 2)
@@ -20,16 +35,12 @@ func localRefParser(ref string) (types.ImageReference, error) {
 		return nil, errors.Errorf("bad image ref: %s", ref)
 	}
 
-	switch parts[0] {
-	case "oci":
-		return layout.ParseReference(parts[1])
-	case "docker":
-		return docker.ParseReference(parts[1])
-	case "containers-storage":
-		return storage.Transport.ParseReference(parts[1])
-	default:
-		return nil, errors.Errorf("unknown image ref type: %s", ref)
+	f, ok := urlSchemes[parts[0]]
+	if !ok {
+		return nil, errors.Errorf("unknown url scheme %s for %s", parts[0], ref)
 	}
+
+	return f(parts[1])
 }
 
 type ImageCopyOpts struct {
