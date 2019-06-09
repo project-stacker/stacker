@@ -1,3 +1,7 @@
 *.swp
 *.stacker
 stacker
+
+# IDEs
+.vscode
+.idea
