@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/anuvu/stacker/lib"
 	stackeroci "github.com/anuvu/stacker/oci"
@@ -205,6 +206,12 @@ func extractOutput(o BaseLayerOpts) error {
 
 		manifest.Layers = []ispec.Descriptor{desc}
 		config.RootFS.DiffIDs = []digest.Digest{layerDigest}
+		now := time.Now()
+		config.History = []ispec.History{{
+			Created:   &now,
+			CreatedBy: fmt.Sprintf("stacker squashfs repack of %s", tag),
+		},
+		}
 
 		configDigest, configSize, err := o.OCI.PutBlobJSON(context.Background(), config)
 		if err != nil {

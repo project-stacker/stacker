@@ -32,6 +32,9 @@ EOF
     mkdir layer1
     mount -t squashfs oci/blobs/sha256/$layer1 layer1
     [ -f layer1/1 ]
+
+    config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
+    [ "$(cat "oci/blobs/sha256/$config" | jq -r .history[0].created_by)" == "stacker squashfs repack of centos" ]
 }
 
 @test "squashfs file whiteouts" {
