@@ -86,7 +86,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 		// url path, let's use the host as the image tag
 		return strings.Split(url.Host, ":")[0], nil
 	case OCIType:
-		pieces := strings.Split(is.Url, ":")
+		pieces := strings.SplitN(is.Url, ":", 2)
 		if len(pieces) != 2 {
 			return "", fmt.Errorf("bad OCI tag: %s", is.Type)
 		}

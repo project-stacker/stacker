@@ -71,7 +71,7 @@ func tagFromSkopeoUrl(thing string) (string, error) {
 		// url path, let's use the host as the image tag
 		return strings.Split(url.Host, ":")[0], nil
 	} else if strings.HasPrefix(thing, "oci") {
-		pieces := strings.Split(thing, ":")
+		pieces := strings.SplitN(thing, ":", 3)
 		if len(pieces) != 3 {
 			return "", fmt.Errorf("bad OCI tag: %s", thing)
 		}
