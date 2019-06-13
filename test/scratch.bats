@@ -15,7 +15,7 @@ EOF
     [ "$(ls dest/rootfs)" == "" ]
 }
 
-@test "/bin/bash present check" {
+@test "/bin/sh present check" {
     cat > stacker.yaml <<EOF
 empty:
     from:
@@ -23,5 +23,5 @@ empty:
     run: /bin/true
 EOF
     bad_stacker build
-    echo "$output" | grep "rootfs for empty does not have a /bin/bash"
+    echo "$output" | grep "rootfs for empty does not have a /bin/sh"
 }

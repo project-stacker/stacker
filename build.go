@@ -467,14 +467,14 @@ func Build(opts *BuildArgs) error {
 		}
 
 		if len(run) != 0 {
-			_, err := os.Stat(path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs/bin/bash"))
+			_, err := os.Stat(path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs/bin/sh"))
 			if err != nil {
-				return fmt.Errorf("rootfs for %s does not have a /bin/bash", name)
+				return fmt.Errorf("rootfs for %s does not have a /bin/sh", name)
 			}
 
 			importsDir := path.Join(opts.Config.StackerDir, "imports", name)
 
-			script := fmt.Sprintf("#!/bin/bash -xe\n%s", strings.Join(run, "\n"))
+			script := fmt.Sprintf("#!/bin/sh -xe\n%s", strings.Join(run, "\n"))
 			if err := ioutil.WriteFile(path.Join(importsDir, ".stacker-run.sh"), []byte(script), 0755); err != nil {
 				return err
 			}
