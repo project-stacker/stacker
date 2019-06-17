@@ -112,7 +112,12 @@ func (a *Apply) DoApply() error {
 }
 
 func (a *Apply) applyImage(layer string) error {
-	err := runSkopeo(layer, a.opts, false)
+	is, err := NewImageSource(layer)
+	if err != nil {
+		return err
+	}
+
+	err = importImage(is, a.opts.Config)
 	if err != nil {
 		return err
 	}
@@ -123,7 +128,7 @@ func (a *Apply) applyImage(layer string) error {
 	}
 	defer layerBases.Close()
 
-	tag, err := tagFromSkopeoUrl(layer)
+	tag, err := is.ParseTag()
 	if err != nil {
 		return err
 	}

@@ -82,6 +82,10 @@ func ImageCopy(opts ImageCopyOpts) error {
 		}
 	}
 
+	args.DestinationCtx = &types.SystemContext{
+		OCIAcceptUncompressedLayers: true,
+	}
+
 	_, err = copy.Image(context.Background(), policy, destRef, srcRef, args)
 	return err
 }

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -65,6 +66,43 @@ type ImageSource struct {
 	Url      string `yaml:"url"`
 	Tag      string `yaml:"tag"`
 	Insecure bool   `yaml:"insecure"`
+}
+
+func NewImageSource(containersImageString string) (*ImageSource, error) {
+	ret := &ImageSource{}
+	if strings.HasPrefix(containersImageString, "oci:") {
+		ret.Type = OCIType
+		ret.Url = containersImageString[len("oci:"):]
+		return ret, nil
+	}
+
+	url, err := url.Parse(containersImageString)
+	if err != nil {
+		return nil, err
+	}
+
+	switch url.Scheme {
+	case "docker":
+		ret.Type = DockerType
+		ret.Url = containersImageString
+	default:
+		return nil, errors.Errorf("unknown image source type: %s", containersImageString)
+	}
+
+	return ret, nil
+}
+
+// Returns a URL that can be passed to github.com/containers/image handling
+// code.
+func (is *ImageSource) ContainersImageURL() (string, error) {
+	switch is.Type {
+	case DockerType:
+		return is.Url, nil
+	case OCIType:
+		return fmt.Sprintf("oci:%s", is.Url), nil
+	default:
+		return "", errors.Errorf("can't get containers/image url for source type: %s", is.Type)
+	}
 }
 
 func (is *ImageSource) ParseTag() (string, error) {

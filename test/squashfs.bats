@@ -9,6 +9,28 @@ function teardown() {
     cleanup
 }
 
+@test "squashfs import support" {
+    cat > stacker.yaml <<EOF
+centos1:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        touch /1
+EOF
+    stacker build --layer-type=squashfs
+
+    cat > stacker.yaml <<EOF
+centos2:
+    from:
+        type: oci
+        url: oci:centos1
+    run: |
+        [ -f /1 ]
+EOF
+    stacker build --layer-type=squashfs
+}
+
 @test "squashfs layer support" {
     cat > stacker.yaml <<EOF
 centos:
@@ -34,7 +56,7 @@ EOF
     [ -f layer1/1 ]
 
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
-    [ "$(cat "oci/blobs/sha256/$config" | jq -r .history[0].created_by)" == "stacker squashfs repack of centos" ]
+    [ "$(cat "oci/blobs/sha256/$config" | jq -r .history[0].created_by)" == "stacker layer-type mismatch repack of centos" ]
 }
 
 @test "squashfs file whiteouts" {

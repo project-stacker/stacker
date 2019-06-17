@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"net/url"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -15,9 +15,12 @@ import (
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
+	"github.com/openSUSE/umoci/oci/layer"
+	"github.com/openSUSE/umoci/pkg/fseval"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/vbatts/go-mtree"
 )
 
 const (
@@ -45,9 +48,9 @@ func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
 	case TarType:
 		return getTar(o)
 	case OCIType:
-		return getOCI(o)
+		return getContainersImageType(o)
 	case DockerType:
-		return getDocker(o)
+		return getContainersImageType(o)
 	case ScratchType:
 		return getScratch(o)
 	default:
@@ -55,42 +58,20 @@ func GetBaseLayer(o BaseLayerOpts, sf *Stackerfile) error {
 	}
 }
 
-func tagFromSkopeoUrl(thing string) (string, error) {
-	if strings.HasPrefix(thing, "docker") {
-		url, err := url.Parse(thing)
-		if err != nil {
-			return "", err
-		}
-
-		if url.Path != "" {
-			return path.Base(strings.Split(url.Path, ":")[0]), nil
-		}
-
-		// skopeo allows docker://centos:latest or
-		// docker://docker.io/centos:latest; if we don't have a
-		// url path, let's use the host as the image tag
-		return strings.Split(url.Host, ":")[0], nil
-	} else if strings.HasPrefix(thing, "oci") {
-		pieces := strings.SplitN(thing, ":", 3)
-		if len(pieces) != 3 {
-			return "", fmt.Errorf("bad OCI tag: %s", thing)
-		}
-
-		return pieces[2], nil
-	} else {
-		return "", fmt.Errorf("invalid image url: %s", thing)
+func importImage(is *ImageSource, config StackerConfig) error {
+	toImport, err := is.ContainersImageURL()
+	if err != nil {
+		return err
 	}
-}
 
-func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
-	tag, err := tagFromSkopeoUrl(toImport)
+	tag, err := is.ParseTag()
 	if err != nil {
 		return err
 	}
 
 	// Note that we can do tihs over the top of the cache every time, since
 	// skopeo should be smart enough to only copy layers that have changed.
-	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
+	cacheDir := path.Join(config.StackerDir, "layer-bases", "oci")
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return err
 	}
@@ -103,32 +84,16 @@ func runSkopeo(toImport string, o BaseLayerOpts, copyToOutput bool) error {
 			return
 		}
 		defer oci.Close()
-
-		oci.GC(context.Background())
 	}()
 
 	err = lib.ImageCopy(lib.ImageCopyOpts{
 		Src:      toImport,
 		Dest:     fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		SkipTLS:  o.Layer.From.Insecure,
+		SkipTLS:  is.Insecure,
 		Progress: os.Stdout,
 	})
 	if err != nil {
 		return err
-	}
-
-	if !copyToOutput {
-		return nil
-	}
-
-	// If the layer type is something besides tar, we'll generate the
-	// base layer after it's extracted from the input image.
-	if o.LayerType == "tar" {
-		// We just copied it to the cache, now let's copy that over to our image.
-		err = lib.ImageCopy(lib.ImageCopyOpts{
-			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
-		})
 	}
 
 	return err
@@ -143,31 +108,97 @@ func extractOutput(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Target)
 	fmt.Println("unpacking to", target)
 
-	// This is a bit of a hack; since we want to unpack from the
-	// layer-bases import folder instead of the actual oci dir, we hack
-	// this to make config.OCIDir be our input folder. That's a lie, but it
-	// seems better to do a little lie here than to try and abstract it out
-	// and make everyone else deal with it.
-	modifiedConfig := o.Config
-	modifiedConfig.OCIDir = path.Join(o.Config.StackerDir, "layer-bases", "oci")
-	err = RunUmociSubcommand(modifiedConfig, o.Debug, []string{
-		"--bundle-path", target,
-		"--tag", tag,
-		"unpack",
-	})
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
+	cacheTag, err := o.Layer.From.ParseTag()
 	if err != nil {
 		return err
+	}
+
+	cacheOCI, err := umoci.OpenLayout(cacheDir)
+	if err != nil {
+		return err
+	}
+
+	sourceLayerType := "tar"
+	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
+	if err != nil {
+		return err
+	}
+
+	if manifest.Layers[0].MediaType == MediaTypeLayerSquashfs {
+		sourceLayerType = "squashfs"
+	}
+
+	if sourceLayerType == "squashfs" {
+		for _, layer := range manifest.Layers {
+			rootfs := path.Join(target, "rootfs")
+			squashfsFile := path.Join(cacheDir, "blobs", "sha256", layer.Digest.Encoded())
+			err = MaybeRunInUserns([]string{"unsquashfs", "-f", "-d", rootfs, squashfsFile}, "couldn't unsquashfs layer")
+			if err != nil {
+				return err
+			}
+		}
+
+		dps, err := cacheOCI.ResolveReference(context.Background(), tag)
+		if err != nil {
+			return err
+		}
+
+		mtreeName := strings.Replace(dps[0].Descriptor().Digest.String(), ":", "_", 1)
+		err = umoci.GenerateBundleManifest(mtreeName, target, fseval.DefaultFsEval)
+		if err != nil {
+			return err
+		}
+
+		err = umoci.WriteBundleMeta(target, umoci.Meta{
+			Version: umoci.MetaVersion,
+			From: casext.DescriptorPath{
+				Walk: []ispec.Descriptor{dps[0].Descriptor()},
+			},
+		})
+	} else {
+		// This is a bit of a hack; since we want to unpack from the
+		// layer-bases import folder instead of the actual oci dir, we hack
+		// this to make config.OCIDir be our input folder. That's a lie, but it
+		// seems better to do a little lie here than to try and abstract it out
+		// and make everyone else deal with it.
+		modifiedConfig := o.Config
+		modifiedConfig.OCIDir = cacheDir
+		err = RunUmociSubcommand(modifiedConfig, o.Debug, []string{
+			"--bundle-path", target,
+			"--tag", tag,
+			"unpack",
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// Delete the tag for the base layer; we're only interested in our
 	// build layer outputs, not in the base layers.
 	o.OCI.DeleteReference(context.Background(), tag)
 
-	// Now, if the layer type is something besides tar, we need to
-	// generate the base layer as whatever type that is. Note that we don't
-	// need to this for build only layers, as those are not added to the
-	// output.
-	if o.LayerType == "squashfs" && !o.Layer.BuildOnly {
+	if o.Layer.BuildOnly {
+		return nil
+	}
+
+	// if the layer types are the same, just copy it over and be done
+	if o.LayerType == sourceLayerType {
+		// We just copied it to the cache, now let's copy that over to our image.
+		err = lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name),
+		})
+		return err
+	}
+
+	var blob io.ReadCloser
+
+	bundlePath := path.Join(o.Config.RootFSDir, WorkingContainerName)
+	// otherwise, render the right layer type
+	if o.LayerType == "squashfs" {
+		// sourced a non-squashfs image and wants a squashfs layer,
+		// let's generate one.
 		o.OCI.GC(context.Background())
 
 		tmpSquashfs, err := mkSquashfs(o.Config, "")
@@ -175,98 +206,95 @@ func extractOutput(o BaseLayerOpts) error {
 			return err
 		}
 
-		layerDigest, layerSize, err := o.OCI.PutBlob(context.Background(), tmpSquashfs)
+		blob = tmpSquashfs
+
+	} else {
+		// sourced a non-tar layer, and wants a tar one.
+		diff, err := mtree.Check(path.Join(bundlePath, "rootfs"), nil, umoci.MtreeKeywords, fseval.DefaultFsEval)
 		if err != nil {
 			return err
 		}
 
-		cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
-		cache, err := umoci.OpenLayout(cacheDir)
-		if err != nil {
-			return errors.Wrapf(err, "couldn't open base layer dir")
-		}
-		defer cache.Close()
-
-		cacheTag, err := tagFromSkopeoUrl(o.Layer.From.Url)
-		manifest, err := stackeroci.LookupManifest(cache, cacheTag)
-		if err != nil {
-			return err
-		}
-
-		config, err := stackeroci.LookupConfig(cache, manifest.Config)
-		if err != nil {
-			return err
-		}
-
-		desc := ispec.Descriptor{
-			MediaType: MediaTypeLayerSquashfs,
-			Digest:    layerDigest,
-			Size:      layerSize,
-		}
-
-		manifest.Layers = []ispec.Descriptor{desc}
-		config.RootFS.DiffIDs = []digest.Digest{layerDigest}
-		now := time.Now()
-		config.History = []ispec.History{{
-			Created:   &now,
-			CreatedBy: fmt.Sprintf("stacker squashfs repack of %s", tag),
-		},
-		}
-
-		configDigest, configSize, err := o.OCI.PutBlobJSON(context.Background(), config)
-		if err != nil {
-			return err
-		}
-
-		manifest.Config = ispec.Descriptor{
-			MediaType: ispec.MediaTypeImageConfig,
-			Digest:    configDigest,
-			Size:      configSize,
-		}
-
-		manifestDigest, manifestSize, err := o.OCI.PutBlobJSON(context.Background(), manifest)
-		if err != nil {
-			return err
-		}
-
-		desc = ispec.Descriptor{
-			MediaType: ispec.MediaTypeImageManifest,
-			Digest:    manifestDigest,
-			Size:      manifestSize,
-		}
-
-		err = o.OCI.UpdateReference(context.Background(), o.Name, desc)
-		if err != nil {
-			return err
-		}
-
-		bundlePath := path.Join(o.Config.RootFSDir, WorkingContainerName)
-		err = updateBundleMtree(bundlePath, desc)
-		if err != nil {
-			return err
-		}
-
-		err = umoci.WriteBundleMeta(bundlePath, umoci.Meta{
-			Version: umoci.MetaVersion,
-			From: casext.DescriptorPath{
-				Walk: []ispec.Descriptor{desc},
-			},
-		})
+		blob, err = layer.GenerateLayer(path.Join(bundlePath, "rootfs"), diff, nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-func getDocker(o BaseLayerOpts) error {
-	err := runSkopeo(o.Layer.From.Url, o, !o.Layer.BuildOnly && o.LayerType == "tar")
+	layerDigest, layerSize, err := o.OCI.PutBlob(context.Background(), blob)
 	if err != nil {
 		return err
 	}
 
-	return extractOutput(o)
+	cacheManifest, err := stackeroci.LookupManifest(cacheOCI, cacheTag)
+	if err != nil {
+		return err
+	}
+
+	config, err := stackeroci.LookupConfig(cacheOCI, cacheManifest.Config)
+	if err != nil {
+		return err
+	}
+
+	layerType := MediaTypeLayerSquashfs
+	if o.LayerType == "tar" {
+		layerType = ispec.MediaTypeImageLayerGzip
+	}
+
+	desc := ispec.Descriptor{
+		MediaType: layerType,
+		Digest:    layerDigest,
+		Size:      layerSize,
+	}
+
+	manifest.Layers = []ispec.Descriptor{desc}
+	config.RootFS.DiffIDs = []digest.Digest{layerDigest}
+	now := time.Now()
+	config.History = []ispec.History{{
+		Created:   &now,
+		CreatedBy: fmt.Sprintf("stacker layer-type mismatch repack of %s", tag),
+	},
+	}
+
+	configDigest, configSize, err := o.OCI.PutBlobJSON(context.Background(), config)
+	if err != nil {
+		return err
+	}
+
+	manifest.Config = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageConfig,
+		Digest:    configDigest,
+		Size:      configSize,
+	}
+
+	manifestDigest, manifestSize, err := o.OCI.PutBlobJSON(context.Background(), manifest)
+	if err != nil {
+		return err
+	}
+
+	desc = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageManifest,
+		Digest:    manifestDigest,
+		Size:      manifestSize,
+	}
+
+	err = o.OCI.UpdateReference(context.Background(), o.Name, desc)
+	if err != nil {
+		return err
+	}
+
+	err = updateBundleMtree(bundlePath, desc)
+	if err != nil {
+		return err
+	}
+
+	err = umoci.WriteBundleMeta(bundlePath, umoci.Meta{
+		Version: umoci.MetaVersion,
+		From: casext.DescriptorPath{
+			Walk: []ispec.Descriptor{desc},
+		},
+	})
+	return err
 }
 
 func umociInit(o BaseLayerOpts) error {
@@ -307,8 +335,8 @@ func getScratch(o BaseLayerOpts) error {
 	return umociInit(o)
 }
 
-func getOCI(o BaseLayerOpts) error {
-	err := runSkopeo(fmt.Sprintf("oci:%s", o.Layer.From.Url), o, !o.Layer.BuildOnly)
+func getContainersImageType(o BaseLayerOpts) error {
+	err := importImage(o.Layer.From, o.Config)
 	if err != nil {
 		return err
 	}
