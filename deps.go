@@ -10,7 +10,7 @@ type StackerFilesDAG struct {
 }
 
 // NewStackerDepsDAG properly initializes a StackerDepsProcessor
-func NewStackerFilesDAG(sfMap map[string]*Stackerfile) (*StackerFilesDAG, error) {
+func NewStackerFilesDAG(sfMap StackerFiles) (*StackerFilesDAG, error) {
 	dag := lib.NewDAG()
 
 	// Add vertices to dag
