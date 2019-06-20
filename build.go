@@ -313,14 +313,14 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 
 // Builder is responsible for building the layers based on stackerfiles
 type Builder struct {
-	builtStackerfiles []*Stackerfile // Keep track of all the Stackerfiles which were built
-	opts              *BuildArgs     // Build options
+	builtStackerfiles StackerFiles // Keep track of all the Stackerfiles which were built
+	opts              *BuildArgs   // Build options
 }
 
 // NewBuilder initializes a new Builder struct
 func NewBuilder(opts *BuildArgs) *Builder {
 	return &Builder{
-		builtStackerfiles: []*Stackerfile{},
+		builtStackerfiles: make(map[string]*Stackerfile, 1),
 		opts:              opts,
 	}
 }
@@ -363,7 +363,7 @@ func (b *Builder) Build(file string) error {
 	defer oci.Close()
 
 	// Add this stackerfile to the list of stackerfiles which were built
-	b.builtStackerfiles = append(b.builtStackerfiles, sf)
+	b.builtStackerfiles[file] = sf
 	buildCache, err := OpenCache(opts.Config, oci, b.builtStackerfiles)
 	if err != nil {
 		return err
@@ -399,7 +399,6 @@ func (b *Builder) Build(file string) error {
 	author := fmt.Sprintf("%s@%s", username, host)
 
 	s.Delete(WorkingContainerName)
-
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {

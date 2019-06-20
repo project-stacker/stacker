@@ -377,7 +377,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 			return nil, err
 		}
 
-		// This file is on the disk, get it's current directory
+		// This file is on the disk, use its parent directory
 		sf.referenceDirectory = filepath.Dir(sf.path)
 
 	} else {
@@ -396,7 +396,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 			return nil, err
 		}
 
-		// There's no need to update the working directory of the stackerfile
+		// There's no need to update the reference directory of the stackerfile
 		// Continue to use the working directory
 	}
 
@@ -493,49 +493,6 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	return &sf, err
 }
 
-// NewStackerFiles reads multiple Stackerfiles from a list of paths and applies substitutions
-// It adds the Stackerfiles mentioned in the prerequisite paths to the results
-func NewStackerFiles(paths []string, substituteVars []string) (map[string]*Stackerfile, error) {
-	sfm := make(map[string]*Stackerfile, len(paths))
-
-	// Iterate over list of paths to stackerfiles
-	for _, path := range paths {
-		fmt.Printf("initializing stacker recipe: %s\n", path)
-
-		// Read this stackerfile
-		sf, err := NewStackerfile(path, substituteVars)
-		if err != nil {
-			return nil, err
-		}
-
-		// Add using absolute path to make sure the entries are unique
-		absPath, err := filepath.Abs(path)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := sfm[absPath]; ok != true {
-			sfm[absPath] = sf
-		}
-
-		// Determine correct path of prerequisites
-		prerequisites, err := sf.Prerequisites()
-		if err != nil {
-			return nil, err
-		}
-
-		// Need to also add stackerfile dependencies of this stackerfile to the map of stackerfiles
-		depStackerFiles, err := NewStackerFiles(prerequisites, substituteVars)
-		if err != nil {
-			return nil, err
-		}
-		for depPath, depStackerFile := range depStackerFiles {
-			sfm[depPath] = depStackerFile
-		}
-	}
-
-	return sfm, nil
-}
-
 // DependencyOrder provides the list of layer names from a stackerfile
 // the current order to be built, note this method does not reorder the layers,
 // but it does validate they are specified in an order which makes sense
@@ -630,4 +587,62 @@ func (sf *Stackerfile) Prerequisites() ([]string, error) {
 		}
 	}
 	return prerequisitePaths, nil
+}
+
+// Logic for working with multiple StackerFiles
+type StackerFiles map[string]*Stackerfile
+
+// NewStackerFiles reads multiple Stackerfiles from a list of paths and applies substitutions
+// It adds the Stackerfiles mentioned in the prerequisite paths to the results
+func NewStackerFiles(paths []string, substituteVars []string) (StackerFiles, error) {
+	sfm := make(map[string]*Stackerfile, len(paths))
+
+	// Iterate over list of paths to stackerfiles
+	for _, path := range paths {
+		fmt.Printf("initializing stacker recipe: %s\n", path)
+
+		// Read this stackerfile
+		sf, err := NewStackerfile(path, substituteVars)
+		if err != nil {
+			return nil, err
+		}
+
+		// Add using absolute path to make sure the entries are unique
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := sfm[absPath]; ok != true {
+			sfm[absPath] = sf
+		}
+
+		// Determine correct path of prerequisites
+		prerequisites, err := sf.Prerequisites()
+		if err != nil {
+			return nil, err
+		}
+
+		// Need to also add stackerfile dependencies of this stackerfile to the map of stackerfiles
+		depStackerFiles, err := NewStackerFiles(prerequisites, substituteVars)
+		if err != nil {
+			return nil, err
+		}
+		for depPath, depStackerFile := range depStackerFiles {
+			sfm[depPath] = depStackerFile
+		}
+	}
+
+	return sfm, nil
+}
+
+// LookupLayerDefinition searches for the Layer entry within the Stackerfiles
+func (sfm StackerFiles) LookupLayerDefinition(name string) (*Layer, bool) {
+	// Search for the layer in all of the stackerfiles
+	for _, sf := range sfm {
+		l, found := sf.Get(name)
+		if found {
+			return l, true
+		}
+	}
+	return nil, false
 }
