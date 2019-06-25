@@ -9,6 +9,29 @@ function teardown() {
     cleanup
 }
 
+@test "squashfs yum install" {
+    cat > stacker.yaml <<EOF
+centos1:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        yum install -y wget
+        ls /usr/bin/wget || true
+EOF
+    stacker build --layer-type=squashfs
+
+    cat > stacker.yaml <<EOF
+centos2:
+    from:
+        type: oci
+        url: oci:centos1
+    run: |
+        ls /usr/bin | grep wget
+EOF
+    stacker build --layer-type=squashfs
+}
+
 @test "squashfs import support" {
     cat > stacker.yaml <<EOF
 centos1:
