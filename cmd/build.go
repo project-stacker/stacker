@@ -16,10 +16,9 @@ var buildCmd = cli.Command{
 			Name:  "leave-unladen",
 			Usage: "leave the built rootfs mount after image building",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:  "stacker-file, f",
 			Usage: "the input stackerfile",
-			Value: "stacker.yaml",
 		},
 		cli.BoolFlag{
 			Name:  "no-cache",
@@ -66,6 +65,13 @@ func beforeBuild(ctx *cli.Context) error {
 		}
 	}
 
+	if len(ctx.StringSlice("stacker-file")) == 0 {
+		err := ctx.Set("stacker-file", "stacker.yaml")
+		if err != nil {
+			return err
+		}
+	}
+
 	switch ctx.String("layer-type") {
 	case "tar":
 		break
@@ -93,5 +99,5 @@ func doBuild(ctx *cli.Context) error {
 	}
 
 	builder := stacker.NewBuilder(&args)
-	return builder.BuildMultiple([]string{ctx.String("stacker-file")})
+	return builder.BuildMultiple(ctx.StringSlice("stacker-file"))
 }
