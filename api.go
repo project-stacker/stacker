@@ -34,6 +34,7 @@ type StackerConfig struct {
 
 type BuildConfig struct {
 	Prerequisites []string `yaml:"prerequisites"`
+	SaveUrl       string   `yaml:"save_url"`
 }
 
 type Stackerfile struct {
@@ -455,6 +456,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	sf.fileOrder = []string{}      // Order of layers
 	sf.buildConfig = &BuildConfig{ // Stacker build configuration
 		Prerequisites: []string{},
+		SaveUrl:       "",
 	}
 	lms := yaml.MapSlice{} // Actual list of layers excluding the stacker_config directive
 	for _, e := range ms {

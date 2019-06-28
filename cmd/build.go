@@ -50,6 +50,10 @@ var buildCmd = cli.Command{
 			Name:  "order-only",
 			Usage: "show the build order without running the actual build",
 		},
+		cli.StringSliceFlag{
+			Name:  "remote-save-tag",
+			Usage: "tag to be used with --remote-save",
+		},
 	},
 	Before: beforeBuild,
 }
@@ -88,6 +92,7 @@ func doBuild(ctx *cli.Context) error {
 		OnRunFailure:            ctx.String("on-run-failure"),
 		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
 		LayerType:               ctx.String("layer-type"),
+		RemoteSaveTags:          ctx.StringSlice("remote-save-tag"),
 		OrderOnly:               ctx.Bool("order-only"),
 		Debug:                   debug,
 	}

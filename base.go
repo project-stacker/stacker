@@ -86,6 +86,7 @@ func importImage(is *ImageSource, config StackerConfig) error {
 		defer oci.Close()
 	}()
 
+	fmt.Printf("loading %s\n", toImport)
 	err = lib.ImageCopy(lib.ImageCopyOpts{
 		Src:      toImport,
 		Dest:     fmt.Sprintf("oci:%s:%s", cacheDir, tag),
