@@ -1,18 +1,20 @@
 package stacker
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/anuvu/stacker/lib"
+	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -21,9 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
 	"golang.org/x/sys/unix"
-
-	"github.com/anuvu/stacker/lib"
-	stackeroci "github.com/anuvu/stacker/oci"
 )
 
 type BuildArgs struct {
@@ -58,112 +57,15 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 	return nil
 }
 
-func mkSquashfs(config StackerConfig, toExclude string) (*os.File, error) {
-	var excludesFile string
-	var err error
-
-	if len(toExclude) != 0 {
-		excludes, err := ioutil.TempFile("", "stacker-squashfs-exclude-")
-		if err != nil {
-			return nil, err
-		}
-		defer os.Remove(excludes.Name())
-
-		excludesFile = excludes.Name()
-		_, err = excludes.WriteString(toExclude)
-		excludes.Close()
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func mkSquashfs(config StackerConfig, eps *squashfs.ExcludePaths) (io.ReadCloser, error) {
 	// generate the squashfs in OCIDir, and then open it, read it from
 	// there, and delete it.
 	if err := os.MkdirAll(config.OCIDir, 0755); err != nil {
 		return nil, err
 	}
 
-	tmpSquashfs, err := ioutil.TempFile(config.OCIDir, "stacker-squashfs-img-")
-	if err != nil {
-		return nil, err
-	}
-	tmpSquashfs.Close()
-	os.Remove(tmpSquashfs.Name())
-	defer os.Remove(tmpSquashfs.Name())
 	rootfsPath := path.Join(config.RootFSDir, WorkingContainerName, "rootfs")
-	args := []string{rootfsPath, tmpSquashfs.Name()}
-	if len(toExclude) != 0 {
-		args = append(args, "-ef", excludesFile)
-	}
-	cmd := exec.Command("mksquashfs", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err = cmd.Run(); err != nil {
-		return nil, errors.Wrap(err, "couldn't build squashfs")
-	}
-
-	return os.Open(tmpSquashfs.Name())
-}
-
-type excludePaths struct {
-	exclude map[string]bool
-	include []string
-}
-
-func (eps *excludePaths) AddExclude(p string) {
-	for _, inc := range eps.include {
-		// If /usr/bin/ls has changed but /usr hasn't, we don't want to list
-		// /usr in the include paths any more, so let's be sure to only
-		// add things which aren't prefixes.
-		if strings.HasPrefix(inc, p) {
-			return
-		}
-	}
-	eps.exclude[p] = true
-}
-
-func (eps *excludePaths) AddInclude(orig string, isDir bool) {
-	// First, remove this thing and all its parents from exclude.
-	p := orig
-
-	// normalize to the first dir
-	if !isDir {
-		p = path.Dir(p)
-	}
-	for {
-		// our paths are all absolute, so this is a base case
-		if p == "/" {
-			break
-		}
-
-		delete(eps.exclude, p)
-		p = path.Dir(p)
-	}
-
-	// now add it to the list of includes, so we don't accidentally re-add
-	// anything above.
-	eps.include = append(eps.include, orig)
-}
-
-func (eps *excludePaths) String() (string, error) {
-	var buf bytes.Buffer
-	for p, _ := range eps.exclude {
-		_, err := buf.WriteString(p)
-		if err != nil {
-			return "", err
-		}
-		_, err = buf.WriteString("\n")
-		if err != nil {
-			return "", err
-		}
-	}
-
-	_, err := buf.WriteString("\n")
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
+	return squashfs.MakeSquashfs(config.OCIDir, rootfsPath, eps)
 }
 
 func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *BuildArgs) error {
@@ -215,7 +117,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		}
 	}()
 
-	paths := &excludePaths{map[string]bool{}, []string{}}
+	paths := squashfs.NewExcludePaths()
 	for _, diff := range diffs {
 		switch diff.Type() {
 		case mtree.Modified, mtree.Extra:
@@ -236,11 +138,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		}
 	}
 
-	toExclude, err := paths.String()
-	if err != nil {
-		return err
-	}
-	tmpSquashfs, err := mkSquashfs(opts.Config, toExclude)
+	tmpSquashfs, err := mkSquashfs(opts.Config, paths)
 	if err != nil {
 		return err
 	}

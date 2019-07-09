@@ -202,7 +202,7 @@ func extractOutput(o BaseLayerOpts) error {
 		// let's generate one.
 		o.OCI.GC(context.Background())
 
-		tmpSquashfs, err := mkSquashfs(o.Config, "")
+		tmpSquashfs, err := mkSquashfs(o.Config, nil)
 		if err != nil {
 			return err
 		}
