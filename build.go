@@ -144,53 +144,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	}
 	defer tmpSquashfs.Close()
 
-	manifest, err := stackeroci.LookupManifest(oci, name)
-	if err != nil {
-		return err
-	}
-
-	config, err := stackeroci.LookupConfig(oci, manifest.Config)
-	if err != nil {
-		return err
-	}
-
-	blobDigest, blobSize, err := oci.PutBlob(context.Background(), tmpSquashfs)
-	if err != nil {
-		return err
-	}
-
-	desc := ispec.Descriptor{
-		MediaType: MediaTypeLayerSquashfs,
-		Digest:    blobDigest,
-		Size:      blobSize,
-	}
-
-	manifest.Layers = append(manifest.Layers, desc)
-	config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, blobDigest)
-
-	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), config)
-	if err != nil {
-		return err
-	}
-
-	manifest.Config = ispec.Descriptor{
-		MediaType: ispec.MediaTypeImageConfig,
-		Digest:    configDigest,
-		Size:      configSize,
-	}
-
-	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), manifest)
-	if err != nil {
-		return err
-	}
-
-	desc = ispec.Descriptor{
-		MediaType: ispec.MediaTypeImageManifest,
-		Digest:    manifestDigest,
-		Size:      manifestSize,
-	}
-
-	err = oci.UpdateReference(context.Background(), name, desc)
+	desc, err := stackeroci.AddBlobNoCompression(oci, name, tmpSquashfs)
 	if err != nil {
 		return err
 	}

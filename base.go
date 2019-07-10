@@ -23,10 +23,6 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const (
-	MediaTypeLayerSquashfs = "application/vnd.oci.image.layer.squashfs"
-)
-
 type BaseLayerOpts struct {
 	Config    StackerConfig
 	Name      string
@@ -126,7 +122,7 @@ func extractOutput(o BaseLayerOpts) error {
 		return err
 	}
 
-	if manifest.Layers[0].MediaType == MediaTypeLayerSquashfs {
+	if manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
 		sourceLayerType = "squashfs"
 	}
 
@@ -237,7 +233,7 @@ func extractOutput(o BaseLayerOpts) error {
 		return err
 	}
 
-	layerType := MediaTypeLayerSquashfs
+	layerType := stackeroci.MediaTypeLayerSquashfs
 	if o.LayerType == "tar" {
 		layerType = ispec.MediaTypeImageLayerGzip
 	}

@@ -3,10 +3,15 @@ package lib
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+)
+
+const (
+	MediaTypeLayerSquashfs = "application/vnd.oci.image.layer.squashfs"
 )
 
 func LookupManifest(oci casext.Engine, tag string) (ispec.Manifest, error) {
@@ -44,4 +49,61 @@ func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error)
 
 	return configBlob.Data.(ispec.Image), nil
 
+}
+
+// AddBlobNoCompression adds a blob to an OCI tag without compressing it (i.e.
+// not through umoci.mutator).
+func AddBlobNoCompression(oci casext.Engine, name string, content io.Reader) (ispec.Descriptor, error) {
+	manifest, err := LookupManifest(oci, name)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	config, err := LookupConfig(oci, manifest.Config)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	blobDigest, blobSize, err := oci.PutBlob(context.Background(), content)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	desc := ispec.Descriptor{
+		MediaType: MediaTypeLayerSquashfs,
+		Digest:    blobDigest,
+		Size:      blobSize,
+	}
+
+	manifest.Layers = append(manifest.Layers, desc)
+	config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, blobDigest)
+
+	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), config)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	manifest.Config = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageConfig,
+		Digest:    configDigest,
+		Size:      configSize,
+	}
+
+	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), manifest)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	desc = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageManifest,
+		Digest:    manifestDigest,
+		Size:      manifestSize,
+	}
+
+	err = oci.UpdateReference(context.Background(), name, desc)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	return desc, nil
 }
