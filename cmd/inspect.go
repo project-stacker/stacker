@@ -59,7 +59,7 @@ func renderManifest(oci casext.Engine, name string) error {
 
 	fmt.Printf("%s\n", name)
 	for i, l := range man.Layers {
-		fmt.Printf("\tlayer %d: %s... (%s, %s)\n", i, l.Digest[:12], humanize.Bytes(uint64(l.Size)), l.MediaType)
+		fmt.Printf("\tlayer %d: %s... (%s, %s)\n", i, l.Digest.Encoded()[:12], humanize.Bytes(uint64(l.Size)), l.MediaType)
 	}
 
 	if len(man.Annotations) > 0 {
