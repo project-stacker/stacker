@@ -146,7 +146,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		return nil, err
 	}
 
-	for _, k := range []string{"http_proxy", "https_proxy", "no_proxy", "TERM"} {
+	for _, k := range []string{"http_proxy", "https_proxy", "no_proxy", "ftp_proxy", "TERM"} {
 		v := os.Getenv(k)
 		if v != "" {
 			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
