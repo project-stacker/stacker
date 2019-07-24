@@ -265,17 +265,18 @@ func doUnpack(ctx *cli.Context) error {
 			return err
 		}
 
-		err = prepareUmociMetadata(storage, bundlePath, dps[0], highestHash)
-		if err != nil {
-			return err
+		// If we resotred from the last extracted layer, we can just
+		// ensure the metadata is correct and return.
+		if lastLayer+1 == len(manifest.Layers) {
+			err = prepareUmociMetadata(storage, bundlePath, dps[0], highestHash)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		}
 	}
 
-	// If we restored from the last extracted layer, we don't need to do
-	// anything, and can just return.
-	if lastLayer >= 0 && lastLayer+1 == len(manifest.Layers) {
-		return nil
-	}
 	startFrom := manifest.Layers[lastLayer+1]
 
 	// TODO: we could always share the empty layer, but that's more code
