@@ -188,6 +188,25 @@ func prepareUmociMetadata(storage stacker.Storage, bundlePath string, dp casext.
 	return nil
 }
 
+// clean all the umoci metadata (config.json for the OCI runtime, umoci.json
+// for its metadata, anything named *.mtree)
+func cleanUmociMetadata(bundlePath string) error {
+	ents, err := ioutil.ReadDir(bundlePath)
+	if err != nil {
+		return err
+	}
+
+	for _, ent := range ents {
+		if ent.Name() == "rootfs" {
+			continue
+		}
+
+		os.Remove(path.Join(bundlePath, ent.Name()))
+	}
+
+	return nil
+}
+
 func doUnpack(ctx *cli.Context) error {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
@@ -271,13 +290,35 @@ func doUnpack(ctx *cli.Context) error {
 	}
 
 	opts := layer.MapOptions{KeepDirlinks: true}
-	// again, if we restored from something that already had an mtree
-	// entry, but are going to unpack stuff on top of it, umoci will fail.
-	// So let's delete this, because umoci is going to create it again
-	// anyways.
-	mtreeName := strings.Replace(dps[0].Descriptor().Digest.String(), ":", "_", 1)
-	os.RemoveAll(path.Join(bundlePath, mtreeName+".mtree"))
-	return umoci.Unpack(oci, ctx.GlobalString("tag"), bundlePath, opts, callback, startFrom)
+	// again, if we restored from something that already been unpacked but
+	// we're going to unpack stuff on top of it, we need to delete the old
+	// metadata.
+	err = cleanUmociMetadata(bundlePath)
+	if err != nil {
+		return err
+	}
+
+	err = umoci.Unpack(oci, ctx.GlobalString("tag"), bundlePath, opts, callback, startFrom)
+	if err != nil {
+		return err
+	}
+
+	// Ok, now that we have extracted and computed the mtree, let's
+	// re-snapshot. The problem is that the snapshot in the callback won't
+	// contain an mtree file, because the final mtree is generated after
+	// the callback is called.
+	hash, err := stacker.ComputeAggregateHash(manifest, manifest.Layers[len(manifest.Layers)-1])
+	err = storage.Delete(hash)
+	if err != nil {
+		return err
+	}
+
+	err = storage.Snapshot(stacker.WorkingContainerName, hash)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func doRepack(ctx *cli.Context) error {

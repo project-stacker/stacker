@@ -106,3 +106,36 @@ EOF
     stacker build --leave-unladen
     [ -f roots/test/rootfs/surgery ]
 }
+
+@test "everything that gets umoci.json gets foo.mtree as well" {
+    cat > stacker.yaml <<EOF
+t1:
+    from:
+        type: docker
+        url: docker://ubuntu
+    run: |
+        touch t1
+
+t2:
+    from:
+        type: oci
+        url: ./oci:t1
+
+    run: |
+        touch t2
+
+t3:
+    from:
+        type: oci
+        url: ./oci:t2
+    run: |
+        touch t3
+
+EOF
+    stacker build
+    umoci unpack --image oci:t3 dest
+
+	[ -f dest/rootfs/t1 ]
+	[ -f dest/rootfs/t2 ]
+	[ -f dest/rootfs/t3 ]
+}
