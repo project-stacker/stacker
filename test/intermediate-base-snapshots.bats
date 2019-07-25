@@ -112,7 +112,7 @@ EOF
 t1:
     from:
         type: docker
-        url: docker://ubuntu:latest
+        url: docker://centos:latest
     run: |
         touch t1
 
