@@ -328,8 +328,17 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
+		// Need to check if the image has bind mounts, if the image has bind mounts,
+		// it needs to be rebuilt regardless of the build cache
+		// The reason is that tracking build cache for bind mounted folders
+		// is too expensive, so we don't do it
+		binds, err := l.ParseBinds()
+		if err != nil {
+			return err
+		}
+
 		cacheEntry, ok := buildCache.Lookup(name)
-		if ok {
+		if ok && (len(binds) == 0) {
 			if l.BuildOnly {
 				if cacheEntry.Name != name {
 					err = s.Snapshot(cacheEntry.Name, name)

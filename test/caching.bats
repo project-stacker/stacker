@@ -61,3 +61,40 @@ EOF
     stacker build
     [ "$status" -eq 0 ]
 }
+
+@test "bind rebuilds" {
+    cat > stacker.yaml <<"EOF"
+bind-test:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import:
+        - tree1/foo/zomg
+    binds:
+        - ${{bind_path}} -> /root/tree2/foo
+    run: |
+        cp /stacker/zomg /root/zomg1
+        cp /root/tree2/foo/zomg /root/zomg2
+        ls /root
+EOF
+    # In case the image has bind mounts, it needs to be rebuilt
+    # regardless of the build cache. The reason is that tracking build
+    # cache for bind mounted folders is too expensive, so we don't do it
+
+    mkdir -p tree1/foo
+    echo foo >> tree1/foo/zomg
+    mkdir -p tree2/foo
+    echo bar >> tree2/foo/zomg
+
+    bind_path=$(realpath tree2/foo)
+
+    # The layer should be built
+    stacker build --substitute bind_path=${bind_path}
+    out=$(stacker build --substitute bind_path=${bind_path})
+    [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
+
+    # The layer should be rebuilt since the there is a bind configuration in stacker.yaml
+    out=$(stacker build --substitute bind_path=${bind_path})
+    [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
+    [[ ! "${out}" =~ ^(.*found cached layer bind-test)$ ]]
+}
