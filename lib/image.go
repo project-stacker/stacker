@@ -10,6 +10,7 @@ import (
 	"github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/types"
+	"github.com/containers/image/zot"
 	"github.com/pkg/errors"
 )
 
@@ -27,6 +28,7 @@ func init() {
 	urlSchemes = map[string]func(string) (types.ImageReference, error){}
 	RegisterURLScheme("oci", layout.ParseReference)
 	RegisterURLScheme("docker", docker.ParseReference)
+	RegisterURLScheme("zot", zot.Transport.ParseReference)
 }
 
 func localRefParser(ref string) (types.ImageReference, error) {
