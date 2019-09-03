@@ -3,7 +3,6 @@ package stacker
 import (
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -158,7 +157,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 }
 
 func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
-	url, err := url.Parse(i)
+	url, err := newDockerishUrl(i)
 	if err != nil {
 		return "", err
 	}

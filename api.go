@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -77,6 +76,39 @@ const (
 	ScratchType = "scratch"
 )
 
+// dockerishUrl represents a URL that looks like docker://image:tag; as of go
+// 1.12.9 these are no longer parsed correctly via the url.Parse() function,
+// since it complains about :tag not being a valid int (i.e. port number).
+type dockerishUrl struct {
+	Scheme string
+	Host   string
+	Tag    string
+	Path   string
+}
+
+func newDockerishUrl(thing string) (dockerishUrl, error) {
+	parts := strings.SplitN(thing, "://", 2)
+
+	if len(parts) < 2 {
+		return dockerishUrl{Path: thing}, nil
+	}
+
+	url := dockerishUrl{Scheme: parts[0]}
+	pathSplit := strings.SplitN(parts[1], "/", 2)
+
+	url.Host = pathSplit[0]
+	if len(pathSplit) == 2 {
+		url.Path = "/" + pathSplit[1]
+	}
+
+	tagSplit := strings.SplitN(url.Host, ":", 2)
+	if len(tagSplit) == 2 {
+		url.Tag = tagSplit[1]
+	}
+
+	return url, nil
+}
+
 type ImageSource struct {
 	Type     string `yaml:"type"`
 	Url      string `yaml:"url"`
@@ -92,7 +124,7 @@ func NewImageSource(containersImageString string) (*ImageSource, error) {
 		return ret, nil
 	}
 
-	url, err := url.Parse(containersImageString)
+	url, err := newDockerishUrl(containersImageString)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +158,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 	case BuiltType:
 		return is.Tag, nil
 	case DockerType:
-		url, err := url.Parse(is.Url)
+		url, err := newDockerishUrl(is.Url)
 		if err != nil {
 			return "", err
 		}
@@ -246,7 +278,7 @@ func (l *Layer) ParseRun() ([]string, error) {
 }
 
 func (l *Layer) getAbsPath(path string) (string, error) {
-	parsedPath, err := url.Parse(path)
+	parsedPath, err := newDockerishUrl(path)
 	if err != nil {
 		return "", err
 	}
@@ -398,7 +430,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 		return nil, err
 	}
 
-	url, err := url.Parse(stackerfile)
+	url, err := newDockerishUrl(stackerfile)
 	if err != nil {
 		return nil, err
 	}
@@ -567,7 +599,7 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 			// layer which has not been processed
 			allStackerImportsProcessed := true
 			for _, imp := range imports {
-				url, err := url.Parse(imp)
+				url, err := newDockerishUrl(imp)
 				if err != nil {
 					return nil, err
 				}
@@ -610,7 +642,7 @@ func (sf *Stackerfile) Prerequisites() ([]string, error) {
 	// Cleanup paths in the prerequisites
 	var prerequisitePaths []string
 	for _, prerequisitePath := range sf.buildConfig.Prerequisites {
-		parsedPath, err := url.Parse(prerequisitePath)
+		parsedPath, err := newDockerishUrl(prerequisitePath)
 		if err != nil {
 			return nil, err
 		}
