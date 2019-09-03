@@ -16,8 +16,8 @@ github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuy
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 h1:kFOfPq6dUM1hTo4JG6LR5AXSUEsOjtdm0kw0FtQtMJA=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
-github.com/anuvu/image v1.5.2-0.20190830191930-f48c51c45ec2 h1:J0FalcPv9SzTp8e3hKncBFTHyqG3FBZr5fMkVvfiiJA=
-github.com/anuvu/image v1.5.2-0.20190830191930-f48c51c45ec2/go.mod h1:kgJ7R9dqjOhitwZyG3dvc8N2uga9BHJxOsHmYHUU678=
+github.com/anuvu/image v1.5.2-0.20190903224424-2c00f4d71628 h1:dcPcIFujPHtNW2SZEaN1lpHnRCuZFT2GgeHitQUkGRw=
+github.com/anuvu/image v1.5.2-0.20190903224424-2c00f4d71628/go.mod h1:kgJ7R9dqjOhitwZyG3dvc8N2uga9BHJxOsHmYHUU678=
 github.com/apex/log v1.1.0 h1:J5rld6WVFi6NxA6m8GJ1LJqu3+GiTFIt3mYv27gdQWI=
 github.com/apex/log v1.1.0/go.mod h1:yA770aXIDQrhVOIGurT/pVdfCpSq1GQV/auzMN5fzvY=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLMYoU8P317H5OQ+Via4RmuPwCS0=
