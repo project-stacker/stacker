@@ -74,6 +74,7 @@ const (
 	OCIType     = "oci"
 	BuiltType   = "built"
 	ScratchType = "scratch"
+	ZotType     = "zot"
 )
 
 // dockerishUrl represents a URL that looks like docker://image:tag; as of go
@@ -148,6 +149,8 @@ func (is *ImageSource) ContainersImageURL() (string, error) {
 		return is.Url, nil
 	case OCIType:
 		return fmt.Sprintf("oci:%s", is.Url), nil
+	case ZotType:
+		return is.Url, nil
 	default:
 		return "", errors.Errorf("can't get containers/image url for source type: %s", is.Type)
 	}
@@ -178,6 +181,17 @@ func (is *ImageSource) ParseTag() (string, error) {
 		}
 
 		return pieces[1], nil
+	case ZotType:
+		url, err := newDockerishUrl(is.Url)
+		if err != nil {
+			return "", err
+		}
+
+		if url.Path != "" {
+			return path.Base(strings.Split(url.Path, ":")[0]), nil
+		}
+
+		return strings.Split(url.Host, ":")[0], nil
 	default:
 		return "", fmt.Errorf("unsupported type: %s", is.Type)
 	}

@@ -49,6 +49,8 @@ func GetBaseLayer(o BaseLayerOpts, sfm StackerFiles) error {
 		return getContainersImageType(o)
 	case ScratchType:
 		return getScratch(o)
+	case ZotType:
+		return getContainersImageType(o)
 	default:
 		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
