@@ -81,3 +81,7 @@ replace github.com/vbatts/go-mtree v0.4.4 => github.com/vbatts/go-mtree v0.4.5-0
 replace github.com/openSUSE/umoci v0.4.4 => github.com/tych0/umoci v0.1.1-0.20190402232331-556620754fb1
 
 replace github.com/containers/image => github.com/anuvu/image v1.5.2-0.20190830191930-f48c51c45ec2
+
+replace github.com/go-check/check v1.0.0-20180628173108-788fd7840127 => github.com/go-check/check v0.0.0-20180628173108-788fd7840127
+
+replace github.com/flosch/pongo2 v0.0.0-20181225140029-79872a7b2769 => github.com/flosch/pongo2 v0.0.0-20181225140029-79872a7b2769
