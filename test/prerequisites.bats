@@ -64,14 +64,56 @@ function teardown() {
 }
 
 @test "order prerequisites" {
+    # Search for sub3/stacker.yaml and produce a build order including all other stackerfiles it depends on
     stacker build -f ocibuilds/sub3/stacker.yaml --order-only
     [[ "${lines[-1]}" =~ ^(2 build .*ocibuilds\/sub3\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml .*\/sub2\/stacker\.yaml\])$ ]]
     [[ "${lines[-2]}" =~ ^(1 build .*ocibuilds\/sub2\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml\])$ ]]
     [[ "${lines[-3]}" =~ ^(0 build .*ocibuilds\/sub1\/stacker\.yaml: requires: \[\])$ ]]
 }
 
-@test "build layers and prerequisites" {
+@test "search for multiple stackerfiles using default settings" {
+    cd ocibuilds
+    # Search for all stackerfiles under current directory and produce a build order
+    stacker recursive-build --order-only
+    [[ "${lines[-1]}" =~ ^(2 build .*ocibuilds\/sub3\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml .*\/sub2\/stacker\.yaml\])$ ]]
+    [[ "${lines[-2]}" =~ ^(1 build .*ocibuilds\/sub2\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml\])$ ]]
+    [[ "${lines[-3]}" =~ ^(0 build .*ocibuilds\/sub1\/stacker\.yaml: requires: \[\])$ ]]
+}
+
+@test "search for multiple stackerfiles using a custom search directory" {
+    # Search for all stackerfiles under ocibuilds and produce a build order
+    stacker recursive-build --search-dir ocibuilds --order-only
+    [[ "${lines[-1]}" =~ ^(2 build .*ocibuilds\/sub3\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml .*\/sub2\/stacker\.yaml\])$ ]]
+    [[ "${lines[-2]}" =~ ^(1 build .*ocibuilds\/sub2\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml\])$ ]]
+    [[ "${lines[-3]}" =~ ^(0 build .*ocibuilds\/sub1\/stacker\.yaml: requires: \[\])$ ]]
+}
+
+@test "search for multiple stackerfiles using a custom search directory and a custom file path pattern" {
+    stacker recursive-build --search-dir ocibuilds -p sub2/stacker.yaml --order-only
+    # Only sub2/stacker.yaml should be found
+    # since sub2/stacker.yaml depends on sub1/stacker.yaml, sub1/stacker.yaml will also be rebuilt
+    # since sub3/stacker.yaml is filtered out and sub2.stacker.yaml does not depend on it, it can be ignored
+    [[ "${lines[-1]}" =~ ^(1 build .*ocibuilds\/sub2\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml\])$ ]]
+    [[ "${lines[-2]}" =~ ^(0 build .*ocibuilds\/sub1\/stacker\.yaml: requires: \[\])$ ]]
+}
+
+@test "build layers and prerequisites using the build command" {
     stacker build -f ocibuilds/sub3/stacker.yaml
+    mkdir dest
+    umoci unpack --image oci:layer3_1 dest/layer3_1
+    [ "$status" -eq 0 ]
+    [ -f dest/layer3_1/rootfs/root/import2_copied ]
+    [ -f dest/layer3_1/rootfs/root/import2 ]
+    [ -f dest/layer3_1/rootfs/root/import1_copied ]
+    [ -f dest/layer3_1/rootfs/root/import1 ]
+    umoci unpack --image oci:layer3_2 dest/layer3_2
+    [ "$status" -eq 0 ]
+    [ -f dest/layer3_2/rootfs/root/import0_copied ]
+    [ -f dest/layer3_2/rootfs/root/import0 ]
+}
+
+@test "build layers and prerequisites using the recursive-build command" {
+    stacker recursive-build -d ocibuilds
     mkdir dest
     umoci unpack --image oci:layer3_1 dest/layer3_1
     [ "$status" -eq 0 ]

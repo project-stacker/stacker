@@ -3,23 +3,34 @@ package main
 import (
 	"fmt"
 
-	"github.com/anuvu/stacker"
 	"github.com/urfave/cli"
+
+	"github.com/anuvu/stacker"
 )
 
 var buildCmd = cli.Command{
 	Name:   "build",
 	Usage:  "builds a new OCI image from a stacker yaml file",
 	Action: doBuild,
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "leave-unladen",
-			Usage: "leave the built rootfs mount after image building",
-		},
+	Flags:  initBuildFlags(),
+	Before: beforeBuild,
+}
+
+func initBuildFlags() []cli.Flag {
+	return append(
+		initCommonBuildFlags(),
 		cli.StringFlag{
 			Name:  "stacker-file, f",
 			Usage: "the input stackerfile",
 			Value: "stacker.yaml",
+		})
+}
+
+func initCommonBuildFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.BoolFlag{
+			Name:  "leave-unladen",
+			Usage: "leave the built rootfs mount after image building",
 		},
 		cli.BoolFlag{
 			Name:  "no-cache",
@@ -50,8 +61,7 @@ var buildCmd = cli.Command{
 			Name:  "order-only",
 			Usage: "show the build order without running the actual build",
 		},
-	},
-	Before: beforeBuild,
+	}
 }
 
 func beforeBuild(ctx *cli.Context) error {
@@ -79,8 +89,8 @@ func beforeBuild(ctx *cli.Context) error {
 	return nil
 }
 
-func doBuild(ctx *cli.Context) error {
-	args := stacker.BuildArgs{
+func newBuildArgs(ctx *cli.Context) stacker.BuildArgs {
+	return stacker.BuildArgs{
 		Config:                  config,
 		LeaveUnladen:            ctx.Bool("leave-unladen"),
 		NoCache:                 ctx.Bool("no-cache"),
@@ -91,6 +101,10 @@ func doBuild(ctx *cli.Context) error {
 		OrderOnly:               ctx.Bool("order-only"),
 		Debug:                   debug,
 	}
+}
+
+func doBuild(ctx *cli.Context) error {
+	args := newBuildArgs(ctx)
 
 	builder := stacker.NewBuilder(&args)
 	return builder.BuildMultiple([]string{ctx.String("stacker-file")})
