@@ -3,6 +3,8 @@ package lib
 import (
 	"io"
 	"os"
+	"path/filepath"
+	"regexp"
 )
 
 func FileCopy(dest string, source string) error {
@@ -47,4 +49,32 @@ func FileCopy(dest string, source string) error {
 
 	_, err = io.Copy(d, s)
 	return err
+}
+
+// FindFiles searches for paths matching a particular regex under a given folder
+func FindFiles(base, pattern string) ([]string, error) {
+	var err error
+	var paths []string
+
+	re, err := regexp.Compile(pattern)
+
+	visit := func(path string, info os.FileInfo, err error) error {
+
+		if info.IsDir() {
+			return nil
+		}
+
+		matched := re.MatchString(path)
+
+		if matched {
+			paths = append(paths, path)
+		}
+
+		return nil
+	}
+
+	// Note symlinks are not followed by walk implementation
+	err = filepath.Walk(base, visit)
+
+	return paths, err
 }
