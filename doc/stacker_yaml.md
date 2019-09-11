@@ -120,3 +120,28 @@ once).
 `apply` has a basic diff mechanism, so that two edits to the same file may
 possibly be merged. However, if there are conflicts, apply will fail, and you
 must regenerate the source layers yourself and resolve the conflicts.
+
+#### `config`
+
+`config` key is a special type of entry in the root in the `stacker.yaml` file.
+It cannot contain a layer definition, it is used to provide configuration
+applicable for building all the layers defined in this file. For example,
+
+    config:
+        prerequisites:
+            - ../folder2/stacker.yaml
+            - ../folder3/stacker.yaml
+
+##### `prerequisites`
+If the `prerequisites` list is present under the `config` key, stacker will
+make sure to build all the layers in the stacker.yaml files found at the paths
+contained in the list. This way stacker supports building multiple
+stacker.yaml files in the correct order.
+
+In this particular case the parent folder of the current folder, let's call it
+`parent`, has 3 subfolders `folder1`, `folder2` and `folder3`, each containing a
+`stacker.yaml` file. The example `config` above is in `parent/folder1/stacker.yaml`.
+
+When `stacker build -f parent/folder1/stacker.yaml` is invoked, stacker would search
+for the other two stacker.yaml files and build them first, before building
+the stacker.yaml specified in the command line.
