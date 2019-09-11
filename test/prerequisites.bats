@@ -24,7 +24,7 @@ EOF
     mkdir -p ocibuilds/sub2
     touch ocibuilds/sub2/import2
     cat > ocibuilds/sub2/stacker.yaml <<EOF
-stacker_config:
+config:
     prerequisites:
         - ../sub1/stacker.yaml
 layer2:
@@ -39,7 +39,7 @@ layer2:
 EOF
     mkdir -p ocibuilds/sub3
     cat > ocibuilds/sub3/stacker.yaml <<EOF
-stacker_config:
+config:
     prerequisites:
         - ../sub1/stacker.yaml
         - ../sub2/stacker.yaml

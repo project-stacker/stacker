@@ -502,20 +502,22 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	sf.buildConfig = &BuildConfig{ // Stacker build configuration
 		Prerequisites: []string{},
 	}
-	lms := yaml.MapSlice{} // Actual list of layers excluding the stacker_config directive
+	lms := yaml.MapSlice{} // Actual list of layers excluding the config directive
 	for _, e := range ms {
 		keyName, ok := e.Key.(string)
 		if !ok {
 			return nil, fmt.Errorf("stackerfile: cannot cast %v to string", e.Key)
 		}
 
-		if "stacker_config" == keyName {
+		if "config" == keyName {
 			stackerConfigContent, err := yaml.Marshal(e.Value)
 			if err != nil {
 				return nil, err
 			}
 			if err = yaml.Unmarshal(stackerConfigContent, &sf.buildConfig); err != nil {
-				return nil, fmt.Errorf("stackerfile: cannot interpret 'stacker_config' value %v", e.Value)
+				msg := fmt.Sprintf("stackerfile: cannot interpret 'config' value, "+
+					"note the 'config' section in the stackerfile cannot contain a layer definition %v", e.Value)
+				return nil, errors.New(msg)
 			}
 		} else {
 			sf.fileOrder = append(sf.fileOrder, e.Key.(string))
