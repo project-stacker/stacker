@@ -12,9 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anuvu/stacker/lib"
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -23,6 +20,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
 	"golang.org/x/sys/unix"
+
+	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 )
 
 type BuildArgs struct {
@@ -35,7 +35,6 @@ type BuildArgs struct {
 	LayerType               string
 	Debug                   bool
 	OrderOnly               bool
-	RemoteSaveTags          []string
 }
 
 func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
@@ -164,62 +163,6 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		return err
 	}
 
-	return nil
-}
-
-// SaveLayer stores the final layers into a separate location based on the content of
-// the stackerfile, this is useful to avoid an extra manual step to upload build results
-// and also in case of caching in between stacker builds
-// The logic should work for both Docker registry destination and OCI layout destinations
-// In case of OCI layout destinations the tag will be included in the layer name
-func SaveLayer(opts *BuildArgs, sf *Stackerfile, name string) error {
-	if len(sf.buildConfig.SaveUrl) == 0 {
-		return fmt.Errorf("layer %s cannot be saved since it doesn't have a save URL", name)
-	}
-
-	// Need to determine if URL is docker/oci or something else
-	is, err := NewImageSource(sf.buildConfig.SaveUrl)
-	if err != nil {
-		return err
-	}
-
-	// Determine list of tags to be used
-	tags := opts.RemoteSaveTags
-
-	// Attempt to produce a git commit tag
-	commitTag, err := NewGitLayerTag(sf.referenceDirectory)
-	if err == nil {
-		// Add git tag to the list of tags to be used
-		tags = append(tags, commitTag)
-	}
-
-	if len(tags) == 0 {
-		fmt.Printf("can't save layer %s since list of tags is empty\n", name)
-	}
-
-	// Store the layers to new detination
-	for _, tag := range tags {
-		var destUrl string
-		switch is.Type {
-		case DockerType:
-			destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(sf.buildConfig.SaveUrl, "/"), name, tag)
-		case OCIType:
-			destUrl = fmt.Sprintf("%s:%s_%s", sf.buildConfig.SaveUrl, name, tag)
-		default:
-			return fmt.Errorf("can't save layers to destination type: %s", is.Type)
-		}
-
-		fmt.Printf("saving %s\n", destUrl)
-		err = lib.ImageCopy(lib.ImageCopyOpts{
-			Src:      fmt.Sprintf("oci:%s:%s", opts.Config.OCIDir, name),
-			Dest:     destUrl,
-			Progress: os.Stdout,
-			SkipTLS:  true,
-		})
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -353,15 +296,6 @@ func (b *Builder) Build(file string) error {
 				}
 			}
 			fmt.Printf("found cached layer %s\n", name)
-
-			// Save image if requested by user
-			if len(sf.buildConfig.SaveUrl) != 0 {
-				err := SaveLayer(opts, sf, name)
-				if err != nil {
-					return err
-				}
-			}
-
 			continue
 		}
 
@@ -621,14 +555,6 @@ func (b *Builder) Build(file string) error {
 
 		if err := buildCache.Put(name, descPaths[0].Descriptor()); err != nil {
 			return err
-		}
-
-		// Save image if requested by user
-		if len(sf.buildConfig.SaveUrl) != 0 {
-			err := SaveLayer(opts, sf, name)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
