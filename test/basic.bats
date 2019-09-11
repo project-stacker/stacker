@@ -68,7 +68,7 @@ function teardown() {
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
-    stackerGit=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."ws.tycho.stacker.git_version"')
+    stackerGit=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."com.github.anuvu.stacker.git_version"')
     [ "stacker version ${stackerGit}" = "$(stacker --version)" ]
 
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Env[0]')" = "FOO=bar" ]

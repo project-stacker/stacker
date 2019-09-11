@@ -19,8 +19,8 @@ import (
 
 const (
 	MediaTypeImageBtrfsLayer  = "application/vnd.cisco.image.layer.btrfs"
-	GitVersionAnnotation      = "ws.tycho.stacker.git_version"
-	StackerContentsAnnotation = "ws.tycho.stacker.stacker_yaml"
+	GitVersionAnnotation      = "com.github.anuvu.stacker.git_version"
+	StackerContentsAnnotation = "com.github.anuvu.stacker.stacker_yaml"
 )
 
 // StackerConfig is a struct that contains global (or widely used) stacker
