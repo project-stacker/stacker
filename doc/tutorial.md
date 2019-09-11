@@ -16,6 +16,9 @@ smallest stacker files is just:
             type: docker
             url: docker://centos:latest
 
+Note the key `first` represents the name of the layer, and it can have any value except
+`config`, which has a special usage, see the [stacker yaml](stacker_yaml.md) documentation
+
 With this stacker file as `first.yaml`, we can do a basic stacker build:
 
     $ stacker build -f first.yaml
