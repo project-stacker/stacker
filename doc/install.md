@@ -1,20 +1,13 @@
 ### Building
 
-Stacker requires go 1.10, on Ubuntu 18.04 you can get that with:
+Stacker requires at least go 1.11, since it uses go modules.
+On Ubuntu 18.04 you can get that using the instructions at:
+https://github.com/golang/go/wiki/Ubuntu
 
-    sudo apt install golang
-
-If you are on another Ubuntu release you can use the gophers' ppa:
-
-    sudo apt-add-repository ppa:gophers/archive
-    sudo apt update
-    sudo apt install golang-1.10
-    export PATH=$PATH:/usr/lib/go-1.10/bin
-
-And uses glide for dependency management, which unfortunately is installed with
-curl piped to sh as follows:
-
-    curl https://glide.sh/get | sh
+Or you could get the latest version available at:
+https://golang.org/dl/#stable
+And install it using the instructions on on the official go website:
+https://golang.org/doc/install#install
 
 Stacker also has the following build dependencies:
 
