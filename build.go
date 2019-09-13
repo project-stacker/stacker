@@ -351,8 +351,14 @@ func (b *Builder) Build(file string) error {
 
 			importsDir := path.Join(opts.Config.StackerDir, "imports", name)
 
-			script := fmt.Sprintf("#!/bin/sh -xe\n%s", strings.Join(run, "\n"))
-			if err := ioutil.WriteFile(path.Join(importsDir, ".stacker-run.sh"), []byte(script), 0755); err != nil {
+			shebangLine := "#!/bin/sh -xe\n"
+			if strings.HasPrefix(run[0], "#!") {
+				shebangLine = ""
+			}
+			if err := ioutil.WriteFile(
+				path.Join(importsDir, ".stacker-run.sh"),
+				[]byte(shebangLine+strings.Join(run, "\n")+"\n"),
+				0755); err != nil {
 				return err
 			}
 
