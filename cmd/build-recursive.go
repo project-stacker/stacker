@@ -1,9 +1,6 @@
 package main
 
 import (
-	"os"
-	"regexp"
-
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/lib"
 
@@ -35,31 +32,21 @@ func initRecursiveBuildFlags() []cli.Flag {
 
 func beforeRecursiveBuild(ctx *cli.Context) error {
 
-	// Validate arguments which are common to build
-	err := beforeBuild(ctx)
+	// Validate build failure arguments
+	err := validateBuildFailureFlags(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Use the current working directory if base search directory is "."
-	if ctx.String("search-dir") == "." {
-		wd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		err = ctx.Set("search-dir", wd)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Ensure the base search directory exists
-	if _, err := os.Lstat(ctx.String("search-dir")); err != nil {
+	// Validate layer type
+	err = validateLayerTypeFlags(ctx)
+	if err != nil {
 		return err
 	}
 
-	// Ensure the stacker-file-pattern variable compiles as a regex
-	if _, err := regexp.Compile(ctx.String("stacker-file-pattern")); err != nil {
+	// Validate search arguments
+	err = validateFileSearchFlags(ctx)
+	if err != nil {
 		return err
 	}
 

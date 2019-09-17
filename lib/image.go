@@ -46,10 +46,12 @@ func localRefParser(ref string) (types.ImageReference, error) {
 }
 
 type ImageCopyOpts struct {
-	Src      string
-	Dest     string
-	SkipTLS  bool
-	Progress io.Writer
+	Src          string
+	Dest         string
+	DestUsername string
+	DestPassword string
+	SkipTLS      bool
+	Progress     io.Writer
 }
 
 func ImageCopy(opts ImageCopyOpts) error {
@@ -86,6 +88,13 @@ func ImageCopy(opts ImageCopyOpts) error {
 
 	args.DestinationCtx = &types.SystemContext{
 		OCIAcceptUncompressedLayers: true,
+	}
+
+	if opts.DestUsername != "" {
+		args.DestinationCtx.DockerAuthConfig = &types.DockerAuthConfig{
+			Username: opts.DestUsername,
+			Password: opts.DestPassword,
+		}
 	}
 
 	_, err = copy.Image(context.Background(), policy, destRef, srcRef, args)
