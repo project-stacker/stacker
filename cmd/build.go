@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/urfave/cli"
 
 	"github.com/anuvu/stacker"
@@ -65,27 +63,18 @@ func initCommonBuildFlags() []cli.Flag {
 }
 
 func beforeBuild(ctx *cli.Context) error {
-	if ctx.Bool("shell-fail") {
-		askedFor := ctx.String("on-run-failure")
-		if askedFor != "" && askedFor != "/bin/sh" {
-			return fmt.Errorf("--shell-fail is incompatible with --on-run-failure=%s", askedFor)
-		}
-		err := ctx.Set("on-run-failure", "/bin/sh")
-		if err != nil {
-			return err
-		}
+
+	// Validate build failure arguments
+	err := validateBuildFailureFlags(ctx)
+	if err != nil {
+		return err
 	}
 
-	switch ctx.String("layer-type") {
-	case "tar":
-		break
-	case "squashfs":
-		fmt.Println("squashfs support is experimental")
-		break
-	default:
-		return fmt.Errorf("unknown layer type: %s", ctx.String("layer-type"))
+	// Validate layer type
+	err = validateLayerTypeFlags(ctx)
+	if err != nil {
+		return err
 	}
-
 	return nil
 }
 
