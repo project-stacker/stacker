@@ -3,6 +3,7 @@ package stacker
 import (
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -101,5 +102,66 @@ func TestSubstitute(t *testing.T) {
 	expected = "foo ${PRODUCT//x} foo"
 	if result != expected {
 		t.Fatalf("bad substitution result, expected %s got %s", expected, result)
+	}
+}
+
+func TestFilterEnv(t *testing.T) {
+	myenv := map[string]string{
+		"PT_K1":  "val1",
+		"PT_9":   "val2",
+		"PTNAME": "foo",
+		"TARGET": "build",
+		"HOME":   "/home/user1",
+	}
+	var result, expected map[string]string
+	var err error
+	result, err = FilterEnv([]string{"PT_.*", "TARGET"}, myenv)
+	if err != nil {
+		t.Fatalf("Failed FilterEnv1: %s", err)
+	}
+	expected = map[string]string{
+		"PT_K1": "val1", "PT_9": "val2", "TARGET": "build"}
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Incorrect result Filter1 expected != found: %v != %v",
+			expected, result)
+	}
+}
+
+func TestBuildEnvEqualInEnviron(t *testing.T) {
+	mockOsEnv := func() []string {
+		return []string{"VAR_NORMAL=VAL", "VAR_TRICKY=VAL=EQUAL"}
+	}
+
+	result, err := buildEnv([]string{"VAR_.*"},
+		map[string]string{"myvar": "myval"}, mockOsEnv)
+	if err != nil {
+		t.Fatalf("Failed buildEnv: %s", err)
+	}
+	expected := map[string]string{
+		"VAR_NORMAL": "VAL",
+		"VAR_TRICKY": "VAL=EQUAL",
+		"myvar":      "myval",
+	}
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Incorrect result buildEnv expected != found: %v != %v",
+			expected, result)
+	}
+}
+
+func TestContainerProxyPassThroughByDefault(t *testing.T) {
+	mockOsEnv := func() []string {
+		return []string{"HTTP_PROXY=http://proxy.example.com", "HOME=/home/user"}
+	}
+	result, err := buildEnv([]string{}, map[string]string{"k": "v"}, mockOsEnv)
+	if err != nil {
+		t.Fatalf("Failed buildEnv: %s", err)
+	}
+	expected := map[string]string{
+		"HTTP_PROXY": "http://proxy.example.com",
+		"k":          "v",
+	}
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatalf("Incorrect result buildEnv expected != found: %v != %v",
+			expected, result)
 	}
 }

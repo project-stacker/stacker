@@ -7,7 +7,7 @@ import (
 )
 
 func Grab(sc StackerConfig, name string, source string) error {
-	c, err := newContainer(sc, WorkingContainerName)
+	c, err := newContainer(sc, WorkingContainerName, map[string]string{})
 	if err != nil {
 		return err
 	}

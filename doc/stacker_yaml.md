@@ -74,6 +74,23 @@ spec](https://github.com/opencontainers/image-spec/blob/master/config.md#propert
 and are available for users to pass things through to the runtime environment
 of the image.
 
+#### `build_env` and `build_env_passthrough`
+By default, environment variables do not pass through (pollute) the
+build environment.
+
+`build_env`: this is a dictionary with environment variable definitions.
+   their values will be present in the build's environment.
+
+`build_env_passthrough`: This is a list of regular expressions that work as a filter on which environment variables should be passed through from the current env into the container.  To let all variables through simply set build_env_passthrough: [".*"]
+
+If build_env_passthrough is not set, then the default value
+is to allow through proxy variables
+ HTTP_PROXY, HTTPS_PROXY, FTP_PROXY, http_proxy, https_proxy, ftp_proxy.
+
+values in the build_env override values passed through via
+build_env_passthrough.
+
+
 #### `full_command`
 
 Because of the odd behavior of `cmd` and `entrypoint` (and the inherited nature

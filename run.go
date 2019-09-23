@@ -8,7 +8,11 @@ import (
 )
 
 func Run(sc StackerConfig, name string, command string, l *Layer, onFailure string, stdin io.Reader) error {
-	c, err := newContainer(sc, WorkingContainerName)
+	env, err := l.BuildEnvironment()
+	if err != nil {
+		return err
+	}
+	c, err := newContainer(sc, WorkingContainerName, env)
 	if err != nil {
 		return err
 	}

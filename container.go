@@ -77,7 +77,7 @@ type container struct {
 	c  *lxc.Container
 }
 
-func newContainer(sc StackerConfig, name string) (*container, error) {
+func newContainer(sc StackerConfig, name string, env map[string]string) (*container, error) {
 	if !lxc.VersionAtLeast(2, 1, 0) {
 		return nil, fmt.Errorf("stacker requires liblxc >= 2.1.0")
 	}
@@ -146,19 +146,7 @@ func newContainer(sc StackerConfig, name string) (*container, error) {
 		return nil, err
 	}
 
-	for _, k := range []string{"http_proxy", "https_proxy", "no_proxy", "ftp_proxy", "TERM"} {
-		v := os.Getenv(k)
-		if v != "" {
-			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// The proxy vars are special, because some things e.g. curl
-		// and python like lower case, while golang likes upper case.
-		k = strings.ToUpper(k)
-		v = os.Getenv(k)
+	for k, v := range env {
 		if v != "" {
 			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
 			if err != nil {
