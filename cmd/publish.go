@@ -52,6 +52,10 @@ var publishCmd = cli.Command{
 			Name:  "show-only",
 			Usage: "show the images to be published without actually publishing them",
 		},
+		cli.BoolFlag{
+			Name:  "force",
+			Usage: "force publishing the images present in the OCI layout even if they should be rebuilt",
+		},
 	},
 	Before: beforePublish,
 }
@@ -89,6 +93,7 @@ func doPublish(ctx *cli.Context) error {
 		Url:        ctx.String("url"),
 		Username:   ctx.String("username"),
 		Password:   ctx.String("password"),
+		Force:      ctx.Bool("force"),
 	}
 
 	var stackerFiles []string

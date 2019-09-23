@@ -3,8 +3,12 @@ package stacker
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/openSUSE/umoci"
+	"github.com/openSUSE/umoci/oci/casext"
 
 	"github.com/anuvu/stacker/lib"
 )
@@ -18,6 +22,7 @@ type PublishArgs struct {
 	Url        string
 	Username   string
 	Password   string
+	Force      bool
 }
 
 // Publisher is responsible for publishing the layers based on stackerfiles
@@ -38,10 +43,25 @@ func NewPublisher(opts *PublishArgs) *Publisher {
 func (p *Publisher) Publish(file string) error {
 	opts := p.opts
 
-	// Read stackerfile
-	// Do not call NewStackerfile directly as there may be substitution errors
-	// substitute with the value 'dummy' in case value is not provided by the user
-	sf, err := p.readStackerFile(file, opts.Substitute)
+	// Use absolute path to identify the file in stackerfile map
+	absPath, err := filepath.Abs(file)
+	if err != nil {
+		return err
+	}
+
+	sf, ok := p.stackerfiles[absPath]
+	if !ok {
+		return fmt.Errorf("could not find entry for %s(%s) in stackerfiles", absPath, file)
+	}
+
+	var oci casext.Engine
+	oci, err = umoci.OpenLayout(opts.Config.OCIDir)
+	if err != nil {
+		return err
+	}
+	defer oci.Close()
+
+	buildCache, err := OpenCache(opts.Config, oci, p.stackerfiles)
 	if err != nil {
 		return err
 	}
@@ -68,6 +88,13 @@ func (p *Publisher) Publish(file string) error {
 
 	// Iterate through all layers defined in this stackerfile
 	for _, name := range sf.fileOrder {
+
+		// Verify layer is in build cache
+		_, ok := buildCache.Lookup(name)
+		if !ok && !opts.Force {
+			return fmt.Errorf("layer needs to be rebuilt before publishing: %s", name)
+		}
+
 		// Iterate through all tags
 		for _, tag := range tags {
 			// Determine full destination URL
@@ -111,7 +138,19 @@ func (p *Publisher) Publish(file string) error {
 // PublishMultiple published layers defined in a list of stackerfiles
 func (p *Publisher) PublishMultiple(paths []string) error {
 
-	// Build all Stackerfiles
+	// Verify the OCI layout exists
+	if _, err := os.Stat(p.opts.Config.OCIDir); err != nil {
+		return err
+	}
+
+	// Read stackerfiles and update substitutions
+	sfm, err := p.readStackerFiles(paths)
+	if err != nil {
+		return err
+	}
+	p.stackerfiles = sfm
+
+	// Publish all Stackerfiles
 	for _, path := range paths {
 		err := p.Publish(path)
 		if err != nil {
@@ -122,11 +161,13 @@ func (p *Publisher) PublishMultiple(paths []string) error {
 	return nil
 }
 
-// readStackerFile reads a stacker recipe and applies substitutions
+// readStackerFiles reads stacker recipes and applies substitutions
 // it has a hack for determining if a value is not substituted
 // if it should be substituted but is is not, substitute it with 'dummy'
-func (p *Publisher) readStackerFile(path string, substituteVars []string) (*Stackerfile, error) {
-	sf, err := NewStackerfile(path, substituteVars)
+func (p *Publisher) readStackerFiles(paths []string) (StackerFiles, error) {
+
+	// Read all the stacker recipes
+	sfm, err := NewStackerFiles(paths, p.opts.Substitute)
 	if err != nil {
 
 		// Verify if the error is related to an invalid substitution
@@ -145,8 +186,11 @@ func (p *Publisher) readStackerFile(path string, substituteVars []string) (*Stac
 			return nil, err
 		}
 
-		// Try again, this time add the value dummy to the missing variable
-		return p.readStackerFile(path, append(substituteVars, fmt.Sprintf("%s=dummy", matches[0][1])))
+		// Add the value dummy to the missing substitute variables
+		p.opts.Substitute = append(p.opts.Substitute, fmt.Sprintf("%s=dummy", matches[0][1]))
+
+		// Try again, this time with the new substitute variables
+		return p.readStackerFiles(paths)
 	}
-	return sf, nil
+	return sfm, nil
 }
