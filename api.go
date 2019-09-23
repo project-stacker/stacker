@@ -206,6 +206,8 @@ type Layer struct {
 	Cmd                interface{}       `yaml:"cmd"`
 	Entrypoint         interface{}       `yaml:"entrypoint"`
 	FullCommand        interface{}       `yaml:"full_command"`
+	BuildEnvPt         []string          `yaml: "build_env_passthrough"`
+	BuildEnv           map[string]string `yaml: "build_env"`
 	Environment        map[string]string `yaml:"environment"`
 	Volumes            []string          `yaml:"volumes"`
 	Labels             map[string]string `yaml:"labels"`
@@ -214,6 +216,62 @@ type Layer struct {
 	Binds              interface{}       `yaml:"binds"`
 	Apply              []string          `yaml:"apply"`
 	referenceDirectory string            // Location of the directory where the layer is defined
+}
+
+func FilterEnv(matchList []string, curEnv map[string]string) (map[string]string, error) {
+	// matchList is a list of regular expressions.
+	// curEnv is a map[string]string.
+	// return is filtered set of curEnv that match an entry in matchList
+	var err error
+	var r *regexp.Regexp
+	newEnv := map[string]string{}
+	matches := []*regexp.Regexp{}
+	for _, t := range matchList {
+		r, err = regexp.Compile("^" + t + "$")
+		if err != nil {
+			return newEnv, err
+		}
+		matches = append(matches, r)
+	}
+	for key, val := range curEnv {
+		for _, match := range matches {
+			if match.Match([]byte(key)) {
+				newEnv[key] = val
+				break
+			}
+		}
+	}
+	return newEnv, err
+}
+
+func buildEnv(passThrough []string, newEnv map[string]string,
+	getCurEnv func() []string) (map[string]string, error) {
+	// get a map[string]string that should be used for the environment
+	// of the container.
+	curEnv := map[string]string{}
+	for _, kv := range getCurEnv() {
+		pair := strings.SplitN(kv, "=", 2)
+		curEnv[pair[0]] = pair[1]
+	}
+	defList := []string{
+		"ftp_proxy", "http_proxy", "https_proxy", "no_proxy",
+		"FTP_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "TERM"}
+	matchList := defList
+	if len(passThrough) != 0 {
+		matchList = passThrough
+	}
+	ret, err := FilterEnv(matchList, curEnv)
+	if err != nil {
+		return ret, err
+	}
+	for k, v := range newEnv {
+		ret[k] = v
+	}
+	return ret, nil
+}
+
+func (l *Layer) BuildEnvironment() (map[string]string, error) {
+	return buildEnv(l.BuildEnvPt, l.BuildEnv, os.Environ)
 }
 
 func (l *Layer) ParseCmd() ([]string, error) {
