@@ -133,6 +133,9 @@ func NewImageSource(containersImageString string) (*ImageSource, error) {
 	case "docker":
 		ret.Type = DockerType
 		ret.Url = containersImageString
+	case "zot":
+		ret.Type = ZotType
+		ret.Url = containersImageString
 	default:
 		return nil, errors.Errorf("unknown image source type: %s", containersImageString)
 	}
