@@ -80,6 +80,10 @@ func beforePublish(ctx *cli.Context) error {
 			password)
 	}
 
+	if len(ctx.String("url")) == 0 {
+		return fmt.Errorf("--url is a mandatory argument for publishing")
+	}
+
 	return nil
 }
 
