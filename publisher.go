@@ -77,6 +77,8 @@ func (p *Publisher) Publish(file string) error {
 				destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, tag)
 			case OCIType:
 				destUrl = fmt.Sprintf("%s:%s_%s", opts.Url, name, tag)
+			case ZotType:
+				destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, tag)
 			default:
 				return fmt.Errorf("can't save layers to destination type: %s", is.Type)
 			}

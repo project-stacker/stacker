@@ -91,6 +91,7 @@ func ImageCopy(opts ImageCopyOpts) error {
 	}
 
 	if opts.DestUsername != "" {
+		// DoTo check if destination is really a docker URL, maybe it's a zot URL
 		args.DestinationCtx.DockerAuthConfig = &types.DockerAuthConfig{
 			Username: opts.DestUsername,
 			Password: opts.DestPassword,
