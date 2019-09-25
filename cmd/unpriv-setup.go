@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -53,6 +54,18 @@ func recursiveChown(dir string, uid int, gid int) error {
 	})
 }
 
+func warnAboutNewuidmap() {
+	_, err := exec.LookPath("newuidmap")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "WARNING: no newuidmap binary present. LXC will not work correctly.")
+	}
+
+	_, err = exec.LookPath("newgidmap")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "WARNING: no newgidmap binary present. LXC will not work correctly.")
+	}
+}
+
 func doUnprivSetup(ctx *cli.Context) error {
 	_, err := os.Stat(config.StackerDir)
 	if err == nil {
@@ -89,5 +102,12 @@ func doUnprivSetup(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return recursiveChown(config.RootFSDir, uid, gid)
+
+	err = recursiveChown(config.RootFSDir, uid, gid)
+	if err != nil {
+		return err
+	}
+
+	warnAboutNewuidmap()
+	return nil
 }
