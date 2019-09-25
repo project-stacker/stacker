@@ -59,7 +59,12 @@ func NewStorage(c StackerConfig) (Storage, error) {
 			return nil, err
 		}
 
-		err = MakeLoopbackBtrfs(loopback, int64(size), uid, c.RootFSDir)
+		gid, err := strconv.Atoi(currentUser.Gid)
+		if err != nil {
+			return nil, err
+		}
+
+		err = MakeLoopbackBtrfs(loopback, int64(size), uid, gid, c.RootFSDir)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +279,7 @@ func (b *btrfs) Exists(thing string) bool {
 
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
 // device and allows the specified uid to delete subvolumes on it.
-func MakeLoopbackBtrfs(loopback string, size int64, uid int, dest string) error {
+func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest string) error {
 	mounted, err := isMounted(loopback)
 	if err != nil {
 		return err
@@ -285,7 +290,7 @@ func MakeLoopbackBtrfs(loopback string, size int64, uid int, dest string) error 
 		return nil
 	}
 
-	if err := setupLoopback(loopback, uid, size); err != nil {
+	if err := setupLoopback(loopback, uid, gid, size); err != nil {
 		return err
 	}
 
@@ -303,14 +308,14 @@ func MakeLoopbackBtrfs(loopback string, size int64, uid int, dest string) error 
 		return fmt.Errorf("Failed mount fs: %v", err)
 	}
 
-	if err := os.Chown(dest, uid, uid); err != nil {
+	if err := os.Chown(dest, uid, gid); err != nil {
 		return fmt.Errorf("couldn't chown %s: %v", dest, err)
 	}
 
 	return nil
 }
 
-func setupLoopback(path string, uid int, size int64) error {
+func setupLoopback(path string, uid int, gid int, size int64) error {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		if !os.IsExist(err) {
@@ -321,7 +326,7 @@ func setupLoopback(path string, uid int, size int64) error {
 	}
 	defer f.Close()
 
-	if err := f.Chown(uid, uid); err != nil {
+	if err := f.Chown(uid, gid); err != nil {
 		os.RemoveAll(f.Name())
 		return err
 	}

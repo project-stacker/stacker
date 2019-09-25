@@ -23,6 +23,11 @@ var unprivSetupCmd = cli.Command{
 			Usage: "the user to do setup for (defaults to $SUDO_UID from env)",
 			Value: os.Getenv("SUDO_UID"),
 		},
+		cli.StringFlag{
+			Name:  "gid",
+			Usage: "the group to do setup for (defaults to $SUDO_GID from env)",
+			Value: os.Getenv("SUDO_GID"),
+		},
 	},
 }
 
@@ -31,16 +36,20 @@ func beforeUnprivSetup(ctx *cli.Context) error {
 		return fmt.Errorf("please specify --uid or run unpriv-setup with sudo")
 	}
 
+	if ctx.String("gid") == "" {
+		return fmt.Errorf("please specify --gid or run unpriv-setup with sudo")
+	}
+
 	return nil
 }
 
-func recursiveChown(dir string, uid int) error {
+func recursiveChown(dir string, uid int, gid int) error {
 	return filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		return os.Chown(p, uid, uid)
+		return os.Chown(p, uid, gid)
 	})
 }
 
@@ -55,6 +64,11 @@ func doUnprivSetup(ctx *cli.Context) error {
 		return errors.Wrapf(err, "couldn't convert uid %s", ctx.String("uid"))
 	}
 
+	gid, err := strconv.Atoi(ctx.String("gid"))
+	if err != nil {
+		return errors.Wrapf(err, "couldn't convert gid %s", ctx.String("gid"))
+	}
+
 	err = os.MkdirAll(path.Join(config.StackerDir), 0755)
 	if err != nil {
 		return err
@@ -66,14 +80,14 @@ func doUnprivSetup(ctx *cli.Context) error {
 	}
 
 	size := int64(100 * 1024 * 1024 * 1024)
-	err = stacker.MakeLoopbackBtrfs(path.Join(config.StackerDir, "btrfs.loop"), size, uid, config.RootFSDir)
+	err = stacker.MakeLoopbackBtrfs(path.Join(config.StackerDir, "btrfs.loop"), size, uid, gid, config.RootFSDir)
 	if err != nil {
 		return err
 	}
 
-	err = recursiveChown(config.StackerDir, uid)
+	err = recursiveChown(config.StackerDir, uid, gid)
 	if err != nil {
 		return err
 	}
-	return recursiveChown(config.RootFSDir, uid)
+	return recursiveChown(config.RootFSDir, uid, gid)
 }
