@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/anuvu/stacker"
 	"github.com/pkg/errors"
@@ -66,6 +69,73 @@ func warnAboutNewuidmap() {
 	}
 }
 
+func addSpecificEntries(file string, name string, id int) error {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't read %s", file)
+	}
+
+	maxAlloc := 100 * 1000
+
+	for _, line := range strings.Split(string(content), "\n") {
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, ":")
+		if parts[0] == name {
+			return nil
+		}
+
+		if len(parts) != 3 {
+			return errors.Errorf("invalid %s entry: %s", file, line)
+		}
+
+		thisAlloc, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return errors.Wrapf(err, "invalid %s entry: %s", file, line)
+		}
+
+		size, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return errors.Wrapf(err, "invalid %s entry: %s", file, line)
+		}
+
+		if thisAlloc+size > maxAlloc {
+			maxAlloc = thisAlloc + size
+		}
+
+	}
+
+	withNewEntry := append(content, []byte(fmt.Sprintf("%s:%d:65536\n", name, maxAlloc))...)
+	err = ioutil.WriteFile(file, withNewEntry, 0644)
+	return errors.Wrapf(err, "couldn't write %s", file)
+}
+
+func addEtcEntriesIfNecessary(uid int, gid int) error {
+	currentUser, err := user.LookupId(fmt.Sprintf("%d", uid))
+	if err != nil {
+		return errors.Wrapf(err, "couldn't find user for %d", uid)
+	}
+
+	err = addSpecificEntries("/etc/subuid", currentUser.Username, uid)
+	if err != nil {
+		return err
+	}
+
+	group, err := user.LookupGroupId(fmt.Sprintf("%d", gid))
+	if err != nil {
+		return errors.Wrapf(err, "couldn't find group for %d", gid)
+	}
+
+	err = addSpecificEntries("/etc/subgid", group.Name, gid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func doUnprivSetup(ctx *cli.Context) error {
 	_, err := os.Stat(config.StackerDir)
 	if err == nil {
@@ -109,5 +179,5 @@ func doUnprivSetup(ctx *cli.Context) error {
 	}
 
 	warnAboutNewuidmap()
-	return nil
+	return addEtcEntriesIfNecessary(uid, gid)
 }
