@@ -16,10 +16,11 @@ import (
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 4
+const currentCacheVersion = 5
 
 type ImportType int
 
@@ -147,11 +148,21 @@ func hashFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 
 	_, err = io.Copy(h, f)
-	f.Close()
 	if err != nil {
 		return "", err
+	}
+
+	fi, err := f.Stat()
+	if err != nil {
+		return "", err
+	}
+
+	_, err = h.Write([]byte(fmt.Sprintf("%v", fi.Mode())))
+	if err != nil {
+		return "", errors.Wrapf(err, "couldn't write mode")
 	}
 
 	d := digest.NewDigest("sha256", h)
