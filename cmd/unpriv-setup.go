@@ -71,7 +71,7 @@ func warnAboutNewuidmap() {
 
 func addSpecificEntries(file string, name string, id int) error {
 	content, err := ioutil.ReadFile(file)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return errors.Wrapf(err, "couldn't read %s", file)
 	}
 
