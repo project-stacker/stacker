@@ -2,7 +2,7 @@ load helpers
 
 function teardown() {
     cleanup
-    rm -rf tree1 tree2 link foo >& /dev/null || true
+    rm -rf tree1 tree2 link foo executable >& /dev/null || true
 }
 
 @test "import caching" {
@@ -97,4 +97,24 @@ EOF
     out=$(stacker build --substitute bind_path=${bind_path})
     [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
     [[ ! "${out}" =~ ^(.*found cached layer bind-test)$ ]]
+}
+
+@test "mode change is re-imported" {
+    cat > stacker.yaml <<"EOF"
+mode-test:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import:
+        - executable
+    run: cp /stacker/executable /executable
+EOF
+    touch executable
+    stacker build
+
+    chmod +x executable
+    stacker build
+
+    umoci unpack --image oci:mode-test dest
+    [ -x dest/rootfs/executable ]
 }

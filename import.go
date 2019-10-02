@@ -40,6 +40,10 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 		return true, nil
 	}
 
+	if info1.Mode() != info2.Mode() {
+		return true, nil
+	}
+
 	f1, err := os.Open(p1)
 	if err != nil {
 		return false, err
