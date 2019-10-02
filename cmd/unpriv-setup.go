@@ -69,7 +69,7 @@ func warnAboutNewuidmap() {
 	}
 }
 
-func addSpecificEntries(file string, name string, id int) error {
+func addSpecificEntries(file string, name string) error {
 	content, err := ioutil.ReadFile(file)
 	if err != nil && !os.IsNotExist(err) {
 		return errors.Wrapf(err, "couldn't read %s", file)
@@ -112,23 +112,18 @@ func addSpecificEntries(file string, name string, id int) error {
 	return errors.Wrapf(err, "couldn't write %s", file)
 }
 
-func addEtcEntriesIfNecessary(uid int, gid int) error {
+func addEtcEntriesIfNecessary(uid int) error {
 	currentUser, err := user.LookupId(fmt.Sprintf("%d", uid))
 	if err != nil {
 		return errors.Wrapf(err, "couldn't find user for %d", uid)
 	}
 
-	err = addSpecificEntries("/etc/subuid", currentUser.Username, uid)
+	err = addSpecificEntries("/etc/subuid", currentUser.Username)
 	if err != nil {
 		return err
 	}
 
-	group, err := user.LookupGroupId(fmt.Sprintf("%d", gid))
-	if err != nil {
-		return errors.Wrapf(err, "couldn't find group for %d", gid)
-	}
-
-	err = addSpecificEntries("/etc/subgid", group.Name, gid)
+	err = addSpecificEntries("/etc/subgid", currentUser.Username)
 	if err != nil {
 		return err
 	}
@@ -179,5 +174,5 @@ func doUnprivSetup(ctx *cli.Context) error {
 	}
 
 	warnAboutNewuidmap()
-	return addEtcEntriesIfNecessary(uid, gid)
+	return addEtcEntriesIfNecessary(uid)
 }
