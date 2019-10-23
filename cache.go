@@ -142,7 +142,7 @@ func walkImport(path string) (*mtree.DirectoryHierarchy, error) {
 	return mtree.Walk(path, nil, mtreeKeywords, nil)
 }
 
-func hashFile(path string) (string, error) {
+func hashFile(path string, includeMode bool) (string, error) {
 	h := sha256.New()
 	f, err := os.Open(path)
 	if err != nil {
@@ -155,14 +155,21 @@ func hashFile(path string) (string, error) {
 		return "", err
 	}
 
-	fi, err := f.Stat()
-	if err != nil {
-		return "", err
-	}
+	if includeMode {
+		// Include file mode when computing the hash
+		// In general we want to do this, but not all external
+		// tooling includes it, so we can't compare it with the hash
+		// in the reply of a HTTP HEAD call
 
-	_, err = h.Write([]byte(fmt.Sprintf("%v", fi.Mode())))
-	if err != nil {
-		return "", errors.Wrapf(err, "couldn't write mode")
+		fi, err := f.Stat()
+		if err != nil {
+			return "", err
+		}
+
+		_, err = h.Write([]byte(fmt.Sprintf("%v", fi.Mode())))
+		if err != nil {
+			return "", errors.Wrapf(err, "couldn't write mode")
+		}
 	}
 
 	d := digest.NewDigest("sha256", h)
@@ -255,7 +262,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 				return nil, false
 			}
 		} else {
-			h, err := hashFile(diskPath)
+			h, err := hashFile(diskPath, true)
 			if err != nil {
 				return nil, false
 			}
@@ -348,7 +355,7 @@ func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
 			}
 		} else {
 			ih.Type = ImportFile
-			ih.Hash, err = hashFile(diskPath)
+			ih.Hash, err = hashFile(diskPath, true)
 			if err != nil {
 				return err
 			}
