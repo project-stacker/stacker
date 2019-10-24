@@ -2,7 +2,25 @@ load helpers
 
 function teardown() {
     cleanup
-    rm -rf recursive || true
+    rm -rf recursive bing.ico || true
+}
+
+@test "different URLs with same base get re-imported" {
+    cat > stacker.yaml <<EOF
+thing:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import:
+        - https://bing.com/favicon.ico
+EOF
+    stacker build
+    # wait, people don't use bing!
+    cp .stacker/imports/thing/favicon.ico bing.ico
+    sed -i -e 's/bing/google/g' stacker.yaml
+    stacker build
+    # we should re-import google's favicon since the URL changed
+    [ "$(sha bing.ico)" != "$(sha .stacker/imports/thing/favicon.ico)" ]
 }
 
 @test "importing recursively" {
