@@ -75,21 +75,23 @@ and are available for users to pass things through to the runtime environment
 of the image.
 
 #### `build_env` and `build_env_passthrough`
+
 By default, environment variables do not pass through (pollute) the
 build environment.
 
 `build_env`: this is a dictionary with environment variable definitions.
    their values will be present in the build's environment.
 
-`build_env_passthrough`: This is a list of regular expressions that work as a filter on which environment variables should be passed through from the current env into the container.  To let all variables through simply set build_env_passthrough: [".*"]
+`build_env_passthrough`: This is a list of regular expressions that work as a
+filter on which environment variables should be passed through from the current
+env into the container.  To let all variables through simply set
+`build_env_passthrough`: `[".*"]`
 
-If build_env_passthrough is not set, then the default value
-is to allow through proxy variables
- HTTP_PROXY, HTTPS_PROXY, FTP_PROXY, http_proxy, https_proxy, ftp_proxy.
+If `build_env_passthrough` is not set, then the default value is to allow
+through proxy variables `HTTP_PROXY, HTTPS_PROXY, FTP_PROXY, http_proxy,
+https_proxy, ftp_proxy`.
 
-values in the build_env override values passed through via
-build_env_passthrough.
-
+Values in the `build_env` override values passed through via
 
 #### `full_command`
 
@@ -150,6 +152,7 @@ applicable for building all the layers defined in this file. For example,
             - ../folder3/stacker.yaml
 
 ##### `prerequisites`
+
 If the `prerequisites` list is present under the `config` key, stacker will
 make sure to build all the layers in the stacker.yaml files found at the paths
 contained in the list. This way stacker supports building multiple
