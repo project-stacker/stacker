@@ -206,8 +206,8 @@ type Layer struct {
 	Cmd                interface{}       `yaml:"cmd"`
 	Entrypoint         interface{}       `yaml:"entrypoint"`
 	FullCommand        interface{}       `yaml:"full_command"`
-	BuildEnvPt         []string          `yaml: "build_env_passthrough"`
-	BuildEnv           map[string]string `yaml: "build_env"`
+	BuildEnvPt         []string          `yaml:"build_env_passthrough"`
+	BuildEnv           map[string]string `yaml:"build_env"`
 	Environment        map[string]string `yaml:"environment"`
 	Volumes            []string          `yaml:"volumes"`
 	Labels             map[string]string `yaml:"labels"`
