@@ -22,6 +22,7 @@ centos:
         foo: bar
         bar: baz
     working_dir: /meshuggah/rocks
+    runtime_user: 1000
 layer1:
     from:
         type: built
@@ -72,6 +73,7 @@ function teardown() {
     [ "stacker version ${stackerGit}" = "$(stacker --version)" ]
 
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Env[0]')" = "FOO=bar" ]
+    [ "$(cat oci/blobs/sha256/$config | jq -r '.config.User')" = "1000" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Volumes["/data/db"]')" = "{}" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Labels["foo"]')" = "bar" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Labels["bar"]')" = "baz" ]

@@ -66,7 +66,7 @@ will not be reflected.
 
 Will grab /path/to/file from the previously built layer `$name`.
 
-#### `environment`, `labels, `working_dir`, `volumes`, `cmd`, `entrypoint`
+#### `environment`, `labels, `working_dir`, `volumes`, `cmd`, `entrypoint`, `user`
 
 These all correspond exactly to the similarly named bits in the [OCI image
 config

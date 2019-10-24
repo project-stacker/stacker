@@ -488,6 +488,10 @@ func (b *Builder) Build(file string) error {
 			imageConfig.WorkingDir = l.WorkingDir
 		}
 
+		if l.RuntimeUser != "" {
+			imageConfig.User = l.RuntimeUser
+		}
+
 		meta, err := mutator.Meta(context.Background())
 		if err != nil {
 			return err
