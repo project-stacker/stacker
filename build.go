@@ -267,11 +267,6 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		err = CleanImportsDir(opts.Config, name, imports, buildCache)
-		if err != nil {
-			return err
-		}
-
 		if err := Import(opts.Config, name, imports); err != nil {
 			return err
 		}
