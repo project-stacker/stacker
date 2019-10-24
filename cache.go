@@ -20,7 +20,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 5
+const currentCacheVersion = 6
 
 type ImportType int
 
@@ -169,6 +169,11 @@ func hashFile(path string) (string, error) {
 	return d.String(), nil
 }
 
+func (c *BuildCache) LookupWithoutChecks(name string) (CacheEntry, bool) {
+	e, ok := c.Cache[name]
+	return e, ok
+}
+
 func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
@@ -209,12 +214,12 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 	}
 
 	for _, imp := range imports {
-		fname := path.Base(imp)
-		cachedImport, ok := result.Imports[fname]
+		cachedImport, ok := result.Imports[imp]
 		if !ok {
 			return nil, false
 		}
 
+		fname := path.Base(imp)
 		diskPath := path.Join(c.importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
@@ -289,7 +294,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 		return "", nil
 	}
 
-	baseEnt, ok := c.Lookup(l.From.Tag)
+	baseEnt, ok := c.LookupWithoutChecks(l.From.Tag)
 	if !ok {
 		return "", fmt.Errorf("couldn't find a cache of base layer")
 	}
@@ -349,7 +354,7 @@ func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
 			}
 		}
 
-		ent.Imports[fname] = ih
+		ent.Imports[imp] = ih
 	}
 
 	c.Cache[name] = ent
