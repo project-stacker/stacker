@@ -365,7 +365,7 @@ func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
 	}
 
 	// Nothing to do here -- we didn't import any base layers.
-	if (base.From.Type != DockerType && base.From.Type != OCIType) || !base.BuildOnly {
+	if (base.From.Type != DockerType && base.From.Type != OCIType && base.From.Type != ZotType) || !base.BuildOnly {
 		return nil
 	}
 
