@@ -9,6 +9,23 @@ function teardown() {
     cleanup
 }
 
+@test "squashfs + derivative build only layers" {
+    cat > stacker.yaml <<EOF
+build:
+    from:
+        type: docker
+        url: docker://centos:latest
+    build_only: true
+importer:
+    from:
+        type: built
+        tag: build
+    run: |
+        echo hello world
+EOF
+    stacker build --layer-type squashfs
+}
+
 @test "squashfs yum install" {
     cat > stacker.yaml <<EOF
 centos1:

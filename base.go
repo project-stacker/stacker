@@ -347,6 +347,7 @@ func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
 	// We need to copy any base OCI layers to the output dir, since they
 	// may not have been copied before and the final `umoci repack` expects
 	// them to be there.
+	targetName := o.Name
 	base := o.Layer
 	for {
 		// Iterate through base layers until we find the first one which is not BuiltType
@@ -384,13 +385,13 @@ func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 	err = lib.ImageCopy(lib.ImageCopyOpts{
 		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, tag),
+		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
 	})
 	if err != nil {
 		return err
 	}
 
-	return o.OCI.DeleteReference(context.Background(), tag)
+	return nil
 }
 
 func ComputeAggregateHash(manifest ispec.Manifest, descriptor ispec.Descriptor) (string, error) {
