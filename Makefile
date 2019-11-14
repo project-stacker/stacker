@@ -1,10 +1,10 @@
 GO_SRC=$(shell find . -name \*.go)
-COMMIT_HASH=$(shell git rev-parse HEAD)
-COMMIT=$(if $(shell git status --porcelain --untracked-files=no),$(COMMIT_HASH)-dirty,$(COMMIT_HASH))
+VERSION=$(shell git describe --tags || git rev-parse HEAD)
+VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 
 stacker: $(GO_SRC)
-	go build -ldflags "-X main.version=$(COMMIT)" -o stacker ./cmd
+	go build -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
 
 # make test TEST=basic will run only the basic test.
 .PHONY: check
