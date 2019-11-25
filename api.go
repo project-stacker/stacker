@@ -633,8 +633,16 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 		return nil, err
 	}
 
-	// Set the directory with the location where the layer was defined
-	for _, layer := range sf.internal {
+	for name, layer := range sf.internal {
+		// Validate field values
+		switch layer.From.Type {
+		case BuiltType:
+			if len(layer.From.Tag) == 0 {
+				return nil, fmt.Errorf("%s: from tag cannot be empty for image type 'built'", name)
+			}
+		}
+
+		// Set the directory with the location where the layer was defined
 		layer.referenceDirectory = sf.referenceDirectory
 	}
 
