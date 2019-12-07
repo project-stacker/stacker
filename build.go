@@ -349,16 +349,17 @@ func (b *Builder) Build(file string) error {
 		}
 
 		if len(run) != 0 {
-			_, err := os.Stat(path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs/bin/sh"))
-			if err != nil {
-				return fmt.Errorf("rootfs for %s does not have a /bin/sh", name)
-			}
 
 			importsDir := path.Join(opts.Config.StackerDir, "imports", name)
 
 			shebangLine := "#!/bin/sh -xe\n"
 			if strings.HasPrefix(run[0], "#!") {
 				shebangLine = ""
+			} else {
+				_, err = os.Stat(path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs/bin/sh"))
+				if err != nil {
+					return fmt.Errorf("rootfs for %s does not have a /bin/sh", name)
+				}
 			}
 			if err := ioutil.WriteFile(
 				path.Join(importsDir, ".stacker-run.sh"),
