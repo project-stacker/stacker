@@ -121,7 +121,6 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		switch diff.Type() {
 		case mtree.Modified, mtree.Extra:
 			p := path.Join(rootfsPath, diff.Path())
-			missing = append(missing, p)
 			paths.AddInclude(p, diff.New().IsDir())
 		case mtree.Missing:
 			p := path.Join(rootfsPath, diff.Path())
