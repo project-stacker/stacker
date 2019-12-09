@@ -28,7 +28,7 @@ function teardown() {
 @test "unprivileged stacker" {
     [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
 
-    sudo -u $SUDO_USER $GOPATH/bin/stacker build
+    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
     umoci unpack --image oci:layer1 dest
 
     [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
