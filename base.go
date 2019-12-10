@@ -348,50 +348,47 @@ func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
 	// may not have been copied before and the final `umoci repack` expects
 	// them to be there.
 	targetName := o.Name
-	base := o.Layer
-	for {
-		// Iterate through base layers until we find the first one which is not BuiltType
-		// Need to declare ok separately, if we do it in the same line as
-		// assigning the new value to base, base would be a new variable only in the scope
-		// of this iteration and we never meet the condition to exit the loop
-		var ok bool
-		base, ok = sfm.LookupLayerDefinition(base.From.Tag)
-		if !ok {
-			return fmt.Errorf("missing base layer: %s?", base.From.Tag)
+	baseLayerDefinition, ok := sfm.LookupLayerDefinition(o.Layer.From.Tag)
+	if !ok {
+		return errors.Errorf("missing base layer: %s?", o.Layer.From.Tag)
+	}
+
+	if baseLayerDefinition.BuildOnly {
+		baseInputTag, err := baseLayerDefinition.From.ParseTag()
+		if err != nil {
+			return err
 		}
 
-		if base.From.Type != BuiltType {
-			break
+		// Ok, we didn't generate an OCI diff for whatever mutated this
+		// layer. So either 1. the layer was sourced
+		// from something and is in the OCI cache, so we can copy at
+		// least the base's base over to make the delta smaller or 2.
+		// it was sourced from e.g. a tar file, in which case there's
+		// nothing we can do besides initialize an empty oci tag and
+		// generate the whole thing.
+		cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
+		err = lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, baseInputTag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
+		})
+		if err != nil {
+			// give up and just create an empty image
+			return umociInit(o)
 		}
-	}
-
-	// Nothing to do here -- we didn't import any base layers.
-	if (base.From.Type != DockerType && base.From.Type != OCIType && base.From.Type != ZotType) || !base.BuildOnly {
 		return nil
-	}
+	} else {
+		baseOutputTag, err := o.Layer.From.ParseTag()
+		if err != nil {
+			return err
+		}
 
-	// Nothing to do here either -- the previous step emitted a layer with
-	// the base's tag name. We don't want to overwrite that with a stock
-	// base layer.
-	if !base.BuildOnly {
-		return nil
+		refs, _ := o.OCI.ListReferences(context.Background())
+		fmt.Printf("refs: %v\n", refs)
+		return lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, baseOutputTag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
+		})
 	}
-
-	tag, err := base.From.ParseTag()
-	if err != nil {
-		return err
-	}
-
-	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
-	err = lib.ImageCopy(lib.ImageCopyOpts{
-		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func ComputeAggregateHash(manifest ispec.Manifest, descriptor ispec.Descriptor) (string, error) {
