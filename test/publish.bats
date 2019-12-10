@@ -68,8 +68,7 @@ function teardown() {
         [ -f dest/layer1_commit/rootfs/root/import1 ]
     else
         # The repo has local changes, don't apply the commit_hash
-        published=$(umoci list --layout oci_publish)
-        [[ ! "${published}" =~ ^(.*commit-.*)$ ]]
+        [[ ${output} =~ "since list of tags is empty" ]]
     fi
 }
 
