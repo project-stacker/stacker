@@ -366,6 +366,17 @@ func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
 		// it was sourced from e.g. a tar file, in which case there's
 		// nothing we can do besides initialize an empty oci tag and
 		// generate the whole thing.
+
+		// Attempt to copy the base from o.Config.OCIDir layout in case it's already there
+		err = lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, baseInputTag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
+		})
+		if err == nil {
+			return nil
+		}
+
+		// Attempt to copy the base from the layer-bases layout
 		cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 		err = lib.ImageCopy(lib.ImageCopyOpts{
 			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, baseInputTag),
