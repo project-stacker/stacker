@@ -25,3 +25,33 @@ EOF
     bad_stacker build
     echo "$output" | grep "rootfs for empty does not have a /bin/sh"
 }
+
+@test "derived from build_only scratch" {
+    cat > stacker.yaml <<EOF
+empty:
+    from:
+        type: scratch
+    build_only: true
+
+empty2:
+    from:
+        type: built
+        tag: empty
+EOF
+    stacker build
+}
+
+@test "derived from build_only scratch with squashfs" {
+    cat > stacker.yaml <<EOF
+empty:
+    from:
+        type: scratch
+    build_only: true
+
+empty2:
+    from:
+        type: built
+        tag: empty
+EOF
+    stacker build --layer-type squashfs
+}
