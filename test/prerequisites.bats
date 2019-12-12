@@ -126,3 +126,32 @@ function teardown() {
     [ -f dest/layer3_2/rootfs/root/import0_copied ]
     [ -f dest/layer3_2/rootfs/root/import0 ]
 }
+
+@test "build layers and prerequisites containing build-only layer" {
+    mkdir -p ocibuilds/sub4
+    cat > ocibuilds/sub4/stacker.yaml <<EOF
+config:
+    prerequisites:
+        - ../sub1/stacker.yaml
+layer4_1:
+    from:
+        type: built
+        tag: layer1_2
+    run: |
+        touch /root/import4
+    build_only: true
+layer4_2:
+    from:
+        type: built
+        tag: layer4_1
+    run: |
+        cp /root/import4 /root/import4_copied
+EOF
+    stacker build -f ocibuilds/sub4/stacker.yaml
+    mkdir dest
+    umoci unpack --image oci:layer4_2 dest/layer4_2
+    [ "$status" -eq 0 ]
+    [ -f dest/layer4_2/rootfs/root/import4_copied ]
+    [ -f dest/layer4_2/rootfs/root/import4 ]
+    [ -f dest/layer4_2/rootfs/root/import0 ]
+}

@@ -349,49 +349,62 @@ func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
 	// them to be there.
 	targetName := o.Name
 	base := o.Layer
+	var baseTag string
+	var baseType string
+
 	for {
-		// Iterate through base layers until we find the first one which is not BuiltType
-		// Need to declare ok separately, if we do it in the same line as
+		// Iterate through base layers until we find the first one which is not BuiltType or BuildOnly
+
+		// Need to declare ok and err  separately, if we do it in the same line as
 		// assigning the new value to base, base would be a new variable only in the scope
 		// of this iteration and we never meet the condition to exit the loop
 		var ok bool
+		var err error
+
+		baseType = base.From.Type
+		if baseType == ScratchType || baseType == TarType {
+			break
+		}
+
+		baseTag, err = base.From.ParseTag()
+		if err != nil {
+			return err
+		}
+
+		if baseType != BuiltType {
+			break
+		}
+
 		base, ok = sfm.LookupLayerDefinition(base.From.Tag)
 		if !ok {
 			return fmt.Errorf("missing base layer: %s?", base.From.Tag)
 		}
 
-		if base.From.Type != BuiltType {
+		if !base.BuildOnly {
 			break
 		}
 	}
 
-	// Nothing to do here -- we didn't import any base layers.
-	if (base.From.Type != DockerType && base.From.Type != OCIType && base.From.Type != ZotType) || !base.BuildOnly {
-		return nil
+	if (baseType == ScratchType || baseType == TarType) && base.BuildOnly {
+		// The base layers cannot be copied, so initialize an empty OCI tag.
+		return umoci.NewImage(o.OCI, targetName)
 	}
 
-	// Nothing to do here either -- the previous step emitted a layer with
-	// the base's tag name. We don't want to overwrite that with a stock
-	// base layer.
-	if !base.BuildOnly {
-		return nil
+	if baseType != DockerType && baseType != OCIType && baseType != ZotType {
+		// Assume the user who wrote the stacker yaml has ordered the layers correctly
+		// and the base image has already been built and placed in OCIDir
+		return lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, baseTag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
+		})
 	}
 
-	tag, err := base.From.ParseTag()
-	if err != nil {
-		return err
-	}
-
+	// The base image has been built separately and needs to be picked up from layer-bases
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
-	err = lib.ImageCopy(lib.ImageCopyOpts{
-		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+	return lib.ImageCopy(lib.ImageCopyOpts{
+		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, baseTag),
 		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func ComputeAggregateHash(manifest ispec.Manifest, descriptor ispec.Descriptor) (string, error) {
