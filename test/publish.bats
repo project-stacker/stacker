@@ -34,6 +34,13 @@ layer2:
         cp /stacker/import2 /root/import2
         cp /root/import1 /root/import1_copied
 EOF
+    mkdir -p /tmp/ocibuilds/sub3
+    cat > /tmp/ocibuilds/sub3/stacker.yaml <<EOF
+layer3:
+    from:
+        type: scratch
+    build_only: true
+EOF
     mkdir -p /tmp/ocibuilds/sub4
     cat > /tmp/ocibuilds/sub4/stacker.yaml <<EOF
 layer4:
@@ -151,7 +158,7 @@ function teardown() {
     stacker build -f ocibuilds/sub1/stacker.yaml
     stacker publish -f ocibuilds/sub1/stacker.yaml --url docker://docker-reg.fake.com/ --username user --password pass --tag test1 --show-only
 
-     # Check command output
+    # Check command output
     if [[ -z ${untracked} ]]; then
         # The repo doesn't have local changes so the commit_hash tag is applied
         [[ "${lines[-2]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:test1)$ ]]
@@ -162,4 +169,11 @@ function teardown() {
         [[ "${lines[-1]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:test1)$ ]]
     fi
 
+}
+
+@test "do not publish build only layer" {
+    stacker build -f /tmp/ocibuilds/sub3/stacker.yaml
+    stacker publish -f /tmp/ocibuilds/sub3/stacker.yaml --url oci:oci_publish --tag test1
+    # Check the output does not contain the tag since no images should be published
+    [[ ${output} =~ "will not publish: /tmp/ocibuilds/sub3/stacker.yaml build_only layer3" ]]
 }
