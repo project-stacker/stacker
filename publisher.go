@@ -89,8 +89,18 @@ func (p *Publisher) Publish(file string) error {
 	// Iterate through all layers defined in this stackerfile
 	for _, name := range sf.fileOrder {
 
+		// Verify layer is not build only
+		l, ok := sf.Get(name)
+		if !ok {
+			return fmt.Errorf("layer cannot be found in stackerfile: %s", name)
+		}
+		if l.BuildOnly {
+			fmt.Printf("will not publish: %s build_only %s\n", file, name)
+			continue
+		}
+
 		// Verify layer is in build cache
-		_, ok := buildCache.Lookup(name)
+		_, ok = buildCache.Lookup(name)
 		if !ok && !opts.Force {
 			return fmt.Errorf("layer needs to be rebuilt before publishing: %s", name)
 		}
