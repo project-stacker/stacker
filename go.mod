@@ -15,7 +15,7 @@ require (
 	github.com/docker/go-connections v0.0.0-20180821093606-97c2040d34df // indirect
 	github.com/docker/go-metrics v0.0.0-20181218153428-b84716841b82 // indirect
 	github.com/dustin/go-humanize v1.0.0
-	github.com/flosch/pongo2 v0.0.0-20181225140029-79872a7b2769 // indirect
+	github.com/flosch/pongo2 v0.0.0-20190707114632-bbf5a6c351f4 // indirect
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/freddierice/go-losetup v0.0.0-20170407175016-fc9adea44124
 	github.com/ghodss/yaml v0.0.0-20190206175653-d4115522f0fe // indirect
@@ -66,7 +66,3 @@ replace github.com/vbatts/go-mtree v0.4.4 => github.com/vbatts/go-mtree v0.4.5-0
 replace github.com/openSUSE/umoci v0.4.4 => github.com/tych0/umoci v0.1.1-0.20190402232331-556620754fb1
 
 replace github.com/containers/image => github.com/anuvu/image v1.5.2-0.20190904195626-7368bc47821d
-
-replace github.com/go-check/check v1.0.0-20180628173108-788fd7840127 => github.com/go-check/check v0.0.0-20180628173108-788fd7840127
-
-replace github.com/flosch/pongo2 v0.0.0-20181225140029-79872a7b2769 => github.com/flosch/pongo2 v0.0.0-20181225140029-79872a7b2769
