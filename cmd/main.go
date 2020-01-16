@@ -27,11 +27,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	configDir := os.Getenv("XDG_CONFIG_HOME")
-	if configDir == "" {
-		configDir = path.Join(user.HomeDir, ".config")
-	}
-
 	app := cli.NewApp()
 	app.Name = "stacker"
 	app.Usage = "stacker builds OCI images"
@@ -48,6 +43,11 @@ func main() {
 		umociCmd,
 		unprivSetupCmd,
 		gcCmd,
+	}
+
+	configDir := os.Getenv("XDG_CONFIG_HOME")
+	if configDir == "" {
+		configDir = path.Join(user.HomeDir, ".config", app.Name)
 	}
 
 	app.Flags = []cli.Flag{
