@@ -442,7 +442,7 @@ func substitute(content string, substitutions []string) (string, error) {
 		from := fmt.Sprintf("$%s", membs[0])
 		to := membs[1]
 
-		fmt.Printf("substituting %s to %s\n", from, to)
+		fmt.Fprintf(os.Stderr, "substituting %s to %s\n", from, to)
 
 		content = strings.Replace(content, from, to, -1)
 
