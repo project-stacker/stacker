@@ -63,7 +63,7 @@ func doChroot(ctx *cli.Context) error {
 	file := ctx.String("f")
 	sf, err := stacker.NewStackerfile(file, ctx.StringSlice("substitute"))
 	if err != nil {
-		fmt.Printf("couldn't find stacker file, chrooting to %s as best effort\n", tag)
+		fmt.Fprintf(os.Stderr, "couldn't find stacker file, chrooting to %s as best effort\n", tag)
 		return stacker.Run(config, tag, cmd, &stacker.Layer{}, "", os.Stdin)
 	}
 
@@ -78,6 +78,6 @@ func doChroot(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("WARNING: this chroot is temporary, any changes will be destroyed when it exits.")
+	fmt.Fprintln(os.Stderr, "WARNING: this chroot is temporary, any changes will be destroyed when it exits.")
 	return stacker.Run(config, tag, cmd, layer, "", os.Stdin)
 }
