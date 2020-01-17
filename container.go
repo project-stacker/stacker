@@ -13,6 +13,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/apex/log"
 	"github.com/lxc/lxd/shared/idmap"
 	"github.com/openSUSE/umoci/oci/layer"
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
@@ -219,11 +220,10 @@ func (c *container) containerError(theErr error, msg string) error {
 		}
 	}
 
-	if len(lxcErrors) > 0 {
-		extra := strings.Join(lxcErrors, "\n")
-		return errors.Errorf("%s\nLast few LXC errors:\n%s", msg, extra)
+	for _, err := range lxcErrors {
+		log.Debug(err)
 	}
-	return errors.Wrapf(theErr, msg)
+	return theErr
 }
 
 func (c *container) execute(args string, stdin io.Reader) error {
