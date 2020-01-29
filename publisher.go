@@ -70,12 +70,6 @@ func (p *Publisher) Publish(file string) error {
 	tags := make([]string, len(opts.Tags))
 	copy(tags, opts.Tags)
 
-	// Attempt to produce a git commit tag
-	if ct, err := NewGitLayerTag(sf.referenceDirectory); err == nil {
-		// Add git tag to the list of tags to be used
-		tags = append(tags, ct)
-	}
-
 	if len(tags) == 0 {
 		fmt.Printf("can't save OCI images in %s since list of tags is empty\n", file)
 	}
