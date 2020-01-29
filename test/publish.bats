@@ -59,58 +59,10 @@ function teardown() {
     rm -rf oci_publish || true
 }
 
-@test "publish layer with git tag only" {
-    stacker build -f ocibuilds/sub1/stacker.yaml
-    stacker publish -f ocibuilds/sub1/stacker.yaml --url oci:oci_publish
 
-     # Determine expected commit hash
-    commit_hash=commit-$(git rev-parse --short HEAD)
-    echo ${commit_hash}
-
-     # Unpack published image and check content
-    mkdir dest
-    if [[ -z $(git status --porcelain --untracked-files=no) ]]; then
-        # The repo doesn't have local changes so the commit_hash tag is applied
-        umoci unpack --image oci_publish:layer1_${commit_hash} dest/layer1_commit
-        [ -f dest/layer1_commit/rootfs/root/import1 ]
-    else
-        # The repo has local changes, don't apply the commit_hash
-        [[ ${output} =~ "since list of tags is empty" ]]
-    fi
-}
-
-@test "publish layer with git and custom tags" {
-    stacker build -f ocibuilds/sub1/stacker.yaml
-    stacker publish -f ocibuilds/sub1/stacker.yaml --url oci:oci_publish --tag test1 --tag test2
-
-     # Determine expected commit hash
-    commit_hash=commit-$(git rev-parse --short HEAD)
-    echo ${commit_hash}
-
-     # Unpack published image and check content
-    mkdir dest
-    if [[ -z $(git status --porcelain --untracked-files=no) ]]; then
-        # The repo doesn't have local changes so the commit_hash tag is applied
-        umoci unpack --image oci_publish:layer1_${commit_hash} dest/layer1_commit
-        [ -f dest/layer1_commit/rootfs/root/import1 ]
-    else
-        # The repo has local changes, don't apply the commit_hash
-        published=$(umoci list --layout oci_publish)
-        [[ ! "${published}" =~ ^(.*commit-.*)$ ]]
-    fi
-    umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
-    [ -f dest/layer1_test1/rootfs/root/import1 ]
-    umoci unpack --image oci_publish:layer1_test2 dest/layer1_test2
-    [ -f dest/layer1_test2/rootfs/root/import1 ]
-}
-
-@test "publish layer with custom tag but without git tag" {
+@test "publish layer with custom tag" {
     stacker build -f /tmp/ocibuilds/sub4/stacker.yaml
     stacker publish -f /tmp/ocibuilds/sub4/stacker.yaml --url oci:oci_publish --tag test1
-
-     # Check absence of layer with commit in name
-    published=$(umoci list --layout oci_publish)
-    [[ ! "${published}" =~ ^(.*commit-.*)$ ]]
 
      # Unpack published image and check content
     mkdir dest
@@ -118,27 +70,25 @@ function teardown() {
     [ -f dest/layer4_test1/rootfs/root/ls_out ]
 }
 
+
+@test "publish layer with multiple custom tags" {
+    stacker build -f ocibuilds/sub1/stacker.yaml
+    stacker publish -f ocibuilds/sub1/stacker.yaml --url oci:oci_publish --tag test1 --tag test2
+
+     # Unpack published image and check content
+    mkdir dest
+    umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
+    [ -f dest/layer1_test1/rootfs/root/import1 ]
+    umoci unpack --image oci_publish:layer1_test2 dest/layer1_test2
+    [ -f dest/layer1_test2/rootfs/root/import1 ]
+}
+
+
 @test "publish multiple layers recursively" {
     stacker recursive-build -d ocibuilds
     stacker publish -d ocibuilds --url oci:oci_publish --tag test1
 
-     # Determine expected commit hash
-    commit_hash=commit-$(git rev-parse --short HEAD)
-    echo ${commit_hash}
-
      # Unpack published image and check content
-    mkdir dest
-    if [[ -z $(git status --porcelain --untracked-files=no) ]]; then
-        umoci unpack --image oci_publish:layer1_${commit_hash} dest/layer1_commit
-        [ -f dest/layer1_commit/rootfs/root/import1 ]
-        umoci unpack --image oci_publish:layer2_${commit_hash} dest/layer2_commit
-        [ -f dest/layer2_commit/rootfs/root/import2 ]
-        [ -f dest/layer2_commit/rootfs/root/import1_copied ]
-        [ -f dest/layer2_commit/rootfs/root/import1 ]
-    else
-        published=$(umoci list --layout oci_publish)
-        [[ ! "${published}" =~ ^(.*commit-.*)$ ]]
-    fi
     umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
     [ -f dest/layer1_test1/rootfs/root/import1 ]
     umoci unpack --image oci_publish:layer2_test1 dest/layer2_test1
@@ -148,26 +98,11 @@ function teardown() {
 }
 
 @test "publish single layer with docker url" {
-
-    # Determine expected commit hash
-    commit_hash=commit-$(git rev-parse --short HEAD)
-    untracked=$(git status --porcelain --untracked-files=no)
-    echo ${commit_hash}
-    echo ${untracked}
-
     stacker build -f ocibuilds/sub1/stacker.yaml
     stacker publish -f ocibuilds/sub1/stacker.yaml --url docker://docker-reg.fake.com/ --username user --password pass --tag test1 --show-only
 
     # Check command output
-    if [[ -z ${untracked} ]]; then
-        # The repo doesn't have local changes so the commit_hash tag is applied
-        [[ "${lines[-2]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:test1)$ ]]
-        [[ "${lines[-1]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:commit-.*)$ ]]
-
-    else
-        # The repo has local changes so the commit_hash tag is not applied
-        [[ "${lines[-1]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:test1)$ ]]
-    fi
+    [[ "${lines[-1]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:test1)$ ]]
 
 }
 
