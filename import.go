@@ -120,9 +120,9 @@ func importFile(imp string, cacheDir string) (string, error) {
 	for _, d := range diff {
 		switch d.Type() {
 		case mtree.Missing:
-			err := os.RemoveAll(path.Join(cacheDir, d.Path()))
+			err := os.RemoveAll(path.Join(cacheDir, path.Base(imp), d.Path()))
 			if err != nil {
-				return "", errors.Wrapf(err, "couldn't remove missing import %s", path.Join(cacheDir, d.Path()))
+				return "", errors.Wrapf(err, "couldn't remove missing import %s", path.Join(cacheDir, path.Base(imp), d.Path()))
 			}
 		case mtree.Modified:
 			fallthrough
