@@ -54,12 +54,10 @@ a:
     import:
         - foo
     run: |
-        [ -f /stacker/foo/baz ]
+        [ ! -f /stacker/foo/bar ]
 EOF
     rm foo/bar
-    touch foo/baz
     stacker build
-    [ "$status" -eq 0 ]
 }
 
 @test "bind rebuilds" {
