@@ -6,7 +6,7 @@ TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 stacker: $(GO_SRC)
 	go build -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
 
-# make test TEST=basic will run only the basic test.
+# make check TEST=basic will run only the basic test.
 .PHONY: check
 check: stacker
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
