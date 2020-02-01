@@ -10,7 +10,7 @@ function teardown() {
 import-cache:
     from:
         type: docker
-        url: docker://centos:latest
+        url: docker://alpine:latest
     import:
         - link/foo
     run: cp /stacker/foo/zomg /zomg
@@ -34,7 +34,7 @@ EOF
 a:
     from:
         type: docker
-        url: docker://centos:latest
+        url: docker://alpine:latest
     import:
         - foo
     run: |
@@ -50,7 +50,7 @@ EOF
 a:
     from:
         type: docker
-        url: docker://centos:latest
+        url: docker://alpine:latest
     import:
         - foo
     run: |
@@ -67,7 +67,7 @@ EOF
 bind-test:
     from:
         type: docker
-        url: docker://centos:latest
+        url: docker://alpine:latest
     import:
         - tree1/foo/zomg
     binds:
@@ -104,7 +104,7 @@ EOF
 mode-test:
     from:
         type: docker
-        url: docker://centos:latest
+        url: docker://alpine:latest
     import:
         - executable
     run: cp /stacker/executable /executable
