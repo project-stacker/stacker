@@ -34,6 +34,7 @@ func init() {
 	if os.Geteuid() != 0 {
 		currentUser, err := user.Current()
 		if err != nil {
+			log.Warnf("failed getting current user: %v", err)
 			return
 		}
 
@@ -65,6 +66,7 @@ func init() {
 			for _, hm := range hostMap {
 				err := IdmapSet.AddSafe(hm)
 				if err != nil {
+					log.Warnf("Failed adding idmap entry: %v", err)
 					return
 				}
 			}
