@@ -69,7 +69,7 @@ func warnAboutNewuidmap() {
 	}
 }
 
-func addSpecificEntries(file string, name string) error {
+func addSpecificEntries(file string, name string, currentId int) error {
 	content, err := ioutil.ReadFile(file)
 	if err != nil && !os.IsNotExist(err) {
 		return errors.Wrapf(err, "couldn't read %s", file)
@@ -107,23 +107,32 @@ func addSpecificEntries(file string, name string) error {
 
 	}
 
+	// newuidmap (and thus lxc-usernsexec, or more generally liblxc) will
+	// complain if the current uid is in the subuid allocation. So if it
+	// is, let's just advance the subuid allocation another 65536 uids. we
+	// don't need to check if this overlaps again, since we know that
+	// maxAlloc was the highest existing allocation.
+	if maxAlloc <= currentId && currentId < maxAlloc+65536 {
+		maxAlloc += 65536
+	}
+
 	withNewEntry := append(content, []byte(fmt.Sprintf("%s:%d:65536\n", name, maxAlloc))...)
 	err = ioutil.WriteFile(file, withNewEntry, 0644)
 	return errors.Wrapf(err, "couldn't write %s", file)
 }
 
-func addEtcEntriesIfNecessary(uid int) error {
+func addEtcEntriesIfNecessary(uid int, gid int) error {
 	currentUser, err := user.LookupId(fmt.Sprintf("%d", uid))
 	if err != nil {
 		return errors.Wrapf(err, "couldn't find user for %d", uid)
 	}
 
-	err = addSpecificEntries("/etc/subuid", currentUser.Username)
+	err = addSpecificEntries("/etc/subuid", currentUser.Username, uid)
 	if err != nil {
 		return err
 	}
 
-	err = addSpecificEntries("/etc/subgid", currentUser.Username)
+	err = addSpecificEntries("/etc/subgid", currentUser.Username, gid)
 	if err != nil {
 		return err
 	}
@@ -174,5 +183,5 @@ func doUnprivSetup(ctx *cli.Context) error {
 	}
 
 	warnAboutNewuidmap()
-	return addEtcEntriesIfNecessary(uid)
+	return addEtcEntriesIfNecessary(uid, gid)
 }
