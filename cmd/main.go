@@ -41,6 +41,7 @@ func main() {
 		inspectCmd,
 		grabCmd,
 		umociCmd,
+		squashfsCmd,
 		unprivSetupCmd,
 		gcCmd,
 	}

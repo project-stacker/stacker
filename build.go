@@ -56,25 +56,25 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 	return nil
 }
 
-func mkSquashfs(config StackerConfig, eps *squashfs.ExcludePaths) (io.ReadCloser, error) {
+func mkSquashfs(bundlepath, ocidir string, eps *squashfs.ExcludePaths) (io.ReadCloser, error) {
 	// generate the squashfs in OCIDir, and then open it, read it from
 	// there, and delete it.
-	if err := os.MkdirAll(config.OCIDir, 0755); err != nil {
+	if err := os.MkdirAll(ocidir, 0755); err != nil {
 		return nil, err
 	}
 
-	rootfsPath := path.Join(config.RootFSDir, WorkingContainerName, "rootfs")
-	return squashfs.MakeSquashfs(config.OCIDir, rootfsPath, eps)
+	rootfsPath := path.Join(bundlepath, "rootfs")
+	return squashfs.MakeSquashfs(ocidir, rootfsPath, eps)
 }
 
-func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *BuildArgs) error {
-	meta, err := umoci.ReadBundleMeta(path.Join(opts.Config.RootFSDir, WorkingContainerName))
+func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.Engine) error {
+	meta, err := umoci.ReadBundleMeta(bundlepath)
 	if err != nil {
 		return err
 	}
 
 	mtreeName := strings.Replace(meta.From.Descriptor().Digest.String(), ":", "_", 1)
-	mtreePath := path.Join(opts.Config.RootFSDir, WorkingContainerName, mtreeName+".mtree")
+	mtreePath := path.Join(bundlepath, mtreeName+".mtree")
 
 	mfh, err := os.Open(mtreePath)
 	if err != nil {
@@ -87,7 +87,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	}
 
 	fsEval := fseval.DefaultFsEval
-	rootfsPath := path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs")
+	rootfsPath := path.Join(bundlepath, "rootfs")
 	newDH, err := mtree.Walk(rootfsPath, nil, umoci.MtreeKeywords, fsEval)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't mtree walk %s", rootfsPath)
@@ -128,7 +128,15 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 			paths.AddInclude(p, diff.Old().IsDir())
 			if err := unix.Mknod(p, unix.S_IFCHR, int(unix.Mkdev(0, 0))); err != nil {
 				if !os.IsNotExist(err) && err != unix.ENOTDIR {
-					return errors.Wrapf(err, "couldn't mknod whiteout for %s", diff.Path())
+					// No privilege to create device nodes. Create a .wh.$filename instead.
+					dirname := path.Dir(diff.Path())
+					fname := fmt.Sprintf(".wh.%s", path.Base(diff.Path()))
+					whPath := path.Join(rootfsPath, dirname, fname)
+					fd, err := os.Create(whPath)
+					if err != nil {
+						return errors.Wrapf(err, "couldn't mknod whiteout for %s", diff.Path())
+					}
+					fd.Close()
 				}
 			}
 		case mtree.Same:
@@ -136,7 +144,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 		}
 	}
 
-	tmpSquashfs, err := mkSquashfs(opts.Config, paths)
+	tmpSquashfs, err := mkSquashfs(bundlepath, ocidir, paths)
 	if err != nil {
 		return err
 	}
@@ -148,7 +156,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	}
 
 	newName := strings.Replace(desc.Digest.String(), ":", "_", 1) + ".mtree"
-	err = umoci.GenerateBundleManifest(newName, path.Join(opts.Config.RootFSDir, WorkingContainerName), fsEval)
+	err = umoci.GenerateBundleManifest(newName, bundlepath, fsEval)
 	if err != nil {
 		return err
 	}
@@ -157,7 +165,7 @@ func generateSquashfsLayer(oci casext.Engine, name string, author string, opts *
 	meta.From = casext.DescriptorPath{
 		Walk: []ispec.Descriptor{desc},
 	}
-	err = umoci.WriteBundleMeta(path.Join(opts.Config.RootFSDir, WorkingContainerName), meta)
+	err = umoci.WriteBundleMeta(bundlepath, meta)
 	if err != nil {
 		return err
 	}
@@ -407,7 +415,10 @@ func (b *Builder) Build(file string) error {
 				return err
 			}
 		case "squashfs":
-			err = generateSquashfsLayer(oci, name, author, opts)
+			err = RunSquashfsSubcommand(opts.Config, opts.Debug, []string{
+				"--bundle-path", path.Join(opts.Config.RootFSDir, WorkingContainerName),
+				"--tag", name, "--author", author, "repack",
+			})
 			if err != nil {
 				return err
 			}

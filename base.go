@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/anuvu/stacker/lib"
@@ -129,32 +128,16 @@ func extractOutput(o BaseLayerOpts) error {
 	}
 
 	if sourceLayerType == "squashfs" {
-		for _, layer := range manifest.Layers {
-			rootfs := path.Join(target, "rootfs")
-			squashfsFile := path.Join(cacheDir, "blobs", "sha256", layer.Digest.Encoded())
-			err = MaybeRunInUserns([]string{"unsquashfs", "-f", "-d", rootfs, squashfsFile}, "couldn't unsquashfs layer")
-			if err != nil {
-				return err
-			}
-		}
-
-		dps, err := cacheOCI.ResolveReference(context.Background(), tag)
-		if err != nil {
-			return err
-		}
-
-		mtreeName := strings.Replace(dps[0].Descriptor().Digest.String(), ":", "_", 1)
-		err = umoci.GenerateBundleManifest(mtreeName, target, fseval.DefaultFsEval)
-		if err != nil {
-			return err
-		}
-
-		err = umoci.WriteBundleMeta(target, umoci.Meta{
-			Version: umoci.MetaVersion,
-			From: casext.DescriptorPath{
-				Walk: []ispec.Descriptor{dps[0].Descriptor()},
-			},
+		modifiedConfig := o.Config
+		modifiedConfig.OCIDir = cacheDir
+		err = RunSquashfsSubcommand(modifiedConfig, o.Debug, []string{
+			"--bundle-path", target,
+			"--tag", tag,
+			"unpack",
 		})
+		if err != nil {
+			return err
+		}
 	} else {
 		// This is a bit of a hack; since we want to unpack from the
 		// layer-bases import folder instead of the actual oci dir, we hack
@@ -200,7 +183,7 @@ func extractOutput(o BaseLayerOpts) error {
 		// let's generate one.
 		o.OCI.GC(context.Background())
 
-		tmpSquashfs, err := mkSquashfs(o.Config, nil)
+		tmpSquashfs, err := mkSquashfs(bundlePath, o.Config.OCIDir, nil)
 		if err != nil {
 			return err
 		}
@@ -448,6 +431,24 @@ func RunUmociSubcommand(config StackerConfig, debug bool, args []string) error {
 	}
 
 	cmd = append(cmd, "umoci")
+	cmd = append(cmd, args...)
+	return MaybeRunInUserns(cmd, "image unpack failed")
+}
+
+func RunSquashfsSubcommand(config StackerConfig, debug bool, args []string) error {
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{
+		binary,
+		"--oci-dir", config.OCIDir,
+		"--roots-dir", config.RootFSDir,
+		"--stacker-dir", config.StackerDir,
+	}
+
+	cmd = append(cmd, "squashfs")
 	cmd = append(cmd, args...)
 	return MaybeRunInUserns(cmd, "image unpack failed")
 }
