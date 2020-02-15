@@ -43,7 +43,9 @@ func init() {
 		// re-execing inside a user namespace we don't want to do that.
 		// So let's just ignore the error and let future code handle it.
 		IdmapSet, err = idmap.DefaultIdmapSet("", currentUser.Username)
-		log.Warnf("failed parsing /etc/sub{u,g}idmap: %v", err)
+		if err != nil {
+			log.Warnf("failed parsing /etc/sub{u,g}idmap: %v", err)
+		}
 
 		if IdmapSet != nil {
 			/* Let's make our current user the root user in the ns, so that when
