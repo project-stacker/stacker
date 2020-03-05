@@ -16,6 +16,14 @@ with `${FOO:default}` a default value will evaluate to their default if not
 specified on the command line. It is an error to specify a `${FOO}` style
 without a default; to make the default an empty string, use `${FOO:}`.
 
+In addition to substitutions provided on the command line, the following
+variables are also available with their values from either command
+line flags or stacker-config file.
+
+    STACKER_STACKER_DIR config name 'stacker_dir', cli flag '--stacker-dir'-
+    STACKER_ROOTFS_DIR  config name 'rootfs_dir', cli flag '--roots-dir'
+    STACKER_OCI_DIR     config name 'oci_dir', cli flag '--oci-dir'
+
 #### `from`
 
 The `from` directive describes the base image that stacker will start from. It
