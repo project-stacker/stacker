@@ -195,7 +195,8 @@ func (b *Builder) Build(file string) error {
 		os.RemoveAll(opts.Config.StackerDir)
 	}
 
-	sf, err := NewStackerfile(file, opts.Substitute)
+	fmt.Printf("Build subs: %v\n", b.opts.Config.Substitutions())
+	sf, err := NewStackerfile(file, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
 	}
@@ -597,7 +598,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	opts := b.opts
 
 	// Read all the stacker recipes
-	stackerFiles, err := NewStackerFiles(paths, opts.Substitute)
+	stackerFiles, err := NewStackerFiles(paths, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
 	}
