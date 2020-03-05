@@ -195,7 +195,6 @@ func (b *Builder) Build(file string) error {
 		os.RemoveAll(opts.Config.StackerDir)
 	}
 
-	fmt.Printf("Build subs: %v\n", b.opts.Config.Substitutions())
 	sf, err := NewStackerfile(file, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
