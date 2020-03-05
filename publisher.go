@@ -171,7 +171,7 @@ func (p *Publisher) PublishMultiple(paths []string) error {
 func (p *Publisher) readStackerFiles(paths []string) (StackerFiles, error) {
 
 	// Read all the stacker recipes
-	sfm, err := NewStackerFiles(paths, p.opts.Substitute)
+	sfm, err := NewStackerFiles(paths, append(p.opts.Substitute, p.opts.Config.Substitutions()...))
 	if err != nil {
 
 		// Verify if the error is related to an invalid substitution
