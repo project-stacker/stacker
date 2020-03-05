@@ -75,3 +75,17 @@ function umount_under() {
     done
     return 0
 }
+
+function cmp_files() {
+    local f1="$1" f2="$2" f1sha="" f2sha=""
+    [ -f "$f1" ] || { stderr "$f1: not a file"; return 1; }
+    [ -f "$f2" ] || { stderr "$f2: not a file"; return 1; }
+    f1sha=$(sha "$f1") || { stderr "failed sha $f1"; return 1; }
+    f2sha=$(sha "$f2") || { stderr "failed sha $f2"; return 1; }
+    if [ "$f1sha" != "$f2sha" ]; then
+        stderr "$f1 and $f2 differed"
+        diff -u "$f1" "$f2" 1>&2 || :
+        return 1
+    fi
+    return 0
+}
