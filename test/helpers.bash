@@ -14,8 +14,15 @@ function sha() {
 }
 
 function cleanup() {
+    if [ -n "$TEST_TMPDIR" ]; then
+        if [ -d "$TEST_TMPDIR" ]; then
+            umount_under "$TEST_TMPDIR"
+            rm -rf "$TEST_TMPDIR" || true
+        fi
+        unset TEST_TMPDIR
+    fi
     rm -rf stacker.yaml >& /dev/null || true
-    umount roots >& /dev/null || true
+    umount_under roots >/dev/null || true
     rm -rf roots oci dest >& /dev/null || true
     rm link >& /dev/null || true
     if [ -z "$STACKER_KEEP" ]; then
@@ -35,4 +42,36 @@ function bad_stacker {
     run "${ROOT_DIR}/stacker" --debug "$@"
     echo "$output"
     [ "$status" -ne 0 ]
+}
+
+function tmpd() {
+    mktemp -d "${PWD}/.stackertest${1:+-$1}.XXXXXX"
+}
+
+function stderr() {
+    echo "$@" 1>&2
+}
+
+function umount_under() {
+    # umount_under(dir)
+    # unmount dir and anything under it.
+    # note IFS gets set to '\n' by bats.
+    local dir="" mounts="" mp="" oifs="$IFS"
+    [ -d "$1" ] || return 0
+    # make sure its a full path.
+    dir=$(cd "$1" && pwd)
+    # reverse the entries to unwind.
+    mounts=$(awk '
+        $2 ~ matchdir || $2 == dir { found=$2 "|" found; };
+        END { printf("%s\n", found); }' \
+            "dir=$dir" matchdir="^${dir}/" /proc/mounts)
+    IFS="|"; set -- ${mounts}; IFS="$oifs"
+    [ $# -gt 0 ] || return 0
+    for mp in "$@"; do
+        umount "$mp" || {
+            stderr "failed umount $mp."
+            return 1
+        }
+    done
+    return 0
 }
