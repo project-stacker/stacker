@@ -2,39 +2,42 @@ load helpers
 
 function teardown() {
     cleanup
-    umount args-roots || true
-    umount config-roots || true
-    rm -rf *-oci *-stacker *-roots config.yaml || true
+    rm -rf *-oci *-stacker *-roots || true
 }
 
 @test "config args work" {
+    TEST_TMPDIR=$(tmpd config-args)
+    local tmpd="$TEST_TMPDIR"
     cat > stacker.yaml <<EOF
 test:
     from:
         type: scratch
 EOF
 
-    stacker --oci-dir args-oci --stacker-dir args-stacker --roots-dir args-roots build --leave-unladen
-    [ -d args-oci ]
-    [ -d args-stacker ]
-    [ -d args-roots ]
+    stacker "--oci-dir=$tmpd/args-oci" "--stacker-dir=$tmpd/args-stacker" \
+        "--roots-dir=$tmpd/args-roots" build --leave-unladen
+    [ -d "$tmpd/args-oci" ]
+    [ -d "$tmpd/args-stacker" ]
+    [ -d "$tmpd/args-roots" ]
 }
 
 @test "config file works" {
+    TEST_TMPDIR=$(tmpd config-file)
+    local tmpd="$TEST_TMPDIR"
     cat > stacker.yaml <<EOF
 test:
     from:
         type: scratch
 EOF
-    cat > config.yaml <<EOF
-stacker_dir: config-stacker
-oci_dir: config-oci
-rootfs_dir: config-roots
+    cat > "$tmpd/config.yaml" <<EOF
+stacker_dir: $tmpd/config-stacker
+oci_dir: $tmpd/config-oci
+rootfs_dir: $tmpd/config-roots
 EOF
 
-    stacker --config config.yaml build --leave-unladen
+    stacker "--config=$tmpd/config.yaml" build --leave-unladen
     ls
-    [ -d config-oci ]
-    [ -d config-stacker ]
-    [ -d config-roots ]
+    [ -d "$tmpd/config-oci" ]
+    [ -d "$tmpd/config-stacker" ]
+    [ -d "$tmpd/config-roots" ]
 }
