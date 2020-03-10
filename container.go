@@ -78,12 +78,12 @@ func init() {
 }
 
 // our representation of a container
-type container struct {
+type Container struct {
 	sc StackerConfig
 	c  *lxc.Container
 }
 
-func newContainer(sc StackerConfig, name string, env map[string]string) (*container, error) {
+func NewContainer(sc StackerConfig, name string) (*Container, error) {
 	if !lxc.VersionAtLeast(2, 1, 0) {
 		return nil, fmt.Errorf("stacker requires liblxc >= 2.1.0")
 	}
@@ -92,7 +92,7 @@ func newContainer(sc StackerConfig, name string, env map[string]string) (*contai
 	if err != nil {
 		return nil, err
 	}
-	c := &container{sc: sc, c: lxcC}
+	c := &Container{sc: sc, c: lxcC}
 
 	if err := c.c.SetLogLevel(lxc.TRACE); err != nil {
 		return nil, err
@@ -152,16 +152,12 @@ func newContainer(sc StackerConfig, name string, env map[string]string) (*contai
 		return nil, err
 	}
 
-	for k, v := range env {
-		if v != "" {
-			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
-			if err != nil {
-				return nil, err
-			}
-		}
+	err = c.bindMount("/sys", "/sys", "")
+	if err != nil {
+		return nil, err
 	}
 
-	err = c.bindMount("/sys", "/sys", "")
+	err = c.bindMount("/etc/resolv.conf", "/etc/resolv.conf", "")
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +171,7 @@ func newContainer(sc StackerConfig, name string, env map[string]string) (*contai
 	return c, nil
 }
 
-func (c *container) bindMount(source string, dest string, extraOpts string) error {
+func (c *Container) bindMount(source string, dest string, extraOpts string) error {
 	createOpt := "create=dir"
 	stat, err := os.Stat(source)
 	if err == nil && !stat.IsDir() {
@@ -186,7 +182,7 @@ func (c *container) bindMount(source string, dest string, extraOpts string) erro
 	return c.setConfig("lxc.mount.entry", val)
 }
 
-func (c *container) setConfigs(config map[string]string) error {
+func (c *Container) setConfigs(config map[string]string) error {
 	for k, v := range config {
 		if err := c.setConfig(k, v); err != nil {
 			return err
@@ -196,7 +192,7 @@ func (c *container) setConfigs(config map[string]string) error {
 	return nil
 }
 
-func (c *container) setConfig(name string, value string) error {
+func (c *Container) setConfig(name string, value string) error {
 	err := c.c.SetConfigItem(name, value)
 	if err != nil {
 		return fmt.Errorf("failed setting config %s to %s: %v", name, value, err)
@@ -206,7 +202,7 @@ func (c *container) setConfig(name string, value string) error {
 
 // containerError tries its best to report as much context about an LXC error
 // as possible.
-func (c *container) containerError(theErr error, msg string) error {
+func (c *Container) containerError(theErr error, msg string) error {
 	if theErr == nil {
 		return nil
 	}
@@ -231,7 +227,7 @@ func (c *container) containerError(theErr error, msg string) error {
 	return theErr
 }
 
-func (c *container) execute(args string, stdin io.Reader) error {
+func (c *Container) Execute(args string, stdin io.Reader) error {
 	if err := c.setConfig("lxc.execute.cmd", args); err != nil {
 		return err
 	}
@@ -246,6 +242,10 @@ func (c *container) execute(args string, stdin io.Reader) error {
 	if err := c.c.SaveConfigFile(f.Name()); err != nil {
 		return err
 	}
+
+	// we want to be sure to remove the /stacker from the generated
+	// filesystem after execution.
+	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "rootfs", "stacker"))
 
 	// Just in case the binary has chdir'd somewhere since it started,
 	// let's readlink /proc/self/exe to figure out what to exec.
@@ -325,7 +325,50 @@ func (c *container) execute(args string, stdin io.Reader) error {
 	return c.containerError(cmdErr, "execute failed")
 }
 
-func (c *container) Close() {
+func (c *Container) SetupLayerConfig(realContainerName string, l *Layer) error {
+	env, err := l.BuildEnvironment()
+	if err != nil {
+		return err
+	}
+
+	// this is a bit of a hack, we can't use c.c.Name() because during a
+	// build, we use WorkingContainerName. Seems like maybe we should just
+	// get rid of the working contianer all together and just build the
+	// thing wherever it will finally live, but that's a fairly major
+	// refactoring.
+	importsDir := path.Join(c.sc.StackerDir, "imports", realContainerName)
+	if _, err := os.Stat(importsDir); err == nil {
+		err = c.bindMount(importsDir, "/stacker", "ro")
+		if err != nil {
+			return err
+		}
+	}
+
+	for k, v := range env {
+		if v != "" {
+			err = c.setConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	binds, err := l.ParseBinds()
+	if err != nil {
+		return err
+	}
+
+	for source, target := range binds {
+		err = c.bindMount(source, target, "")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Container) Close() {
 	c.c.Release()
 }
 

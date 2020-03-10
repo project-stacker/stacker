@@ -7,7 +7,7 @@ import (
 )
 
 func Grab(sc StackerConfig, name string, source string) error {
-	c, err := newContainer(sc, WorkingContainerName, map[string]string{})
+	c, err := NewContainer(sc, WorkingContainerName)
 	if err != nil {
 		return err
 	}
@@ -24,5 +24,5 @@ func Grab(sc StackerConfig, name string, source string) error {
 	}
 	defer os.Remove(path.Join(sc.RootFSDir, WorkingContainerName, "rootfs", "stacker"))
 
-	return c.execute(fmt.Sprintf("cp -a %s /stacker", source), nil)
+	return c.Execute(fmt.Sprintf("cp -a %s /stacker", source), nil)
 }

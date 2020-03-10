@@ -349,6 +349,17 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
+		c, err := NewContainer(opts.Config, WorkingContainerName)
+		if err != nil {
+			return err
+		}
+		defer c.Close()
+
+		err = c.SetupLayerConfig(name, l)
+		if err != nil {
+			return err
+		}
+
 		fmt.Println("running commands...")
 
 		run, err := l.ParseRun()
@@ -377,8 +388,17 @@ func (b *Builder) Build(file string) error {
 			}
 
 			fmt.Println("running commands for", name)
-			if err := Run(opts.Config, name, "/stacker/.stacker-run.sh", l, opts.OnRunFailure, nil); err != nil {
-				return err
+
+			// These should all be non-interactive; let's ensure that.
+			err = c.Execute("/stacker/.stacker-run.sh", nil)
+			if err != nil {
+				if opts.OnRunFailure != "" {
+					err2 := c.Execute(opts.OnRunFailure, os.Stdin)
+					if err2 != nil {
+						fmt.Printf("failed executing %s: %s\n", opts.OnRunFailure, err2)
+					}
+				}
+				return fmt.Errorf("run commands failed: %s", err)
 			}
 		}
 

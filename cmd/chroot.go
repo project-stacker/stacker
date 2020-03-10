@@ -57,14 +57,24 @@ func doChroot(ctx *cli.Context) error {
 	// we can't figure out easily which filesystem _working came from, we
 	// fake an empty layer.
 	if tag == stacker.WorkingContainerName {
-		return stacker.Run(config, tag, cmd, &stacker.Layer{}, "", os.Stdin)
+		c, err := stacker.NewContainer(config, tag)
+		if err != nil {
+			return err
+		}
+		defer c.Close()
+		return c.Execute(cmd, os.Stdin)
 	}
 
 	file := ctx.String("f")
 	sf, err := stacker.NewStackerfile(file, ctx.StringSlice("substitute"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "couldn't find stacker file, chrooting to %s as best effort\n", tag)
-		return stacker.Run(config, tag, cmd, &stacker.Layer{}, "", os.Stdin)
+		c, err := stacker.NewContainer(config, tag)
+		if err != nil {
+			return err
+		}
+		defer c.Close()
+		return c.Execute(cmd, os.Stdin)
 	}
 
 	layer, ok := sf.Get(tag)
@@ -79,5 +89,14 @@ func doChroot(ctx *cli.Context) error {
 	}
 
 	fmt.Fprintln(os.Stderr, "WARNING: this chroot is temporary, any changes will be destroyed when it exits.")
-	return stacker.Run(config, tag, cmd, layer, "", os.Stdin)
+	c, err := stacker.NewContainer(config, stacker.WorkingContainerName)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	err = c.SetupLayerConfig(tag, layer)
+	if err != nil {
+		return err
+	}
+	return c.Execute(cmd, os.Stdin)
 }
