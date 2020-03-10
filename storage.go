@@ -240,6 +240,7 @@ func btrfsSubVolumeDelete(subvol string) error {
 		"btrfs",
 		"subvolume",
 		"delete",
+		"-c",
 		subvol).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("btrfs delete: %s: %s", err, output)
