@@ -263,6 +263,7 @@ func (b *Builder) Build(file string) error {
 		}
 
 		fmt.Printf("building image %s...\n", name)
+		s.Delete(name)
 
 		// We need to run the imports first since we now compare
 		// against imports for caching layers. Since we don't do
@@ -386,7 +387,6 @@ func (b *Builder) Build(file string) error {
 		// imported into future images. Let's just snapshot it and add
 		// a bogus entry to our cache.
 		if l.BuildOnly {
-			s.Delete(name)
 			if err := s.Snapshot(WorkingContainerName, name); err != nil {
 				return err
 			}
@@ -566,8 +566,6 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		// Delete the old snapshot if it existed; we just did a new build.
-		s.Delete(name)
 		if err := s.Snapshot(WorkingContainerName, name); err != nil {
 			return err
 		}
