@@ -44,6 +44,7 @@ func main() {
 		squashfsCmd,
 		unprivSetupCmd,
 		gcCmd,
+		containerSetupCmd,
 	}
 
 	configDir := os.Getenv("XDG_CONFIG_HOME")

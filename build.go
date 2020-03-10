@@ -35,6 +35,7 @@ type BuildArgs struct {
 	LayerType               string
 	Debug                   bool
 	OrderOnly               bool
+	SetupOnly               bool
 }
 
 func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
@@ -262,7 +263,16 @@ func (b *Builder) Build(file string) error {
 			return fmt.Errorf("%s not present in stackerfile?", name)
 		}
 
-		fmt.Printf("building image %s...\n", name)
+		// if a container builds on another container in a stacker
+		// file, we can't correctly render the dependent container's
+		// filesystem, since we don't know what the output of the
+		// parent build will be. so let's refuse to run in setup-only
+		// mode in this case.
+		if opts.SetupOnly && l.From.Type == BuiltType {
+			return errors.Errorf("no built type layers (%s) allowed in setup mode", name)
+		}
+
+		fmt.Printf("preparing image %s...\n", name)
 		s.Delete(name)
 
 		// We need to run the imports first since we now compare
@@ -358,6 +368,19 @@ func (b *Builder) Build(file string) error {
 		err = c.SetupLayerConfig(name, l)
 		if err != nil {
 			return err
+		}
+
+		if opts.SetupOnly {
+			err = c.c.SaveConfigFile(path.Join(opts.Config.RootFSDir, WorkingContainerName, "lxc.conf"))
+			if err != nil {
+				return errors.Wrapf(err, "error saving config file for %s", name)
+			}
+
+			if err := s.Snapshot(WorkingContainerName, name); err != nil {
+				return err
+			}
+			fmt.Printf("setup for %s complete\n", name)
+			continue
 		}
 
 		fmt.Println("running commands...")
