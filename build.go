@@ -584,12 +584,7 @@ func (b *Builder) Build(file string) error {
 		}
 	}
 
-	err = oci.GC(context.Background())
-	if err != nil {
-		fmt.Printf("final OCI GC failed: %v\n", err)
-	}
-
-	return err
+	return oci.GC(context.Background())
 }
 
 // BuildMultiple builds a list of stackerfiles
