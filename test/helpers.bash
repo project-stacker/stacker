@@ -21,7 +21,7 @@ function cleanup() {
         fi
         unset TEST_TMPDIR
     fi
-    rm -rf stacker.yaml >& /dev/null || true
+    rm -rf stacker*.yaml >& /dev/null || true
     umount_under roots >/dev/null || true
     rm -rf roots oci dest >& /dev/null || true
     rm link >& /dev/null || true
