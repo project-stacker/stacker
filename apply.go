@@ -82,9 +82,7 @@ func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage Storage, considerTim
 			return nil, err
 		}
 
-		for _, l := range manifest.Layers {
-			a.layers = append(a.layers, l)
-		}
+		a.layers = append(a.layers, manifest.Layers...)
 	}
 
 	return a, nil
