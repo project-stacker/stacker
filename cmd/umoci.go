@@ -309,6 +309,9 @@ func doUnpack(ctx *cli.Context) error {
 	// contain an mtree file, because the final mtree is generated after
 	// the callback is called.
 	hash, err := stacker.ComputeAggregateHash(manifest, manifest.Layers[len(manifest.Layers)-1])
+	if err != nil {
+		return err
+	}
 	err = storage.Delete(hash)
 	if err != nil {
 		return err
