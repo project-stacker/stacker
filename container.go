@@ -15,8 +15,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/lxc/lxd/shared/idmap"
-	"github.com/openSUSE/umoci/oci/layer"
-	rspec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
 	"gopkg.in/lxc/go-lxc.v2"
 )
@@ -370,37 +368,6 @@ func (c *Container) SetupLayerConfig(realContainerName string, l *Layer) error {
 
 func (c *Container) Close() {
 	c.c.Release()
-}
-
-func umociMapOptions() *layer.MapOptions {
-	os := &layer.MapOptions{}
-	if IdmapSet == nil {
-		return os
-	}
-
-	os.UIDMappings = []rspec.LinuxIDMapping{}
-	os.GIDMappings = []rspec.LinuxIDMapping{}
-	os.Rootless = true
-
-	for _, ide := range IdmapSet.Idmap {
-		if ide.Isuid {
-			os.UIDMappings = append(os.UIDMappings, rspec.LinuxIDMapping{
-				HostID:      uint32(ide.Hostid),
-				ContainerID: uint32(ide.Nsid),
-				Size:        uint32(ide.Maprange),
-			})
-		}
-
-		if ide.Isgid {
-			os.GIDMappings = append(os.GIDMappings, rspec.LinuxIDMapping{
-				HostID:      uint32(ide.Hostid),
-				ContainerID: uint32(ide.Nsid),
-				Size:        uint32(ide.Maprange),
-			})
-		}
-	}
-
-	return os
 }
 
 func RunInUserns(userCmd []string, msg string) error {
