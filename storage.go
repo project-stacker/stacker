@@ -271,11 +271,7 @@ func (b *btrfs) Detach() error {
 
 func (b *btrfs) Exists(thing string) bool {
 	_, err := os.Stat(path.Join(b.c.RootFSDir, thing))
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
