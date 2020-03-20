@@ -14,7 +14,7 @@ test:
         type: docker
         url: docker://centos:latest
     run: |
-        # make sure that /stacker is reasonly
+        # make sure that /stacker is readonly
         grep "/stacker" /proc/mounts | grep -P "\sro[\s,]"
 
         # make sure stacker deleted the non-import
