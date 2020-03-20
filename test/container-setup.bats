@@ -4,7 +4,7 @@ function teardown() {
     cleanup
 }
 
-@test "/stacker is ro" {
+@test "container-setup generates a config" {
     TEST_TMPDIR=$(tmpd config-args)
     cat > stacker.yaml <<EOF
 test:
