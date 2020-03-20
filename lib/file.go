@@ -57,6 +57,9 @@ func FindFiles(base, pattern string) ([]string, error) {
 	var paths []string
 
 	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
 
 	visit := func(path string, info os.FileInfo, err error) error {
 
