@@ -71,7 +71,7 @@ func (eps *ExcludePaths) AddInclude(orig string, isDir bool) {
 
 func (eps *ExcludePaths) String() (string, error) {
 	var buf bytes.Buffer
-	for p, _ := range eps.exclude {
+	for p := range eps.exclude {
 		_, err := buf.WriteString(p)
 		if err != nil {
 			return "", err
