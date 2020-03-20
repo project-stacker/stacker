@@ -16,6 +16,7 @@ import (
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/openSUSE/umoci/pkg/fseval"
+	"github.com/openSUSE/umoci/pkg/mtreefilter"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
@@ -99,6 +100,10 @@ func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.E
 		return err
 	}
 
+	diffs = mtreefilter.FilterDeltas(diffs,
+		LayerGenerationIgnoreRoot,
+		mtreefilter.SimplifyFilter(diffs))
+
 	// This is a pretty massive hack, because there's no library for
 	// generating squashfs images. However, mksquashfs does take a list of
 	// files to exclude from the image. So we go through and accumulate a
@@ -117,13 +122,18 @@ func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.E
 		}
 	}()
 
+	// we only need to generate a layer if anything was added, modified, or
+	// deleted; if everything is the same this should be a no-op.
+	needsLayer := false
 	paths := squashfs.NewExcludePaths()
 	for _, diff := range diffs {
 		switch diff.Type() {
 		case mtree.Modified, mtree.Extra:
+			needsLayer = true
 			p := path.Join(rootfsPath, diff.Path())
 			paths.AddInclude(p, diff.New().IsDir())
 		case mtree.Missing:
+			needsLayer = true
 			p := path.Join(rootfsPath, diff.Path())
 			missing = append(missing, p)
 			paths.AddInclude(p, diff.Old().IsDir())
@@ -143,6 +153,10 @@ func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.E
 		case mtree.Same:
 			paths.AddExclude(path.Join(rootfsPath, diff.Path()))
 		}
+	}
+
+	if !needsLayer {
+		return nil
 	}
 
 	tmpSquashfs, err := mkSquashfs(bundlepath, ocidir, paths)

@@ -17,6 +17,7 @@ import (
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/openSUSE/umoci/oci/layer"
 	"github.com/openSUSE/umoci/pkg/fseval"
+	"github.com/openSUSE/umoci/pkg/mtreefilter"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -355,5 +356,6 @@ func doRepack(ctx *cli.Context) error {
 		EmptyLayer: false,
 	}
 
-	return umoci.Repack(oci, ctx.GlobalString("tag"), bundlePath, meta, history, nil, true, mutator)
+	filters := []mtreefilter.FilterFunc{stacker.LayerGenerationIgnoreRoot}
+	return umoci.Repack(oci, ctx.GlobalString("tag"), bundlePath, meta, history, filters, true, mutator)
 }
