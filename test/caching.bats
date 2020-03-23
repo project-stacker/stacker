@@ -5,6 +5,29 @@ function teardown() {
     rm -rf tree1 tree2 link foo executable >& /dev/null || true
 }
 
+@test "built-type layer import caching" {
+    cat > stacker.yaml <<EOF
+build-base:
+    from:
+        type: docker
+        url: docker://centos:latest
+base:
+    from:
+        type: built
+        tag: build-base
+    import:
+        - foo
+    run: |
+        cp /stacker/foo /foo
+EOF
+    touch foo
+    stacker build
+    echo "second time" > foo
+    stacker build
+    umoci unpack --image oci:base dest
+    [ "$(cat dest/rootfs/foo)" == "second time" ]
+}
+
 @test "import caching" {
     cat > stacker.yaml <<EOF
 import-cache:

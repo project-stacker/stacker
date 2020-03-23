@@ -273,7 +273,6 @@ func (b *Builder) Build(file string) error {
 		}
 
 		fmt.Printf("preparing image %s...\n", name)
-		s.Delete(name)
 
 		// We need to run the imports first since we now compare
 		// against imports for caching layers. Since we don't do
@@ -370,6 +369,10 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
+		// Delete the old snapshot. We wait until as late as possible
+		// to do this, so that if anything fails we can potentially
+		// keep stuff cached.
+		s.Delete(name)
 		if opts.SetupOnly {
 			err = c.c.SaveConfigFile(path.Join(opts.Config.RootFSDir, WorkingContainerName, "lxc.conf"))
 			if err != nil {
