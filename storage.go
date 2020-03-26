@@ -364,15 +364,6 @@ func isMounted(path string) (bool, error) {
 	return false, nil
 }
 
-func haveRsync() error {
-	_, err := exec.LookPath("rsync")
-	if err != nil {
-		return fmt.Errorf("rsync binary not found")
-	}
-
-	return nil
-}
-
 func CleanRoots(config StackerConfig) {
 	btrfsSubVolumesDelete(config.RootFSDir)
 	syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
