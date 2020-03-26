@@ -1,3 +1,6 @@
+run:
+    build-tags:
+        - exclude_graphdriver_devicemapper
 linters:
     disable:
         - errcheck
