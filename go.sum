@@ -168,8 +168,8 @@ github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+W
 github.com/onsi/ginkgo v1.10.1/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v1.5.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
 github.com/onsi/gomega v1.7.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
-github.com/openSUSE/umoci v0.4.6-0.20200206004913-cc1b6b2e346e h1:NVczV4U1e7MbS3wAlNMLp0HGEE3eMBmnXU/3UhS17hQ=
-github.com/openSUSE/umoci v0.4.6-0.20200206004913-cc1b6b2e346e/go.mod h1:3p4KA5nwyY65lVmQZxv7tm0YEylJ+t1fY91ORsVXv58=
+github.com/openSUSE/umoci v0.4.6-0.20200326170452-7654d6c16c17 h1:8CgsxJWxELfF8AlZsUfXJlPMCqhqIyhzW1csc5wq1mg=
+github.com/openSUSE/umoci v0.4.6-0.20200326170452-7654d6c16c17/go.mod h1:3p4KA5nwyY65lVmQZxv7tm0YEylJ+t1fY91ORsVXv58=
 github.com/opencontainers/go-digest v1.0.0-rc1 h1:WzifXhOVOEOuFYOJAW6aQqW0TooG2iki3E3Ii+WN7gQ=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/image-spec v1.0.0/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
@@ -241,8 +241,6 @@ github.com/tj/go-kinesis v0.0.0-20171128231115-08b17f58cb1b/go.mod h1:/yhzCV0xPf
 github.com/tj/go-spin v1.1.0/go.mod h1:Mg1mzmePZm4dva8Qz60H2lHwmJ2loum4VIrLgVnKwh4=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1LnyzV7yuijHlBtiq6lH5T/mljw=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
-github.com/tych0/umoci v0.3.2-0.20200325170210-21755ed901fd h1:MNFse0+U7MkVlRsmQOpfjgisgwHmlOt+fnucL+tTY4Q=
-github.com/tych0/umoci v0.3.2-0.20200325170210-21755ed901fd/go.mod h1:3p4KA5nwyY65lVmQZxv7tm0YEylJ+t1fY91ORsVXv58=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ulikunitz/xz v0.5.6 h1:jGHAfXawEGZQ3blwU5wnWKQJvAraT7Ftq9EXjnXYgt8=

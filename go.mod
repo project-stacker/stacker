@@ -29,10 +29,9 @@ require (
 	github.com/mattn/go-runewidth v0.0.0-20181218000649-703b5e6b11ae // indirect
 	github.com/mattn/go-shellwords v1.0.6 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
-	github.com/openSUSE/umoci v0.4.6-0.20200206004913-cc1b6b2e346e
+	github.com/openSUSE/umoci v0.4.6-0.20200326170452-7654d6c16c17
 	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/opencontainers/image-spec v1.0.1
-	github.com/opencontainers/runtime-spec v1.0.1
 	github.com/opencontainers/selinux v1.3.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
@@ -56,5 +55,3 @@ require (
 replace github.com/vbatts/go-mtree v0.4.4 => github.com/vbatts/go-mtree v0.4.5-0.20190122034725-8b6de6073c1a
 
 replace github.com/containers/image => github.com/anuvu/image v1.5.2-0.20190904195626-7368bc47821d
-
-replace github.com/openSUSE/umoci => github.com/tych0/umoci v0.3.2-0.20200325170210-21755ed901fd
