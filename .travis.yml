@@ -1,10 +1,10 @@
-sudo: required
+os: linux
 dist: xenial
 language: go
 go:
     - 1.x
     - master
-matrix:
+jobs:
     allow_failures:
         - go: master
 before_install:
