@@ -540,11 +540,6 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 			}
 		}
 
-		// Disable this merging code for now. In particular, we have a
-		// problem with the layer merging and layer intelligence code
-		// conflicting. layer intelligence seems more important, so we
-		// disable this.
-		return false, fmt.Errorf("Merging of files (%s) is currently disabled.", hdr.Name)
 		// Now we know the files aren't equal. We don't want to
 		// try that hard to diff things, so let's make sure we
 		// only diff text files.
