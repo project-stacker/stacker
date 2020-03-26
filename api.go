@@ -478,7 +478,7 @@ func substitute(content string, substitutions []string) (string, error) {
 	}
 
 	// now, anything that's left we can just use its value
-	re, err := regexp.Compile(`\$\{\{[^\}]*\}\}`)
+	re := regexp.MustCompile(`\$\{\{[^\}]*\}\}`)
 	for {
 		indexes := re.FindAllStringIndex(content, -1)
 		if len(indexes) == 0 {
@@ -496,7 +496,7 @@ func substitute(content string, substitutions []string) (string, error) {
 		}
 
 		buf := bytes.NewBufferString(content[:idx[0]])
-		_, err = buf.WriteString(membs[1])
+		_, err := buf.WriteString(membs[1])
 		if err != nil {
 			return "", err
 		}
