@@ -194,7 +194,7 @@ func CleanImportsDir(c StackerConfig, name string, imports []string, cache *Buil
 	// but the URL they were imported from was different, let's
 	// make sure we invalidate the cached version.
 	for _, i := range imports {
-		for cached, _ := range cacheEntry.Imports {
+		for cached := range cacheEntry.Imports {
 			if path.Base(cached) == path.Base(i) && cached != i {
 				fmt.Printf("%s url changed to %s\n", cached, i)
 				err := os.RemoveAll(path.Join(dir, path.Base(i)))
