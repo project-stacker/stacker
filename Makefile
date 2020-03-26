@@ -11,6 +11,7 @@ stacker: $(GO_SRC) go.mod go.sum
 check: stacker
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
 	go test -tags "exclude_graphdriver_devicemapper" ./...
+	$(shell go env GOPATH)/bin/golangci-lint run
 	sudo -E "PATH=$$PATH" bats -t $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup

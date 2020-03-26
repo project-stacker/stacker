@@ -1,0 +1,7 @@
+linters:
+    disable:
+        - errcheck
+issues:
+    exclude:
+        - 'PAXRecords'
+        - 'os.SEEK_' # hard to remember the aliases meanings

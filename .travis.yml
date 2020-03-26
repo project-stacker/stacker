@@ -14,5 +14,6 @@ before_install:
     - sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq libcap-dev libgpgme11-dev
     - GO111MODULE=off go get github.com/openSUSE/umoci/cmd/umoci
     - sudo cp $GOPATH/bin/umoci /usr/bin
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0
 script:
     - env GO111MODULE=on make check
