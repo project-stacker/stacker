@@ -791,7 +791,7 @@ func NewStackerFiles(paths []string, substituteVars []string) (StackerFiles, err
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := sfm[absPath]; ok != true {
+		if _, ok := sfm[absPath]; ok {
 			sfm[absPath] = sf
 		}
 
