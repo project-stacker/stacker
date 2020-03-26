@@ -167,7 +167,7 @@ func btrfsSubVolumesGet(path string) ([]string, error) {
 	}
 
 	// Unprivileged users can't get to fs internals
-	filepath.Walk(path, func(fpath string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(path, func(fpath string, fi os.FileInfo, err error) error {
 		// Skip walk errors
 		if err != nil {
 			return nil
@@ -190,6 +190,9 @@ func btrfsSubVolumesGet(path string) ([]string, error) {
 
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }
