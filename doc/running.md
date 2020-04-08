@@ -24,13 +24,6 @@ If you are running in a non-btrfs filesystem, but as root, then stacker
 will automatically create and mount a loopback btrfs to use.
 
 If you are running as non-root in a non-btrfs filesystem, then you need
-to prepare by, with privilege, mounting a btrfs under "./roots" first.
-You can see this being done in tests/main.sh:
-
-```bash
-truncate -s 100G btrfs.loop
-mkfs.btrfs btrfs.loop
-mkdir -p roots
-sudo mount -o loop,user_subvol_rm_allowed btrfs.loop roots
-sudo chown -R $(id -u):$(id -g) roots
-```
+to prepare by running `sudo stacker unpriv-setup`. Note that you'll need to
+mount this filesystem on every reboot, either by running `unpriv-setup` again,
+or setting up the mount in systemd or fstab or something.
