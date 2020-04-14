@@ -23,7 +23,7 @@ empty:
     run: /bin/true
 EOF
     bad_stacker build
-    echo "$output" | grep "rootfs for empty does not have a /bin/sh"
+    echo "$output" | grep "does not have a /bin/sh"
 }
 
 @test "derived from build_only scratch" {

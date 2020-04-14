@@ -426,3 +426,21 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 	return RunInUserns(userCmd, msg)
 
 }
+
+// GenerateShellForRunning generates a shell script to run inside the
+// container, and writes it to the contianer. It does a few additional checks:
+// does the script already have a shebang? If so, it leaves it as is, otherwise
+// it prepends a shebang. It also makes sure the rootfs has a shell.
+func GenerateShellForRunning(rootfs string, cmd []string, outFile string) error {
+	shebangLine := "#!/bin/sh -xe\n"
+	if strings.HasPrefix(cmd[0], "#!") {
+		shebangLine = ""
+	} else {
+		_, err := os.Stat(path.Join(rootfs, "bin/sh"))
+		if err != nil {
+			return errors.Errorf("rootfs %s does not have a /bin/sh", rootfs)
+		}
+	}
+
+	return ioutil.WriteFile(outFile, []byte(shebangLine+strings.Join(cmd, "\n")+"\n"), 0755)
+}
