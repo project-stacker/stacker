@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -21,9 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
 	"golang.org/x/sys/unix"
-
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
 )
 
 type BuildArgs struct {
