@@ -3,6 +3,7 @@ package stacker
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/apex/log"
 	"github.com/freddierice/go-losetup"
 	"github.com/pkg/errors"
 )
@@ -25,6 +27,7 @@ type Storage interface {
 	Delete(path string) error
 	Detach() error
 	Exists(thing string) bool
+	TemporaryWritableSnapshot(source string) (string, func(), error)
 }
 
 func NewStorage(c StackerConfig) (Storage, error) {
@@ -275,6 +278,44 @@ func (b *btrfs) Detach() error {
 func (b *btrfs) Exists(thing string) bool {
 	_, err := os.Stat(path.Join(b.c.RootFSDir, thing))
 	return err == nil
+}
+
+func (b *btrfs) TemporaryWritableSnapshot(source string) (string, func(), error) {
+	dir, err := ioutil.TempDir(b.c.RootFSDir, fmt.Sprintf("temp-snapshot-%s-", source))
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "couldn't create temporary snapshot dir for %s", source)
+	}
+
+	err = os.RemoveAll(dir)
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "couldn't remove tempdir for %s", source)
+	}
+
+	dir = path.Base(dir)
+
+	output, err := exec.Command(
+		"btrfs",
+		"subvolume",
+		"snapshot",
+		path.Join(b.c.RootFSDir, source),
+		path.Join(b.c.RootFSDir, dir)).CombinedOutput()
+	if err != nil {
+		return "", nil, errors.Errorf("temporary snapshot %s to %s: %s: %s", source, dir, err, string(output))
+	}
+
+	cleanup := func() {
+		err = b.Delete(dir)
+		if err != nil {
+			log.Errorf("problem deleting temp subvolume %s: %v", dir, err)
+			return
+		}
+		err = os.RemoveAll(dir)
+		if err != nil {
+			log.Errorf("problem deleting temp subvolume dir %s: %v", dir, err)
+		}
+	}
+
+	return dir, cleanup, nil
 }
 
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop

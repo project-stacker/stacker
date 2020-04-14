@@ -233,6 +233,7 @@ type Layer struct {
 	Environment        map[string]string `yaml:"environment"`
 	Volumes            []string          `yaml:"volumes"`
 	Labels             map[string]string `yaml:"labels"`
+	GenerateLabels     interface{}       `yaml:"generate_labels"`
 	WorkingDir         string            `yaml:"working_dir"`
 	BuildOnly          bool              `yaml:"build_only"`
 	Binds              interface{}       `yaml:"binds"`
@@ -370,6 +371,12 @@ func (l *Layer) ParseBinds() (map[string]string, error) {
 
 func (l *Layer) ParseRun() ([]string, error) {
 	return l.getStringOrStringSlice(l.Run, func(s string) ([]string, error) {
+		return []string{s}, nil
+	})
+}
+
+func (l *Layer) ParseGenerateLabels() ([]string, error) {
+	return l.getStringOrStringSlice(l.GenerateLabels, func(s string) ([]string, error) {
 		return []string{s}, nil
 	})
 }

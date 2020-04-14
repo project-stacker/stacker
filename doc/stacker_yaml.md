@@ -82,6 +82,15 @@ spec](https://github.com/opencontainers/image-spec/blob/master/config.md#propert
 and are available for users to pass things through to the runtime environment
 of the image.
 
+#### `generate_labels`
+
+The `generate_labels` entry is similar to `run` in that it contains a list of
+commands to run inside the generated rootfs. It runs after the `run` section is
+done, and its mutations to the filesystem are not recorded, except in one case
+`/oci-labels`. `/oci-labels` is a special directory where this code can write a
+file, and the name of the file will be the OCI label name, and the content will
+be the label content.
+
 #### `build_env` and `build_env_passthrough`
 
 By default, environment variables do not pass through (pollute) the
