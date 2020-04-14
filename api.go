@@ -31,7 +31,6 @@ var (
 	// mask this out. This of course prevents stuff like `chmod 0444 /` or
 	// similar, but that's not a very common use case.
 	LayerGenerationIgnoreRoot mtreefilter.FilterFunc = func(path string) bool {
-		fmt.Printf("ignore root: %s\n", path)
 		// the paths are supplied relative to the filter dir, so '.' is root.
 		return path != "."
 	}
