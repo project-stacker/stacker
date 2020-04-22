@@ -300,7 +300,7 @@ func doUnpack(ctx *cli.Context) error {
 		return err
 	}
 
-	err = umoci.Unpack(oci, ctx.GlobalString("tag"), bundlePath, opts, callback, startFrom)
+	err = umoci.Unpack(oci, tag, bundlePath, opts, callback, startFrom)
 	if err != nil {
 		return err
 	}
