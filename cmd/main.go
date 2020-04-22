@@ -36,7 +36,6 @@ func main() {
 		recursiveBuildCmd,
 		publishCmd,
 		chrootCmd,
-		unladeCmd,
 		cleanCmd,
 		inspectCmd,
 		grabCmd,
