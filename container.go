@@ -402,7 +402,7 @@ func RunInUserns(userCmd []string, msg string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("error %s: %s", msg, err)
+		return errors.Wrapf(err, fmt.Sprintf("couldn't run in userns: %s", msg))
 	}
 
 	return nil
@@ -420,7 +420,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		return errors.Wrapf(cmd.Run(), fmt.Sprintf("couldn't run outside of userns: %s", msg))
 	}
 
 	return RunInUserns(userCmd, msg)
