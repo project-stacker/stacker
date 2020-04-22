@@ -269,7 +269,6 @@ func (b *Builder) Build(file string) error {
 
 	author := fmt.Sprintf("%s@%s", username, host)
 
-	s.Delete(WorkingContainerName)
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {
