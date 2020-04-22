@@ -65,8 +65,8 @@ type Stackerfile struct {
 	// internal is the actual representation of the stackerfile as a map.
 	internal map[string]*Layer
 
-	// fileOrder is the order of elements as they appear in the stackerfile.
-	fileOrder []string
+	// FileOrder is the order of elements as they appear in the stackerfile.
+	FileOrder []string
 
 	// configuration specific for this specific build
 	buildConfig *BuildConfig
@@ -589,7 +589,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	}
 
 	// Determine the layers in the stacker.yaml, their order and the list of prerequisite files
-	sf.fileOrder = []string{}      // Order of layers
+	sf.FileOrder = []string{}      // Order of layers
 	sf.buildConfig = &BuildConfig{ // Stacker build configuration
 		Prerequisites: []string{},
 	}
@@ -611,7 +611,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 				return nil, errors.New(msg)
 			}
 		} else {
-			sf.fileOrder = append(sf.fileOrder, e.Key.(string))
+			sf.FileOrder = append(sf.FileOrder, e.Key.(string))
 			lms = append(lms, e)
 		}
 	}
@@ -688,7 +688,7 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	hasPrerequisites := len(s.buildConfig.Prerequisites) > 0
 
 	for i := 0; i < s.Len(); i++ {
-		for _, name := range s.fileOrder {
+		for _, name := range s.FileOrder {
 			_, ok := processed[name]
 			if ok {
 				continue

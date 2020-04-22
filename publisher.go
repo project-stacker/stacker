@@ -81,7 +81,7 @@ func (p *Publisher) Publish(file string) error {
 	}
 
 	// Iterate through all layers defined in this stackerfile
-	for _, name := range sf.fileOrder {
+	for _, name := range sf.FileOrder {
 
 		// Verify layer is not build only
 		l, ok := sf.Get(name)

@@ -40,8 +40,7 @@ func doChroot(ctx *cli.Context) error {
 	}
 	defer s.Detach()
 
-	tag := stacker.WorkingContainerName
-
+	tag := ""
 	if len(ctx.Args()) > 0 {
 		tag = ctx.Args()[0]
 	}
@@ -50,19 +49,6 @@ func doChroot(ctx *cli.Context) error {
 
 	if len(ctx.Args()) > 1 {
 		cmd = ctx.Args()[1]
-	}
-
-	// It may be useful to do `stacker chroot _working` in order to inspect
-	// the filesystem that just broke. So, let's try to support this. Since
-	// we can't figure out easily which filesystem _working came from, we
-	// fake an empty layer.
-	if tag == stacker.WorkingContainerName {
-		c, err := stacker.NewContainer(config, tag)
-		if err != nil {
-			return err
-		}
-		defer c.Close()
-		return c.Execute(cmd, os.Stdin)
 	}
 
 	file := ctx.String("f")
@@ -77,19 +63,23 @@ func doChroot(ctx *cli.Context) error {
 		return c.Execute(cmd, os.Stdin)
 	}
 
+	if tag == "" {
+		tag = sf.FileOrder[0]
+	}
+
 	layer, ok := sf.Get(tag)
 	if !ok {
 		return fmt.Errorf("no layer %s in stackerfile", tag)
 	}
 
-	defer s.Delete(stacker.WorkingContainerName)
-	err = s.Restore(tag, stacker.WorkingContainerName)
+	name, cleanup, err := s.TemporaryWritableSnapshot(tag)
 	if err != nil {
 		return err
 	}
+	defer cleanup()
 
 	fmt.Fprintln(os.Stderr, "WARNING: this chroot is temporary, any changes will be destroyed when it exits.")
-	c, err := stacker.NewContainer(config, stacker.WorkingContainerName)
+	c, err := stacker.NewContainer(config, name)
 	if err != nil {
 		return err
 	}
