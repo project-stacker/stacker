@@ -25,7 +25,6 @@ import (
 type BaseLayerOpts struct {
 	Config    StackerConfig
 	Name      string
-	Target    string
 	Layer     *Layer
 	Cache     *BuildCache
 	OCI       casext.Engine
@@ -103,7 +102,7 @@ func extractOutput(o BaseLayerOpts) error {
 		return err
 	}
 
-	target := path.Join(o.Config.RootFSDir, o.Target)
+	target := path.Join(o.Config.RootFSDir, o.Name)
 	fmt.Println("unpacking to", target)
 
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
@@ -147,7 +146,7 @@ func extractOutput(o BaseLayerOpts) error {
 		modifiedConfig := o.Config
 		modifiedConfig.OCIDir = cacheDir
 		err = RunUmociSubcommand(modifiedConfig, o.Debug, []string{
-			"--bundle-path", target,
+			"--name", o.Name,
 			"--tag", tag,
 			"unpack",
 		})
@@ -176,7 +175,7 @@ func extractOutput(o BaseLayerOpts) error {
 
 	var blob io.ReadCloser
 
-	bundlePath := path.Join(o.Config.RootFSDir, WorkingContainerName)
+	bundlePath := path.Join(o.Config.RootFSDir, o.Name)
 	// otherwise, render the right layer type
 	if o.LayerType == "squashfs" {
 		// sourced a non-squashfs image and wants a squashfs layer,
@@ -282,7 +281,7 @@ func extractOutput(o BaseLayerOpts) error {
 func umociInit(o BaseLayerOpts) error {
 	return RunUmociSubcommand(o.Config, o.Debug, []string{
 		"--tag", o.Name,
-		"--bundle-path", path.Join(o.Config.RootFSDir, WorkingContainerName),
+		"--name", o.Name,
 		"init",
 	})
 }
@@ -304,7 +303,7 @@ func getTar(o BaseLayerOpts) error {
 	}
 
 	// TODO: make this respect ID maps
-	layerPath := path.Join(o.Config.RootFSDir, o.Target, "rootfs")
+	layerPath := path.Join(o.Config.RootFSDir, o.Name, "rootfs")
 	output, err := exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error: %s: %s", err, string(output))

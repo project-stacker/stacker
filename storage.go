@@ -27,6 +27,7 @@ type Storage interface {
 	Delete(path string) error
 	Detach() error
 	Exists(thing string) bool
+	MarkReadOnly(thing string) error
 	TemporaryWritableSnapshot(source string) (string, func(), error)
 }
 
@@ -139,6 +140,21 @@ func (b *btrfs) Restore(source string, target string) error {
 		return fmt.Errorf("btrfs mark writable: %s: %s", err, output)
 	}
 
+	return nil
+}
+
+func (b *btrfs) MarkReadOnly(thing string) error {
+	output, err := exec.Command(
+		"btrfs",
+		"property",
+		"set",
+		"-ts",
+		path.Join(b.c.RootFSDir, thing),
+		"ro",
+		"true").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("btrfs mark readonly: %s: %s", err, output)
+	}
 	return nil
 }
 

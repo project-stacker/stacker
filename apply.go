@@ -93,7 +93,7 @@ func (a *Apply) DoApply() error {
 		return nil
 	}
 
-	err := a.storage.Snapshot(a.opts.Target, "stacker-apply-base")
+	err := a.storage.Snapshot(a.opts.Name, "stacker-apply-base")
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (a *Apply) applyImage(layer string) error {
 		// layer is strictly additive or doesn't otherwise require
 		// merging, we could realize that and add it directly to the
 		// OCI output, so that it is kept as its own layer.
-		err := a.applyLayer(layerBases, l, path.Join(a.opts.Config.RootFSDir, a.opts.Target))
+		err := a.applyLayer(layerBases, l, path.Join(a.opts.Config.RootFSDir, a.opts.Name))
 		if err != nil {
 			return err
 		}
@@ -258,7 +258,7 @@ func (a *Apply) applyImage(layer string) error {
 
 	// Calculate a new mtree with our current manifest.
 	newMtreeName := strings.Replace(manifestDesc.Digest.String(), ":", "_", 1)
-	bundlePath := path.Join(a.opts.Config.RootFSDir, a.opts.Target)
+	bundlePath := path.Join(a.opts.Config.RootFSDir, a.opts.Name)
 
 	// Remove the mtree file if it exists: GenerateBundleManifest() fails
 	// if it already exists, and it may exist because we restored from a
@@ -581,7 +581,7 @@ func (a *Apply) diffFile(hdr *tar.Header, temp string) error {
 
 	// now, apply it on top of all the other layer deltas. if it works,
 	// great, if not, we bail.
-	return applyPatch(path.Join(a.opts.Config.RootFSDir, a.opts.Target, "rootfs", hdr.Name), p)
+	return applyPatch(path.Join(a.opts.Config.RootFSDir, a.opts.Name, "rootfs", hdr.Name), p)
 }
 
 func genPatch(p1 string, p2 string) ([]diffmatchpatch.Patch, error) {

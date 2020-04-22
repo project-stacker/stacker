@@ -28,10 +28,12 @@ var umociCmd = cli.Command{
 	Hidden: true,
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "bundle-path",
+			Name:  "tag",
+			Usage: "tag in the oci image to operate on",
 		},
 		cli.StringFlag{
-			Name: "tag",
+			Name:  "name",
+			Usage: "name of the rootfs in --roots-dir",
 		},
 	},
 	Subcommands: []cli.Command{
@@ -58,7 +60,7 @@ var umociCmd = cli.Command{
 func doInit(ctx *cli.Context) error {
 	name := ctx.GlobalString("tag")
 	ociDir := config.OCIDir
-	bundlePath := ctx.GlobalString("bundle-path")
+	bundlePath := path.Join(ctx.GlobalString("roots-dir"), ctx.GlobalString("name"))
 	var oci casext.Engine
 	var err error
 
@@ -84,7 +86,7 @@ func doInit(ctx *cli.Context) error {
 	return nil
 }
 
-func prepareUmociMetadata(storage stacker.Storage, bundlePath string, dp casext.DescriptorPath, highestHash string) error {
+func prepareUmociMetadata(storage stacker.Storage, name string, bundlePath string, dp casext.DescriptorPath, highestHash string) error {
 	// We need the mtree metadata to be present, but since these
 	// intermediate snapshots were created after each layer was
 	// extracted and the metadata wasn't, it won't necessarily
@@ -181,7 +183,7 @@ func prepareUmociMetadata(storage stacker.Storage, bundlePath string, dp casext.
 		return err
 	}
 
-	err = storage.Snapshot(stacker.WorkingContainerName, highestHash)
+	err = storage.Snapshot(name, highestHash)
 	if err != nil {
 		return err
 	}
@@ -220,7 +222,9 @@ func doUnpack(ctx *cli.Context) error {
 	}
 
 	tag := ctx.GlobalString("tag")
-	bundlePath := ctx.GlobalString("bundle-path")
+	name := ctx.GlobalString("name")
+
+	bundlePath := path.Join(ctx.GlobalString("roots-dir"), ctx.GlobalString("name"))
 
 	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
@@ -252,16 +256,12 @@ func doUnpack(ctx *cli.Context) error {
 	if highestHash != "" {
 		// Delete the previously created working snapshot; we're about
 		// to create a new one.
-		err = storage.Delete(stacker.WorkingContainerName)
+		err = storage.Delete(name)
 		if err != nil {
 			return err
 		}
 
-		// TODO: this is a little wonky: we're assuming that
-		// bundle-path ends in _working. It always does because
-		// this is an internal API, but we should refactor this
-		// a bit.
-		err = storage.Restore(highestHash, stacker.WorkingContainerName)
+		err = storage.Restore(highestHash, name)
 		if err != nil {
 			return err
 		}
@@ -269,7 +269,7 @@ func doUnpack(ctx *cli.Context) error {
 		// If we resotred from the last extracted layer, we can just
 		// ensure the metadata is correct and return.
 		if lastLayer+1 == len(manifest.Layers) {
-			err = prepareUmociMetadata(storage, bundlePath, dps[0], highestHash)
+			err = prepareUmociMetadata(storage, name, bundlePath, dps[0], highestHash)
 			if err != nil {
 				return err
 			}
@@ -288,7 +288,7 @@ func doUnpack(ctx *cli.Context) error {
 			return err
 		}
 
-		return storage.Snapshot(stacker.WorkingContainerName, hash)
+		return storage.Snapshot(name, hash)
 	}
 
 	opts := layer.MapOptions{KeepDirlinks: true}
@@ -318,7 +318,7 @@ func doUnpack(ctx *cli.Context) error {
 		return err
 	}
 
-	err = storage.Snapshot(stacker.WorkingContainerName, hash)
+	err = storage.Snapshot(name, hash)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func doRepack(ctx *cli.Context) error {
 		return err
 	}
 
-	bundlePath := ctx.GlobalString("bundle-path")
+	bundlePath := path.Join(ctx.GlobalString("roots-dir"), ctx.GlobalString("name"))
 	meta, err := umoci.ReadBundleMeta(bundlePath)
 	if err != nil {
 		return err

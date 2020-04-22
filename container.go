@@ -21,7 +21,6 @@ import (
 
 const (
 	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-	WorkingContainerName  = "_working"
 )
 
 var (
@@ -323,18 +322,13 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	return c.containerError(cmdErr, "execute failed")
 }
 
-func (c *Container) SetupLayerConfig(realContainerName string, l *Layer) error {
+func (c *Container) SetupLayerConfig(l *Layer) error {
 	env, err := l.BuildEnvironment()
 	if err != nil {
 		return err
 	}
 
-	// this is a bit of a hack, we can't use c.c.Name() because during a
-	// build, we use WorkingContainerName. Seems like maybe we should just
-	// get rid of the working contianer all together and just build the
-	// thing wherever it will finally live, but that's a fairly major
-	// refactoring.
-	importsDir := path.Join(c.sc.StackerDir, "imports", realContainerName)
+	importsDir := path.Join(c.sc.StackerDir, "imports", c.c.Name())
 	if _, err := os.Stat(importsDir); err == nil {
 		err = c.bindMount(importsDir, "/stacker", "ro")
 		if err != nil {

@@ -84,7 +84,7 @@ func doChroot(ctx *cli.Context) error {
 		return err
 	}
 	defer c.Close()
-	err = c.SetupLayerConfig(tag, layer)
+	err = c.SetupLayerConfig(layer)
 	if err != nil {
 		return err
 	}

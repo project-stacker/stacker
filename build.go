@@ -336,7 +336,6 @@ func (b *Builder) Build(file string) error {
 		baseOpts := BaseLayerOpts{
 			Config:    opts.Config,
 			Name:      name,
-			Target:    WorkingContainerName,
 			Layer:     l,
 			Cache:     buildCache,
 			OCI:       oci,
@@ -344,13 +343,16 @@ func (b *Builder) Build(file string) error {
 			Debug:     opts.Debug,
 		}
 
-		s.Delete(WorkingContainerName)
+		// Delete the old snapshot. We wait until as late as possible
+		// to do this, so that if anything fails we can potentially
+		// keep stuff cached.
+		s.Delete(name)
 		if l.From.Type == BuiltType {
-			if err := s.Restore(l.From.Tag, WorkingContainerName); err != nil {
+			if err := s.Restore(l.From.Tag, name); err != nil {
 				return err
 			}
 		} else {
-			if err := s.Create(WorkingContainerName); err != nil {
+			if err := s.Create(name); err != nil {
 				return err
 			}
 		}
@@ -370,28 +372,24 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		c, err := NewContainer(opts.Config, WorkingContainerName)
+		c, err := NewContainer(opts.Config, name)
 		if err != nil {
 			return err
 		}
 		defer c.Close()
 
-		err = c.SetupLayerConfig(name, l)
+		err = c.SetupLayerConfig(l)
 		if err != nil {
 			return err
 		}
 
-		// Delete the old snapshot. We wait until as late as possible
-		// to do this, so that if anything fails we can potentially
-		// keep stuff cached.
-		s.Delete(name)
 		if opts.SetupOnly {
-			err = c.c.SaveConfigFile(path.Join(opts.Config.RootFSDir, WorkingContainerName, "lxc.conf"))
+			err = c.c.SaveConfigFile(path.Join(opts.Config.RootFSDir, name, "lxc.conf"))
 			if err != nil {
 				return errors.Wrapf(err, "error saving config file for %s", name)
 			}
 
-			if err := s.Snapshot(WorkingContainerName, name); err != nil {
+			if err := s.MarkReadOnly(name); err != nil {
 				return err
 			}
 			fmt.Printf("setup for %s complete\n", name)
@@ -406,7 +404,7 @@ func (b *Builder) Build(file string) error {
 		}
 
 		if len(run) != 0 {
-			rootfs := path.Join(opts.Config.RootFSDir, WorkingContainerName, "rootfs")
+			rootfs := path.Join(opts.Config.RootFSDir, name, "rootfs")
 			shellScript := path.Join(opts.Config.StackerDir, "imports", name, ".stacker-run.sh")
 			err = GenerateShellForRunning(rootfs, run, shellScript)
 			if err != nil {
@@ -433,7 +431,7 @@ func (b *Builder) Build(file string) error {
 		// imported into future images. Let's just snapshot it and add
 		// a bogus entry to our cache.
 		if l.BuildOnly {
-			if err := s.Snapshot(WorkingContainerName, name); err != nil {
+			if err := s.MarkReadOnly(name); err != nil {
 				return err
 			}
 
@@ -454,7 +452,7 @@ func (b *Builder) Build(file string) error {
 		case "tar":
 			err = RunUmociSubcommand(opts.Config, opts.Debug, []string{
 				"--tag", name,
-				"--bundle-path", path.Join(opts.Config.RootFSDir, WorkingContainerName),
+				"--name", name,
 				"repack",
 			})
 			if err != nil {
@@ -462,7 +460,7 @@ func (b *Builder) Build(file string) error {
 			}
 		case "squashfs":
 			err = RunSquashfsSubcommand(opts.Config, opts.Debug, []string{
-				"--bundle-path", path.Join(opts.Config.RootFSDir, WorkingContainerName),
+				"--bundle-path", path.Join(opts.Config.RootFSDir, name),
 				"--tag", name, "--author", author, "repack",
 			})
 			if err != nil {
@@ -497,7 +495,7 @@ func (b *Builder) Build(file string) error {
 		}
 
 		if len(generateLabels) > 0 {
-			name, cleanup, err := s.TemporaryWritableSnapshot(WorkingContainerName)
+			writable, cleanup, err := s.TemporaryWritableSnapshot(name)
 			if err != nil {
 				return err
 			}
@@ -509,7 +507,7 @@ func (b *Builder) Build(file string) error {
 			}
 			defer os.RemoveAll(dir)
 
-			c, err = NewContainer(opts.Config, name)
+			c, err = NewContainer(opts.Config, writable)
 			if err != nil {
 				return err
 			}
@@ -520,7 +518,7 @@ func (b *Builder) Build(file string) error {
 				return err
 			}
 
-			rootfs := path.Join(opts.Config.RootFSDir, name, "rootfs")
+			rootfs := path.Join(opts.Config.RootFSDir, writable, "rootfs")
 			runPath := path.Join(dir, ".stacker-run.sh")
 			err = GenerateShellForRunning(rootfs, generateLabels, runPath)
 			if err != nil {
@@ -661,7 +659,7 @@ func (b *Builder) Build(file string) error {
 
 		// Now, we need to set the umoci data on the fs to tell it that
 		// it has a layer that corresponds to this fs.
-		bundlePath := path.Join(opts.Config.RootFSDir, WorkingContainerName)
+		bundlePath := path.Join(opts.Config.RootFSDir, name)
 		err = updateBundleMtree(bundlePath, newPath.Descriptor())
 		if err != nil {
 			return err
@@ -673,7 +671,7 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		if err := s.Snapshot(WorkingContainerName, name); err != nil {
+		if err := s.MarkReadOnly(name); err != nil {
 			return err
 		}
 
