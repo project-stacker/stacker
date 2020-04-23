@@ -65,8 +65,6 @@ func ImageCopy(opts ImageCopyOpts) error {
 		return err
 	}
 
-	// lol. and all this crap is the reason we make everyone install
-	// libgpgme-dev, and we don't even want to use it :(
 	policy, err := signature.NewPolicyContext(&signature.Policy{
 		Default: []signature.PolicyRequirement{
 			signature.NewPRInsecureAcceptAnything(),

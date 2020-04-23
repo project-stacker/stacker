@@ -3,7 +3,7 @@ VERSION=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 
-BUILD_TAGS = exclude_graphdriver_devicemapper
+BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
 
 stacker: $(GO_SRC) go.mod go.sum
 	go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
