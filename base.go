@@ -90,7 +90,7 @@ func importImage(is *ImageSource, config StackerConfig) error {
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "couldn't import base layer %s", tag)
 	}
 
 	return err
