@@ -304,17 +304,25 @@ func getTar(o BaseLayerOpts) error {
 
 	// TODO: make this respect ID maps
 	layerPath := path.Join(o.Config.RootFSDir, o.Name, "rootfs")
+	fmt.Println("unpacking tar file", tar)
 	tarReader, err := os.Open(tar)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't open %s", tar)
 	}
 	defer tarReader.Close()
-	uncompressed, err := pgzip.NewReader(tarReader)
+	var uncompressed io.ReadCloser
+	uncompressed, err = pgzip.NewReader(tarReader)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't create reader for %s", tar)
+		_, err = tarReader.Seek(0, os.SEEK_SET)
+		if err != nil {
+			return errors.Wrapf(err, "failed to 0 seek %s", tar)
+		}
+		uncompressed = tarReader
+	} else {
+		defer uncompressed.Close()
 	}
-	defer uncompressed.Close()
 
+	fmt.Println("TYCHO: unpacking layer to", layerPath)
 	err = layer.UnpackLayer(layerPath, uncompressed, nil)
 	if err != nil {
 		return err
