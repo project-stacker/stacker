@@ -65,7 +65,7 @@ func importImage(is *ImageSource, config StackerConfig) error {
 		return err
 	}
 
-	// Note that we can do tihs over the top of the cache every time, since
+	// Note that we can do this over the top of the cache every time, since
 	// skopeo should be smart enough to only copy layers that have changed.
 	cacheDir := path.Join(config.StackerDir, "layer-bases", "oci")
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
