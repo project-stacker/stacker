@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path"
 	"time"
 
 	"github.com/anuvu/stacker/lib"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/klauspost/pgzip"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/openSUSE/umoci/oci/layer"
@@ -304,9 +304,20 @@ func getTar(o BaseLayerOpts) error {
 
 	// TODO: make this respect ID maps
 	layerPath := path.Join(o.Config.RootFSDir, o.Name, "rootfs")
-	output, err := exec.Command("tar", "xf", tar, "-C", layerPath).CombinedOutput()
+	tarReader, err := os.Open(tar)
 	if err != nil {
-		return fmt.Errorf("error: %s: %s", err, string(output))
+		return errors.Wrapf(err, "couldn't open %s", tar)
+	}
+	defer tarReader.Close()
+	uncompressed, err := pgzip.NewReader(tarReader)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't create reader for %s", tar)
+	}
+	defer uncompressed.Close()
+
+	err = layer.UnpackLayer(layerPath, uncompressed, nil)
+	if err != nil {
+		return err
 	}
 
 	return nil
