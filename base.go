@@ -97,11 +97,6 @@ func importImage(is *ImageSource, config StackerConfig) error {
 }
 
 func extractOutput(o BaseLayerOpts) error {
-	tag, err := o.Layer.From.ParseTag()
-	if err != nil {
-		return err
-	}
-
 	target := path.Join(o.Config.RootFSDir, o.Name)
 	fmt.Println("unpacking to", target)
 
@@ -117,7 +112,7 @@ func extractOutput(o BaseLayerOpts) error {
 	}
 
 	sourceLayerType := "tar"
-	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
+	manifest, err := stackeroci.LookupManifest(cacheOCI, cacheTag)
 	if err != nil {
 		return err
 	}
@@ -131,7 +126,7 @@ func extractOutput(o BaseLayerOpts) error {
 		modifiedConfig.OCIDir = cacheDir
 		err = RunSquashfsSubcommand(modifiedConfig, o.Debug, []string{
 			"--bundle-path", target,
-			"--tag", tag,
+			"--tag", cacheTag,
 			"unpack",
 		})
 		if err != nil {
@@ -147,7 +142,7 @@ func extractOutput(o BaseLayerOpts) error {
 		modifiedConfig.OCIDir = cacheDir
 		err = RunUmociSubcommand(modifiedConfig, o.Debug, []string{
 			"--name", o.Name,
-			"--tag", tag,
+			"--tag", cacheTag,
 			"unpack",
 		})
 		if err != nil {
@@ -157,7 +152,7 @@ func extractOutput(o BaseLayerOpts) error {
 
 	// Delete the tag for the base layer; we're only interested in our
 	// build layer outputs, not in the base layers.
-	o.OCI.DeleteReference(context.Background(), tag)
+	o.OCI.DeleteReference(context.Background(), cacheTag)
 
 	if o.Layer.BuildOnly {
 		return nil
@@ -167,7 +162,7 @@ func extractOutput(o BaseLayerOpts) error {
 	if o.LayerType == sourceLayerType {
 		// We just copied it to the cache, now let's copy that over to our image.
 		err = lib.ImageCopy(lib.ImageCopyOpts{
-			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
 			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name),
 		})
 		return err
@@ -233,7 +228,7 @@ func extractOutput(o BaseLayerOpts) error {
 	now := time.Now()
 	config.History = []ispec.History{{
 		Created:   &now,
-		CreatedBy: fmt.Sprintf("stacker layer-type mismatch repack of %s", tag),
+		CreatedBy: fmt.Sprintf("stacker layer-type mismatch repack of %s", cacheTag),
 	},
 	}
 
