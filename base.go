@@ -150,10 +150,6 @@ func extractOutput(o BaseLayerOpts) error {
 		}
 	}
 
-	// Delete the tag for the base layer; we're only interested in our
-	// build layer outputs, not in the base layers.
-	o.OCI.DeleteReference(context.Background(), cacheTag)
-
 	if o.Layer.BuildOnly {
 		return nil
 	}
