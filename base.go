@@ -304,7 +304,6 @@ func getTar(o BaseLayerOpts) error {
 
 	// TODO: make this respect ID maps
 	layerPath := path.Join(o.Config.RootFSDir, o.Name, "rootfs")
-	fmt.Println("unpacking tar file", tar)
 	tarReader, err := os.Open(tar)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't open %s", tar)
@@ -322,7 +321,6 @@ func getTar(o BaseLayerOpts) error {
 		defer uncompressed.Close()
 	}
 
-	fmt.Println("TYCHO: unpacking layer to", layerPath)
 	err = layer.UnpackLayer(layerPath, uncompressed, nil)
 	if err != nil {
 		return err
