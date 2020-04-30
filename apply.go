@@ -38,6 +38,10 @@ type Apply struct {
 func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage Storage, considerTimestamps bool) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
+	if len(opts.Layer.Apply) == 0 {
+		return a, nil
+	}
+
 	var source casext.Engine
 
 	if opts.Layer.From.Type == DockerType || opts.Layer.From.Type == OCIType {
