@@ -4,6 +4,29 @@ function teardown() {
     cleanup
 }
 
+@test "oci input and output directories can be the same" {
+    cat > stacker.yaml <<EOF
+output1:
+    from:
+        type: oci
+        url: oci:centos
+output2:
+    from:
+        type: oci
+        url: oci:centos
+EOF
+
+    skopeo --insecure-policy copy docker://centos:latest oci:oci:centos
+    stacker build
+
+    name0=$(cat oci/index.json | jq -r .manifests[0].annotations.'"org.opencontainers.image.ref.name"')
+    [ "$name0" == "centos" ]
+    name1=$(cat oci/index.json | jq -r .manifests[1].annotations.'"org.opencontainers.image.ref.name"')
+    [ "$name1" == "output1" ]
+    name2=$(cat oci/index.json | jq -r .manifests[2].annotations.'"org.opencontainers.image.ref.name"')
+    [ "$name2" == "output2" ]
+}
+
 @test "oci imports" {
     cat > stacker.yaml <<EOF
 centos2:
