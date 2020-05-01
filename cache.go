@@ -199,6 +199,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 	}
 
 	if h1 != h2 {
+		fmt.Println("cache miss because layer definition was changed")
 		return nil, false
 	}
 
@@ -208,6 +209,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 	}
 
 	if baseHash != result.Base {
+		fmt.Println("cache miss because base layer was changed")
 		return nil, false
 	}
 
@@ -219,6 +221,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 	for _, imp := range imports {
 		cachedImport, ok := result.Imports[imp]
 		if !ok {
+			fmt.Println("cache miss because of new import: ", imp)
 			return nil, false
 		}
 
@@ -231,6 +234,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
+			fmt.Println("cache miss because import type changed: ", imp)
 			return nil, false
 		}
 
@@ -256,6 +260,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 			}
 
 			if len(diff) > 0 {
+				fmt.Println("cache miss because import dir content changed: ", imp)
 				return nil, false
 			}
 		} else {
@@ -265,6 +270,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 			}
 
 			if h != cachedImport.Hash {
+				fmt.Println("cache miss because import content changed: ", imp)
 				return nil, false
 			}
 		}
