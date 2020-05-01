@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -20,6 +21,23 @@ func TestLayerHashing(t *testing.T) {
 	config := StackerConfig{
 		StackerDir: dir,
 		RootFSDir:  dir,
+	}
+
+	layerBases := path.Join(config.StackerDir, "layer-bases")
+	err = os.MkdirAll(layerBases, 0755)
+	if err != nil {
+		t.Fatalf("couldn't mkdir for layer bases %v", err)
+	}
+
+	oci, err := umoci.CreateLayout(path.Join(layerBases, "oci"))
+	if err != nil {
+		t.Fatalf("couldn't creat OCI layout: %v", err)
+	}
+	defer oci.Close()
+
+	err = umoci.NewImage(oci, "centos")
+	if err != nil {
+		t.Fatalf("couldn't create fake centos image %v", err)
 	}
 
 	layer := &Layer{

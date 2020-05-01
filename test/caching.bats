@@ -2,7 +2,41 @@ load helpers
 
 function teardown() {
     cleanup
-    rm -rf tree1 tree2 link foo executable >& /dev/null || true
+    rm -rf tree1 tree2 link foo executable tar.tar content.txt >& /dev/null || true
+}
+
+@test "from: tar layer rebuilds on change" {
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: tar
+        url: tar.tar
+EOF
+    echo -n "a" > content.txt
+    tar -cf tar.tar content.txt
+    stacker build
+    echo -n "b" > content.txt
+    rm tar.tar
+    tar -cf tar.tar content.txt
+    stacker build
+    umoci unpack --image oci:test dest
+    cat dest/rootfs/content.txt
+    [ "$(cat dest/rootfs/content.txt)" == "b" ]
+}
+
+@test "from: oci layer rebuilds on change" {
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: oci:base
+EOF
+    skopeo --insecure-policy copy docker://centos:latest oci:oci:base
+    stacker build
+    skopeo --insecure-policy copy docker://ubuntu:latest oci:oci:base
+    stacker build
+    umoci unpack --image oci:test dest
+    grep -q Ubuntu dest/rootfs/etc/issue
 }
 
 @test "built-type layer import caching" {

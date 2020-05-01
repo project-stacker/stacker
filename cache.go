@@ -13,6 +13,7 @@ import (
 	"path"
 
 	"github.com/mitchellh/hashstructure"
+	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -20,7 +21,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 6
+const currentCacheVersion = 7
 
 type ImportType int
 
@@ -64,20 +65,20 @@ type CacheEntry struct {
 }
 
 type BuildCache struct {
-	path       string
-	importsDir string
-	sfm        StackerFiles
-	Cache      map[string]CacheEntry `json:"cache"`
-	Version    int                   `json:"version"`
+	path    string
+	sfm     StackerFiles
+	Cache   map[string]CacheEntry `json:"cache"`
+	Version int                   `json:"version"`
+	config  StackerConfig
 }
 
 func OpenCache(config StackerConfig, oci casext.Engine, sfm StackerFiles) (*BuildCache, error) {
 	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
 	cache := &BuildCache{
-		path:       p,
-		importsDir: path.Join(config.StackerDir, "imports"),
-		sfm:        sfm,
+		path:   p,
+		sfm:    sfm,
+		config: config,
 	}
 
 	if err != nil {
@@ -222,7 +223,8 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 		}
 
 		fname := path.Base(imp)
-		diskPath := path.Join(c.importsDir, name, fname)
+		importsDir := path.Join(c.config.StackerDir, "imports")
+		diskPath := path.Join(importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			return nil, false
@@ -286,27 +288,66 @@ func getEncodedMtree(path string) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
+// getBaseHash returns some kind of "hash" for the base layer, whatever type it
+// may be.
 func (c *BuildCache) getBaseHash(name string) (string, error) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
 		return "", fmt.Errorf("%s missing from stackerfile?", name)
 	}
 
-	if l.From.Type != BuiltType {
+	switch l.From.Type {
+	case BuiltType:
+		// for built type, just use the hash of the cache entry
+		baseEnt, ok := c.Lookup(l.From.Tag)
+		if !ok {
+			return "", fmt.Errorf("couldn't find a cache of base layer")
+		}
+
+		baseHash, err := hashstructure.Hash(baseEnt, nil)
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%d", baseHash), nil
+	case ScratchType:
+		// no base, no hash :)
 		return "", nil
-	}
+	case TarType:
+		// use the hash of the input tarball
+		cacheDir := path.Join(c.config.StackerDir, "layer-bases")
+		tar := path.Join(cacheDir, path.Base(l.From.Url))
+		return hashFile(tar, true)
+	case OCIType:
+		fallthrough
+	case DockerType:
+		fallthrough
+	case ZotType:
+		tag, err := l.From.ParseTag()
+		if err != nil {
+			return "", err
+		}
 
-	baseEnt, ok := c.Lookup(l.From.Tag)
-	if !ok {
-		return "", fmt.Errorf("couldn't find a cache of base layer")
-	}
+		// use the manifest hash of the thing in the cache
+		oci, err := umoci.OpenLayout(path.Join(c.config.StackerDir, "layer-bases", "oci"))
+		if err != nil {
+			return "", err
+		}
+		defer oci.Close()
 
-	baseHash, err := hashstructure.Hash(baseEnt, nil)
-	if err != nil {
-		return "", err
-	}
+		descriptorPaths, err := oci.ResolveReference(context.Background(), tag)
+		if err != nil {
+			return "", err
+		}
 
-	return fmt.Sprintf("%d", baseHash), nil
+		if len(descriptorPaths) != 1 {
+			return "", errors.Errorf("duplicate manifests for %s", tag)
+		}
+
+		return descriptorPaths[0].Descriptor().Digest.Encoded(), nil
+	default:
+		return "", fmt.Errorf("unknown layer type: %v", l.From.Type)
+	}
 }
 
 func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
@@ -335,7 +376,8 @@ func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
 
 	for _, imp := range imports {
 		fname := path.Base(imp)
-		diskPath := path.Join(c.importsDir, name, fname)
+		importsDir := path.Join(c.config.StackerDir, "imports")
+		diskPath := path.Join(importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			return err
