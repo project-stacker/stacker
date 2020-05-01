@@ -30,28 +30,83 @@ type BaseLayerOpts struct {
 	OCI       casext.Engine
 	LayerType string
 	Debug     bool
+	Storage   Storage
 }
 
-func GetBaseLayer(o BaseLayerOpts, sfm StackerFiles) error {
+// GetBase grabs the base layer and puts it in the cache.
+func GetBase(o BaseLayerOpts) error {
 	switch o.Layer.From.Type {
 	case BuiltType:
-		return getBuilt(o, sfm)
-	case TarType:
-		return getTar(o)
-	case OCIType:
-		return getContainersImageType(o)
-	case DockerType:
-		return getContainersImageType(o)
+		return nil
 	case ScratchType:
-		return getScratch(o)
+		return nil
+	case TarType:
+		cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
+		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+			return err
+		}
+
+		_, err := acquireUrl(o.Config, o.Layer.From.Url, cacheDir)
+		return err
+	/* now we can do all the containers/image types */
+	case OCIType:
+		fallthrough
+	case DockerType:
+		fallthrough
 	case ZotType:
-		return getContainersImageType(o)
+		return importContainersImage(o.Layer.From, o.Config)
 	default:
 		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
 }
 
-func importImage(is *ImageSource, config StackerConfig) error {
+// SetupRootfs assumes the base layer is correct in the cache, and sets up
+// the filesystem image in RootsDir, and copies whatever OCI layers exist for
+// the base to the output. If no OCI layers exist for the base (e.g. "scratch"
+// or "tar" types), this operation initializes an empty tag in the output.
+//
+// This will also do the conversion between squashfs and tar imports if
+// necessary, so the layers that appear in the output will be of the right
+// type.
+//
+// Finally, if the layer is a build only layer, this code simply initializes
+// the filesystem in roots to the built tag's filesystem.
+func SetupRootfs(o BaseLayerOpts, sfm StackerFiles) error {
+	o.Storage.Delete(o.Name)
+	if o.Layer.From.Type == BuiltType {
+		// For built type images, we already have the base fs content
+		// and umoci metadata. So let's just use that, and copy
+		// whatever we can to the output image.
+		if err := o.Storage.Restore(o.Layer.From.Tag, o.Name); err != nil {
+			return err
+		}
+
+		return copyBuiltTypeBaseToOutput(o, sfm)
+	}
+
+	// For everything else, we create a new snapshot and extract whatever
+	// we can on top of it.
+	if err := o.Storage.Create(o.Name); err != nil {
+		return err
+	}
+
+	switch o.Layer.From.Type {
+	case TarType:
+		return setupTarRootfs(o)
+	case ScratchType:
+		return setupScratchRootfs(o)
+	case OCIType:
+		fallthrough
+	case DockerType:
+		fallthrough
+	case ZotType:
+		return setupContainersImageRootfs(o)
+	default:
+		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
+	}
+}
+
+func importContainersImage(is *ImageSource, config StackerConfig) error {
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err
@@ -93,7 +148,7 @@ func importImage(is *ImageSource, config StackerConfig) error {
 	return err
 }
 
-func extractOutput(o BaseLayerOpts) error {
+func setupContainersImageRootfs(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Name)
 	fmt.Println("unpacking to", target)
 
@@ -274,21 +329,15 @@ func umociInit(o BaseLayerOpts) error {
 	})
 }
 
-func getTar(o BaseLayerOpts) error {
+func setupTarRootfs(o BaseLayerOpts) error {
+	// initialize an empty image, then extract it
+	err := umociInit(o)
+	if err != nil {
+		return err
+	}
+
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
-		return err
-	}
-
-	tar, err := acquireUrl(o.Config, o.Layer.From.Url, cacheDir)
-	if err != nil {
-		return err
-	}
-
-	err = umociInit(o)
-	if err != nil {
-		return err
-	}
+	tar := path.Join(cacheDir, path.Base(o.Layer.From.Url))
 
 	// TODO: make this respect ID maps
 	layerPath := path.Join(o.Config.RootFSDir, o.Name, "rootfs")
@@ -317,20 +366,12 @@ func getTar(o BaseLayerOpts) error {
 	return nil
 }
 
-func getScratch(o BaseLayerOpts) error {
+func setupScratchRootfs(o BaseLayerOpts) error {
+	// nothing to extract, so just initialize an empty image
 	return umociInit(o)
 }
 
-func getContainersImageType(o BaseLayerOpts) error {
-	err := importImage(o.Layer.From, o.Config)
-	if err != nil {
-		return err
-	}
-
-	return extractOutput(o)
-}
-
-func getBuilt(o BaseLayerOpts, sfm StackerFiles) error {
+func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 	// We need to copy any base OCI layers to the output dir, since they
 	// may not have been copied before and the final `umoci repack` expects
 	// them to be there.

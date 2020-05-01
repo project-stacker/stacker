@@ -314,6 +314,21 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
+		baseOpts := BaseLayerOpts{
+			Config:    opts.Config,
+			Name:      name,
+			Layer:     l,
+			Cache:     buildCache,
+			OCI:       oci,
+			LayerType: opts.LayerType,
+			Debug:     opts.Debug,
+			Storage:   s,
+		}
+
+		if err := GetBase(baseOpts); err != nil {
+			return err
+		}
+
 		cacheEntry, cacheHit := buildCache.Lookup(name)
 		if cacheHit && (len(binds) == 0) {
 			if l.BuildOnly {
@@ -333,31 +348,7 @@ func (b *Builder) Build(file string) error {
 			continue
 		}
 
-		baseOpts := BaseLayerOpts{
-			Config:    opts.Config,
-			Name:      name,
-			Layer:     l,
-			Cache:     buildCache,
-			OCI:       oci,
-			LayerType: opts.LayerType,
-			Debug:     opts.Debug,
-		}
-
-		// Delete the old snapshot. We wait until as late as possible
-		// to do this, so that if anything fails we can potentially
-		// keep stuff cached.
-		s.Delete(name)
-		if l.From.Type == BuiltType {
-			if err := s.Restore(l.From.Tag, name); err != nil {
-				return err
-			}
-		} else {
-			if err := s.Create(name); err != nil {
-				return err
-			}
-		}
-
-		err = GetBaseLayer(baseOpts, b.builtStackerfiles)
+		err = SetupRootfs(baseOpts, b.builtStackerfiles)
 		if err != nil {
 			return err
 		}

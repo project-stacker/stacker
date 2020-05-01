@@ -120,7 +120,7 @@ func (a *Apply) applyImage(layer string) error {
 		return err
 	}
 
-	err = importImage(is, a.opts.Config)
+	err = importContainersImage(is, a.opts.Config)
 	if err != nil {
 		return err
 	}
