@@ -177,52 +177,56 @@ func hashFile(path string, includeMode bool) (string, error) {
 	return d.String(), nil
 }
 
-func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
+func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
-		return nil, false
+		return nil, false, nil
 	}
 
 	result, ok := c.Cache[name]
 	if !ok {
-		return nil, false
+		// cache miss because the layer was not previously found. we
+		// don't log a message here because it's probably not found
+		// because it's either 1. the first time this thing has been
+		// run or 2. a new layer from the previous run.
+		return nil, false, nil
 	}
 
 	h1, err := hashstructure.Hash(result.Layer, nil)
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
 
 	h2, err := hashstructure.Hash(l, nil)
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
 
 	if h1 != h2 {
 		fmt.Println("cache miss because layer definition was changed")
-		return nil, false
+		return nil, false, nil
 	}
 
 	baseHash, err := c.getBaseHash(name)
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
 
 	if baseHash != result.Base {
 		fmt.Println("cache miss because base layer was changed")
-		return nil, false
+		return nil, false, nil
 	}
 
 	imports, err := l.ParseImport()
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
 
 	for _, imp := range imports {
 		cachedImport, ok := result.Imports[imp]
 		if !ok {
 			fmt.Println("cache miss because of new import: ", imp)
-			return nil, false
+			return nil, false, nil
 		}
 
 		fname := path.Base(imp)
@@ -230,53 +234,57 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 		diskPath := path.Join(importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
-			return nil, false
+			if os.IsNotExist(err) {
+				fmt.Println("cache miss because import was missing: ", imp)
+				return nil, false, nil
+			}
+			return nil, false, err
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
 			fmt.Println("cache miss because import type changed: ", imp)
-			return nil, false
+			return nil, false, err
 		}
 
 		if st.IsDir() {
 			rawCachedImport, err := base64.StdEncoding.DecodeString(cachedImport.Hash)
 			if err != nil {
-				return nil, false
+				return nil, false, err
 			}
 
 			cachedDH, err := mtree.ParseSpec(bytes.NewBuffer(rawCachedImport))
 			if err != nil {
-				return nil, false
+				return nil, false, err
 			}
 
 			dh, err := walkImport(diskPath)
 			if err != nil {
-				return nil, false
+				return nil, false, err
 			}
 
 			diff, err := mtree.Compare(cachedDH, dh, mtreeKeywords)
 			if err != nil {
-				return nil, false
+				return nil, false, err
 			}
 
 			if len(diff) > 0 {
 				fmt.Println("cache miss because import dir content changed: ", imp)
-				return nil, false
+				return nil, false, nil
 			}
 		} else {
 			h, err := hashFile(diskPath, true)
 			if err != nil {
-				return nil, false
+				return nil, false, err
 			}
 
 			if h != cachedImport.Hash {
 				fmt.Println("cache miss because import content changed: ", imp)
-				return nil, false
+				return nil, false, nil
 			}
 		}
 	}
 
-	return &result, true
+	return &result, true, nil
 }
 
 func getEncodedMtree(path string) (string, error) {
@@ -305,7 +313,10 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 	switch l.From.Type {
 	case BuiltType:
 		// for built type, just use the hash of the cache entry
-		baseEnt, ok := c.Lookup(l.From.Tag)
+		baseEnt, ok, err := c.Lookup(l.From.Tag)
+		if err != nil {
+			return "", err
+		}
 		if !ok {
 			return "", fmt.Errorf("couldn't find a cache of base layer")
 		}

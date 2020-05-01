@@ -94,7 +94,10 @@ func (p *Publisher) Publish(file string) error {
 		}
 
 		// Verify layer is in build cache
-		_, ok = buildCache.Lookup(name)
+		_, ok, err = buildCache.Lookup(name)
+		if err != nil {
+			return err
+		}
 		if !ok && !opts.Force {
 			return fmt.Errorf("layer needs to be rebuilt before publishing: %s", name)
 		}

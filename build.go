@@ -329,7 +329,10 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		cacheEntry, cacheHit := buildCache.Lookup(name)
+		cacheEntry, cacheHit, err := buildCache.Lookup(name)
+		if err != nil {
+			return err
+		}
 		if cacheHit && (len(binds) == 0) {
 			if l.BuildOnly {
 				if cacheEntry.Name != name {

@@ -81,7 +81,10 @@ func TestLayerHashing(t *testing.T) {
 		t.Fatalf("couldn't re-load cache %v", err)
 	}
 
-	_, ok := cache.Lookup("foo")
+	_, ok, err := cache.Lookup("foo")
+	if err != nil {
+		t.Errorf("lookup failed %v", err)
+	}
 	if ok {
 		t.Errorf("found cached entry when I shouldn't have?")
 	}
