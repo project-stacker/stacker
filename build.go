@@ -314,8 +314,8 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		cacheEntry, ok := buildCache.Lookup(name)
-		if ok && (len(binds) == 0) {
+		cacheEntry, cacheHit := buildCache.Lookup(name)
+		if cacheHit && (len(binds) == 0) {
 			if l.BuildOnly {
 				if cacheEntry.Name != name {
 					err = s.Snapshot(cacheEntry.Name, name)
