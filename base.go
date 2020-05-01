@@ -33,9 +33,6 @@ type BaseLayerOpts struct {
 }
 
 func GetBaseLayer(o BaseLayerOpts, sfm StackerFiles) error {
-	// delete the tag if it exists
-	o.OCI.DeleteReference(context.Background(), o.Name)
-
 	switch o.Layer.From.Type {
 	case BuiltType:
 		return getBuilt(o, sfm)
