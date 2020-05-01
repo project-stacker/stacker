@@ -183,22 +183,20 @@ func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
 func CleanImportsDir(c StackerConfig, name string, imports []string, cache *BuildCache) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
-	existingImports, err := ioutil.ReadDir(dir)
-	if err != nil {
-		// if the import dir didn't exist, nothing to check
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
+	cacheEntry, cacheHit := cache.Cache[name]
+	if !cacheHit {
+		// no previous build means we should delete everything that was
+		// imported; who knows where it came from.
+		return os.RemoveAll(dir)
 	}
 
 	// If the base name of two things was the same across builds
 	// but the URL they were imported from was different, let's
 	// make sure we invalidate the cached version.
 	for _, i := range imports {
-		for _, cached := range existingImports {
-			if path.Base(cached.Name()) == path.Base(i) && cached.Name() != i {
-				fmt.Printf("%s url changed to %s\n", cached.Name(), i)
+		for cached := range cacheEntry.Imports {
+			if path.Base(cached) == path.Base(i) && cached != i {
+				fmt.Printf("%s url changed to %s\n", cached, i)
 				err := os.RemoveAll(path.Join(dir, path.Base(i)))
 				if err != nil {
 					return err
