@@ -176,11 +176,6 @@ func hashFile(path string, includeMode bool) (string, error) {
 	return d.String(), nil
 }
 
-func (c *BuildCache) LookupWithoutChecks(name string) (CacheEntry, bool) {
-	e, ok := c.Cache[name]
-	return e, ok
-}
-
 func (c *BuildCache) Lookup(name string) (*CacheEntry, bool) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
@@ -301,7 +296,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 		return "", nil
 	}
 
-	baseEnt, ok := c.LookupWithoutChecks(l.From.Tag)
+	baseEnt, ok := c.Lookup(l.From.Tag)
 	if !ok {
 		return "", fmt.Errorf("couldn't find a cache of base layer")
 	}
