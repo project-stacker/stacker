@@ -69,7 +69,7 @@ function teardown() {
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
-    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."ws.tycho.stacker.git_version"')
+    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."com.cisco.stacker.git_version"')
     # travis does not clone tags. There it tests the fallback-to-commit path.
     myGitVersion=$(git describe --tags) || myGitVersion=$(git rev-parse HEAD)
     [ -n "$(git status --porcelain --untracked-files=no)" ] &&

@@ -20,8 +20,8 @@ import (
 
 const (
 	MediaTypeImageBtrfsLayer  = "application/vnd.cisco.image.layer.btrfs"
-	GitVersionAnnotation      = "ws.tycho.stacker.git_version"
-	StackerContentsAnnotation = "ws.tycho.stacker.stacker_yaml"
+	GitVersionAnnotation      = "com.cisco.stacker.git_version"
+	StackerContentsAnnotation = "com.cisco.stacker.stacker_yaml"
 )
 
 var (
