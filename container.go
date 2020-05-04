@@ -23,55 +23,51 @@ const (
 	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
-var (
-	IdmapSet *idmap.IdmapSet
-)
+func resolveIdmapSet() (*idmap.IdmapSet, error) {
+	// TODO: we should try to use user namespaces when we're root as well.
+	// For now we don't.
+	if os.Geteuid() == 0 {
+		return nil, nil
+	}
 
-func init() {
-	if os.Geteuid() != 0 {
-		currentUser, err := user.Current()
-		if err != nil {
-			log.Warnf("failed getting current user: %v", err)
-			return
+	currentUser, err := user.Current()
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't resolve current user")
+	}
+
+	idmapSet, err := idmap.DefaultIdmapSet("", currentUser.Username)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed parsing /etc/sub{u,g}idmap")
+	}
+
+	if idmapSet != nil {
+		/* Let's make our current user the root user in the ns, so that when
+		 * stacker emits files, it does them as the right user.
+		 */
+		hostMap := []idmap.IdmapEntry{
+			idmap.IdmapEntry{
+				Isuid:    true,
+				Hostid:   int64(os.Getuid()),
+				Nsid:     0,
+				Maprange: 1,
+			},
+			idmap.IdmapEntry{
+				Isgid:    true,
+				Hostid:   int64(os.Getgid()),
+				Nsid:     0,
+				Maprange: 1,
+			},
 		}
 
-		// An error here means that this user has no subuid
-		// delegations. The only thing we can do is panic, and if we're
-		// re-execing inside a user namespace we don't want to do that.
-		// So let's just ignore the error and let future code handle it.
-		IdmapSet, err = idmap.DefaultIdmapSet("", currentUser.Username)
-		if err != nil {
-			log.Warnf("failed parsing /etc/sub{u,g}idmap: %v", err)
-		}
-
-		if IdmapSet != nil {
-			/* Let's make our current user the root user in the ns, so that when
-			 * stacker emits files, it does them as the right user.
-			 */
-			hostMap := []idmap.IdmapEntry{
-				idmap.IdmapEntry{
-					Isuid:    true,
-					Hostid:   int64(os.Getuid()),
-					Nsid:     0,
-					Maprange: 1,
-				},
-				idmap.IdmapEntry{
-					Isgid:    true,
-					Hostid:   int64(os.Getgid()),
-					Nsid:     0,
-					Maprange: 1,
-				},
-			}
-
-			for _, hm := range hostMap {
-				err := IdmapSet.AddSafe(hm)
-				if err != nil {
-					log.Warnf("Failed adding idmap entry: %v", err)
-					return
-				}
+		for _, hm := range hostMap {
+			err := idmapSet.AddSafe(hm)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed adding idmap entry: %v", hm)
 			}
 		}
 	}
+
+	return idmapSet, nil
 }
 
 // our representation of a container
@@ -108,14 +104,19 @@ func NewContainer(sc StackerConfig, name string) (*Container, error) {
 		return nil, err
 	}
 
-	if IdmapSet != nil {
-		for _, idm := range IdmapSet.Idmap {
+	idmapSet, err := resolveIdmapSet()
+	if err != nil {
+		return nil, err
+	}
+
+	if idmapSet != nil {
+		for _, idm := range idmapSet.Idmap {
 			if err := idm.Usable(); err != nil {
 				return nil, fmt.Errorf("idmap unusable: %s", err)
 			}
 		}
 
-		for _, lxcConfig := range IdmapSet.ToLxcString() {
+		for _, lxcConfig := range idmapSet.ToLxcString() {
 			err = c.setConfig("lxc.idmap", lxcConfig)
 			if err != nil {
 				return nil, err
@@ -364,14 +365,13 @@ func (c *Container) Close() {
 	c.c.Release()
 }
 
-func RunInUserns(userCmd []string, msg string) error {
-	if IdmapSet == nil {
+func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
+	if idmapSet == nil {
 		return errors.Errorf("no subuids!")
 	}
 
 	args := []string{}
-
-	for _, idm := range IdmapSet.Idmap {
+	for _, idm := range idmapSet.Idmap {
 		var which string
 		if idm.Isuid && idm.Isgid {
 			which = "b"
@@ -405,7 +405,12 @@ func RunInUserns(userCmd []string, msg string) error {
 // A wrapper which runs things in a userns if we're an unprivileged user with
 // an idmap, or runs things on the host if we're root and don't.
 func MaybeRunInUserns(userCmd []string, msg string) error {
-	if IdmapSet == nil {
+	idmapSet, err := resolveIdmapSet()
+	if err != nil {
+		return err
+	}
+
+	if idmapSet == nil {
 		if os.Geteuid() != 0 {
 			return fmt.Errorf("no idmap and not root, can't run %v", userCmd)
 		}
@@ -417,7 +422,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 		return errors.Wrapf(cmd.Run(), fmt.Sprintf("couldn't run outside of userns: %s", msg))
 	}
 
-	return RunInUserns(userCmd, msg)
+	return RunInUserns(idmapSet, userCmd, msg)
 
 }
 
