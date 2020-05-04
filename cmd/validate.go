@@ -29,7 +29,7 @@ func validateLayerTypeFlags(ctx *cli.Context) error {
 	case "tar":
 		break
 	case "squashfs":
-		fmt.Println("squashfs support is experimental")
+		break
 	default:
 		return fmt.Errorf("unknown layer type: %s", ctx.String("layer-type"))
 	}
