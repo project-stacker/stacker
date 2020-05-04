@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 
 	"github.com/anuvu/stacker"
+	stackerlog "github.com/anuvu/stacker/log"
 	"github.com/apex/log"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
@@ -66,21 +68,46 @@ func main() {
 			Usage: "set the directory for the rootfs output",
 			Value: "roots",
 		},
-		cli.BoolFlag{
-			Name:  "debug",
-			Usage: "enable stacker debug mode",
-		},
 		cli.StringFlag{
 			Name:  "config",
 			Usage: "stacker config file with defaults",
 			Value: path.Join(configDir, "conf.yaml"),
 		},
+		cli.BoolFlag{
+			Name:  "debug",
+			Usage: "enable stacker debug mode",
+		},
+		cli.BoolFlag{
+			Name:  "q, quiet",
+			Usage: "silence all logs",
+		},
+		cli.StringFlag{
+			Name:  "log-file",
+			Usage: "log to a file instead of stderr",
+		},
 	}
 
+	var logFile *os.File
+	// close the log file if we happen to open it
+	defer func() {
+		if logFile != nil {
+			logFile.Close()
+		}
+	}()
 	debug := false
 	app.Before = func(ctx *cli.Context) error {
-		var err error
+		logLevel := log.InfoLevel
+		if ctx.Bool("debug") {
+			debug = true
+			logLevel = log.DebugLevel
+			if ctx.Bool("quiet") {
+				return fmt.Errorf("debug and quiet don't make sense together")
+			}
+		} else if ctx.Bool("quiet") {
+			logLevel = log.FatalLevel
+		}
 
+		var err error
 		content, err := ioutil.ReadFile(ctx.String("config"))
 		if err == nil {
 			err = yaml.Unmarshal(content, &config)
@@ -113,11 +140,20 @@ func main() {
 			return err
 		}
 
-		debug = ctx.Bool("debug")
+		var handler log.Handler
+		handler = stackerlog.NewTextHandler(os.Stderr)
+		if ctx.String("log-file") != "" {
+			logFile, err = os.Create(ctx.String("log-file"))
+			if err != nil {
+				return errors.Wrapf(err, "failed to access %v", logFile)
+			}
+			handler = stackerlog.NewTextHandler(logFile)
+		}
+
+		stackerlog.FilterNonStackerLogs(handler, logLevel)
+		stackerlog.Debugf("stacker version %s", version)
 		return nil
 	}
-
-	log.SetLevel(log.WarnLevel)
 
 	if err := app.Run(os.Args); err != nil {
 		format := "error: %v\n"
