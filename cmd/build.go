@@ -88,7 +88,7 @@ func newBuildArgs(ctx *cli.Context) stacker.BuildArgs {
 		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
 		LayerType:               ctx.String("layer-type"),
 		OrderOnly:               ctx.Bool("order-only"),
-		Debug:                   debug,
+		Debug:                   ctx.GlobalBool("debug"),
 	}
 }
 

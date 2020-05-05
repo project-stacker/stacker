@@ -90,7 +90,7 @@ func beforePublish(ctx *cli.Context) error {
 func doPublish(ctx *cli.Context) error {
 	args := stacker.PublishArgs{
 		Config:     config,
-		Debug:      debug,
+		Debug:      ctx.GlobalBool("debug"),
 		ShowOnly:   ctx.Bool("show-only"),
 		Substitute: ctx.StringSlice("substitute"),
 		Tags:       ctx.StringSlice("tag"),

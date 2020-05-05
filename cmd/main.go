@@ -17,7 +17,6 @@ import (
 var (
 	config  stacker.StackerConfig
 	version = ""
-	debug   = false
 )
 
 func main() {
@@ -78,6 +77,7 @@ func main() {
 		},
 	}
 
+	debug := false
 	app.Before = func(ctx *cli.Context) error {
 		var err error
 
