@@ -1,6 +1,11 @@
 load helpers
 
-function setup() {
+function teardown() {
+    cleanup
+    rm executable
+}
+
+@test "basic workings" {
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -33,14 +38,6 @@ EOF
 
     touch executable
     chmod +x executable
-}
-
-function teardown() {
-    cleanup
-    rm executable
-}
-
-@test "basic workings" {
     mkdir -p .stacker/layer-bases
     skopeo --insecure-policy copy docker://centos:latest oci:.stacker/layer-bases/oci:centos
     umoci unpack --image .stacker/layer-bases/oci:centos dest
