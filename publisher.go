@@ -9,6 +9,7 @@ import (
 
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
+	"github.com/pkg/errors"
 
 	"github.com/anuvu/stacker/lib"
 )
@@ -71,7 +72,7 @@ func (p *Publisher) Publish(file string) error {
 	copy(tags, opts.Tags)
 
 	if len(tags) == 0 {
-		fmt.Printf("can't save OCI images in %s since list of tags is empty\n", file)
+		return errors.Errorf("can't save OCI images in %s since list of tags is empty\n", file)
 	}
 
 	// Need to determine if URL is docker/oci or something else
