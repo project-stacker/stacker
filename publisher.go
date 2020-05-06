@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -24,6 +25,7 @@ type PublishArgs struct {
 	Username   string
 	Password   string
 	Force      bool
+	Progress   bool
 }
 
 // Publisher is responsible for publishing the layers based on stackerfiles
@@ -124,6 +126,11 @@ func (p *Publisher) Publish(file string) error {
 				continue
 			}
 
+			var progressWriter io.Writer
+			if p.opts.Progress {
+				progressWriter = os.Stderr
+			}
+
 			// Store the layers to new destination
 			log.Infof("publishing %s %s to %s\n", file, name, destUrl)
 			err = lib.ImageCopy(lib.ImageCopyOpts{
@@ -131,7 +138,7 @@ func (p *Publisher) Publish(file string) error {
 				Dest:         destUrl,
 				DestUsername: opts.Username,
 				DestPassword: opts.Password,
-				Progress:     os.Stdout,
+				Progress:     progressWriter,
 				SkipTLS:      true,
 			})
 			if err != nil {

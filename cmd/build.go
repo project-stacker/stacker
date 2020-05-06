@@ -89,6 +89,7 @@ func newBuildArgs(ctx *cli.Context) stacker.BuildArgs {
 		LayerType:               ctx.String("layer-type"),
 		OrderOnly:               ctx.Bool("order-only"),
 		Debug:                   ctx.GlobalBool("debug"),
+		Progress:                shouldShowProgress(ctx),
 	}
 }
 

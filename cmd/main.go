@@ -13,6 +13,7 @@ import (
 	"github.com/apex/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,6 +21,19 @@ var (
 	config  stacker.StackerConfig
 	version = ""
 )
+
+func shouldShowProgress(ctx *cli.Context) bool {
+	/* if the user provided explicit recommendations, follow those */
+	if ctx.GlobalBool("no-progress") {
+		return false
+	}
+	if ctx.GlobalBool("progress") {
+		return true
+	}
+
+	/* otherise, show it when we're attached to a terminal */
+	return terminal.IsTerminal(int(os.Stdout.Fd()))
+}
 
 func main() {
 	user, err := user.Current()
@@ -85,6 +99,32 @@ func main() {
 			Name:  "log-file",
 			Usage: "log to a file instead of stderr",
 		},
+	}
+
+	/*
+	 * Here's a barrel of suck: urfave/cli v1 doesn't allow for default
+	 * values of boolean flags. So what we want is to append either
+	 * --progress if this is not a tty, or --no-progress if it is a tty, so
+	 * that we can allow for the right disabling of the thing in the right
+	 * case.
+	 *
+	 * We don't want to convert to v2, because among other things it
+	 * restricts *even more* the order of arguments and flags.
+	 *
+	 * see shouldShowProgress() for how we resolve whether or not to
+	 * actually show it.
+	 */
+	isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
+	if isTerminal {
+		app.Flags = append(app.Flags, cli.BoolFlag{
+			Name:  "no-progress",
+			Usage: "disable progress when downloading container images or files",
+		})
+	} else {
+		app.Flags = append(app.Flags, cli.BoolFlag{
+			Name:  "progress",
+			Usage: "enable progress when downloading container images or files",
+		})
 	}
 
 	var logFile *os.File

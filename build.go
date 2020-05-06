@@ -37,6 +37,7 @@ type BuildArgs struct {
 	Debug                   bool
 	OrderOnly               bool
 	SetupOnly               bool
+	Progress                bool
 }
 
 func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
@@ -301,7 +302,7 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		if err := Import(opts.Config, name, imports); err != nil {
+		if err := Import(opts.Config, name, imports, opts.Progress); err != nil {
 			return err
 		}
 
@@ -323,6 +324,7 @@ func (b *Builder) Build(file string) error {
 			LayerType: opts.LayerType,
 			Debug:     opts.Debug,
 			Storage:   s,
+			Progress:  opts.Progress,
 		}
 
 		if err := GetBase(baseOpts); err != nil {

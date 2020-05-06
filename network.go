@@ -15,7 +15,7 @@ import (
 )
 
 // download with caching support in the specified cache dir.
-func Download(cacheDir string, url string) (string, error) {
+func Download(cacheDir string, url string, progress bool) (string, error) {
 	name := path.Join(cacheDir, path.Base(url))
 
 	if fi, err := os.Stat(name); err == nil {
@@ -81,7 +81,7 @@ func Download(cacheDir string, url string) (string, error) {
 	}
 
 	source := resp.Body
-	if resp.ContentLength >= 0 {
+	if progress {
 		bar := pb.New(int(resp.ContentLength)).SetUnits(pb.U_BYTES)
 		bar.ShowTimeLeft = true
 		bar.ShowSpeed = true

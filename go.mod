@@ -43,6 +43,7 @@ require (
 	github.com/urfave/cli v1.22.1
 	github.com/vbatts/go-mtree v0.4.4
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
+	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
 	golang.org/x/sys v0.0.0-20190913121621-c3b328c6e5a7
 	gopkg.in/cheggaaa/pb.v1 v1.0.27 // indirect
 	gopkg.in/lxc/go-lxc.v2 v2.0.0-20181227225324-7c910f8a5edc

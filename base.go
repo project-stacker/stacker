@@ -32,6 +32,7 @@ type BaseLayerOpts struct {
 	LayerType string
 	Debug     bool
 	Storage   Storage
+	Progress  bool
 }
 
 // GetBase grabs the base layer and puts it in the cache.
@@ -47,7 +48,7 @@ func GetBase(o BaseLayerOpts) error {
 			return err
 		}
 
-		_, err := acquireUrl(o.Config, o.Layer.From.Url, cacheDir)
+		_, err := acquireUrl(o.Config, o.Layer.From.Url, cacheDir, o.Progress)
 		return err
 	/* now we can do all the containers/image types */
 	case OCIType:
@@ -55,7 +56,7 @@ func GetBase(o BaseLayerOpts) error {
 	case DockerType:
 		fallthrough
 	case ZotType:
-		return importContainersImage(o.Layer.From, o.Config)
+		return importContainersImage(o.Layer.From, o.Config, o.Progress)
 	default:
 		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
@@ -107,7 +108,7 @@ func SetupRootfs(o BaseLayerOpts, sfm StackerFiles) error {
 	}
 }
 
-func importContainersImage(is *ImageSource, config StackerConfig) error {
+func importContainersImage(is *ImageSource, config StackerConfig, progress bool) error {
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err
@@ -135,12 +136,17 @@ func importContainersImage(is *ImageSource, config StackerConfig) error {
 		defer oci.Close()
 	}()
 
+	var progressWriter io.Writer
+	if progress {
+		progressWriter = os.Stderr
+	}
+
 	log.Infof("loading %s", toImport)
 	err = lib.ImageCopy(lib.ImageCopyOpts{
 		Src:      toImport,
 		Dest:     fmt.Sprintf("oci:%s:%s", cacheDir, tag),
 		SkipTLS:  is.Insecure,
-		Progress: os.Stdout,
+		Progress: progressWriter,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "couldn't import base layer %s", tag)

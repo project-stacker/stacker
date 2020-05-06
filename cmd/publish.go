@@ -98,6 +98,7 @@ func doPublish(ctx *cli.Context) error {
 		Username:   ctx.String("username"),
 		Password:   ctx.String("password"),
 		Force:      ctx.Bool("force"),
+		Progress:   shouldShowProgress(ctx),
 	}
 
 	var stackerFiles []string

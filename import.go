@@ -161,7 +161,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 }
 
-func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
+func acquireUrl(c StackerConfig, i string, cache string, progress bool) (string, error) {
 	url, err := newDockerishUrl(i)
 	if err != nil {
 		return "", err
@@ -172,7 +172,7 @@ func acquireUrl(c StackerConfig, i string, cache string) (string, error) {
 		return importFile(i, cache)
 	} else if url.Scheme == "http" || url.Scheme == "https" {
 		// otherwise, we need to download it
-		return Download(cache, i)
+		return Download(cache, i, progress)
 	} else if url.Scheme == "stacker" {
 		p := path.Join(c.RootFSDir, url.Host, "rootfs", url.Path)
 		return importFile(p, cache)
@@ -209,7 +209,7 @@ func CleanImportsDir(c StackerConfig, name string, imports []string, cache *Buil
 	return nil
 }
 
-func Import(c StackerConfig, name string, imports []string) error {
+func Import(c StackerConfig, name string, imports []string, progress bool) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -222,7 +222,7 @@ func Import(c StackerConfig, name string, imports []string) error {
 	}
 
 	for _, i := range imports {
-		name, err := acquireUrl(c, i, dir)
+		name, err := acquireUrl(c, i, dir, progress)
 		if err != nil {
 			return err
 		}

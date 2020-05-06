@@ -24,3 +24,27 @@ function teardown() {
     stacker --log-file=logfile build --help
     grep "stacker version" logfile
 }
+
+@test "--progress works" {
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: docker
+        url: docker://centos:latest
+EOF
+
+    stacker --progress build
+    echo "$output" | grep "Copying blob"
+}
+
+@test "no progress when not attached to a terminal" {
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: docker
+        url: docker://centos:latest
+EOF
+
+    stacker build
+    [ -z "$(echo "$output" | grep "Copying blob")" ]
+}
