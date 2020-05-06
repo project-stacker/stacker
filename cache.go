@@ -225,7 +225,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	for _, imp := range imports {
 		cachedImport, ok := result.Imports[imp]
 		if !ok {
-			fmt.Println("cache miss because of new import: ", imp)
+			fmt.Println("cache miss because of new import:", imp)
 			return nil, false, nil
 		}
 
@@ -235,14 +235,14 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Println("cache miss because import was missing: ", imp)
+				fmt.Println("cache miss because import was missing:", imp)
 				return nil, false, nil
 			}
 			return nil, false, err
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
-			fmt.Println("cache miss because import type changed: ", imp)
+			fmt.Println("cache miss because import type changed:", imp)
 			return nil, false, err
 		}
 
@@ -268,7 +268,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 
 			if len(diff) > 0 {
-				fmt.Println("cache miss because import dir content changed: ", imp)
+				fmt.Println("cache miss because import dir content changed:", imp)
 				return nil, false, nil
 			}
 		} else {
@@ -278,7 +278,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 
 			if h != cachedImport.Hash {
-				fmt.Println("cache miss because import content changed: ", imp)
+				fmt.Println("cache miss because import content changed:", imp)
 				return nil, false, nil
 			}
 		}
