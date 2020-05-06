@@ -57,16 +57,18 @@ func recursiveChown(dir string, uid int, gid int) error {
 	})
 }
 
-func warnAboutNewuidmap() {
+func warnAboutNewuidmap() error {
 	_, err := exec.LookPath("newuidmap")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "WARNING: no newuidmap binary present. LXC will not work correctly.")
+		errors.Errorf("WARNING: no newuidmap binary present. LXC will not work correctly.")
 	}
 
 	_, err = exec.LookPath("newgidmap")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "WARNING: no newgidmap binary present. LXC will not work correctly.")
+		errors.Errorf("WARNING: no newgidmap binary present. LXC will not work correctly.")
 	}
+
+	return nil
 }
 
 func addSpecificEntries(file string, name string, currentId int) error {
@@ -182,6 +184,9 @@ func doUnprivSetup(ctx *cli.Context) error {
 		return err
 	}
 
-	warnAboutNewuidmap()
+	err = warnAboutNewuidmap()
+	if err != nil {
+		return err
+	}
 	return addEtcEntriesIfNecessary(uid, gid)
 }
