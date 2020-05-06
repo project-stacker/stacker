@@ -2,7 +2,26 @@ load helpers
 
 function teardown() {
     cleanup
-    rm executable
+    rm executable import || true
+}
+
+@test "multiple stacker builds in a row" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import: import
+EOF
+    echo 1 > import
+    stacker build
+    echo 2 > import
+    stacker build
+    echo 3 > import
+    stacker build
+    echo 4 > import
+    stacker build
+    false
 }
 
 @test "basic workings" {
