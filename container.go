@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/apex/log"
+	"github.com/anuvu/stacker/log"
 	"github.com/lxc/lxd/shared/idmap"
 	"github.com/pkg/errors"
 	"gopkg.in/lxc/go-lxc.v2"
@@ -27,6 +27,7 @@ func resolveIdmapSet() (*idmap.IdmapSet, error) {
 	// TODO: we should try to use user namespaces when we're root as well.
 	// For now we don't.
 	if os.Geteuid() == 0 {
+		log.Debugf("No uid mappings, running as root")
 		return nil, nil
 	}
 
@@ -220,7 +221,7 @@ func (c *Container) containerError(theErr error, msg string) error {
 	}
 
 	for _, err := range lxcErrors {
-		log.Debug(err)
+		log.Debugf(err)
 	}
 	return theErr
 }
