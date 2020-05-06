@@ -48,8 +48,6 @@ EOF
     # Second execution reads from the cache, but cannot access the net
     run ip netns exec stacker-test "${ROOT_DIR}/stacker" build -f img/stacker2.yaml
     [ "$status" -eq 0 ]
-    [[ ${output} =~ "cannot obtain file info of" ]]
-    [[ ${output} =~ "using cached copy of" ]]
     umoci ls --layout oci
     umoci unpack --image oci:img dest/img
     [ "$(sha reference/nm_orig)" == "$(sha .stacker/imports/img/nm)" ]
@@ -66,8 +64,6 @@ EOF
     # Second execution reads from the cache
     stacker build -f img/stacker2.yaml
     umoci ls --layout oci
-    [[ ${output} =~ "matched content length of" ]]
-    [[ ${output} =~ "taking a leap of faith using cached copy of" ]]
     umoci unpack --image oci:img dest/img
     [ "$(sha reference/nm_orig)" == "$(sha .stacker/imports/img/nm)" ]
     [ "$(sha reference/nm_orig)" == "$(sha dest/img/rootfs/root/nm)" ]
