@@ -278,7 +278,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 			defer reader.Close()
 			_, err := io.Copy(os.Stdout, reader)
 			if err != nil {
-				log.Infof("err from stdout copy:", err)
+				log.Infof("err from stdout copy: %s", err)
 			}
 		}()
 
