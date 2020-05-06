@@ -14,7 +14,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/apex/log"
+	"github.com/anuvu/stacker/log"
 	"github.com/freddierice/go-losetup"
 	"github.com/pkg/errors"
 )
@@ -322,12 +322,12 @@ func (b *btrfs) TemporaryWritableSnapshot(source string) (string, func(), error)
 	cleanup := func() {
 		err = b.Delete(dir)
 		if err != nil {
-			log.Errorf("problem deleting temp subvolume %s: %v", dir, err)
+			log.Infof("problem deleting temp subvolume %s: %v", dir, err)
 			return
 		}
 		err = os.RemoveAll(dir)
 		if err != nil {
-			log.Errorf("problem deleting temp subvolume dir %s: %v", dir, err)
+			log.Infof("problem deleting temp subvolume dir %s: %v", dir, err)
 		}
 	}
 
