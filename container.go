@@ -277,7 +277,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 			defer reader.Close()
 			_, err := io.Copy(os.Stdout, reader)
 			if err != nil {
-				fmt.Println("err from stdout copy:", err)
+				log.Infof("err from stdout copy:", err)
 			}
 		}()
 
@@ -311,7 +311,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 
 				err = syscall.Kill(c.c.InitPid(), sg.(syscall.Signal))
 				if err != nil {
-					fmt.Println("failed to send signal", sg, err)
+					log.Infof("failed to send signal %v %v", sg, err)
 				}
 			}
 		}

@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/anuvu/stacker/log"
 	"github.com/mitchellh/hashstructure"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
@@ -100,7 +101,7 @@ func OpenCache(config StackerConfig, oci casext.Engine, sfm StackerFiles) (*Buil
 	}
 
 	if cache.Version != currentCacheVersion {
-		fmt.Println("old cache version found, clearing cache and rebuilding from scratch...")
+		log.Infof("old cache version found, clearing cache and rebuilding from scratch...")
 		os.Remove(p)
 		cache.Cache = map[string]CacheEntry{}
 		cache.Version = currentCacheVersion
@@ -120,7 +121,7 @@ func OpenCache(config StackerConfig, oci casext.Engine, sfm StackerFiles) (*Buil
 		}
 
 		if err != nil {
-			fmt.Printf("couldn't find %s, pruning it from the cache\n", ent.Name)
+			log.Infof("couldn't find %s, pruning it from the cache", ent.Name)
 			delete(cache.Cache, hash)
 			pruned = true
 		}
@@ -203,7 +204,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	}
 
 	if h1 != h2 {
-		fmt.Println("cache miss because layer definition was changed")
+		log.Infof("cache miss because layer definition was changed")
 		return nil, false, nil
 	}
 
@@ -213,7 +214,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	}
 
 	if baseHash != result.Base {
-		fmt.Println("cache miss because base layer was changed")
+		log.Infof("cache miss because base layer was changed")
 		return nil, false, nil
 	}
 
@@ -225,7 +226,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	for _, imp := range imports {
 		cachedImport, ok := result.Imports[imp]
 		if !ok {
-			fmt.Println("cache miss because of new import:", imp)
+			log.Infof("cache miss because of new import: %s", imp)
 			return nil, false, nil
 		}
 
@@ -235,14 +236,14 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Println("cache miss because import was missing:", imp)
+				log.Infof("cache miss because import was missing: %s", imp)
 				return nil, false, nil
 			}
 			return nil, false, err
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
-			fmt.Println("cache miss because import type changed:", imp)
+			log.Infof("cache miss because import type changed: %s", imp)
 			return nil, false, err
 		}
 
@@ -268,7 +269,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 
 			if len(diff) > 0 {
-				fmt.Println("cache miss because import dir content changed:", imp)
+				log.Infof("cache miss because import dir content changed: %s", imp)
 				return nil, false, nil
 			}
 		} else {
@@ -278,7 +279,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 
 			if h != cachedImport.Hash {
-				fmt.Println("cache miss because import content changed:", imp)
+				log.Infof("cache miss because import content changed: %s", imp)
 				return nil, false, nil
 			}
 		}

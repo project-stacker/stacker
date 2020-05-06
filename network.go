@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/anuvu/stacker/log"
 	"github.com/cheggaaa/pb"
 )
 
@@ -26,27 +27,24 @@ func Download(cacheDir string, url string) (string, error) {
 		}
 		localHash = strings.TrimPrefix(localHash, "sha256:")
 		localSize := strconv.FormatInt(fi.Size(), 10)
-		fmt.Printf("Local file: hash: %s length: %s\n", localHash, localSize)
+		log.Debugf("Local file: hash: %s length: %s", localHash, localSize)
 
 		remoteHash, remoteSize, err := getHttpFileInfo(url)
 		if err != nil {
 			// Needed for "working offline"
 			// See https://github.com/anuvu/stacker/issues/44
-			fmt.Println("cannot obtain file info of", url)
-			fmt.Println("using cached copy of", url)
+			log.Infof("cannot obtain file info of %s, using cached copy", url)
 			return name, nil
 		}
-		fmt.Printf("Remote file: hash: %s length: %s\n", remoteHash, remoteSize)
+		log.Debugf("Remote file: hash: %s length: %s", remoteHash, remoteSize)
 
 		if localHash == remoteHash {
 			// Cached file has same hash as the remote file
-			fmt.Println("matched hash of", url)
-			fmt.Println("using cached copy of", url)
+			log.Infof("matched hash of %s, using cached copy", url)
 			return name, nil
 		} else if localSize == remoteSize {
 			// Cached file has same content length as the remote file
-			fmt.Println("matched content length of", url)
-			fmt.Println("taking a leap of faith using cached copy of", url)
+			log.Infof("matched content length of %s, taking a leap of faith and using cached copy", url)
 			return name, nil
 		}
 		// Cached file has a different hash from the remote one
@@ -68,7 +66,7 @@ func Download(cacheDir string, url string) (string, error) {
 	}
 	defer out.Close()
 
-	fmt.Println("downloading", url)
+	log.Infof("downloading %v", url)
 
 	resp, err := http.Get(url)
 	if err != nil {

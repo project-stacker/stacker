@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/log"
 	"github.com/pkg/errors"
 	"github.com/udhos/equalfile"
 	"github.com/vbatts/go-mtree"
@@ -86,12 +87,12 @@ func importFile(imp string, cacheDir string) (string, error) {
 		}
 
 		if needsCopy {
-			fmt.Printf("copying %s\n", imp)
+			log.Infof("copying %s", imp)
 			if err := lib.FileCopy(dest, imp); err != nil {
 				return "", errors.Wrapf(err, "couldn't copy import %s", imp)
 			}
 		} else {
-			fmt.Println("using cached copy of", imp)
+			log.Infof("using cached copy of %s", imp)
 		}
 
 		return dest, nil
@@ -196,7 +197,7 @@ func CleanImportsDir(c StackerConfig, name string, imports []string, cache *Buil
 	for _, i := range imports {
 		for cached := range cacheEntry.Imports {
 			if path.Base(cached) == path.Base(i) && cached != i {
-				fmt.Printf("%s url changed to %s\n", cached, i)
+				log.Infof("%s url changed to %s, pruning cache", cached, i)
 				err := os.RemoveAll(path.Join(dir, path.Base(i)))
 				if err != nil {
 					return err

@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/klauspost/pgzip"
 	"github.com/openSUSE/umoci"
@@ -104,7 +105,7 @@ func (a *Apply) DoApply() error {
 	defer a.storage.Delete("stacker-apply-base")
 
 	for _, image := range a.opts.Layer.Apply {
-		fmt.Println("merging in layers from", image)
+		log.Infof("merging in layers from %s", image)
 		err = a.applyImage(image)
 		if err != nil {
 			return err
@@ -181,7 +182,7 @@ func (a *Apply) applyImage(layer string) error {
 			continue
 		}
 
-		fmt.Println("applying layer", l.Digest)
+		log.Infof("applying layer %s", l.Digest)
 
 		// apply the layer. TODO: we could be smart about this if the
 		// layer is strictly additive or doesn't otherwise require

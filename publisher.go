@@ -7,11 +7,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/log"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 	"github.com/pkg/errors"
-
-	"github.com/anuvu/stacker/lib"
 )
 
 type PublishArgs struct {
@@ -90,7 +90,7 @@ func (p *Publisher) Publish(file string) error {
 			return fmt.Errorf("layer cannot be found in stackerfile: %s", name)
 		}
 		if l.BuildOnly {
-			fmt.Printf("will not publish: %s build_only %s\n", file, name)
+			log.Infof("will not publish: %s build_only %s", file, name)
 			continue
 		}
 
@@ -120,12 +120,12 @@ func (p *Publisher) Publish(file string) error {
 
 			if opts.ShowOnly {
 				// User has requested only to see what would be published
-				fmt.Printf("would publish: %s %s to %s\n", file, name, destUrl)
+				log.Infof("would publish: %s %s to %s", file, name, destUrl)
 				continue
 			}
 
 			// Store the layers to new destination
-			fmt.Printf("publishing %s %s to %s\n", file, name, destUrl)
+			log.Infof("publishing %s %s to %s\n", file, name, destUrl)
 			err = lib.ImageCopy(lib.ImageCopyOpts{
 				Src:          fmt.Sprintf("oci:%s:%s", opts.Config.OCIDir, name),
 				Dest:         destUrl,

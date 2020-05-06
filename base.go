@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/klauspost/pgzip"
 	"github.com/openSUSE/umoci"
@@ -134,7 +135,7 @@ func importContainersImage(is *ImageSource, config StackerConfig) error {
 		defer oci.Close()
 	}()
 
-	fmt.Printf("loading %s\n", toImport)
+	log.Infof("loading %s", toImport)
 	err = lib.ImageCopy(lib.ImageCopyOpts{
 		Src:      toImport,
 		Dest:     fmt.Sprintf("oci:%s:%s", cacheDir, tag),
@@ -150,7 +151,7 @@ func importContainersImage(is *ImageSource, config StackerConfig) error {
 
 func setupContainersImageRootfs(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Name)
-	fmt.Println("unpacking to", target)
+	log.Debugf("unpacking to %s", target)
 
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 	cacheTag, err := o.Layer.From.ParseTag()

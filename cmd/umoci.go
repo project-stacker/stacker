@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/mutate"
@@ -160,7 +160,7 @@ func prepareUmociMetadata(storage stacker.Storage, name string, bundlePath strin
 		}
 	} else {
 		// Umoci's metadata wasn't present. Let's generate it.
-		fmt.Println("generating mtree metadata for snapshot (this may take a bit)...")
+		log.Infof("generating mtree metadata for snapshot (this may take a bit)...")
 		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.DefaultFsEval)
 		if err != nil {
 			return err
@@ -242,7 +242,7 @@ func doUnpack(ctx *cli.Context) error {
 		if storage.Exists(hash) {
 			highestHash = hash
 			lastLayer = i
-			fmt.Println("found previous extraction of", layerDesc.Digest.String())
+			log.Infof("found previous extraction of %s", layerDesc.Digest.String())
 		} else {
 			break
 		}

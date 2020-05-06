@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
 	"github.com/openSUSE/umoci"
@@ -284,13 +285,12 @@ func (b *Builder) Build(file string) error {
 			return errors.Errorf("no built type layers (%s) allowed in setup mode", name)
 		}
 
-		fmt.Printf("preparing image %s...\n", name)
+		log.Infof("preparing image %s...", name)
 
 		// We need to run the imports first since we now compare
 		// against imports for caching layers. Since we don't do
 		// network copies if the files are present and we use rsync to
 		// copy things across, hopefully this isn't too expensive.
-		fmt.Println("importing files...")
 		imports, err := l.ParseImport()
 		if err != nil {
 			return err
@@ -347,7 +347,7 @@ func (b *Builder) Build(file string) error {
 					return err
 				}
 			}
-			fmt.Printf("found cached layer %s\n", name)
+			log.Infof("found cached layer %s\n", name)
 			continue
 		}
 
@@ -386,11 +386,9 @@ func (b *Builder) Build(file string) error {
 			if err := s.MarkReadOnly(name); err != nil {
 				return err
 			}
-			fmt.Printf("setup for %s complete\n", name)
+			log.Infof("setup for %s complete", name)
 			continue
 		}
-
-		fmt.Println("running commands...")
 
 		run, err := l.ParseRun()
 		if err != nil {
@@ -405,15 +403,13 @@ func (b *Builder) Build(file string) error {
 				return err
 			}
 
-			fmt.Println("running commands for", name)
-
 			// These should all be non-interactive; let's ensure that.
 			err = c.Execute("/stacker/.stacker-run.sh", nil)
 			if err != nil {
 				if opts.OnRunFailure != "" {
 					err2 := c.Execute(opts.OnRunFailure, os.Stdin)
 					if err2 != nil {
-						fmt.Printf("failed executing %s: %s\n", opts.OnRunFailure, err2)
+						log.Infof("failed executing %s: %s\n", opts.OnRunFailure, err2)
 					}
 				}
 				return fmt.Errorf("run commands failed: %s", err)
@@ -429,7 +425,7 @@ func (b *Builder) Build(file string) error {
 				return err
 			}
 
-			fmt.Println("build only layer, skipping OCI diff generation")
+			log.Debugf("build only layer, skipping OCI diff generation")
 
 			// A small hack: for build only layers, we keep track
 			// of the name, so we can make sure it exists when
@@ -441,7 +437,7 @@ func (b *Builder) Build(file string) error {
 			continue
 		}
 
-		fmt.Println("generating layer for", name)
+		log.Infof("generating layer for %s", name)
 		switch opts.LayerType {
 		case "tar":
 			err = RunUmociSubcommand(opts.Config, opts.Debug, []string{
@@ -623,7 +619,7 @@ func (b *Builder) Build(file string) error {
 		}
 
 		if gitVersion != "" {
-			fmt.Println("setting git version annotation to", gitVersion)
+			log.Debugf("setting git version annotation to %s", gitVersion)
 			annotations[GitVersionAnnotation] = gitVersion
 		} else {
 			annotations[StackerContentsAnnotation] = sf.AfterSubstitutions
@@ -669,7 +665,7 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		fmt.Printf("filesystem %s built successfully\n", name)
+		log.Infof("filesystem %s built successfully", name)
 
 		descPaths, err = oci.ResolveReference(context.Background(), name)
 		if err != nil {
@@ -703,13 +699,13 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	sortedPaths := dag.Sort()
 
 	// Show the serial build order
-	fmt.Printf("stacker build order:\n")
+	log.Debugf("stacker build order:")
 	for i, p := range sortedPaths {
 		prerequisites, err := dag.GetStackerFile(p).Prerequisites()
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%d build %s: requires: %v\n", i, p, prerequisites)
+		log.Debugf("%d build %s: requires: %v", i, p, prerequisites)
 	}
 
 	if opts.OrderOnly {
@@ -719,7 +715,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 
 	// Build all Stackerfiles
 	for i, p := range sortedPaths {
-		fmt.Printf("building: %d %s\n", i, p)
+		log.Debugf("building: %d %s\n", i, p)
 
 		err = b.Build(p)
 		if err != nil {

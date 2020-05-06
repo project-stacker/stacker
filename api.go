@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
+	"github.com/anuvu/stacker/log"
 	"github.com/openSUSE/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -471,7 +472,7 @@ func substitute(content string, substitutions []string) (string, error) {
 		from := fmt.Sprintf("$%s", membs[0])
 		to := membs[1]
 
-		fmt.Fprintf(os.Stderr, "substituting %s to %s\n", from, to)
+		log.Debugf("substituting %s to %s", from, to)
 
 		content = strings.Replace(content, from, to, -1)
 
@@ -784,7 +785,7 @@ func NewStackerFiles(paths []string, substituteVars []string) (StackerFiles, err
 
 	// Iterate over list of paths to stackerfiles
 	for _, path := range paths {
-		fmt.Printf("initializing stacker recipe: %s\n", path)
+		log.Debugf("initializing stacker recipe: %s", path)
 
 		// Read this stackerfile
 		sf, err := NewStackerfile(path, substituteVars)
