@@ -21,7 +21,6 @@ EOF
     stacker build
     echo 4 > import
     stacker build
-    false
 }
 
 @test "basic workings" {
