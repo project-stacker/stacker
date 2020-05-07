@@ -58,7 +58,7 @@ func GetBase(o BaseLayerOpts) error {
 	case ZotType:
 		return importContainersImage(o.Layer.From, o.Config, o.Progress)
 	default:
-		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
+		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
 }
 
@@ -104,7 +104,7 @@ func SetupRootfs(o BaseLayerOpts, sfm StackerFiles) error {
 	case ZotType:
 		return setupContainersImageRootfs(o)
 	default:
-		return fmt.Errorf("unknown layer type: %v", o.Layer.From.Type)
+		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
 }
 
@@ -412,7 +412,7 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 
 		base, ok = sfm.LookupLayerDefinition(base.From.Tag)
 		if !ok {
-			return fmt.Errorf("missing base layer: %s?", base.From.Tag)
+			return errors.Errorf("missing base layer: %s?", base.From.Tag)
 		}
 
 		if !base.BuildOnly {

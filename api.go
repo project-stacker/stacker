@@ -202,7 +202,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 	case OCIType:
 		pieces := strings.SplitN(is.Url, ":", 2)
 		if len(pieces) != 2 {
-			return "", fmt.Errorf("bad OCI tag: %s", is.Type)
+			return "", errors.Errorf("bad OCI tag: %s", is.Type)
 		}
 
 		return pieces[1], nil
@@ -218,7 +218,7 @@ func (is *ImageSource) ParseTag() (string, error) {
 
 		return strings.Split(url.Host, ":")[0], nil
 	default:
-		return "", fmt.Errorf("unsupported type: %s", is.Type)
+		return "", errors.Errorf("unsupported type: %s", is.Type)
 	}
 }
 
@@ -348,7 +348,7 @@ func (l *Layer) ParseBinds() (map[string]string, error) {
 	for _, bind := range rawBinds {
 		parts := strings.Split(bind, "->")
 		if len(parts) != 1 && len(parts) != 2 {
-			return nil, fmt.Errorf("invalid bind mount %s", bind)
+			return nil, errors.Errorf("invalid bind mount %s", bind)
 		}
 
 		source := strings.TrimSpace(parts[0])
@@ -413,7 +413,7 @@ func (l *Layer) getStringOrStringSlice(iface interface{}, xform func(string) ([]
 		for _, i := range ifs {
 			s, ok := i.(string)
 			if !ok {
-				return nil, fmt.Errorf("unknown run array type: %T", i)
+				return nil, errors.Errorf("unknown run array type: %T", i)
 			}
 
 			strs = append(strs, s)
@@ -438,7 +438,7 @@ func (l *Layer) getStringOrStringSlice(iface interface{}, xform func(string) ([]
 		return strs, nil
 	}
 
-	return nil, fmt.Errorf("unknown directive type: %T", l.Run)
+	return nil, errors.Errorf("unknown directive type: %T", l.Run)
 }
 
 var (
@@ -466,7 +466,7 @@ func substitute(content string, substitutions []string) (string, error) {
 	for _, subst := range substitutions {
 		membs := strings.SplitN(subst, "=", 2)
 		if len(membs) != 2 {
-			return "", fmt.Errorf("invalid substition %s", subst)
+			return "", errors.Errorf("invalid substition %s", subst)
 		}
 
 		from := fmt.Sprintf("$%s", membs[0])
@@ -499,7 +499,7 @@ func substitute(content string, substitutions []string) (string, error) {
 
 		membs := strings.SplitN(variable, ":", 2)
 		if len(membs) != 2 {
-			return "", fmt.Errorf("no value for substitution %s", variable)
+			return "", errors.Errorf("no value for substitution %s", variable)
 		}
 
 		buf := bytes.NewBufferString(content[:idx[0]])
@@ -564,7 +564,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			return nil, fmt.Errorf("stackerfile: couldn't download %s: %s", stackerfile, resp.Status)
+			return nil, errors.Errorf("stackerfile: couldn't download %s: %s", stackerfile, resp.Status)
 		}
 
 		raw, err = ioutil.ReadAll(resp.Body)
@@ -598,7 +598,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	for _, e := range ms {
 		keyName, ok := e.Key.(string)
 		if !ok {
-			return nil, fmt.Errorf("stackerfile: cannot cast %v to string", e.Key)
+			return nil, errors.Errorf("stackerfile: cannot cast %v to string", e.Key)
 		}
 
 		if "config" == keyName {
@@ -630,7 +630,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 			}
 
 			if !found {
-				return nil, fmt.Errorf("stackerfile: unknown directive %s", directive.Key.(string))
+				return nil, errors.Errorf("stackerfile: unknown directive %s", directive.Key.(string))
 			}
 
 			if directive.Key.(string) == "from" {
@@ -644,7 +644,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 					}
 
 					if !found {
-						return nil, fmt.Errorf("stackerfile: unknown image source directive %s",
+						return nil, errors.Errorf("stackerfile: unknown image source directive %s",
 							sourceDirective.Key.(string))
 					}
 				}
@@ -668,7 +668,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 		switch layer.From.Type {
 		case BuiltType:
 			if len(layer.From.Tag) == 0 {
-				return nil, fmt.Errorf("%s: from tag cannot be empty for image type 'built'", name)
+				return nil, errors.Errorf("%s: from tag cannot be empty for image type 'built'", name)
 			}
 		}
 
@@ -698,7 +698,7 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 			layer := s.internal[name]
 
 			if layer.From == nil {
-				return nil, fmt.Errorf("invalid layer: no base (from directive)")
+				return nil, errors.Errorf("invalid layer: no base (from directive)")
 			}
 
 			// Determine if the layer uses a previously processed layer as base
@@ -744,7 +744,7 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 	}
 
 	if len(ret) != s.Len() {
-		return nil, fmt.Errorf("couldn't resolve some dependencies")
+		return nil, errors.Errorf("couldn't resolve some dependencies")
 	}
 
 	return ret, nil

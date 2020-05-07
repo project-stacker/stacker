@@ -308,7 +308,7 @@ func getEncodedMtree(path string) (string, error) {
 func (c *BuildCache) getBaseHash(name string) (string, error) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
-		return "", fmt.Errorf("%s missing from stackerfile?", name)
+		return "", errors.Errorf("%s missing from stackerfile?", name)
 	}
 
 	switch l.From.Type {
@@ -319,7 +319,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 			return "", err
 		}
 		if !ok {
-			return "", fmt.Errorf("couldn't find a cache of base layer")
+			return "", errors.Errorf("couldn't find a cache of base layer")
 		}
 
 		baseHash, err := hashstructure.Hash(baseEnt, nil)
@@ -364,14 +364,14 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 
 		return descriptorPaths[0].Descriptor().Digest.Encoded(), nil
 	default:
-		return "", fmt.Errorf("unknown layer type: %v", l.From.Type)
+		return "", errors.Errorf("unknown layer type: %v", l.From.Type)
 	}
 }
 
 func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
-		return fmt.Errorf("%s missing from stackerfile?", name)
+		return errors.Errorf("%s missing from stackerfile?", name)
 	}
 
 	baseHash, err := c.getBaseHash(name)

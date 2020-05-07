@@ -94,7 +94,7 @@ func (b *btrfs) Create(source string) error {
 		"create",
 		path.Join(b.c.RootFSDir, source)).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs create: %s: %s", err, output)
+		return errors.Errorf("btrfs create: %s: %s", err, output)
 	}
 
 	return nil
@@ -123,7 +123,7 @@ func (b *btrfs) Restore(source string, target string) error {
 		path.Join(b.c.RootFSDir, source),
 		path.Join(b.c.RootFSDir, target)).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs restore: %s: %s", err, output)
+		return errors.Errorf("btrfs restore: %s: %s", err, output)
 	}
 
 	// Since we create snapshots as readonly above, we must re-mark them
@@ -137,7 +137,7 @@ func (b *btrfs) Restore(source string, target string) error {
 		"ro",
 		"false").CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs mark writable: %s: %s", err, output)
+		return errors.Errorf("btrfs mark writable: %s: %s", err, output)
 	}
 
 	return nil
@@ -153,7 +153,7 @@ func (b *btrfs) MarkReadOnly(thing string) error {
 		"ro",
 		"true").CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs mark readonly: %s: %s", err, output)
+		return errors.Errorf("btrfs mark readonly: %s: %s", err, output)
 	}
 	return nil
 }
@@ -255,7 +255,7 @@ func btrfsSubVolumeDelete(subvol string) error {
 		"ro",
 		"false").CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs mark writable: %s: %s", err, output)
+		return errors.Errorf("btrfs mark writable: %s: %s", err, output)
 	}
 
 	output, err = exec.Command(
@@ -265,7 +265,7 @@ func btrfsSubVolumeDelete(subvol string) error {
 		"-c",
 		subvol).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("btrfs delete: %s: %s", err, output)
+		return errors.Errorf("btrfs delete: %s: %s", err, output)
 	}
 
 	return os.RemoveAll(subvol)
@@ -356,17 +356,17 @@ func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest strin
 	 */
 	dev, err := losetup.Attach(loopback, 0, false)
 	if err != nil {
-		return fmt.Errorf("Failed to attach loop device: %v", err)
+		return errors.Errorf("Failed to attach loop device: %v", err)
 	}
 	defer dev.Detach()
 
 	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed,flushoncommit")
 	if err != nil {
-		return fmt.Errorf("Failed mount fs: %v", err)
+		return errors.Errorf("Failed mount fs: %v", err)
 	}
 
 	if err := os.Chown(dest, uid, gid); err != nil {
-		return fmt.Errorf("couldn't chown %s: %v", dest, err)
+		return errors.Errorf("couldn't chown %s: %v", dest, err)
 	}
 
 	return nil
@@ -397,7 +397,7 @@ func setupLoopback(path string, uid int, gid int, size int64) error {
 	output, err := exec.Command("mkfs.btrfs", f.Name()).CombinedOutput()
 	if err != nil {
 		os.RemoveAll(f.Name())
-		return fmt.Errorf("mkfs.btrfs: %s: %s", err, output)
+		return errors.Errorf("mkfs.btrfs: %s: %s", err, output)
 	}
 
 	return nil

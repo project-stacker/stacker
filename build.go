@@ -274,7 +274,7 @@ func (b *Builder) Build(file string) error {
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {
-			return fmt.Errorf("%s not present in stackerfile?", name)
+			return errors.Errorf("%s not present in stackerfile?", name)
 		}
 
 		// if a container builds on another container in a stacker
@@ -414,7 +414,7 @@ func (b *Builder) Build(file string) error {
 						log.Infof("failed executing %s: %s\n", opts.OnRunFailure, err2)
 					}
 				}
-				return fmt.Errorf("run commands failed: %s", err)
+				return errors.Errorf("run commands failed: %s", err)
 			}
 		}
 
@@ -459,7 +459,7 @@ func (b *Builder) Build(file string) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown layer type: %s", opts.LayerType)
+			return errors.Errorf("unknown layer type: %s", opts.LayerType)
 		}
 
 		descPaths, err := oci.ResolveReference(context.Background(), name)

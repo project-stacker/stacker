@@ -37,11 +37,11 @@ var unprivSetupCmd = cli.Command{
 
 func beforeUnprivSetup(ctx *cli.Context) error {
 	if ctx.String("uid") == "" {
-		return fmt.Errorf("please specify --uid or run unpriv-setup with sudo")
+		return errors.Errorf("please specify --uid or run unpriv-setup with sudo")
 	}
 
 	if ctx.String("gid") == "" {
-		return fmt.Errorf("please specify --gid or run unpriv-setup with sudo")
+		return errors.Errorf("please specify --gid or run unpriv-setup with sudo")
 	}
 
 	return nil
@@ -145,7 +145,7 @@ func addEtcEntriesIfNecessary(uid int, gid int) error {
 func doUnprivSetup(ctx *cli.Context) error {
 	_, err := os.Stat(config.StackerDir)
 	if err == nil {
-		return fmt.Errorf("stacker dir %s already exists, aborting setup", config.StackerDir)
+		return errors.Errorf("stacker dir %s already exists, aborting setup", config.StackerDir)
 	}
 
 	uid, err := strconv.Atoi(ctx.String("uid"))

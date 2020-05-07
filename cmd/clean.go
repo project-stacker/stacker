@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path"
 
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/log"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -54,7 +54,7 @@ func doClean(ctx *cli.Context) error {
 	}
 
 	if fail {
-		return fmt.Errorf("cleaning failed")
+		return errors.Errorf("cleaning failed")
 	}
 
 	return nil

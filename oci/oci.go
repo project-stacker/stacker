@@ -2,7 +2,6 @@ package oci
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/openSUSE/umoci/oci/casext"
@@ -44,7 +43,7 @@ func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error)
 	}
 
 	if configBlob.Descriptor.MediaType != ispec.MediaTypeImageConfig {
-		return ispec.Image{}, fmt.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
+		return ispec.Image{}, errors.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
 	}
 
 	return configBlob.Data.(ispec.Image), nil

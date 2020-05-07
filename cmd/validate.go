@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -12,7 +12,7 @@ func validateBuildFailureFlags(ctx *cli.Context) error {
 	if ctx.Bool("shell-fail") {
 		askedFor := ctx.String("on-run-failure")
 		if askedFor != "" && askedFor != "/bin/sh" {
-			return fmt.Errorf("--shell-fail is incompatible with --on-run-failure=%s", askedFor)
+			return errors.Errorf("--shell-fail is incompatible with --on-run-failure=%s", askedFor)
 		}
 		err := ctx.Set("on-run-failure", "/bin/sh")
 		if err != nil {
@@ -31,7 +31,7 @@ func validateLayerTypeFlags(ctx *cli.Context) error {
 	case "squashfs":
 		break
 	default:
-		return fmt.Errorf("unknown layer type: %s", ctx.String("layer-type"))
+		return errors.Errorf("unknown layer type: %s", ctx.String("layer-type"))
 	}
 
 	return nil

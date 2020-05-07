@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/log"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -70,7 +70,7 @@ func doChroot(ctx *cli.Context) error {
 
 	layer, ok := sf.Get(tag)
 	if !ok {
-		return fmt.Errorf("no layer %s in stackerfile", tag)
+		return errors.Errorf("no layer %s in stackerfile", tag)
 	}
 
 	name, cleanup, err := s.TemporaryWritableSnapshot(tag)

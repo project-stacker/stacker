@@ -10,6 +10,7 @@ import (
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -75,7 +76,7 @@ func renderManifest(oci casext.Engine, name string) error {
 	}
 
 	if configBlob.Descriptor.MediaType != ispec.MediaTypeImageConfig {
-		return fmt.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
+		return errors.Errorf("bad image config type: %s", configBlob.Descriptor.MediaType)
 	}
 
 	config := configBlob.Data.(ispec.Image)

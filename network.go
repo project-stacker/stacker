@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/anuvu/stacker/log"
 	"github.com/cheggaaa/pb"
+	"github.com/pkg/errors"
 )
 
 // download with caching support in the specified cache dir.
@@ -77,7 +77,7 @@ func Download(cacheDir string, url string, progress bool) (string, error) {
 
 	if resp.StatusCode != 200 {
 		os.RemoveAll(name)
-		return "", fmt.Errorf("couldn't download %s: %s", url, resp.Status)
+		return "", errors.Errorf("couldn't download %s: %s", url, resp.Status)
 	}
 
 	source := resp.Body
@@ -103,7 +103,7 @@ func getHttpFileInfo(remoteURL string) (string, string, error) {
 		return "", "", err
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return "", "", fmt.Errorf("cannot obtain content info for non HTTP URL: (%s)", remoteURL)
+		return "", "", errors.Errorf("cannot obtain content info for non HTTP URL: (%s)", remoteURL)
 	}
 
 	// Make a HEAD call on remote URL

@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -17,7 +16,7 @@ import (
 // filesDiffer returns true if the files are different, false if they are the same.
 func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bool, error) {
 	if info1.Name() != info2.Name() {
-		return false, fmt.Errorf("comparing files without the same name?")
+		return false, errors.Errorf("comparing files without the same name?")
 	}
 
 	if info1.Mode()&os.ModeSymlink != 0 {
@@ -34,7 +33,7 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 			return link1 != link2, err
 		}
 
-		return false, fmt.Errorf("symlink -> not symlink not supported")
+		return false, errors.Errorf("symlink -> not symlink not supported")
 	}
 
 	if info1.Size() != info2.Size() {
@@ -178,7 +177,7 @@ func acquireUrl(c StackerConfig, i string, cache string, progress bool) (string,
 		return importFile(p, cache)
 	}
 
-	return "", fmt.Errorf("unsupported url scheme %s", i)
+	return "", errors.Errorf("unsupported url scheme %s", i)
 }
 
 func CleanImportsDir(c StackerConfig, name string, imports []string, cache *BuildCache) error {

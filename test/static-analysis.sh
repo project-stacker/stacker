@@ -15,4 +15,11 @@
     fi
 }
 
+# disallow all fmt.Errorf errors, as these do not give stack traces and are
+# harder to debug.
+[ "$(git grep "fmt.Errorf" | grep -c -v "test/static-analysis.sh")" -gt 0 ] && {
+    echo "using fmt.Errorf directive; use errors.Errorf instead"
+    exit 1
+}
+
 exit 0

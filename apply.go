@@ -56,7 +56,7 @@ func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage Storage, considerTim
 		// Search for the base layer in all of the built stackerfiles
 		base, ok := sfm.LookupLayerDefinition(opts.Layer.From.Tag)
 		if !ok {
-			return nil, fmt.Errorf("missing base layer: %s?", opts.Layer.From.Tag)
+			return nil, errors.Errorf("missing base layer: %s?", opts.Layer.From.Tag)
 		}
 
 		if base.BuildOnly {
@@ -303,7 +303,7 @@ func getReader(blob *casext.Blob) (io.ReadCloser, bool, error) {
 		}
 		needsClose = true
 	default:
-		return nil, false, fmt.Errorf("unknown layer type %s", blob.Descriptor.MediaType)
+		return nil, false, errors.Errorf("unknown layer type %s", blob.Descriptor.MediaType)
 	}
 
 	return reader, needsClose, nil
@@ -368,7 +368,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 	}
 
 	if fi.Mode() != hdr.FileInfo().Mode() {
-		return false, fmt.Errorf("apply can't merge files of different types: %s", hdr.Name)
+		return false, errors.Errorf("apply can't merge files of different types: %s", hdr.Name)
 	}
 
 	sysStat := fi.Sys().(*syscall.Stat_t)
@@ -393,23 +393,23 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 				return false, nil
 			}
 
-			return false, fmt.Errorf("two different mod times on %s %v %v", hdr.Name, fi.ModTime(), hdr.ModTime)
+			return false, errors.Errorf("two different mod times on %s %v %v", hdr.Name, fi.ModTime(), hdr.ModTime)
 		}
 
 		// explicitly don't consider access time
 		cSec, cNsec := sysStat.Ctim.Unix()
 		ctime := time.Unix(cSec, cNsec)
 		if ctime != hdr.ChangeTime && !hdr.ChangeTime.IsZero() {
-			return false, fmt.Errorf("changed times differ on %s", hdr.Name)
+			return false, errors.Errorf("changed times differ on %s", hdr.Name)
 		}
 	}
 
 	if sysStat.Uid != uint32(hdr.Uid) {
-		return false, fmt.Errorf("two different uids on %s: %v %v", hdr.Name, sysStat.Uid, hdr.Uid)
+		return false, errors.Errorf("two different uids on %s: %v %v", hdr.Name, sysStat.Uid, hdr.Uid)
 	}
 
 	if sysStat.Gid != uint32(hdr.Gid) {
-		return false, fmt.Errorf("two different gids on %s: %v %v", hdr.Name, sysStat.Gid, hdr.Gid)
+		return false, errors.Errorf("two different gids on %s: %v %v", hdr.Name, sysStat.Gid, hdr.Gid)
 	}
 
 	sz, err := unix.Llistxattr(path.Join(target, hdr.Name), nil)
@@ -430,7 +430,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		}
 
 		if len(xattrs) != len(hdr.Xattrs) {
-			return false, fmt.Errorf("different xattrs for %s: %v %v", hdr.Name, xattrs, hdr.Xattrs)
+			return false, errors.Errorf("different xattrs for %s: %v %v", hdr.Name, xattrs, hdr.Xattrs)
 		}
 
 		for k, v := range hdr.Xattrs {
@@ -443,7 +443,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 			}
 
 			if !found {
-				return false, fmt.Errorf("different xattrs for %s, missing %s=%s", hdr.Name, k, v)
+				return false, errors.Errorf("different xattrs for %s, missing %s=%s", hdr.Name, k, v)
 			}
 		}
 
@@ -458,12 +458,12 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 	case tar.TypeChar, tar.TypeBlock:
 		if (hdr.FileInfo().Mode()&os.ModeCharDevice != 0) != (hdr.Typeflag == tar.TypeChar) {
 			if uint32(hdr.Devmajor) != unix.Major(sysStat.Dev) || uint32(hdr.Devminor) != unix.Minor(sysStat.Dev) {
-				return false, fmt.Errorf("device number mismatches for %s", hdr.Name)
+				return false, errors.Errorf("device number mismatches for %s", hdr.Name)
 			}
 			return false, nil
 		}
 
-		return false, fmt.Errorf("block/char mismatch: %s", hdr.Name)
+		return false, errors.Errorf("block/char mismatch: %s", hdr.Name)
 	case tar.TypeLink:
 		// make sure this new hard link points to the same
 		// place as the existing one.
@@ -475,7 +475,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		targetIno := targetFI.Sys().(*syscall.Stat_t).Ino
 		curIno := fi.Sys().(*syscall.Stat_t).Ino
 		if targetIno != curIno {
-			return false, fmt.Errorf("hard link %s would change location", hdr.Name)
+			return false, errors.Errorf("hard link %s would change location", hdr.Name)
 		}
 
 		return false, nil
@@ -488,7 +488,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		}
 
 		if linkname != hdr.Linkname {
-			return false, fmt.Errorf("%s would change symlink from %s to %s", hdr.Name, linkname, hdr.Linkname)
+			return false, errors.Errorf("%s would change symlink from %s to %s", hdr.Name, linkname, hdr.Linkname)
 		}
 
 		return false, nil
@@ -518,7 +518,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 			return false, err
 		}
 		if n != hdr.Size {
-			return false, fmt.Errorf("%s was bad size in tar file", hdr.Name)
+			return false, errors.Errorf("%s was bad size in tar file", hdr.Name)
 		}
 
 		existing, err := os.Open(path.Join(target, hdr.Name))
@@ -561,7 +561,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 
 		contentType := http.DetectContentType(buf[:sz])
 		if !strings.HasPrefix(contentType, "text") {
-			return false, fmt.Errorf("existing file different, can't diff %s of type %s", hdr.Name, contentType)
+			return false, errors.Errorf("existing file different, can't diff %s of type %s", hdr.Name, contentType)
 		}
 
 		// TODO: we've mutated the mtime of the directory, we should
@@ -569,7 +569,7 @@ func (a *Apply) insertOneFile(hdr *tar.Header, target string, te *layer.TarExtra
 		// we don't).
 		return true, a.diffFile(hdr, f.Name())
 	default:
-		return false, fmt.Errorf("unknown tar typeflag for %s", hdr.Name)
+		return false, errors.Errorf("unknown tar typeflag for %s", hdr.Name)
 	}
 }
 
@@ -626,7 +626,7 @@ func applyPatch(file string, patch []diffmatchpatch.Patch) error {
 	result, applied := diffmatchpatch.New().PatchApply(patch, string(content))
 	for i, app := range applied {
 		if !app {
-			return fmt.Errorf("couldn't merge %s, specifically hunk:\n%s", file, patch[i].String())
+			return errors.Errorf("couldn't merge %s, specifically hunk:\n%s", file, patch[i].String())
 		}
 	}
 

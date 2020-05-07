@@ -54,7 +54,7 @@ func (p *Publisher) Publish(file string) error {
 
 	sf, ok := p.stackerfiles[absPath]
 	if !ok {
-		return fmt.Errorf("could not find entry for %s(%s) in stackerfiles", absPath, file)
+		return errors.Errorf("could not find entry for %s(%s) in stackerfiles", absPath, file)
 	}
 
 	var oci casext.Engine
@@ -89,7 +89,7 @@ func (p *Publisher) Publish(file string) error {
 		// Verify layer is not build only
 		l, ok := sf.Get(name)
 		if !ok {
-			return fmt.Errorf("layer cannot be found in stackerfile: %s", name)
+			return errors.Errorf("layer cannot be found in stackerfile: %s", name)
 		}
 		if l.BuildOnly {
 			log.Infof("will not publish: %s build_only %s", file, name)
@@ -102,7 +102,7 @@ func (p *Publisher) Publish(file string) error {
 			return err
 		}
 		if !ok && !opts.Force {
-			return fmt.Errorf("layer needs to be rebuilt before publishing: %s", name)
+			return errors.Errorf("layer needs to be rebuilt before publishing: %s", name)
 		}
 
 		// Iterate through all tags
@@ -117,7 +117,7 @@ func (p *Publisher) Publish(file string) error {
 			case ZotType:
 				destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, tag)
 			default:
-				return fmt.Errorf("can't save layers to destination type: %s", is.Type)
+				return errors.Errorf("can't save layers to destination type: %s", is.Type)
 			}
 
 			if opts.ShowOnly {

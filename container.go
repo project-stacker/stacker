@@ -79,7 +79,7 @@ type Container struct {
 
 func NewContainer(sc StackerConfig, name string) (*Container, error) {
 	if !lxc.VersionAtLeast(2, 1, 0) {
-		return nil, fmt.Errorf("stacker requires liblxc >= 2.1.0")
+		return nil, errors.Errorf("stacker requires liblxc >= 2.1.0")
 	}
 
 	lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
@@ -113,7 +113,7 @@ func NewContainer(sc StackerConfig, name string) (*Container, error) {
 	if idmapSet != nil {
 		for _, idm := range idmapSet.Idmap {
 			if err := idm.Usable(); err != nil {
-				return nil, fmt.Errorf("idmap unusable: %s", err)
+				return nil, errors.Errorf("idmap unusable: %s", err)
 			}
 		}
 
@@ -194,7 +194,7 @@ func (c *Container) setConfigs(config map[string]string) error {
 func (c *Container) setConfig(name string, value string) error {
 	err := c.c.SetConfigItem(name, value)
 	if err != nil {
-		return fmt.Errorf("failed setting config %s to %s: %v", name, value, err)
+		return errors.Errorf("failed setting config %s to %s: %v", name, value, err)
 	}
 	return nil
 }
@@ -413,7 +413,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 
 	if idmapSet == nil {
 		if os.Geteuid() != 0 {
-			return fmt.Errorf("no idmap and not root, can't run %v", userCmd)
+			return errors.Errorf("no idmap and not root, can't run %v", userCmd)
 		}
 
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)

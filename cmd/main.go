@@ -141,7 +141,7 @@ func main() {
 			debug = true
 			logLevel = log.DebugLevel
 			if ctx.Bool("quiet") {
-				return fmt.Errorf("debug and quiet don't make sense together")
+				return errors.Errorf("debug and quiet don't make sense together")
 			}
 		} else if ctx.Bool("quiet") {
 			logLevel = log.FatalLevel

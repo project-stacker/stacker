@@ -1,11 +1,11 @@
 package stacker
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/pkg/errors"
 )
 
 // gitHash generates a version string similar to git describe --always
@@ -69,7 +69,7 @@ func NewGitLayerTag(path string) (string, error) {
 
 	// If there are local changes, we don't generate a git commit tag for the new layer
 	if len(output) != 0 {
-		return "", fmt.Errorf("commit is dirty so don't generate a tag based on git commit: %s", output)
+		return "", errors.Errorf("commit is dirty so don't generate a tag based on git commit: %s", output)
 	}
 
 	// Determine git hash

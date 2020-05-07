@@ -1,8 +1,7 @@
 package lib
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/twmb/algoimpl/go/graph"
 )
 
@@ -72,7 +71,7 @@ type dag struct {
 
 func (dg *dag) AddVertex(key Key, val Value) error {
 	if _, ok := dg.vertices[key]; ok {
-		return fmt.Errorf("key %s already exists", key)
+		return errors.Errorf("key %s already exists", key)
 	}
 	node := dg.graph.MakeNode()
 	*node.Value = &Vertex{key, val}
@@ -83,7 +82,7 @@ func (dg *dag) AddVertex(key Key, val Value) error {
 func (dg *dag) RemoveVertex(key Key) error {
 	v, ok := dg.vertices[key]
 	if !ok {
-		return fmt.Errorf("key %s does not exist", key)
+		return errors.Errorf("key %s does not exist", key)
 	}
 	dg.graph.RemoveNode(&v)
 	delete(dg.vertices, key)
@@ -94,7 +93,7 @@ func (dg *dag) AddDependencies(vertex Key, dependencies ...Key) error {
 	for _, dep := range dependencies {
 		srcObj, ok := dg.vertices[vertex]
 		if !ok {
-			return fmt.Errorf("key %s does not exist", vertex)
+			return errors.Errorf("key %s does not exist", vertex)
 		}
 
 		if err := dg.addDep(srcObj, vertex, dep); err != nil {
@@ -108,11 +107,11 @@ func (dg *dag) AddDependencies(vertex Key, dependencies ...Key) error {
 func (dg *dag) addDep(srcObj graph.Node, node Key, dependency Key) error {
 	dstObj, ok := dg.vertices[dependency]
 	if !ok {
-		return fmt.Errorf("key %s does not exist", dependency)
+		return errors.Errorf("key %s does not exist", dependency)
 	}
 
 	if node == dependency {
-		return fmt.Errorf("edge to self is not allowed")
+		return errors.Errorf("edge to self is not allowed")
 	}
 
 	if err := dg.graph.MakeEdge(dstObj, srcObj); err != nil {
@@ -121,7 +120,7 @@ func (dg *dag) addDep(srcObj graph.Node, node Key, dependency Key) error {
 
 	if !isAcyclic(dg) {
 		dg.graph.RemoveEdge(dstObj, srcObj)
-		return fmt.Errorf("edge from %s to %s makes a cycle", node, dependency)
+		return errors.Errorf("edge from %s to %s makes a cycle", node, dependency)
 	}
 	return nil
 
@@ -143,7 +142,7 @@ func (dg *dag) SetValue(v Key, val Value) error {
 		vertex.Value = val
 		return nil
 	}
-	return fmt.Errorf("key %s does not exist", v)
+	return errors.Errorf("key %s does not exist", v)
 }
 
 // A sorted traversal of this graph will guarantee the

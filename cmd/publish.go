@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/urfave/cli"
-
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/lib"
+	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
 var publishCmd = cli.Command{
@@ -75,13 +73,13 @@ func beforePublish(ctx *cli.Context) error {
 	username := ctx.String("username")
 	password := ctx.String("password")
 	if (username == "") != (password == "") {
-		return fmt.Errorf("supply both username and password, or none of them, current values: '%s' '%s'",
+		return errors.Errorf("supply both username and password, or none of them, current values: '%s' '%s'",
 			username,
 			password)
 	}
 
 	if len(ctx.String("url")) == 0 {
-		return fmt.Errorf("--url is a mandatory argument for publishing")
+		return errors.Errorf("--url is a mandatory argument for publishing")
 	}
 
 	return nil
