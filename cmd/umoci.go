@@ -48,11 +48,6 @@ var umociCmd = cli.Command{
 		cli.Command{
 			Name:   "repack",
 			Action: doRepack,
-			Flags: []cli.Flag{
-				cli.Uint64Flag{
-					Name: "max-layer-size",
-				},
-			},
 		},
 	},
 }
