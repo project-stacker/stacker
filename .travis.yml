@@ -1,5 +1,5 @@
 os: linux
-dist: bionic
+dist: focal
 language: go
 go:
     - 1.x
@@ -8,8 +8,10 @@ jobs:
     allow_failures:
         - go: master
 before_install:
+    - . /etc/os-release
+    - sudo sh -c "echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${NAME}_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
+    - wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/x${NAME}_${VERSION_ID}/Release.key -O- | sudo apt-key add -
     - sudo add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
-    - sudo add-apt-repository -y ppa:projectatomic/ppa
     - sudo apt-get update
     - sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq libcap-dev
     - GO111MODULE=off go get github.com/openSUSE/umoci/cmd/umoci
