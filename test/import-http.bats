@@ -1,20 +1,12 @@
 load helpers
 
-function teardown() {
-    cleanup
-    rm -rf img || true
-    rm -rf reference || true
-    rm -rf dest || true
-    sudo ip netns del stacker-test || true
-}
-
 function setup() {
-    mkdir reference
-    mkdir dest
+    stacker_setup
+    mkdir -p reference
+    mkdir -p dest
     rm -f nm_orig
     wget http://network-test.debian.org/nm -O reference/nm_orig
     mkdir img
-    sudo ip netns add stacker-test
     # Need to separate layer download from the download of the test file for imports
     # As we want to be able to have network for base image download
     # in img/stacker1.yaml but disconnect the network for test file download
@@ -38,6 +30,14 @@ img:
 EOF
 }
 
+function teardown() {
+    cleanup
+    rm -rf img || true
+    rm -rf reference || true
+    rm -rf dest || true
+    ip netns del stacker-test || true
+}
+
 @test "importing from cache works for unreachable http urls" {
     # Build base image
     stacker build -f img/stacker1.yaml
@@ -46,6 +46,7 @@ EOF
     stacker build -f img/stacker2.yaml
     umoci ls --layout oci
     # Second execution reads from the cache, but cannot access the net
+    ip netns add stacker-test
     run ip netns exec stacker-test "${ROOT_DIR}/stacker" build -f img/stacker2.yaml
     [ "$status" -eq 0 ]
     umoci ls --layout oci

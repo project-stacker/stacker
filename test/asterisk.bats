@@ -1,6 +1,14 @@
 load helpers
 
 function setup() {
+    stacker_setup
+}
+
+function teardown() {
+    cleanup
+}
+
+@test "wildcards work in run section" {
     cat > stacker.yaml <<EOF
 a:
     from:
@@ -10,16 +18,10 @@ a:
         mkdir /mybin
         cp /bin/* /mybin
 EOF
-}
-
-function teardown() {
-    cleanup
-}
-
-@test "wildcards work in run section" {
     stacker build
     umoci unpack --image oci:a dest
     [ "$status" -eq 0 ]
+
 
     for i in $(ls dest/rootfs/bin); do
         stat dest/rootfs/mybin/$i

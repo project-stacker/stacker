@@ -1,5 +1,9 @@
 load helpers
 
+function setup() {
+    stacker_setup
+}
+
 function teardown() {
     cleanup
     rm logfile || true

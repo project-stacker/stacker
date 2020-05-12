@@ -1,6 +1,7 @@
 load helpers
 
 function setup() {
+    stacker_setup
     cat > stacker.yaml <<EOF
 a:
     from:
@@ -25,6 +26,7 @@ both:
         - oci:oci:a
         - oci:oci:b
 EOF
+
 }
 
 function teardown() {

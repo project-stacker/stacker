@@ -1,10 +1,7 @@
 load helpers
 
 function setup() {
-    cleanup
-    rm -rf ocibuilds || true
-    rm -rf oci_publish || true
-    rm -rf /tmp/ocibuilds || true
+    stacker_setup
     mkdir -p ocibuilds/sub1
     mkdir oci_publish
     touch ocibuilds/sub1/import1

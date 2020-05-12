@@ -1,5 +1,9 @@
 load helpers
 
+function setup() {
+    stacker_setup
+}
+
 function teardown() {
     umount combined || true
     rm -rf combined || true

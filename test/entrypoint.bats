@@ -1,6 +1,14 @@
 load helpers
 
 function setup() {
+    stacker_setup
+}
+
+function teardown() {
+    cleanup
+}
+
+@test "entrypoint mess" {
     cat > stacker.yaml <<EOF
 base:
     from:
@@ -17,13 +25,6 @@ layer2:
         tag: layer1
     full_command: baz
 EOF
-}
-
-function teardown() {
-    cleanup
-}
-
-@test "entrypoint mess" {
     stacker build
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)

@@ -1,5 +1,9 @@
 load helpers
 
+function setup() {
+    stacker_setup
+}
+
 function teardown() {
     cleanup
     rm -rf tree1 tree2 link foo executable tar.tar content.txt >& /dev/null || true

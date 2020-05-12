@@ -1,5 +1,9 @@
 load helpers
 
+function setup() {
+    stacker_setup
+}
+
 function teardown() {
     rm -rf a b || true
     cleanup
@@ -49,6 +53,7 @@ test:
         FOO: bar
 EOF
     stacker container-setup
-    mount -o loop .stacker/btrfs.loop "$TEST_TMPDIR"
-    grep "FOO=bar" "$TEST_TMPDIR/test/lxc.conf"
+    mkdir -p roots
+    mount -o loop .stacker/btrfs.loop roots
+    grep "FOO=bar" "roots/test/lxc.conf"
 }

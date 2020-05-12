@@ -4,16 +4,17 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-# now that we have a package named "oci", we can't be in the top level dir, so
-# let's ensure everything is cd'd into the test/ dir. since we run stacker via
-# the abspath below, this works fine.
-cd "$ROOT_DIR/test"
-
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
 }
 
+function stacker_setup() {
+    export TEST_TMPDIR=$(tmpd $BATS_TEST_NAME)
+    cd $TEST_TMPDIR
+}
+
 function cleanup() {
+    cd "$ROOT_DIR/test"
     if [ -n "$TEST_TMPDIR" ]; then
         if [ -d "$TEST_TMPDIR" ]; then
             umount_under "$TEST_TMPDIR"
@@ -44,8 +45,14 @@ function bad_stacker {
     [ "$status" -ne 0 ]
 }
 
+function strace_stacker {
+    run strace -f -s 4096 "${ROOT_DIR}/stacker" --debug "$@"
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
 function tmpd() {
-    mktemp -d "${PWD}/.stackertest${1:+-$1}.XXXXXX"
+    mktemp -d "${PWD}/stackertest${1:+-$1}.XXXXXX"
 }
 
 function stderr() {

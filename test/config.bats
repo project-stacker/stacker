@@ -1,13 +1,17 @@
 load helpers
 
+function setup() {
+    stacker_setup
+}
+
 function teardown() {
     cleanup
     rm -rf *-oci *-stacker *-roots || true
 }
 
 @test "config args work" {
-    TEST_TMPDIR=$(tmpd config-args)
-    local tmpd="$TEST_TMPDIR"
+    local tmpd=$(pwd)
+    echo "tmpd $tmpd"
     cat > stacker.yaml <<EOF
 test:
     from:
@@ -22,8 +26,9 @@ EOF
 }
 
 @test "config file works" {
-    TEST_TMPDIR=$(tmpd config-file)
-    local tmpd="$TEST_TMPDIR"
+    local tmpd=$(pwd)
+    echo "tmpd $tmpd"
+    find $tmpd
     cat > stacker.yaml <<EOF
 test:
     from:

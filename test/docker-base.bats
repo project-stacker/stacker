@@ -1,6 +1,14 @@
 load helpers
 
 function setup() {
+    stacker_setup
+}
+
+function teardown() {
+    cleanup
+}
+
+@test "importing from a docker hub" {
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -17,13 +25,6 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
-}
-
-function teardown() {
-    cleanup
-}
-
-@test "importing from a docker hub" {
     stacker build --leave-unladen
     [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
     umoci unpack --image oci:layer1 dest

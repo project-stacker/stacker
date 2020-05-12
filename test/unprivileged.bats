@@ -1,6 +1,17 @@
 load helpers
 
 function setup() {
+    stacker_setup
+    stacker unpriv-setup
+}
+
+function teardown() {
+    cleanup
+}
+
+@test "unprivileged stacker" {
+    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -17,17 +28,7 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
-    rm -rf .stacker || true
-    stacker unpriv-setup
-}
-
-function teardown() {
-    cleanup
-}
-
-@test "unprivileged stacker" {
-    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
-
+    chown -R $SUDO_USER:$SUDO_USER .
     sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
     umoci unpack --image oci:layer1 dest
 

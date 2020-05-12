@@ -1,6 +1,15 @@
 load helpers
 
 function setup() {
+    stacker_setup
+}
+
+function teardown() {
+    cleanup
+    rm favicon.ico >& /dev/null || true
+}
+
+@test "build only stacker" {
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -19,14 +28,6 @@ layer1:
     run:
         - cp /stacker/favicon.ico /favicon2.ico
 EOF
-}
-
-function teardown() {
-    cleanup
-    rm favicon.ico >& /dev/null || true
-}
-
-@test "build only stacker" {
     stacker build
     umoci unpack --image oci:layer1 dest
     [ "$(sha dest/rootfs/favicon.ico)" == "$(sha dest/rootfs/favicon2.ico)" ]
@@ -34,6 +35,24 @@ function teardown() {
 }
 
 @test "stacker grab" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import: https://www.cisco.com/favicon.ico
+    run: |
+        cp /stacker/favicon.ico /favicon.ico
+    build_only: true
+layer1:
+    from:
+        type: built
+        tag: centos
+    import:
+        - stacker://centos/favicon.ico
+    run:
+        - cp /stacker/favicon.ico /favicon2.ico
+EOF
     stacker build
     stacker grab centos:/favicon.ico
     [ -f favicon.ico ]
