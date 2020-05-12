@@ -17,6 +17,7 @@ import (
 	"github.com/anuvu/stacker/log"
 	"github.com/freddierice/go-losetup"
 	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
 )
 
 type Storage interface {
@@ -87,6 +88,16 @@ func (b *btrfs) Name() string {
 	return "btrfs"
 }
 
+func (b *btrfs) sync(subvol string) error {
+	p := path.Join(b.c.RootFSDir, subvol)
+	fd, err := unix.Open(p, unix.O_RDONLY, 0)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't open %s to sync", p)
+	}
+	defer unix.Close(fd)
+	return errors.Wrapf(unix.Syncfs(fd), "couldn't sync fs at %s", subvol)
+}
+
 func (b *btrfs) Create(source string) error {
 	output, err := exec.Command(
 		"btrfs",
@@ -101,6 +112,10 @@ func (b *btrfs) Create(source string) error {
 }
 
 func (b *btrfs) Snapshot(source string, target string) error {
+	if err := b.sync(source); err != nil {
+		return err
+	}
+
 	output, err := exec.Command(
 		"btrfs",
 		"subvolume",
@@ -144,6 +159,10 @@ func (b *btrfs) Restore(source string, target string) error {
 }
 
 func (b *btrfs) MarkReadOnly(thing string) error {
+	if err := b.sync(thing); err != nil {
+		return err
+	}
+
 	output, err := exec.Command(
 		"btrfs",
 		"property",
@@ -360,7 +379,7 @@ func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest strin
 	}
 	defer dev.Detach()
 
-	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed,flushoncommit")
+	err = syscall.Mount(dev.Path(), dest, "btrfs", 0, "user_subvol_rm_allowed")
 	if err != nil {
 		return errors.Errorf("Failed mount fs: %v", err)
 	}
