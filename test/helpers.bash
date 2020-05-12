@@ -66,7 +66,7 @@ function umount_under() {
     local dir="" mounts="" mp="" oifs="$IFS"
     [ -d "$1" ] || return 0
     # make sure its a full path.
-    dir=$(cd "$1" && pwd)
+    dir=$(realpath $1)
     # reverse the entries to unwind.
     mounts=$(awk '
         $2 ~ matchdir || $2 == dir { found=$2 "|" found; };
