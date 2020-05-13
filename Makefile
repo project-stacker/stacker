@@ -4,6 +4,7 @@ VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 JOBS?=$(shell grep -c processor /proc/cpuinfo)
 JOBS=1
+BATS?=bats
 
 BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
 
@@ -17,7 +18,7 @@ check: stacker
 	bash test/static-analysis.sh
 	go test -tags "$(BUILD_TAGS)" ./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
-	sudo -E "PATH=$$PATH" bats --jobs "$(JOBS)" -t $(patsubst %,test/%.bats,$(TEST))
+	sudo -E "PATH=$$PATH" $(BATS) --jobs "$(JOBS)" -t $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup
 vendorup:
