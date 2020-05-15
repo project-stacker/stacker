@@ -122,6 +122,7 @@ func OpenCache(config StackerConfig, oci casext.Engine, sfm StackerFiles) (*Buil
 
 		if err != nil {
 			log.Infof("couldn't find %s, pruning it from the cache", ent.Name)
+			log.Debugf("original error %s", err)
 			delete(cache.Cache, hash)
 			pruned = true
 		}
@@ -319,7 +320,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 			return "", err
 		}
 		if !ok {
-			return "", errors.Errorf("couldn't find a cache of base layer")
+			return "", errors.Errorf("couldn't find a cache of base layer for %s: %s", name, l.From.Tag)
 		}
 
 		baseHash, err := hashstructure.Hash(baseEnt, nil)
