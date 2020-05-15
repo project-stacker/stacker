@@ -31,15 +31,15 @@ layer2:
         cp /stacker/import2 /root/import2
         cp /root/import1 /root/import1_copied
 EOF
-    mkdir -p /tmp/ocibuilds/sub3
-    cat > /tmp/ocibuilds/sub3/stacker.yaml <<EOF
+    mkdir -p ocibuilds/sub3
+    cat > ocibuilds/sub3/stacker.yaml <<EOF
 layer3:
     from:
         type: scratch
     build_only: true
 EOF
-    mkdir -p /tmp/ocibuilds/sub4
-    cat > /tmp/ocibuilds/sub4/stacker.yaml <<EOF
+    mkdir -p ocibuilds/sub4
+    cat > ocibuilds/sub4/stacker.yaml <<EOF
 layer4:
     from:
         type: docker
@@ -52,14 +52,13 @@ EOF
 function teardown() {
     cleanup
     rm -rf ocibuilds || true
-    rm -rf /tmp/ocibuilds || true
     rm -rf oci_publish || true
 }
 
 
 @test "publish layer with custom tag" {
-    stacker build -f /tmp/ocibuilds/sub4/stacker.yaml
-    stacker publish -f /tmp/ocibuilds/sub4/stacker.yaml --url oci:oci_publish --tag test1
+    stacker build -f ocibuilds/sub4/stacker.yaml
+    stacker publish -f ocibuilds/sub4/stacker.yaml --url oci:oci_publish --tag test1
 
      # Unpack published image and check content
     mkdir dest
@@ -104,8 +103,8 @@ function teardown() {
 }
 
 @test "do not publish build only layer" {
-    stacker build -f /tmp/ocibuilds/sub3/stacker.yaml
-    stacker publish -f /tmp/ocibuilds/sub3/stacker.yaml --url oci:oci_publish --tag test1
+    stacker build -f ocibuilds/sub3/stacker.yaml
+    stacker publish -f ocibuilds/sub3/stacker.yaml --url oci:oci_publish --tag test1
     # Check the output does not contain the tag since no images should be published
-    [[ ${output} =~ "will not publish: /tmp/ocibuilds/sub3/stacker.yaml build_only layer3" ]]
+    [[ ${output} =~ "will not publish: ocibuilds/sub3/stacker.yaml build_only layer3" ]]
 }
