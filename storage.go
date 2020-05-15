@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"os/user"
@@ -13,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/anuvu/stacker/log"
 	"github.com/freddierice/go-losetup"
@@ -373,7 +375,7 @@ func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest strin
 	/* Now we know that file is a valid btrfs "file" and that it's
 	 * not mounted, so let's mount it.
 	 */
-	dev, err := losetup.Attach(loopback, 0, false)
+	dev, err := attachToLoop(loopback)
 	if err != nil {
 		return errors.Errorf("Failed to attach loop device: %v", err)
 	}
@@ -389,6 +391,28 @@ func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest strin
 	}
 
 	return nil
+}
+
+// attachToLoop attaches the path to a loop device, retrying for a while if it
+// gets -EBUSY.
+func attachToLoop(path string) (dev losetup.Device, err error) {
+	// We can race between when we ask the kernel which loop device
+	// is free and when we actually attach to it. This window is
+	// pretty small, but still happens e.g. when we run the stacker
+	// test suite. So let's sleep for a random number of ms and
+	// retry the whole process again.
+	for i := 0; i < 10; i++ {
+		dev, err = losetup.Attach(path, 0, false)
+		if err == nil {
+			return dev, nil
+		}
+
+		// time.Durations are nanoseconds
+		ms := rand.Int63n(100 * 1000 * 1000)
+		time.Sleep(time.Duration(ms))
+	}
+
+	return dev, errors.Wrapf(err, "couldn't attach btrfs loop, too many retries")
 }
 
 func setupLoopback(path string, uid int, gid int, size int64) error {
