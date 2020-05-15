@@ -3,7 +3,6 @@ VERSION=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 JOBS?=$(shell grep -c processor /proc/cpuinfo)
-JOBS=1
 BATS?=bats
 
 BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
