@@ -55,3 +55,5 @@ require (
 )
 
 replace github.com/containers/image => github.com/anuvu/image v1.5.2-0.20190904195626-7368bc47821d
+
+replace github.com/freddierice/go-losetup => github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61
