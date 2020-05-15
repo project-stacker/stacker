@@ -42,10 +42,10 @@ require (
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.1
-	github.com/vbatts/go-mtree v0.4.4
+	github.com/vbatts/go-mtree v0.5.0
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
-	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
-	golang.org/x/sys v0.0.0-20190913121621-c3b328c6e5a7
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037
 	gopkg.in/cheggaaa/pb.v1 v1.0.27 // indirect
 	gopkg.in/lxc/go-lxc.v2 v2.0.0-20181227225324-7c910f8a5edc
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
@@ -53,7 +53,5 @@ require (
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/client-go v10.0.0+incompatible // indirect
 )
-
-replace github.com/vbatts/go-mtree v0.4.4 => github.com/vbatts/go-mtree v0.4.5-0.20190122034725-8b6de6073c1a
 
 replace github.com/containers/image => github.com/anuvu/image v1.5.2-0.20190904195626-7368bc47821d
