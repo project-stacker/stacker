@@ -47,6 +47,29 @@ layer4:
     run: |
         ls > /root/ls_out
 EOF
+    mkdir -p ocibuilds/sub5
+    cat > ocibuilds/sub5/stacker.yaml <<EOF
+config:
+    prerequisites:
+        - ../sub1/stacker.yaml
+layer5:
+    from:
+        type: built
+        tag: layer1
+    build_only: true
+EOF
+    mkdir -p ocibuilds/sub6
+    cat > ocibuilds/sub6/stacker.yaml <<EOF
+config:
+    prerequisites:
+        - ../sub5/stacker.yaml
+layer6:
+    from:
+        type: built
+        tag: layer5
+    run: |
+        ls > /root/ls_out
+EOF
 }
 
 function teardown() {
