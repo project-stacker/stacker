@@ -43,7 +43,6 @@ EOF
 }
 
 @test "container-setup generates a config" {
-    TEST_TMPDIR=$(tmpd container-setup)
     cat > stacker.yaml <<EOF
 test:
     from:

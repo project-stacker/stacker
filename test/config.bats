@@ -54,7 +54,6 @@ EOF
     #
     # my-base then imports that output file using the expansion of STACKER_ROOTFS_DIR.
     # the test compares that the rootfs from my-base contains the expected content.txt.
-    TEST_TMPDIR=$(tmpd config-subs)
     local tmpd="${TEST_TMPDIR}"
     local sdir="$tmpd/stacker.d" odir="$tmpd/oci.d" rdir="$tmpd/roots.d"
     local stacker_yaml="$tmpd/stacker.yaml" config_yaml="$tmpd/config.yaml"
