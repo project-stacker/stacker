@@ -15,22 +15,8 @@ function stacker_setup() {
 
 function cleanup() {
     cd "$ROOT_DIR/test"
-    if [ -n "$TEST_TMPDIR" ]; then
-        if [ -d "$TEST_TMPDIR" ]; then
-            umount_under "$TEST_TMPDIR"
-            rm -rf "$TEST_TMPDIR" || true
-        fi
-        unset TEST_TMPDIR
-    fi
-    rm -rf stacker*.yaml >& /dev/null || true
-    umount_under roots >/dev/null || true
-    rm -rf roots oci dest >& /dev/null || true
-    rm link >& /dev/null || true
-    if [ -z "$STACKER_KEEP" ]; then
-        rm -rf .stacker >& /dev/null || true
-    else
-        rm -rf .stacker/btrfs.loop .stacker/build.cache .stacker/imports >& /dev/null || true
-    fi
+    umount_under "$TEST_TMPDIR"
+    rm -rf "$TEST_TMPDIR" || true
 }
 
 function stacker {
