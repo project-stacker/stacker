@@ -464,7 +464,16 @@ func isMounted(path string) (bool, error) {
 	return false, nil
 }
 
-func CleanRoots(config StackerConfig) {
-	btrfsSubVolumesDelete(config.RootFSDir)
-	syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
+func CleanRoots(config StackerConfig) error {
+	subvolErr := btrfsSubVolumesDelete(config.RootFSDir)
+	umountErr := syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
+	if subvolErr != nil && umountErr != nil {
+		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)
+	}
+
+	if subvolErr != nil {
+		return subvolErr
+	}
+
+	return umountErr
 }
