@@ -27,10 +27,13 @@ func doClean(ctx *cli.Context) error {
 
 	// Explicitly don't check errors. We want to do what we can to just
 	// clean everything up.
-	err := stacker.CleanRoots(config)
-	if err != nil {
-		log.Infof("problem cleaning roots, btrfs is probably wedged: %v", err)
-		fail = true
+	if _, err := os.Stat(config.RootFSDir); !os.IsNotExist(err) {
+		// path/to/whatever exists
+		err := stacker.CleanRoots(config)
+		if err != nil {
+			log.Infof("problem cleaning roots, btrfs is probably wedged: %v", err)
+			fail = true
+		}
 	}
 	os.RemoveAll(config.RootFSDir)
 	os.RemoveAll(config.OCIDir)
