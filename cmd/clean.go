@@ -34,8 +34,8 @@ func doClean(ctx *cli.Context) error {
 			log.Infof("problem cleaning roots, btrfs is probably wedged: %v", err)
 			fail = true
 		}
+		os.RemoveAll(config.RootFSDir)
 	}
-	os.RemoveAll(config.RootFSDir)
 	os.RemoveAll(config.OCIDir)
 
 	if !ctx.Bool("all") {
