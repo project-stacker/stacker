@@ -179,24 +179,60 @@ func (b *btrfs) MarkReadOnly(thing string) error {
 	return nil
 }
 
-// These next three functions are lifted from LXD, which is also under the
-// apache2 license.
+func IsMountpoint(path string) (bool, error) {
+	return IsMountpointOfDevice(path, "")
+}
+
+func IsMountpointOfDevice(path, devicepath string) (bool, error) {
+	path = strings.TrimSuffix(path, "/")
+	f, err := os.Open("/proc/self/mounts")
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Fields(line)
+		if len(fields) <= 1 {
+			continue
+		}
+		if (fields[1] == path || path == "") && (fields[0] == devicepath || devicepath == "") {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
 
 // isBtrfsSubVolume returns true if the given Path is a btrfs subvolume else
 // false.
-func isBtrfsSubVolume(subvolPath string) bool {
+func isBtrfsSubVolume(subvolPath string) (bool, error) {
 	fs := syscall.Stat_t{}
 	err := syscall.Lstat(subvolPath, &fs)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	// Check if BTRFS_FIRST_FREE_OBJECTID
 	if fs.Ino != 256 {
-		return false
+		return false, nil
 	}
 
-	return true
+	// btrfs roots have the same inode as above, but they are not
+	// subvolumes (and we can't delete them) so exlcude the path if it is a
+	// mountpoint.
+	mountpoint, err := IsMountpoint(subvolPath)
+	if err != nil {
+		return false, err
+	}
+
+	if mountpoint {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func btrfsSubVolumesGet(path string) ([]string, error) {
@@ -213,18 +249,18 @@ func btrfsSubVolumesGet(path string) ([]string, error) {
 			return nil
 		}
 
-		// Ignore the base path
-		if strings.TrimRight(fpath, "/") == strings.TrimRight(path, "/") {
-			return nil
-		}
-
 		// Subvolumes can only be directories
 		if !fi.IsDir() {
 			return nil
 		}
 
 		// Check if a btrfs subvolume
-		if isBtrfsSubVolume(fpath) {
+		isSubvol, err := isBtrfsSubVolume(fpath)
+		if err != nil {
+			return err
+		}
+
+		if isSubvol {
 			result = append(result, strings.TrimPrefix(fpath, path))
 		}
 
@@ -237,9 +273,6 @@ func btrfsSubVolumesGet(path string) ([]string, error) {
 	return result, nil
 }
 
-// btrfsPoolVolumesDelete is the recursive variant on btrfsPoolVolumeDelete,
-// it first deletes subvolumes of the subvolume and then the
-// subvolume itself.
 func btrfsSubVolumesDelete(subvol string) error {
 	// Delete subsubvols.
 	subsubvols, err := btrfsSubVolumesGet(subvol)
@@ -253,12 +286,6 @@ func btrfsSubVolumesDelete(subvol string) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	// Delete the subvol itself
-	err = btrfsSubVolumeDelete(subvol)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -466,7 +493,13 @@ func isMounted(path string) (bool, error) {
 
 func CleanRoots(config StackerConfig) error {
 	subvolErr := btrfsSubVolumesDelete(config.RootFSDir)
-	umountErr := syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
+	loopback := path.Join(config.StackerDir, "btrfs.loop")
+
+	var umountErr error
+	_, err := os.Stat(loopback)
+	if err == nil {
+		umountErr = syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
+	}
 	if subvolErr != nil && umountErr != nil {
 		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)
 	}
