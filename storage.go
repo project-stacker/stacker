@@ -273,50 +273,52 @@ func btrfsSubVolumesGet(path string) ([]string, error) {
 	return result, nil
 }
 
-func btrfsSubVolumesDelete(subvol string) error {
-	// Delete subsubvols.
-	subsubvols, err := btrfsSubVolumesGet(subvol)
+func btrfsSubVolumesDelete(root string) error {
+	subvols, err := btrfsSubVolumesGet(root)
 	if err != nil {
 		return err
 	}
-	sort.Sort(sort.Reverse(sort.StringSlice(subsubvols)))
 
-	for _, subsubvol := range subsubvols {
-		err := btrfsSubVolumeDelete(path.Join(subvol, subsubvol))
+	subvolsReversed := make([]string, len(subvols))
+	copy(subvolsReversed, subvols)
+
+	sort.Sort(sort.StringSlice(subvols))
+	sort.Sort(sort.Reverse(sort.StringSlice(subvolsReversed)))
+
+	for _, subvol := range subvols {
+		// Since we create snapshots as readonly above, we must re-mark them
+		// writable here before we can delete them.
+		output, err := exec.Command(
+			"btrfs",
+			"property",
+			"set",
+			"-ts",
+			path.Join(root, subvol),
+			"ro",
+			"false").CombinedOutput()
+		if err != nil {
+			return errors.Errorf("btrfs mark writable: %s: %s", err, output)
+		}
+	}
+
+	for _, subvol := range subvolsReversed {
+		output, err := exec.Command(
+			"btrfs",
+			"subvolume",
+			"delete",
+			"-c",
+			path.Join(root, subvol)).CombinedOutput()
+		if err != nil {
+			return errors.Errorf("btrfs delete: %s: %s", err, output)
+		}
+
+		err = os.RemoveAll(subvol)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func btrfsSubVolumeDelete(subvol string) error {
-	// Since we create snapshots as readonly above, we must re-mark them
-	// writable here before we can delete them.
-	output, err := exec.Command(
-		"btrfs",
-		"property",
-		"set",
-		"-ts",
-		subvol,
-		"ro",
-		"false").CombinedOutput()
-	if err != nil {
-		return errors.Errorf("btrfs mark writable: %s: %s", err, output)
-	}
-
-	output, err = exec.Command(
-		"btrfs",
-		"subvolume",
-		"delete",
-		"-c",
-		subvol).CombinedOutput()
-	if err != nil {
-		return errors.Errorf("btrfs delete: %s: %s", err, output)
-	}
-
-	return os.RemoveAll(subvol)
 }
 
 func (b *btrfs) Delete(source string) error {

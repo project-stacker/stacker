@@ -40,6 +40,25 @@ function teardown() {
     [ ! -d parent/roots ]
 }
 
+@test "unpriv subvol clean works" {
+    truncate -s 10G btrfs.loop
+    mkfs.btrfs btrfs.loop
+    mkdir -p parent
+    mount -o loop,user_subvol_rm_allowed btrfs.loop parent
+    mkdir -p parent/roots
+
+    # create some subvolumes and make them all readonly
+    btrfs subvol create parent/roots/a
+    btrfs subvol create parent/roots/a/b
+    sudo chown -R $SUDO_USER:$SUDO_USER .
+    btrfs property set -ts parent/roots/a/b ro true
+    btrfs property set -ts parent/roots/a ro true
+
+    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --roots-dir=parent/roots clean
+    [ ! -d parent/roots/a ]
+    [ ! -d parent/roots/a/b ]
+}
+
 @test "clean in loopback mode works" {
     cat > stacker.yaml <<EOF
 test:
