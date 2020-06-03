@@ -8,7 +8,7 @@
     NC='\033[0m'
     printf "${RED}using fmt.Print* directive outside of inspect${NC}\n"
 
-    # Die in traivs, but just print the warning in regular mode. It is handy to
+    # Die in travis, but just print the warning in regular mode. It is handy to
     # use fmt.Println() for debugging.
     if [ -n "$TRAVIS" ]; then
         exit 1
