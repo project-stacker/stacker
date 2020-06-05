@@ -85,7 +85,8 @@ func ImageCopy(opts ImageCopyOpts) error {
 	}
 
 	args.DestinationCtx = &types.SystemContext{
-		OCIAcceptUncompressedLayers: true,
+		OCIAcceptUncompressedLayers:    true,
+		DockerAcceptUncompressedLayers: true,
 	}
 
 	if opts.DestUsername != "" {
