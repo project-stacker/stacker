@@ -59,6 +59,22 @@ function teardown() {
     [ ! -d parent/roots/a/b ]
 }
 
+@test "extra dirs don't get cleaned" {
+    truncate -s 10G btrfs.loop
+    mkfs.btrfs btrfs.loop
+    mkdir -p parent
+    mount -o loop,user_subvol_rm_allowed btrfs.loop parent
+    mkdir -p parent/roots
+
+    btrfs subvol create parent/roots/a
+    # we had a bad bug one time where we forgot to join the root path with the
+    # subvolume we were deleting, so these got deleted.
+    mkdir a
+    stacker --roots-dir=parent/roots clean
+    [ ! -d parent/roots/a ]
+    [ -d a ]
+}
+
 @test "clean in loopback mode works" {
     cat > stacker.yaml <<EOF
 test:

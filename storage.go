@@ -312,7 +312,7 @@ func btrfsSubVolumesDelete(root string) error {
 			return errors.Errorf("btrfs delete: %s: %s", err, output)
 		}
 
-		err = os.RemoveAll(subvol)
+		err = os.RemoveAll(path.Join(root, subvol))
 		if err != nil {
 			return err
 		}
