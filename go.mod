@@ -3,7 +3,6 @@ module github.com/anuvu/stacker
 go 1.12
 
 require (
-	code.cloudfoundry.org/systemcerts v0.0.0-20180917154049-ca00b2f806f2 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239
 	github.com/apex/log v1.1.1
 	github.com/cheggaaa/pb v1.0.27
@@ -16,7 +15,7 @@ require (
 	github.com/gorilla/websocket v0.0.0-20190205004414-7c8e298727d1 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/klauspost/pgzip v1.2.4
-	github.com/lxc/lxd v0.0.0-20190208124523-fe0844d45b32
+	github.com/lxc/lxd v0.0.0-20200608024941-af09a3f77da9
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/openSUSE/umoci v0.4.6-0.20200326170452-7654d6c16c17
