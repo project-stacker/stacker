@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	"github.com/cheggaaa/pb"
 	"github.com/pkg/errors"
@@ -21,7 +22,7 @@ func Download(cacheDir string, url string, progress bool) (string, error) {
 	if fi, err := os.Stat(name); err == nil {
 		// File is found in cache
 		// need to check if cache is valid before using it
-		localHash, err := hashFile(name, false)
+		localHash, err := lib.HashFile(name, false)
 		if err != nil {
 			return "", err
 		}

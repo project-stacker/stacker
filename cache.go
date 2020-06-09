@@ -3,20 +3,18 @@ package stacker
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
 
+	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	"github.com/mitchellh/hashstructure"
 	"github.com/openSUSE/umoci"
 	"github.com/openSUSE/umoci/oci/casext"
-	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
@@ -145,40 +143,6 @@ func walkImport(path string) (*mtree.DirectoryHierarchy, error) {
 	return mtree.Walk(path, nil, mtreeKeywords, nil)
 }
 
-func hashFile(path string, includeMode bool) (string, error) {
-	h := sha256.New()
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	_, err = io.Copy(h, f)
-	if err != nil {
-		return "", err
-	}
-
-	if includeMode {
-		// Include file mode when computing the hash
-		// In general we want to do this, but not all external
-		// tooling includes it, so we can't compare it with the hash
-		// in the reply of a HTTP HEAD call
-
-		fi, err := f.Stat()
-		if err != nil {
-			return "", err
-		}
-
-		_, err = h.Write([]byte(fmt.Sprintf("%v", fi.Mode())))
-		if err != nil {
-			return "", errors.Wrapf(err, "couldn't write mode")
-		}
-	}
-
-	d := digest.NewDigest("sha256", h)
-	return d.String(), nil
-}
-
 func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
@@ -274,7 +238,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 				return nil, false, nil
 			}
 		} else {
-			h, err := hashFile(diskPath, true)
+			h, err := lib.HashFile(diskPath, true)
 			if err != nil {
 				return nil, false, err
 			}
@@ -336,7 +300,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 		// use the hash of the input tarball
 		cacheDir := path.Join(c.config.StackerDir, "layer-bases")
 		tar := path.Join(cacheDir, path.Base(l.From.Url))
-		return hashFile(tar, true)
+		return lib.HashFile(tar, true)
 	case OCIType:
 		fallthrough
 	case DockerType:
@@ -411,7 +375,7 @@ func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
 			}
 		} else {
 			ih.Type = ImportFile
-			ih.Hash, err = hashFile(diskPath, true)
+			ih.Hash, err = lib.HashFile(diskPath, true)
 			if err != nil {
 				return err
 			}
