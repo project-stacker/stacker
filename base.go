@@ -426,8 +426,6 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 	}
 
 	if baseType != DockerType && baseType != OCIType && baseType != ZotType {
-		// Assume the user who wrote the stacker yaml has ordered the layers correctly
-		// and the base image has already been built and placed in OCIDir
 		return lib.ImageCopy(lib.ImageCopyOpts{
 			Src:  fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, baseTag),
 			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
