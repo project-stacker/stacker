@@ -22,6 +22,7 @@ check: stacker
 .PHONY: vendorup
 vendorup:
 	go get -u
+	go mod tidy
 
 .PHONY: clean
 clean:
