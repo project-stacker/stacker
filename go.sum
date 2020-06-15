@@ -495,8 +495,8 @@ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 h1:YR8cESwS4TdDjEe65xsg0ogRM/Nc3DYOhEAlW+xobZo=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/fsnotify.v1 v1.4.7/go.mod h1:Tz8NjZHkW78fSQdbUxIjBTcgA1z1m8ZHf0WmKUhAMys=
-gopkg.in/lxc/go-lxc.v2 v2.0.0-20200518152310-1ee44cc86c87 h1:Z3a2eajfAQT7ciu/AEfyl0PJDQMNohjD6Rx1bPUpR0M=
-gopkg.in/lxc/go-lxc.v2 v2.0.0-20200518152310-1ee44cc86c87/go.mod h1:4K0lbUXeslpmjwJZyW1lI6s5j97mrsj4+kpYwwvuLXo=
+gopkg.in/lxc/go-lxc.v2 v2.0.0-20191021220249-79d3cbb2d58e h1:ulBvYh2hYVOqxSJo+P0fdXlkrhQNStzLkMlZOqdJ3u4=
+gopkg.in/lxc/go-lxc.v2 v2.0.0-20191021220249-79d3cbb2d58e/go.mod h1:4K0lbUXeslpmjwJZyW1lI6s5j97mrsj4+kpYwwvuLXo=
 gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 h1:E846t8CnR+lv5nE+VuiKTDG/v1U2stad0QzddfJC7kY=
 gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5/go.mod h1:hiOFpYm0ZJbusNj2ywpbrXowU3G8U6GIQzqn2mw1UIE=
 gopkg.in/square/go-jose.v2 v2.3.1 h1:SK5KegNXmKmqE342YYN2qPHEnUYeoMiXXl1poUlI+o4=
