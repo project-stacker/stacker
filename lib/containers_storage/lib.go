@@ -6,7 +6,7 @@ package containers_storage
 
 import (
 	"github.com/anuvu/stacker/lib"
-	"github.com/containers/image/storage"
+	"github.com/containers/image/v5/storage"
 )
 
 func init() {

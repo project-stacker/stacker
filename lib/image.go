@@ -5,12 +5,11 @@ import (
 	"io"
 	"strings"
 
-	"github.com/containers/image/copy"
-	"github.com/containers/image/docker"
-	"github.com/containers/image/oci/layout"
-	"github.com/containers/image/signature"
-	"github.com/containers/image/types"
-	"github.com/containers/image/zot"
+	"github.com/containers/image/v5/copy"
+	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/oci/layout"
+	"github.com/containers/image/v5/signature"
+	"github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +27,6 @@ func init() {
 	urlSchemes = map[string]func(string) (types.ImageReference, error){}
 	RegisterURLScheme("oci", layout.ParseReference)
 	RegisterURLScheme("docker", docker.ParseReference)
-	RegisterURLScheme("zot", zot.Transport.ParseReference)
 }
 
 func localRefParser(ref string) (types.ImageReference, error) {
@@ -82,11 +80,6 @@ func ImageCopy(opts ImageCopyOpts) error {
 		args.SourceCtx = &types.SystemContext{
 			DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 		}
-	}
-
-	args.DestinationCtx = &types.SystemContext{
-		OCIAcceptUncompressedLayers:    true,
-		DockerAcceptUncompressedLayers: true,
 	}
 
 	if opts.DestUsername != "" {
