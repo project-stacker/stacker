@@ -11,7 +11,7 @@ import (
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 )
 
@@ -83,9 +83,7 @@ func Download(cacheDir string, url string, progress bool) (string, error) {
 
 	source := resp.Body
 	if progress {
-		bar := pb.New(int(resp.ContentLength)).SetUnits(pb.U_BYTES)
-		bar.ShowTimeLeft = true
-		bar.ShowSpeed = true
+		bar := pb.New(int(resp.ContentLength)).Set(pb.Bytes, true)
 		bar.Start()
 		source = bar.NewProxyReader(source)
 		defer bar.Finish()
