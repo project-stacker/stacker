@@ -6,9 +6,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/oci/casext"
 )
 
 func TestLayerHashing(t *testing.T) {

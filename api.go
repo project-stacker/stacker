@@ -14,7 +14,7 @@ import (
 
 	"github.com/anmitsu/go-shlex"
 	"github.com/anuvu/stacker/log"
-	"github.com/openSUSE/umoci/pkg/mtreefilter"
+	"github.com/opencontainers/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )

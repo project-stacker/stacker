@@ -10,10 +10,10 @@ import (
 	"github.com/anuvu/stacker"
 
 	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/oci/casext"
-	"github.com/openSUSE/umoci/pkg/fseval"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/oci/casext"
+	"github.com/opencontainers/umoci/pkg/fseval"
 	"github.com/urfave/cli"
 )
 

@@ -143,7 +143,7 @@ emitted in the final OCI image. For example:
             export GOPATH=~/go
             mkdir -p $GOPATH/src/github.com/openSUSE
             cd $GOPATH/src/github.com/openSUSE
-            git clone https://github.com/openSUSE/umoci
+            git clone https://github.com/opencontainers/umoci
             cd umoci
             make umoci.static
             cp umoci.static /

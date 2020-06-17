@@ -13,9 +13,9 @@ import (
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	"github.com/mitchellh/hashstructure"
-	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	"github.com/vbatts/go-mtree"
 )

@@ -10,8 +10,8 @@ import (
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
-	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/oci/casext"
+	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 )
 

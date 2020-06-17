@@ -7,7 +7,7 @@ import (
 
 	"github.com/anuvu/stacker"
 	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/openSUSE/umoci"
+	"github.com/opencontainers/umoci"
 	"github.com/urfave/cli"
 )
 

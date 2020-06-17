@@ -14,7 +14,7 @@ before_install:
     - sudo add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
     - sudo apt-get update
     - sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq libcap-dev libbtrfs-dev bats parallel
-    - GO111MODULE=off go get github.com/openSUSE/umoci/cmd/umoci
+    - GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
     - sudo cp $GOPATH/bin/umoci /usr/bin
     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0
 script:

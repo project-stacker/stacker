@@ -10,7 +10,7 @@ import (
 
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
-	"github.com/openSUSE/umoci"
+	"github.com/opencontainers/umoci"
 	"github.com/stretchr/testify/assert"
 )
 

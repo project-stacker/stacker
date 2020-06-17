@@ -19,10 +19,10 @@ require (
 	github.com/lxc/lxd v0.0.0-20200615140249-bc9af2a6adef
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
-	github.com/openSUSE/umoci v0.4.6-0.20200326170452-7654d6c16c17
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
+	github.com/opencontainers/umoci v0.4.6-0.20200617053817-391b0bb74258
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0 // indirect
 	github.com/prometheus/common v0.10.0 // indirect

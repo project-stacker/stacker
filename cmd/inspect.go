@@ -7,9 +7,9 @@ import (
 
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/dustin/go-humanize"
-	"github.com/openSUSE/umoci"
-	"github.com/openSUSE/umoci/oci/casext"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
