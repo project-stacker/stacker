@@ -7,9 +7,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/anuvu/stacker"
-
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
@@ -53,7 +52,7 @@ func squashfsRepack(ctx *cli.Context) error {
 	author := ctx.GlobalString("author")
 	bundlePath := ctx.GlobalString("bundle-path")
 
-	return stacker.GenerateSquashfsLayer(tag, author, bundlePath, config.OCIDir, oci)
+	return squashfs.GenerateSquashfsLayer(tag, author, bundlePath, config.OCIDir, oci)
 }
 
 func squashfsUnpack(ctx *cli.Context) error {

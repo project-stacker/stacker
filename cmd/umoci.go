@@ -11,6 +11,7 @@ import (
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
+	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
@@ -351,6 +352,6 @@ func doRepack(ctx *cli.Context) error {
 		EmptyLayer: false,
 	}
 
-	filters := []mtreefilter.FilterFunc{stacker.LayerGenerationIgnoreRoot}
+	filters := []mtreefilter.FilterFunc{stackermtree.LayerGenerationIgnoreRoot}
 	return umoci.Repack(oci, ctx.GlobalString("tag"), bundlePath, meta, history, filters, true, mutator)
 }

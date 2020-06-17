@@ -12,17 +12,11 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/log"
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
-	"github.com/opencontainers/umoci/pkg/fseval"
-	"github.com/opencontainers/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
-	"github.com/vbatts/go-mtree"
-	"golang.org/x/sys/unix"
 )
 
 type BuildArgs struct {
@@ -53,125 +47,6 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 		}
 
 		return os.Rename(path.Join(rootPath, fi.Name()), path.Join(rootPath, newName))
-	}
-
-	return nil
-}
-
-func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.Engine) error {
-	meta, err := umoci.ReadBundleMeta(bundlepath)
-	if err != nil {
-		return err
-	}
-
-	mtreeName := strings.Replace(meta.From.Descriptor().Digest.String(), ":", "_", 1)
-	mtreePath := path.Join(bundlepath, mtreeName+".mtree")
-
-	mfh, err := os.Open(mtreePath)
-	if err != nil {
-		return err
-	}
-
-	spec, err := mtree.ParseSpec(mfh)
-	if err != nil {
-		return err
-	}
-
-	fsEval := fseval.DefaultFsEval
-	rootfsPath := path.Join(bundlepath, "rootfs")
-	newDH, err := mtree.Walk(rootfsPath, nil, umoci.MtreeKeywords, fsEval)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't mtree walk %s", rootfsPath)
-	}
-
-	diffs, err := mtree.CompareSame(spec, newDH, umoci.MtreeKeywords)
-	if err != nil {
-		return err
-	}
-
-	diffs = mtreefilter.FilterDeltas(diffs,
-		LayerGenerationIgnoreRoot,
-		mtreefilter.SimplifyFilter(diffs))
-
-	// This is a pretty massive hack, because there's no library for
-	// generating squashfs images. However, mksquashfs does take a list of
-	// files to exclude from the image. So we go through and accumulate a
-	// list of these files.
-	//
-	// For missing files, since we're going to use overlayfs with
-	// squashfs, we use overlayfs' mechanism for whiteouts, which is a
-	// character device with device numbers 0/0. But since there's no
-	// library for generating squashfs images, we have to write these to
-	// the actual filesystem, and then remember what they are so we can
-	// delete them later.
-	missing := []string{}
-	defer func() {
-		for _, f := range missing {
-			os.Remove(f)
-		}
-	}()
-
-	// we only need to generate a layer if anything was added, modified, or
-	// deleted; if everything is the same this should be a no-op.
-	needsLayer := false
-	paths := squashfs.NewExcludePaths()
-	for _, diff := range diffs {
-		switch diff.Type() {
-		case mtree.Modified, mtree.Extra:
-			needsLayer = true
-			p := path.Join(rootfsPath, diff.Path())
-			paths.AddInclude(p, diff.New().IsDir())
-		case mtree.Missing:
-			needsLayer = true
-			p := path.Join(rootfsPath, diff.Path())
-			missing = append(missing, p)
-			paths.AddInclude(p, diff.Old().IsDir())
-			if err := unix.Mknod(p, unix.S_IFCHR, int(unix.Mkdev(0, 0))); err != nil {
-				if !os.IsNotExist(err) && err != unix.ENOTDIR {
-					// No privilege to create device nodes. Create a .wh.$filename instead.
-					dirname := path.Dir(diff.Path())
-					fname := fmt.Sprintf(".wh.%s", path.Base(diff.Path()))
-					whPath := path.Join(rootfsPath, dirname, fname)
-					fd, err := os.Create(whPath)
-					if err != nil {
-						return errors.Wrapf(err, "couldn't mknod whiteout for %s", diff.Path())
-					}
-					fd.Close()
-				}
-			}
-		case mtree.Same:
-			paths.AddExclude(path.Join(rootfsPath, diff.Path()))
-		}
-	}
-
-	if !needsLayer {
-		return nil
-	}
-
-	tmpSquashfs, err := squashfs.MakeSquashfs(ocidir, rootfsPath, paths)
-	if err != nil {
-		return err
-	}
-	defer tmpSquashfs.Close()
-
-	desc, err := stackeroci.AddBlobNoCompression(oci, name, tmpSquashfs)
-	if err != nil {
-		return err
-	}
-
-	newName := strings.Replace(desc.Digest.String(), ":", "_", 1) + ".mtree"
-	err = umoci.GenerateBundleManifest(newName, bundlepath, fsEval)
-	if err != nil {
-		return err
-	}
-
-	os.Remove(mtreePath)
-	meta.From = casext.DescriptorPath{
-		Walk: []ispec.Descriptor{desc},
-	}
-	err = umoci.WriteBundleMeta(bundlepath, meta)
-	if err != nil {
-		return err
 	}
 
 	return nil

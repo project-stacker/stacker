@@ -14,7 +14,6 @@ import (
 
 	"github.com/anmitsu/go-shlex"
 	"github.com/anuvu/stacker/log"
-	"github.com/opencontainers/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -23,18 +22,6 @@ const (
 	MediaTypeImageBtrfsLayer  = "application/vnd.cisco.image.layer.btrfs"
 	GitVersionAnnotation      = "com.cisco.stacker.git_version"
 	StackerContentsAnnotation = "com.cisco.stacker.stacker_yaml"
-)
-
-var (
-	// Stacker does a mkdir /stacker for bind mounting in imports and such.
-	// Unfortunately, this causes the mtime on the directory to be changed,
-	// and go-mtree picks that upas a diff and always generates it. Let's
-	// mask this out. This of course prevents stuff like `chmod 0444 /` or
-	// similar, but that's not a very common use case.
-	LayerGenerationIgnoreRoot mtreefilter.FilterFunc = func(path string) bool {
-		// the paths are supplied relative to the filter dir, so '.' is root.
-		return path != "."
-	}
 )
 
 // StackerConfig is a struct that contains global (or widely used) stacker
