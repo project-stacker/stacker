@@ -29,6 +29,7 @@ require (
 	github.com/prometheus/procfs v0.1.3 // indirect
 	github.com/sergi/go-diff v1.1.0
 	github.com/smartystreets/goconvey v1.6.4
+	github.com/stretchr/testify v1.6.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.4
