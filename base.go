@@ -12,6 +12,7 @@ import (
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -226,13 +227,14 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 	var blob io.ReadCloser
 
 	bundlePath := path.Join(o.Config.RootFSDir, o.Name)
+	rootfsPath := path.Join(bundlePath, "rootfs")
 	// otherwise, render the right layer type
 	if o.LayerType == "squashfs" {
 		// sourced a non-squashfs image and wants a squashfs layer,
 		// let's generate one.
 		o.OCI.GC(context.Background())
 
-		tmpSquashfs, err := mkSquashfs(bundlePath, o.Config.OCIDir, nil)
+		tmpSquashfs, err := squashfs.MakeSquashfs(o.Config.OCIDir, rootfsPath, nil)
 		if err != nil {
 			return err
 		}
@@ -241,7 +243,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 
 	} else {
 		// sourced a non-tar layer, and wants a tar one.
-		diff, err := mtree.Check(path.Join(bundlePath, "rootfs"), nil, umoci.MtreeKeywords, fseval.DefaultFsEval)
+		diff, err := mtree.Check(rootfsPath, nil, umoci.MtreeKeywords, fseval.DefaultFsEval)
 		if err != nil {
 			return err
 		}

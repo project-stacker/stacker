@@ -3,7 +3,6 @@ package stacker
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -57,17 +56,6 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 	}
 
 	return nil
-}
-
-func mkSquashfs(bundlepath, ocidir string, eps *squashfs.ExcludePaths) (io.ReadCloser, error) {
-	// generate the squashfs in OCIDir, and then open it, read it from
-	// there, and delete it.
-	if err := os.MkdirAll(ocidir, 0755); err != nil {
-		return nil, err
-	}
-
-	rootfsPath := path.Join(bundlepath, "rootfs")
-	return squashfs.MakeSquashfs(ocidir, rootfsPath, eps)
 }
 
 func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.Engine) error {
@@ -160,7 +148,7 @@ func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.E
 		return nil
 	}
 
-	tmpSquashfs, err := mkSquashfs(bundlepath, ocidir, paths)
+	tmpSquashfs, err := squashfs.MakeSquashfs(ocidir, rootfsPath, paths)
 	if err != nil {
 		return err
 	}
