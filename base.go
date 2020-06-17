@@ -234,13 +234,11 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		// let's generate one.
 		o.OCI.GC(context.Background())
 
-		tmpSquashfs, err := squashfs.MakeSquashfs(o.Config.OCIDir, rootfsPath, nil)
+		blob, err = squashfs.MakeSquashfs(o.Config.OCIDir, rootfsPath, nil)
 		if err != nil {
 			return err
 		}
-
-		blob = tmpSquashfs
-
+		defer blob.Close()
 	} else {
 		// sourced a non-tar layer, and wants a tar one.
 		diff, err := mtree.Check(rootfsPath, nil, umoci.MtreeKeywords, fseval.DefaultFsEval)
@@ -252,6 +250,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		if err != nil {
 			return err
 		}
+		defer blob.Close()
 	}
 
 	layerDigest, layerSize, err := o.OCI.PutBlob(context.Background(), blob)
