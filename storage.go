@@ -32,6 +32,7 @@ type Storage interface {
 	Exists(thing string) bool
 	MarkReadOnly(thing string) error
 	TemporaryWritableSnapshot(source string) (string, func(), error)
+	Clean() error
 }
 
 func NewStorage(c StackerConfig) (Storage, error) {
@@ -384,6 +385,26 @@ func (b *btrfs) TemporaryWritableSnapshot(source string) (string, func(), error)
 	return dir, cleanup, nil
 }
 
+func (b *btrfs) Clean() error {
+	subvolErr := btrfsSubVolumesDelete(b.c.RootFSDir)
+	loopback := path.Join(b.c.StackerDir, "btrfs.loop")
+
+	var umountErr error
+	_, err := os.Stat(loopback)
+	if err == nil {
+		umountErr = syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
+	}
+	if subvolErr != nil && umountErr != nil {
+		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)
+	}
+
+	if subvolErr != nil {
+		return subvolErr
+	}
+
+	return umountErr
+}
+
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
 // device and allows the specified uid to delete subvolumes on it.
 func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest string) error {
@@ -491,24 +512,4 @@ func isMounted(path string) (bool, error) {
 	}
 
 	return false, nil
-}
-
-func CleanRoots(config StackerConfig) error {
-	subvolErr := btrfsSubVolumesDelete(config.RootFSDir)
-	loopback := path.Join(config.StackerDir, "btrfs.loop")
-
-	var umountErr error
-	_, err := os.Stat(loopback)
-	if err == nil {
-		umountErr = syscall.Unmount(config.RootFSDir, syscall.MNT_DETACH)
-	}
-	if subvolErr != nil && umountErr != nil {
-		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)
-	}
-
-	if subvolErr != nil {
-		return subvolErr
-	}
-
-	return umountErr
 }
