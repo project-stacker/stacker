@@ -436,7 +436,13 @@ func GenerateShellForRunning(rootfs string, cmd []string, outFile string) error 
 	if strings.HasPrefix(cmd[0], "#!") {
 		shebangLine = ""
 	} else {
-		_, err := os.Stat(path.Join(rootfs, "bin/sh"))
+		// make sure *something* is at /bin/sh. busybox uses a symlink
+		// to /bin/busybox, which will be incorrect (we're not
+		// chrooted, so it'll check the host's /bin). If the /bin/sh
+		// symlink is busted, then exec will still fail, but this is
+		// really just about rendering a prettier error message anyway,
+		// so...
+		_, err := os.Lstat(path.Join(rootfs, "bin/sh"))
 		if err != nil {
 			return errors.Errorf("rootfs %s does not have a /bin/sh", rootfs)
 		}
