@@ -573,7 +573,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	// Parse the first time to validate the format/content
 	ms := yaml.MapSlice{}
 	if err := yaml.Unmarshal([]byte(content), &ms); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "couldn't parse stacker file %s", stackerfile)
 	}
 
 	// Determine the layers in the stacker.yaml, their order and the list of prerequisite files
