@@ -7,6 +7,7 @@ import (
 
 	"github.com/anuvu/stacker"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/umoci"
 	"github.com/urfave/cli"
 )
@@ -17,7 +18,7 @@ var gcCmd = cli.Command{
 	Action: doGC,
 }
 
-func gcForOCILayout(s stacker.Storage, layout string, thingsToKeep map[string]bool) error {
+func gcForOCILayout(s types.Storage, layout string, thingsToKeep map[string]bool) error {
 	oci, err := umoci.OpenLayout(layout)
 	if err != nil {
 		return err

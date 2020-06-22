@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path"
+
+	"github.com/anuvu/stacker/types"
 )
 
-func Grab(sc StackerConfig, name string, source string) error {
+func Grab(sc types.StackerConfig, name string, source string) error {
 	c, err := NewContainer(sc, name)
 	if err != nil {
 		return err

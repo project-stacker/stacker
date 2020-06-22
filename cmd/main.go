@@ -8,8 +8,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/anuvu/stacker"
 	stackerlog "github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	"github.com/apex/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	config  stacker.StackerConfig
+	config  types.StackerConfig
 	version = ""
 )
 

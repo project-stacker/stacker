@@ -12,6 +12,7 @@ import (
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	"github.com/mitchellh/hashstructure"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
@@ -68,10 +69,10 @@ type BuildCache struct {
 	sfm     StackerFiles
 	Cache   map[string]CacheEntry `json:"cache"`
 	Version int                   `json:"version"`
-	config  StackerConfig
+	config  types.StackerConfig
 }
 
-func OpenCache(config StackerConfig, oci casext.Engine, sfm StackerFiles) (*BuildCache, error) {
+func OpenCache(config types.StackerConfig, oci casext.Engine, sfm StackerFiles) (*BuildCache, error) {
 	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
 	cache := &BuildCache{

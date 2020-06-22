@@ -10,13 +10,14 @@ import (
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 )
 
 type PublishArgs struct {
-	Config     StackerConfig
+	Config     types.StackerConfig
 	Debug      bool
 	ShowOnly   bool
 	Substitute []string

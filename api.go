@@ -24,23 +24,6 @@ const (
 	StackerContentsAnnotation = "com.cisco.stacker.stacker_yaml"
 )
 
-// StackerConfig is a struct that contains global (or widely used) stacker
-// config options.
-type StackerConfig struct {
-	StackerDir string `yaml:"stacker_dir"`
-	OCIDir     string `yaml:"oci_dir"`
-	RootFSDir  string `yaml:"rootfs_dir"`
-}
-
-// Substitutions - return an array of substitutions for StackerFiles
-func (sc *StackerConfig) Substitutions() []string {
-	return []string{
-		fmt.Sprintf("STACKER_ROOTFS_DIR=%s", sc.RootFSDir),
-		fmt.Sprintf("STACKER_STACKER_DIR=%s", sc.StackerDir),
-		fmt.Sprintf("STACKER_OCI_DIR=%s", sc.OCIDir),
-	}
-}
-
 type BuildConfig struct {
 	Prerequisites []string `yaml:"prerequisites"`
 }

@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	"github.com/lxc/lxd/shared/idmap"
 	"github.com/pkg/errors"
 	"gopkg.in/lxc/go-lxc.v2"
@@ -73,11 +74,11 @@ func resolveIdmapSet() (*idmap.IdmapSet, error) {
 
 // our representation of a container
 type Container struct {
-	sc StackerConfig
+	sc types.StackerConfig
 	c  *lxc.Container
 }
 
-func NewContainer(sc StackerConfig, name string) (*Container, error) {
+func NewContainer(sc types.StackerConfig, name string) (*Container, error) {
 	if !lxc.VersionAtLeast(2, 1, 0) {
 		return nil, errors.Errorf("stacker requires liblxc >= 2.1.0")
 	}

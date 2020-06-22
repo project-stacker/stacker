@@ -13,6 +13,7 @@ import (
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
+	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -25,14 +26,14 @@ import (
 )
 
 type BaseLayerOpts struct {
-	Config    StackerConfig
+	Config    types.StackerConfig
 	Name      string
 	Layer     *Layer
 	Cache     *BuildCache
 	OCI       casext.Engine
 	LayerType string
 	Debug     bool
-	Storage   Storage
+	Storage   types.Storage
 	Progress  bool
 }
 
@@ -109,7 +110,7 @@ func SetupRootfs(o BaseLayerOpts, sfm StackerFiles) error {
 	}
 }
 
-func importContainersImage(is *ImageSource, config StackerConfig, progress bool) error {
+func importContainersImage(is *ImageSource, config types.StackerConfig, progress bool) error {
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err
@@ -464,7 +465,7 @@ func ComputeAggregateHash(manifest ispec.Manifest, descriptor ispec.Descriptor) 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-func RunUmociSubcommand(config StackerConfig, debug bool, args []string) error {
+func RunUmociSubcommand(config types.StackerConfig, debug bool, args []string) error {
 	binary, err := os.Readlink("/proc/self/exe")
 	if err != nil {
 		return err
@@ -486,7 +487,7 @@ func RunUmociSubcommand(config StackerConfig, debug bool, args []string) error {
 	return MaybeRunInUserns(cmd, "image unpack failed")
 }
 
-func RunSquashfsSubcommand(config StackerConfig, debug bool, args []string) error {
+func RunSquashfsSubcommand(config types.StackerConfig, debug bool, args []string) error {
 	binary, err := os.Readlink("/proc/self/exe")
 	if err != nil {
 		return err

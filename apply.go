@@ -17,6 +17,7 @@ import (
 
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -32,11 +33,11 @@ import (
 type Apply struct {
 	layers             []ispec.Descriptor
 	opts               BaseLayerOpts
-	storage            Storage
+	storage            types.Storage
 	considerTimestamps bool
 }
 
-func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage Storage, considerTimestamps bool) (*Apply, error) {
+func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage types.Storage, considerTimestamps bool) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
 	if len(opts.Layer.Apply) == 0 {

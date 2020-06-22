@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
@@ -18,7 +19,7 @@ func TestLayerHashing(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	config := StackerConfig{
+	config := types.StackerConfig{
 		StackerDir: dir,
 		RootFSDir:  dir,
 	}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
 	"github.com/udhos/equalfile"
 	"github.com/vbatts/go-mtree"
@@ -160,7 +161,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 }
 
-func acquireUrl(c StackerConfig, i string, cache string, progress bool) (string, error) {
+func acquireUrl(c types.StackerConfig, i string, cache string, progress bool) (string, error) {
 	url, err := newDockerishUrl(i)
 	if err != nil {
 		return "", err
@@ -180,7 +181,7 @@ func acquireUrl(c StackerConfig, i string, cache string, progress bool) (string,
 	return "", errors.Errorf("unsupported url scheme %s", i)
 }
 
-func CleanImportsDir(c StackerConfig, name string, imports []string, cache *BuildCache) error {
+func CleanImportsDir(c types.StackerConfig, name string, imports []string, cache *BuildCache) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
 	cacheEntry, cacheHit := cache.Cache[name]
@@ -208,7 +209,7 @@ func CleanImportsDir(c StackerConfig, name string, imports []string, cache *Buil
 	return nil
 }
 
-func Import(c StackerConfig, name string, imports []string, progress bool) error {
+func Import(c types.StackerConfig, name string, imports []string, progress bool) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {

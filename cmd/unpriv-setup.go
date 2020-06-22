@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/anuvu/stacker"
+	"github.com/anuvu/stacker/btrfs"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -169,7 +169,7 @@ func doUnprivSetup(ctx *cli.Context) error {
 	}
 
 	size := int64(100 * 1024 * 1024 * 1024)
-	err = stacker.MakeLoopbackBtrfs(path.Join(config.StackerDir, "btrfs.loop"), size, uid, gid, config.RootFSDir)
+	err = btrfs.MakeLoopbackBtrfs(path.Join(config.StackerDir, "btrfs.loop"), size, uid, gid, config.RootFSDir)
 	if err != nil {
 		return err
 	}

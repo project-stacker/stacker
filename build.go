@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
@@ -20,7 +21,7 @@ import (
 )
 
 type BuildArgs struct {
-	Config                  StackerConfig
+	Config                  types.StackerConfig
 	LeaveUnladen            bool
 	NoCache                 bool
 	Substitute              []string
