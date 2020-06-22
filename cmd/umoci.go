@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker"
+	"github.com/anuvu/stacker/btrfs"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackermtree "github.com/anuvu/stacker/mtree"
@@ -231,7 +232,7 @@ func doUnpack(ctx *cli.Context) error {
 	lastLayer := -1
 	highestHash := ""
 	for i, layerDesc := range manifest.Layers {
-		hash, err := stacker.ComputeAggregateHash(manifest, layerDesc)
+		hash, err := btrfs.ComputeAggregateHash(manifest, layerDesc)
 		if err != nil {
 			return err
 		}
@@ -280,7 +281,7 @@ func doUnpack(ctx *cli.Context) error {
 	// TODO: we could always share the empty layer, but that's more code
 	// and seems extreme...
 	callback := func(manifest ispec.Manifest, desc ispec.Descriptor) error {
-		hash, err := stacker.ComputeAggregateHash(manifest, desc)
+		hash, err := btrfs.ComputeAggregateHash(manifest, desc)
 		if err != nil {
 			return err
 		}
@@ -306,7 +307,7 @@ func doUnpack(ctx *cli.Context) error {
 	// re-snapshot. The problem is that the snapshot in the callback won't
 	// contain an mtree file, because the final mtree is generated after
 	// the callback is called.
-	hash, err := stacker.ComputeAggregateHash(manifest, manifest.Layers[len(manifest.Layers)-1])
+	hash, err := btrfs.ComputeAggregateHash(manifest, manifest.Layers[len(manifest.Layers)-1])
 	if err != nil {
 		return err
 	}

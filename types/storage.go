@@ -11,4 +11,9 @@ type Storage interface {
 	MarkReadOnly(thing string) error
 	TemporaryWritableSnapshot(source string) (string, func(), error)
 	Clean() error
+
+	// GC any storage that's no longer relevant for the layers in the
+	// layer-bases cache or output directory (note that this implies a GC
+	// of those OCI dirs as well).
+	GC() error
 }

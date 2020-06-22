@@ -2,7 +2,6 @@ package stacker
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -440,29 +439,6 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, baseTag),
 		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
 	})
-}
-
-func ComputeAggregateHash(manifest ispec.Manifest, descriptor ispec.Descriptor) (string, error) {
-	h := sha256.New()
-	found := false
-
-	for _, l := range manifest.Layers {
-		_, err := h.Write([]byte(l.Digest.String()))
-		if err != nil {
-			return "", err
-		}
-
-		if l.Digest.String() == descriptor.Digest.String() {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return "", errors.Errorf("couldn't find descriptor %s in manifest %s", descriptor.Digest.String(), manifest.Annotations["org.opencontainers.image.ref.name"])
-	}
-
-	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 func RunUmociSubcommand(config types.StackerConfig, debug bool, args []string) error {
