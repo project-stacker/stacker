@@ -51,7 +51,9 @@ EOF
     stacker build
 }
 
-@test "intermediate base layers are snapshotted" {
+function test_intermediate_layers {
+    layer_type=$1
+
     # as of this writing, the way the ubuntu image is generated it always has
     # ~4 layers, although they are small. below we fail the test if there are
     # not more than one layers, so that we can be sure the test always keeps
@@ -63,18 +65,26 @@ test:
         url: docker://ubuntu:latest
 
 EOF
-    stacker build --leave-unladen
+    stacker build --leave-unladen --layer-type=$layer_type
 
-    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
-    [ "$(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')" -gt "1" ]
-    for i in $(seq 1 $(($(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))); do
+    manifest=$(cat .stacker/layer-bases/oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    [ "$(cat .stacker/layer-bases/oci/blobs/sha256/$manifest | jq -r '.layers | length')" -gt "1" ]
+    for i in $(seq 1 $(($(cat .stacker/layer-bases/oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))); do
         accum=""
         for j in $(seq 0 $(($i-1))); do
-            accum="$accum$(cat oci/blobs/sha256/$manifest | jq -r ".layers[$j].digest")"
+            accum="$accum$(cat .stacker/layer-bases/oci/blobs/sha256/$manifest | jq -r ".layers[$j].digest")"
         done
         hash=$(echo -n "$accum" | sha256sum | cut -f1 -d" ")
         [ -d "roots/$hash" ]
     done
+}
+
+@test "intermediate base layers are snapshotted" {
+    test_intermediate_layers tar
+}
+
+@test "intermediate base layers are snapshotted (squashfs)" {
+    test_intermediate_layers squashfs
 }
 
 @test "intermediate base layers are used" {
