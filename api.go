@@ -213,7 +213,7 @@ type Layer struct {
 	referenceDirectory string            // Location of the directory where the layer is defined
 }
 
-func FilterEnv(matchList []string, curEnv map[string]string) (map[string]string, error) {
+func filterEnv(matchList []string, curEnv map[string]string) (map[string]string, error) {
 	// matchList is a list of regular expressions.
 	// curEnv is a map[string]string.
 	// return is filtered set of curEnv that match an entry in matchList
@@ -255,7 +255,7 @@ func buildEnv(passThrough []string, newEnv map[string]string,
 	if len(passThrough) != 0 {
 		matchList = passThrough
 	}
-	ret, err := FilterEnv(matchList, curEnv)
+	ret, err := filterEnv(matchList, curEnv)
 	if err != nil {
 		return ret, err
 	}

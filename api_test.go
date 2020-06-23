@@ -115,9 +115,9 @@ func TestFilterEnv(t *testing.T) {
 	}
 	var result, expected map[string]string
 	var err error
-	result, err = FilterEnv([]string{"PT_.*", "TARGET"}, myenv)
+	result, err = filterEnv([]string{"PT_.*", "TARGET"}, myenv)
 	if err != nil {
-		t.Fatalf("Failed FilterEnv1: %s", err)
+		t.Fatalf("Failed filterEnv1: %s", err)
 	}
 	expected = map[string]string{
 		"PT_K1": "val1", "PT_9": "val2", "TARGET": "build"}

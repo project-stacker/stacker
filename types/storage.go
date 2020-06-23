@@ -16,4 +16,11 @@ type Storage interface {
 	// layer-bases cache or output directory (note that this implies a GC
 	// of those OCI dirs as well).
 	GC() error
+
+	// Unpack is the thing that unpacks an OCI manifest into the specified
+	// tag (whatever that means for this particular storage).
+	//
+	// Unpack can do fancy things like using previously cached unpacks to
+	// speed things up, etc.
+	Unpack(ociDir, tag, name string) error
 }

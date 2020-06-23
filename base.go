@@ -8,6 +8,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
@@ -181,33 +182,9 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		sourceLayerType = "squashfs"
 	}
 
-	if sourceLayerType == "squashfs" {
-		modifiedConfig := o.Config
-		modifiedConfig.OCIDir = cacheDir
-		err = RunSquashfsSubcommand(modifiedConfig, o.Debug, []string{
-			"--bundle-path", target,
-			"--tag", cacheTag,
-			"unpack",
-		})
-		if err != nil {
-			return err
-		}
-	} else {
-		// This is a bit of a hack; since we want to unpack from the
-		// layer-bases import folder instead of the actual oci dir, we hack
-		// this to make config.OCIDir be our input folder. That's a lie, but it
-		// seems better to do a little lie here than to try and abstract it out
-		// and make everyone else deal with it.
-		modifiedConfig := o.Config
-		modifiedConfig.OCIDir = cacheDir
-		err = RunUmociSubcommand(modifiedConfig, o.Debug, []string{
-			"--name", o.Name,
-			"--tag", cacheTag,
-			"unpack",
-		})
-		if err != nil {
-			return err
-		}
+	err = o.Storage.Unpack(cacheDir, cacheTag, o.Name)
+	if err != nil {
+		return err
 	}
 
 	if o.Layer.BuildOnly {
@@ -330,9 +307,10 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 }
 
 func umociInit(o BaseLayerOpts) error {
-	return RunUmociSubcommand(o.Config, o.Debug, []string{
+	return container.RunUmociSubcommand(o.Config, o.Debug, []string{
 		"--tag", o.Name,
-		"--name", o.Name,
+		"--oci-path", o.Config.OCIDir,
+		"--bundle-path", path.Join(o.Config.RootFSDir, o.Name),
 		"init",
 	})
 }
@@ -441,28 +419,6 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 	})
 }
 
-func RunUmociSubcommand(config types.StackerConfig, debug bool, args []string) error {
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
-	cmd := []string{
-		binary,
-		"--oci-dir", config.OCIDir,
-		"--roots-dir", config.RootFSDir,
-		"--stacker-dir", config.StackerDir,
-	}
-
-	if debug {
-		cmd = append(cmd, "--debug")
-	}
-
-	cmd = append(cmd, "umoci")
-	cmd = append(cmd, args...)
-	return MaybeRunInUserns(cmd, "image unpack failed")
-}
-
 func RunSquashfsSubcommand(config types.StackerConfig, debug bool, args []string) error {
 	binary, err := os.Readlink("/proc/self/exe")
 	if err != nil {
@@ -478,5 +434,5 @@ func RunSquashfsSubcommand(config types.StackerConfig, debug bool, args []string
 
 	cmd = append(cmd, "squashfs")
 	cmd = append(cmd, args...)
-	return MaybeRunInUserns(cmd, "image unpack failed")
+	return container.MaybeRunInUserns(cmd, "image unpack failed")
 }
