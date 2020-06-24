@@ -11,7 +11,6 @@ import (
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
@@ -133,7 +132,7 @@ func (b *btrfs) findPreviousExtraction(oci casext.Engine, manifest ispec.Manifes
 	return lastLayer, highestHash, nil
 }
 
-func prepareUmociMetadata(storage types.Storage, name string, bundlePath string, dp casext.DescriptorPath, highestHash string) error {
+func prepareUmociMetadata(storage *btrfs, name string, bundlePath string, dp casext.DescriptorPath, highestHash string) error {
 	// We need the mtree metadata to be present, but since these
 	// intermediate snapshots were created after each layer was
 	// extracted and the metadata wasn't, it won't necessarily
