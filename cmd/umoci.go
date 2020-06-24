@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/btrfs"
 	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
@@ -162,11 +161,12 @@ func doUnpack(ctx *cli.Context) error {
 	}
 	defer oci.Close()
 
-	storage, err := stacker.NewStorage(config)
-	if err != nil {
-		return err
-	}
-
+	// Other unpack drivers will probably want to do something fancier for
+	// their unpacks and will exec a different code path, so we can/should
+	// assume this is btrfs for now. Additionally, we can assume its an
+	// existing btrfs, since the loopback device should have been mounted
+	// by the parent.
+	storage := btrfs.NewExisting(config)
 	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
 		return err
