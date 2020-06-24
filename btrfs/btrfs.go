@@ -147,7 +147,7 @@ func (b *btrfs) Restore(source string, target string) error {
 	return nil
 }
 
-func (b *btrfs) MarkReadOnly(thing string) error {
+func (b *btrfs) Finalize(thing string) error {
 	if err := b.sync(thing); err != nil {
 		return err
 	}

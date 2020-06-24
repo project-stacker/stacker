@@ -249,7 +249,7 @@ func (b *Builder) Build(file string) error {
 				return errors.Wrapf(err, "error saving config file for %s", name)
 			}
 
-			if err := s.MarkReadOnly(name); err != nil {
+			if err := s.Finalize(name); err != nil {
 				return err
 			}
 			log.Infof("setup for %s complete", name)
@@ -287,7 +287,7 @@ func (b *Builder) Build(file string) error {
 		// imported into future images. Let's just snapshot it and add
 		// a bogus entry to our cache.
 		if l.BuildOnly {
-			if err := s.MarkReadOnly(name); err != nil {
+			if err := s.Finalize(name); err != nil {
 				return err
 			}
 
@@ -510,7 +510,7 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		if err := s.MarkReadOnly(name); err != nil {
+		if err := s.Finalize(name); err != nil {
 			return err
 		}
 
