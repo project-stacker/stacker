@@ -17,8 +17,9 @@ type Storage interface {
 	// of those OCI dirs as well).
 	GC() error
 
-	// Unpack is the thing that unpacks an OCI manifest into the specified
-	// tag (whatever that means for this particular storage).
+	// Unpack is the thing that unpacks the specfied tag from the specified
+	// ociDir into the specified "name" (working dir), whatever that means
+	// for this storage.
 	//
 	// Unpack can do fancy things like using previously cached unpacks to
 	// speed things up, etc.
