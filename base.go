@@ -61,6 +61,15 @@ func GetBase(o BaseLayerOpts) error {
 	}
 }
 
+func umociInit(o BaseLayerOpts) error {
+	return container.RunUmociSubcommand(o.Config, []string{
+		"--tag", o.Name,
+		"--oci-path", o.Config.OCIDir,
+		"--bundle-path", path.Join(o.Config.RootFSDir, o.Name),
+		"init",
+	})
+}
+
 // SetupRootfs assumes the base layer is correct in the cache, and sets up
 // the filesystem image in RootsDir, and copies whatever OCI layers exist for
 // the base to the output. If no OCI layers exist for the base (e.g. "scratch"
@@ -93,9 +102,23 @@ func SetupRootfs(o BaseLayerOpts, sfm types.StackerFiles) error {
 
 	switch o.Layer.From.Type {
 	case types.TarLayer:
+		err := umociInit(o)
+		if err != nil {
+			return err
+		}
+
+		err = o.Storage.SetupEmptyRootfs(o.Name)
+		if err != nil {
+			return err
+		}
 		return setupTarRootfs(o)
 	case types.ScratchLayer:
-		return setupScratchRootfs(o)
+		err := umociInit(o)
+		if err != nil {
+			return err
+		}
+
+		return o.Storage.SetupEmptyRootfs(o.Name)
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:
@@ -303,22 +326,8 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 	return err
 }
 
-func umociInit(o BaseLayerOpts) error {
-	return container.RunUmociSubcommand(o.Config, []string{
-		"--tag", o.Name,
-		"--oci-path", o.Config.OCIDir,
-		"--bundle-path", path.Join(o.Config.RootFSDir, o.Name),
-		"init",
-	})
-}
-
 func setupTarRootfs(o BaseLayerOpts) error {
 	// initialize an empty image, then extract it
-	err := umociInit(o)
-	if err != nil {
-		return err
-	}
-
 	cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
 	tar := path.Join(cacheDir, path.Base(o.Layer.From.Url))
 
@@ -341,17 +350,12 @@ func setupTarRootfs(o BaseLayerOpts) error {
 		defer uncompressed.Close()
 	}
 
-	err = layer.UnpackLayer(layerPath, uncompressed, nil)
+	err = layer.UnpackLayer(layerPath, uncompressed, &layer.UnpackOptions{KeepDirlinks: true})
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func setupScratchRootfs(o BaseLayerOpts) error {
-	// nothing to extract, so just initialize an empty image
-	return umociInit(o)
 }
 
 func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm types.StackerFiles) error {

@@ -17,14 +17,14 @@ type Mount struct {
 
 type Mounts []Mount
 
-func (ms Mounts) IsMountpoint(p string) bool {
+func (ms Mounts) FindMount(p string) (Mount, bool) {
 	for _, m := range ms {
 		if m.Target == p {
-			return true
+			return m, true
 		}
 	}
 
-	return false
+	return Mount{}, false
 }
 
 func ParseMounts(mountinfo string) (Mounts, error) {
@@ -58,11 +58,22 @@ func ParseMounts(mountinfo string) (Mounts, error) {
 	return mounts, nil
 }
 
-func IsMountpoint(p string) (bool, error) {
+func IsMountpoint(target string) (bool, error) {
+	_, mounted, err := FindMount(target)
+	return mounted, err
+}
+
+func FindMount(target string) (Mount, bool, error) {
 	mounts, err := ParseMounts("/proc/self/mountinfo")
 	if err != nil {
-		return false, err
+		return Mount{}, false, err
 	}
 
-	return mounts.IsMountpoint(p), nil
+	for _, mount := range mounts {
+		if mount.Target == target {
+			return mount, true, nil
+		}
+	}
+
+	return Mount{}, false, nil
 }

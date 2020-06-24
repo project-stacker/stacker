@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
@@ -98,6 +99,18 @@ func (b *btrfs) Create(source string) error {
 	}
 
 	return nil
+}
+
+func (b *btrfs) SetupEmptyRootfs(name string) error {
+	bundlePath := path.Join(b.c.RootFSDir, name)
+	// unpack the empty image in the output (i.e. setup the umoci/mtree
+	// metadata)
+	return container.RunUmociSubcommand(b.c, []string{
+		"--oci-path", b.c.OCIDir,
+		"--tag", name,
+		"--bundle-path", bundlePath,
+		"unpack",
+	})
 }
 
 func (b *btrfs) Snapshot(source string, target string) error {

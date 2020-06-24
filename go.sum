@@ -243,10 +243,6 @@ github.com/opencontainers/runtime-spec v1.0.2 h1:UfAcuLBJB9Coz72x1hgl8O5RVzTdNia
 github.com/opencontainers/runtime-spec v1.0.2/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.5.2 h1:F6DgIsjgBIcDksLW4D5RG9bXok6oqZ3nvMwj4ZoFu/Q=
 github.com/opencontainers/selinux v1.5.2/go.mod h1:yTcKuYAh6R95iDpefGLQaPaRwJFwyzAJufJyiTt7s0g=
-github.com/opencontainers/umoci v0.4.6 h1:nUULYM+jSLLJCVN2gd4wldm8/yuVMahC36UXna3jEqI=
-github.com/opencontainers/umoci v0.4.6/go.mod h1:ZyTwgJPvYl9xv1Cf3ykU41BxMSCxW3AtoueA5Bmxs1E=
-github.com/opencontainers/umoci v0.4.7-0.20200707151043-3ab7c681dab8 h1:RuuuSxjozRfhtpOcFsX4X1iKbNftpwuLijl4bLewCXk=
-github.com/opencontainers/umoci v0.4.7-0.20200707151043-3ab7c681dab8/go.mod h1:ax+DI5s1AIhU7q3nICDIdKTM8Ti/+3hn2FyvXz5zBqM=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913 h1:TnbXhKzrTOyuvWrjI8W6pcoI9XPbLHFXCdN2dtUw7Rw=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG6YJVEWopen4avK3VNQSnALmmjvniMmni/YFYAwc=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
@@ -335,6 +331,10 @@ github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61 h1:INQxeLW5rI6NdK32NgVL+2q6p+ixmFuvvduSYmsCYGw=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61/go.mod h1:cdWJrB+PcHXXfp97Gizi9FJNWfNLgO6pt4CgxWpVA5Q=
+github.com/tych0/umoci v0.3.2-0.20200707230152-66a99b8ceb69 h1:gBaJ3z++c18GHcQ/CIJNmTTXX6oscjNY/5NmKSCajnI=
+github.com/tych0/umoci v0.3.2-0.20200707230152-66a99b8ceb69/go.mod h1:ax+DI5s1AIhU7q3nICDIdKTM8Ti/+3hn2FyvXz5zBqM=
+github.com/tych0/umoci v0.3.2-0.20200708211521-2b9f23b91053 h1:Jb+Ha2M62GcjcnuK88xb7hJMhFCH5X4Alh5kBBw5GFw=
+github.com/tych0/umoci v0.3.2-0.20200708211521-2b9f23b91053/go.mod h1:J81tYuoqLdUKOemyhg7VzTYsx7wqwkEreenieJocJzY=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ulikunitz/xz v0.5.7 h1:YvTNdFzX6+W5m9msiYg/zpkSURPPtOlzbqYjrFn7Yt4=

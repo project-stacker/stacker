@@ -10,16 +10,19 @@ BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
 stacker: $(GO_SRC) go.mod go.sum
 	go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
 
+.PHONY: lint
 lint: $(GO_SRC)
 	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
 	bash test/static-analysis.sh
+	go test -tags "$(BUILD_TAGS)" ./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
+
+check-%: stacker
+	sudo -E "PATH=$$PATH" STORAGE_TYPE=$(subst check-,,$@) $(BATS) --jobs "$(JOBS)" -t $(patsubst %,test/%.bats,$(TEST))
 
 # make check TEST=basic will run only the basic test.
 .PHONY: check
-check: stacker lint
-	go test -tags "$(BUILD_TAGS)" ./...
-	sudo -E "PATH=$$PATH" $(BATS) --jobs "$(JOBS)" -t $(patsubst %,test/%.bats,$(TEST))
+check: lint check-btrfs check-overlay
 
 .PHONY: vendorup
 vendorup:

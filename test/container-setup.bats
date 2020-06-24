@@ -10,6 +10,7 @@ function teardown() {
 }
 
 @test "container-setup: two containers works" {
+    require_storage btrfs
     cat > stacker.yaml <<EOF
 a:
     from:
@@ -43,6 +44,7 @@ EOF
 }
 
 @test "container-setup generates a config" {
+    require_storage btrfs
     cat > stacker.yaml <<EOF
 test:
     from:

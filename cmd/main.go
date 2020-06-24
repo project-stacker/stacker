@@ -98,6 +98,12 @@ func main() {
 			Name:  "log-file",
 			Usage: "log to a file instead of stderr",
 		},
+		cli.StringFlag{
+			Name:  "storage-type",
+			Usage: "storage type (one of \"btrfs\" or \"overlay\")",
+			// default to btrfs for now since it's less experimental
+			Value: "btrfs",
+		},
 	}
 
 	/*
@@ -177,6 +183,8 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		config.StorageType = ctx.String("storage-type")
 
 		var handler log.Handler
 		handler = stackerlog.NewTextHandler(os.Stderr)

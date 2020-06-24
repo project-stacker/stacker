@@ -131,6 +131,7 @@ func RunUmociSubcommand(config types.StackerConfig, args []string) error {
 		"--oci-dir", config.OCIDir,
 		"--roots-dir", config.RootFSDir,
 		"--stacker-dir", config.StackerDir,
+		"--storage-type", config.StorageType,
 	}
 
 	if config.Debug {

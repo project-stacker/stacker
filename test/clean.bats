@@ -9,6 +9,8 @@ function teardown() {
 }
 
 @test "clean on a non-loopback btrfs works" {
+    require_storage btrfs
+
     truncate -s 10G btrfs.loop
     mkfs.btrfs btrfs.loop
     mkdir -p parent
@@ -19,6 +21,8 @@ function teardown() {
 }
 
 @test "clean in the face of subvolumes works" {
+    require_storage btrfs
+
     truncate -s 10G btrfs.loop
     mkfs.btrfs btrfs.loop
     mkdir -p parent
@@ -41,6 +45,8 @@ function teardown() {
 }
 
 @test "unpriv subvol clean works" {
+    require_storage btrfs
+
     truncate -s 10G btrfs.loop
     mkfs.btrfs btrfs.loop
     mkdir -p parent
@@ -60,6 +66,8 @@ function teardown() {
 }
 
 @test "extra dirs don't get cleaned" {
+    require_storage btrfs
+
     truncate -s 10G btrfs.loop
     mkfs.btrfs btrfs.loop
     mkdir -p parent
@@ -76,6 +84,8 @@ function teardown() {
 }
 
 @test "clean in loopback mode works" {
+    require_storage btrfs
+
     cat > stacker.yaml <<EOF
 test:
     from:

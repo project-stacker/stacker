@@ -8,6 +8,10 @@ type Storage interface {
 	// in later operations.
 	Create(path string) error
 
+	// SetupEmptyRootfs() sets up an empty rootfs for contents to be
+	// written in (e.g. if it's a base tar file to be extracted).
+	SetupEmptyRootfs(name string) error
+
 	// Snapshot "copies" (maybe in a fs-specific fast way) one tag to
 	// another; snapshots should be readonly or not generally modifiable.
 	Snapshot(source string, target string) error

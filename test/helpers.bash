@@ -20,7 +20,7 @@ function cleanup() {
 }
 
 function stacker {
-    run "${ROOT_DIR}/stacker" --debug "$@"
+    run "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
     echo "$output"
     [ "$status" -eq 0 ]
 }
@@ -35,6 +35,10 @@ function strace_stacker {
     run strace -f -s 4096 "${ROOT_DIR}/stacker" --debug "$@"
     echo "$output"
     [ "$status" -eq 0 ]
+}
+
+function require_storage {
+    [ "$STORAGE_TYPE" = "$1" ] || skip "test not valid for storage type $STORAGE_TYPE"
 }
 
 function tmpd() {

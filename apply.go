@@ -329,7 +329,7 @@ func (a *Apply) applyLayer(cacheOCI casext.Engine, desc ispec.Descriptor, target
 
 	didMerge := false
 	tr := tar.NewReader(io.TeeReader(reader, diffID.Hash()))
-	te := layer.NewTarExtractor(layer.MapOptions{})
+	te := layer.NewTarExtractor(layer.UnpackOptions{})
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {

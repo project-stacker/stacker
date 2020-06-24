@@ -12,7 +12,10 @@ import (
 	"github.com/anuvu/stacker/log"
 	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/overlay"
 	"github.com/anuvu/stacker/squashfs"
+	"github.com/klauspost/pgzip"
+	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
@@ -25,6 +28,7 @@ import (
 )
 
 var umociCmd = cli.Command{
+	// TODO: rename this, it's not really "umoci" any more.
 	Name:   "umoci",
 	Hidden: true,
 	Flags: []cli.Flag{
@@ -66,6 +70,20 @@ var umociCmd = cli.Command{
 				},
 			},
 		},
+		cli.Command{
+			Name:   "unpack-one",
+			Action: doUnpackOne,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "digest",
+					Usage: "digest of the layer to unpack",
+				},
+			},
+		},
+		cli.Command{
+			Name:   "repack-overlay",
+			Action: doRepackOverlay,
+		},
 	},
 	Before: doBeforeUmociSubcommand,
 }
@@ -78,7 +96,6 @@ func doBeforeUmociSubcommand(ctx *cli.Context) error {
 func doInit(ctx *cli.Context) error {
 	tag := ctx.GlobalString("tag")
 	ociDir := ctx.GlobalString("oci-path")
-	bundlePath := ctx.GlobalString("bundle-path")
 	var oci casext.Engine
 	var err error
 
@@ -90,23 +107,22 @@ func doInit(ctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "Failed creating layout for %s", ociDir)
 	}
-	err = umoci.NewImage(oci, tag)
-	if err != nil {
-		return errors.Wrapf(err, "umoci tag creation failed")
-	}
-
-	opts := layer.MapOptions{KeepDirlinks: true}
-	err = umoci.Unpack(oci, tag, bundlePath, opts, nil, ispec.Descriptor{})
-	if err != nil {
-		return errors.Wrapf(err, "umoci unpack failed for %s into %s", tag, bundlePath)
-	}
-
-	return nil
+	return umoci.NewImage(oci, tag)
 }
 
 func tarUnpack(oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
-	opts := layer.MapOptions{KeepDirlinks: true}
-	return umoci.Unpack(oci, tag, bundlePath, opts, callback, startFrom)
+	whiteoutMode := layer.OCIStandardWhiteout
+	if config.StorageType == "overlay" {
+		whiteoutMode = layer.OverlayFSWhiteout
+	}
+
+	opts := layer.UnpackOptions{
+		KeepDirlinks:     true,
+		AfterLayerUnpack: callback,
+		StartFrom:        startFrom,
+		WhiteoutMode:     whiteoutMode,
+	}
+	return umoci.Unpack(oci, tag, bundlePath, opts)
 }
 
 func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
@@ -197,28 +213,26 @@ func doUnpack(ctx *cli.Context) error {
 		return errors.Errorf("couldn't find starting hash %s", ctx.String("start-from"))
 	}
 
-	// TODO: we could always share the empty layer, but that's more code
-	// and seems extreme...
-	callback := func(manifest ispec.Manifest, desc ispec.Descriptor) error {
-		hash, err := btrfs.ComputeAggregateHash(manifest, desc)
-		if err != nil {
-			return err
+	var callback layer.AfterLayerUnpackCallback
+	if config.StorageType == "btrfs" {
+		// TODO: we could always share the empty layer, but that's more code
+		// and seems extreme...
+		callback = func(manifest ispec.Manifest, desc ispec.Descriptor) error {
+			hash, err := btrfs.ComputeAggregateHash(manifest, desc)
+			if err != nil {
+				return err
+			}
+
+			log.Debugf("creating intermediate snapshot %s", hash)
+			return storage.Snapshot(path.Base(bundlePath), hash)
 		}
-
-		log.Debugf("creating intermediate snapshot %s", hash)
-		return storage.Snapshot(path.Base(bundlePath), hash)
 	}
 
-	if len(manifest.Layers) == 0 {
-		return errors.Errorf("unpacking empty manifest %s", tag)
-	}
-
-	switch manifest.Layers[0].MediaType {
-	case stackeroci.MediaTypeLayerSquashfs:
+	if len(manifest.Layers) != 0 && manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
 		return squashfsUnpack(ociDir, oci, tag, bundlePath, callback, startFrom)
-	default:
-		return tarUnpack(oci, tag, bundlePath, callback, startFrom)
 	}
+
+	return tarUnpack(oci, tag, bundlePath, callback, startFrom)
 }
 
 func doRepack(ctx *cli.Context) error {
@@ -266,4 +280,37 @@ func doRepack(ctx *cli.Context) error {
 	default:
 		return errors.Errorf("unknown layer type %s", layerType)
 	}
+}
+
+func doUnpackOne(ctx *cli.Context) error {
+	ociDir := ctx.GlobalString("oci-path")
+	bundlePath := ctx.GlobalString("bundle-path")
+	digest, err := digest.Parse(ctx.String("digest"))
+	if err != nil {
+		return err
+	}
+
+	oci, err := umoci.OpenLayout(ociDir)
+	if err != nil {
+		return err
+	}
+	defer oci.Close()
+
+	compressed, err := oci.GetBlob(context.Background(), digest)
+	if err != nil {
+		return err
+	}
+	defer compressed.Close()
+
+	uncompressed, err := pgzip.NewReader(compressed)
+	if err != nil {
+		return err
+	}
+
+	return layer.UnpackLayer(bundlePath, uncompressed, nil)
+}
+
+func doRepackOverlay(ctx *cli.Context) error {
+	tag := ctx.GlobalString("tag")
+	return overlay.RepackOverlay(config, tag)
 }

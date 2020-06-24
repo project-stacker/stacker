@@ -7,10 +7,11 @@ import (
 // StackerConfig is a struct that contains global (or widely used) stacker
 // config options.
 type StackerConfig struct {
-	StackerDir string `yaml:"stacker_dir"`
-	OCIDir     string `yaml:"oci_dir"`
-	RootFSDir  string `yaml:"rootfs_dir"`
-	Debug      bool   `yaml:"-"`
+	StackerDir  string `yaml:"stacker_dir"`
+	OCIDir      string `yaml:"oci_dir"`
+	RootFSDir   string `yaml:"rootfs_dir"`
+	Debug       bool   `yaml:"-"`
+	StorageType string `yaml:"-"`
 }
 
 // Substitutions - return an array of substitutions for StackerFiles

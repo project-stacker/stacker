@@ -10,6 +10,7 @@ function teardown() {
 }
 
 @test "build only intermediate snapshots don't confuse things" {
+    require_storage btrfs
     # get a linux to do stuff on
     # (double copy so we can take advantage of caching)
     mkdir -p .stacker/layer-bases
@@ -80,10 +81,12 @@ EOF
 }
 
 @test "intermediate base layers are snapshotted" {
+    require_storage btrfs
     test_intermediate_layers tar
 }
 
 @test "intermediate base layers are snapshotted (squashfs)" {
+    require_storage btrfs
     test_intermediate_layers squashfs
 }
 
@@ -123,11 +126,13 @@ EOF
 }
 
 @test "intermediate base layers are used" {
+    require_storage btrfs
     skopeo --insecure-policy copy docker://ubuntu:latest oci:oci-import:ubuntu
     test_intermediate_layers_used tar oci-import:ubuntu
 }
 
 @test "intermediate base layers are used (squashfs)" {
+    require_storage btrfs
     cat > stacker.yaml <<EOF
 ubuntu:
     from:
@@ -188,14 +193,17 @@ EOF
 }
 
 @test "startFrom is respected" {
+    require_storage btrfs
     test_startfrom_respected tar
 }
 
 @test "startFrom is respected (squashfs)" {
+    require_storage btrfs
     test_startfrom_respected squashfs
 }
 
 @test "everything that gets umoci.json gets foo.mtree as well" {
+    require_storage btrfs
     cat > stacker.yaml <<EOF
 t1:
     from:
