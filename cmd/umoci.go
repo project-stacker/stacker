@@ -12,6 +12,7 @@ import (
 	"github.com/anuvu/stacker/btrfs"
 	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
@@ -211,10 +212,13 @@ func doRepack(ctx *cli.Context) error {
 	ociDir := ctx.GlobalString("oci-path")
 	bundlePath := ctx.GlobalString("bundle-path")
 
+	layerType := ctx.String("layer-type")
+
 	oci, err := umoci.OpenLayout(ociDir)
 	if err != nil {
 		return err
 	}
+	defer oci.Close()
 
 	meta, err := umoci.ReadBundleMeta(bundlePath)
 	if err != nil {
@@ -231,14 +235,21 @@ func doRepack(ctx *cli.Context) error {
 		return err
 	}
 
-	now := time.Now()
-	history := &ispec.History{
-		Author:     imageMeta.Author,
-		Created:    &now,
-		CreatedBy:  "stacker umoci repack",
-		EmptyLayer: false,
-	}
+	switch layerType {
+	case "tar":
+		now := time.Now()
+		history := &ispec.History{
+			Author:     imageMeta.Author,
+			Created:    &now,
+			CreatedBy:  "stacker umoci repack",
+			EmptyLayer: false,
+		}
 
-	filters := []mtreefilter.FilterFunc{stackermtree.LayerGenerationIgnoreRoot}
-	return umoci.Repack(oci, tag, bundlePath, meta, history, filters, true, mutator)
+		filters := []mtreefilter.FilterFunc{stackermtree.LayerGenerationIgnoreRoot}
+		return umoci.Repack(oci, tag, bundlePath, meta, history, filters, true, mutator)
+	case "squashfs":
+		return squashfs.GenerateSquashfsLayer(tag, imageMeta.Author, bundlePath, ociDir, oci)
+	default:
+		return errors.Errorf("unknown layer type %s", layerType)
+	}
 }

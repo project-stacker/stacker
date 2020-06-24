@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -305,28 +304,9 @@ func (b *Builder) Build(file string) error {
 		}
 
 		log.Infof("generating layer for %s", name)
-		bundlePath := path.Join(opts.Config.RootFSDir, name)
-		switch opts.LayerType {
-		case "tar":
-			err = container.RunUmociSubcommand(opts.Config, opts.Debug, []string{
-				"--tag", name,
-				"--bundle-path", bundlePath,
-				"--oci-path", opts.Config.OCIDir,
-				"repack",
-			})
-			if err != nil {
-				return err
-			}
-		case "squashfs":
-			err = RunSquashfsSubcommand(opts.Config, opts.Debug, []string{
-				"--bundle-path", bundlePath,
-				"--tag", name, "--author", author, "repack",
-			})
-			if err != nil {
-				return err
-			}
-		default:
-			return errors.Errorf("unknown layer type: %s", opts.LayerType)
+		err = s.Repack(opts.Config.OCIDir, name, opts.LayerType)
+		if err != nil {
+			return err
 		}
 
 		descPaths, err := oci.ResolveReference(context.Background(), name)
@@ -516,6 +496,7 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
+		bundlePath := path.Join(opts.Config.RootFSDir, name)
 		// Now, we need to set the umoci data on the fs to tell it that
 		// it has a layer that corresponds to this fs.
 		err = updateBundleMtree(bundlePath, newPath.Descriptor())

@@ -24,4 +24,9 @@ type Storage interface {
 	// Unpack can do fancy things like using previously cached unpacks to
 	// speed things up, etc.
 	Unpack(ociDir, tag, name string) error
+
+	// Repack repacks the specified working dir into the specified OCI dir.
+	//
+	// TODO: make layerType an enum :)
+	Repack(ociDir, name, layerType string) error
 }

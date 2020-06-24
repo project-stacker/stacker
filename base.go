@@ -418,21 +418,3 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 		Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),
 	})
 }
-
-func RunSquashfsSubcommand(config types.StackerConfig, debug bool, args []string) error {
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
-	cmd := []string{
-		binary,
-		"--oci-dir", config.OCIDir,
-		"--roots-dir", config.RootFSDir,
-		"--stacker-dir", config.StackerDir,
-	}
-
-	cmd = append(cmd, "squashfs")
-	cmd = append(cmd, args...)
-	return container.MaybeRunInUserns(cmd, "image unpack failed")
-}
