@@ -335,7 +335,11 @@ func GenerateShellForRunning(rootfs string, cmd []string, outFile string) error 
 		// so...
 		_, err := os.Lstat(path.Join(rootfs, "bin/sh"))
 		if err != nil {
-			return errors.Errorf("rootfs %s does not have a /bin/sh", rootfs)
+			if os.IsNotExist(err) {
+				return errors.Errorf("rootfs %s does not have a /bin/sh", rootfs)
+			} else {
+				return errors.Wrapf(err, "problem finding shell in %s", rootfs)
+			}
 		}
 	}
 
