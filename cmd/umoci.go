@@ -102,7 +102,7 @@ func tarUnpack(oci casext.Engine, tag string, bundlePath string, callback layer.
 	return umoci.Unpack(oci, tag, bundlePath, opts, callback, startFrom)
 }
 
-func squashfsUnpack(oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
+func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
 	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func squashfsUnpack(oci casext.Engine, tag string, bundlePath string, callback l
 
 	for _, layer := range manifest.Layers {
 		rootfs := path.Join(bundlePath, "rootfs")
-		squashfsFile := path.Join(config.OCIDir, "blobs", "sha256", layer.Digest.Encoded())
+		squashfsFile := path.Join(ociDir, "blobs", "sha256", layer.Digest.Encoded())
 		userCmd := []string{"unsquashfs", "-f", "-d", rootfs, squashfsFile}
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)
 		cmd.Stdin = nil
@@ -201,7 +201,7 @@ func doUnpack(ctx *cli.Context) error {
 
 	switch manifest.Layers[0].MediaType {
 	case stackeroci.MediaTypeLayerSquashfs:
-		return squashfsUnpack(oci, tag, bundlePath, callback, startFrom)
+		return squashfsUnpack(ociDir, oci, tag, bundlePath, callback, startFrom)
 	default:
 		return tarUnpack(oci, tag, bundlePath, callback, startFrom)
 	}

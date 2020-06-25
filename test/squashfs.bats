@@ -63,12 +63,13 @@ centos1:
         touch /1
 EOF
     stacker build --layer-type=squashfs
+    mv oci oci-import
 
     cat > stacker.yaml <<EOF
 centos2:
     from:
         type: oci
-        url: oci:centos1
+        url: oci-import:centos1
     run: |
         [ -f /1 ]
 EOF
