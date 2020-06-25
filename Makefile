@@ -8,6 +8,7 @@ BATS?=bats
 BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
 
 stacker: $(GO_SRC) go.mod go.sum
+	go fmt ./...
 	go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
 
 # make check TEST=basic will run only the basic test.
