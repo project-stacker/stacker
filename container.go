@@ -276,7 +276,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	return c.containerError(cmdErr, "execute failed")
 }
 
-func (c *Container) SetupLayerConfig(l *Layer) error {
+func (c *Container) SetupLayerConfig(l *types.Layer) error {
 	env, err := l.BuildEnvironment()
 	if err != nil {
 		return err

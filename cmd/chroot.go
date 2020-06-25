@@ -5,6 +5,7 @@ import (
 
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -53,7 +54,7 @@ func doChroot(ctx *cli.Context) error {
 	}
 
 	file := ctx.String("f")
-	sf, err := stacker.NewStackerfile(file, ctx.StringSlice("substitute"))
+	sf, err := types.NewStackerfile(file, ctx.StringSlice("substitute"))
 	if err != nil {
 		log.Infof("couldn't find stacker file, chrooting to %s as best effort", tag)
 		c, err := stacker.NewContainer(config, tag)

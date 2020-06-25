@@ -162,7 +162,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 }
 
 func acquireUrl(c types.StackerConfig, i string, cache string, progress bool) (string, error) {
-	url, err := newDockerishUrl(i)
+	url, err := types.NewDockerishUrl(i)
 	if err != nil {
 		return "", err
 	}

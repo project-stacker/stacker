@@ -30,14 +30,14 @@ type PublishArgs struct {
 
 // Publisher is responsible for publishing the layers based on stackerfiles
 type Publisher struct {
-	stackerfiles StackerFiles // Keep track of all the Stackerfiles to publish
-	opts         *PublishArgs // Publish options
+	stackerfiles types.StackerFiles // Keep track of all the Stackerfiles to publish
+	opts         *PublishArgs       // Publish options
 }
 
 // NewPublisher initializes a new Publisher struct
 func NewPublisher(opts *PublishArgs) *Publisher {
 	return &Publisher{
-		stackerfiles: make(map[string]*Stackerfile, 1),
+		stackerfiles: make(map[string]*types.Stackerfile, 1),
 		opts:         opts,
 	}
 }
@@ -84,7 +84,7 @@ func (p *Publisher) Publish(file string) error {
 	}
 
 	// Need to determine if URL is docker/oci or something else
-	is, err := NewImageSource(opts.Url)
+	is, err := types.NewImageSource(opts.Url)
 	if err != nil {
 		return err
 	}
@@ -116,11 +116,11 @@ func (p *Publisher) Publish(file string) error {
 			// Determine full destination URL
 			var destUrl string
 			switch is.Type {
-			case DockerType:
+			case types.DockerLayer:
 				destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, tag)
-			case OCIType:
+			case types.OCILayer:
 				destUrl = fmt.Sprintf("%s:%s_%s", opts.Url, name, tag)
-			case ZotType:
+			case types.ZotLayer:
 				destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, tag)
 			default:
 				return errors.Errorf("can't save layers to destination type: %s", is.Type)
@@ -185,10 +185,10 @@ func (p *Publisher) PublishMultiple(paths []string) error {
 // readStackerFiles reads stacker recipes and applies substitutions
 // it has a hack for determining if a value is not substituted
 // if it should be substituted but is is not, substitute it with 'dummy'
-func (p *Publisher) readStackerFiles(paths []string) (StackerFiles, error) {
+func (p *Publisher) readStackerFiles(paths []string) (types.StackerFiles, error) {
 
 	// Read all the stacker recipes
-	sfm, err := NewStackerFiles(paths, append(p.opts.Substitute, p.opts.Config.Substitutions()...))
+	sfm, err := types.NewStackerFiles(paths, append(p.opts.Substitute, p.opts.Config.Substitutions()...))
 	if err != nil {
 
 		// Verify if the error is related to an invalid substitution

@@ -28,7 +28,7 @@ import (
 type BaseLayerOpts struct {
 	Config    types.StackerConfig
 	Name      string
-	Layer     *Layer
+	Layer     *types.Layer
 	Cache     *BuildCache
 	OCI       casext.Engine
 	LayerType string
@@ -39,11 +39,11 @@ type BaseLayerOpts struct {
 // GetBase grabs the base layer and puts it in the cache.
 func GetBase(o BaseLayerOpts) error {
 	switch o.Layer.From.Type {
-	case BuiltType:
+	case types.BuiltLayer:
 		return nil
-	case ScratchType:
+	case types.ScratchLayer:
 		return nil
-	case TarType:
+	case types.TarLayer:
 		cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
 		if err := os.MkdirAll(cacheDir, 0755); err != nil {
 			return err
@@ -52,11 +52,11 @@ func GetBase(o BaseLayerOpts) error {
 		_, err := acquireUrl(o.Config, o.Layer.From.Url, cacheDir, o.Progress)
 		return err
 	/* now we can do all the containers/image types */
-	case OCIType:
+	case types.OCILayer:
 		fallthrough
-	case DockerType:
+	case types.DockerLayer:
 		fallthrough
-	case ZotType:
+	case types.ZotLayer:
 		return importContainersImage(o.Layer.From, o.Config, o.Progress)
 	default:
 		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
@@ -74,9 +74,9 @@ func GetBase(o BaseLayerOpts) error {
 //
 // Finally, if the layer is a build only layer, this code simply initializes
 // the filesystem in roots to the built tag's filesystem.
-func SetupRootfs(o BaseLayerOpts, sfm StackerFiles) error {
+func SetupRootfs(o BaseLayerOpts, sfm types.StackerFiles) error {
 	o.Storage.Delete(o.Name)
-	if o.Layer.From.Type == BuiltType {
+	if o.Layer.From.Type == types.BuiltLayer {
 		// For built type images, we already have the base fs content
 		// and umoci metadata. So let's just use that, and copy
 		// whatever we can to the output image.
@@ -94,22 +94,22 @@ func SetupRootfs(o BaseLayerOpts, sfm StackerFiles) error {
 	}
 
 	switch o.Layer.From.Type {
-	case TarType:
+	case types.TarLayer:
 		return setupTarRootfs(o)
-	case ScratchType:
+	case types.ScratchLayer:
 		return setupScratchRootfs(o)
-	case OCIType:
+	case types.OCILayer:
 		fallthrough
-	case DockerType:
+	case types.DockerLayer:
 		fallthrough
-	case ZotType:
+	case types.ZotLayer:
 		return setupContainersImageRootfs(o)
 	default:
 		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
 }
 
-func importContainersImage(is *ImageSource, config types.StackerConfig, progress bool) error {
+func importContainersImage(is *types.ImageSource, config types.StackerConfig, progress bool) error {
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err
@@ -358,7 +358,7 @@ func setupScratchRootfs(o BaseLayerOpts) error {
 	return umociInit(o)
 }
 
-func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
+func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm types.StackerFiles) error {
 	// We need to copy any base OCI layers to the output dir, since they
 	// may not have been copied before and the final `umoci repack` expects
 	// them to be there.
@@ -368,7 +368,7 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 	var baseType string
 
 	for {
-		// Iterate through base layers until we find the first one which is not BuiltType or BuildOnly
+		// Iterate through base layers until we find the first one which is not types.BuiltLayer or BuildOnly
 
 		// Need to declare ok and err  separately, if we do it in the same line as
 		// assigning the new value to base, base would be a new variable only in the scope
@@ -377,7 +377,7 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 		var err error
 
 		baseType = base.From.Type
-		if baseType == ScratchType || baseType == TarType {
+		if baseType == types.ScratchLayer || baseType == types.TarLayer {
 			break
 		}
 
@@ -386,7 +386,7 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 			return err
 		}
 
-		if baseType != BuiltType {
+		if baseType != types.BuiltLayer {
 			break
 		}
 
@@ -400,12 +400,12 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm StackerFiles) error {
 		}
 	}
 
-	if (baseType == ScratchType || baseType == TarType) && base.BuildOnly {
+	if (baseType == types.ScratchLayer || baseType == types.TarLayer) && base.BuildOnly {
 		// The base layers cannot be copied, so initialize an empty OCI tag.
 		return umoci.NewImage(o.OCI, targetName)
 	}
 
-	if baseType != DockerType && baseType != OCIType && baseType != ZotType {
+	if baseType != types.DockerLayer && baseType != types.OCILayer && baseType != types.ZotLayer {
 		return lib.ImageCopy(lib.ImageCopyOpts{
 			Src:  fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, baseTag),
 			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),

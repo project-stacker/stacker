@@ -37,7 +37,7 @@ type Apply struct {
 	considerTimestamps bool
 }
 
-func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage types.Storage, considerTimestamps bool) (*Apply, error) {
+func NewApply(sfm types.StackerFiles, opts BaseLayerOpts, storage types.Storage, considerTimestamps bool) (*Apply, error) {
 	a := &Apply{layers: []ispec.Descriptor{}, opts: opts, storage: storage}
 
 	if len(opts.Layer.Apply) == 0 {
@@ -46,14 +46,14 @@ func NewApply(sfm StackerFiles, opts BaseLayerOpts, storage types.Storage, consi
 
 	var source casext.Engine
 
-	if opts.Layer.From.Type == DockerType || opts.Layer.From.Type == OCIType {
+	if opts.Layer.From.Type == types.DockerLayer || opts.Layer.From.Type == types.OCILayer {
 		var err error
 		source, err = umoci.OpenLayout(path.Join(a.opts.Config.StackerDir, "layer-bases", "oci"))
 		if err != nil {
 			return nil, err
 		}
 		defer source.Close()
-	} else if opts.Layer.From.Type == BuiltType {
+	} else if opts.Layer.From.Type == types.BuiltLayer {
 		// Search for the base layer in all of the built stackerfiles
 		base, ok := sfm.LookupLayerDefinition(opts.Layer.From.Tag)
 		if !ok {
@@ -117,7 +117,7 @@ func (a *Apply) DoApply() error {
 }
 
 func (a *Apply) applyImage(layer string) error {
-	is, err := NewImageSource(layer)
+	is, err := types.NewImageSource(layer)
 	if err != nil {
 		return err
 	}

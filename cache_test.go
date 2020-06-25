@@ -41,22 +41,25 @@ func TestLayerHashing(t *testing.T) {
 		t.Fatalf("couldn't create fake centos image %v", err)
 	}
 
-	layer := &Layer{
-		From: &ImageSource{
-			Type: "docker",
-			Url:  "docker://centos:latest",
-		},
-		Run:       []string{"zomg"},
-		BuildOnly: true,
+	stackerYaml := path.Join(dir, "stacker.yaml")
+	err = ioutil.WriteFile(stackerYaml, []byte(`
+foo:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: zomg
+    build_only: true
+`), 0644)
+	if err != nil {
+		t.Fatalf("couldn't write stacker yaml %v", err)
 	}
 
-	sf := &Stackerfile{
-		internal: map[string]*Layer{
-			"foo": layer,
-		},
+	sf, err := types.NewStackerfile(stackerYaml, nil)
+	if err != nil {
+		t.Fatalf("couldn't read stacker file %v", err)
 	}
 
-	cache, err := OpenCache(config, casext.Engine{}, StackerFiles{"dummy": sf})
+	cache, err := OpenCache(config, casext.Engine{}, types.StackerFiles{"dummy": sf})
 	if err != nil {
 		t.Fatalf("couldn't open cache %v", err)
 	}
@@ -74,15 +77,19 @@ func TestLayerHashing(t *testing.T) {
 
 	// change the layer, but look it up under the same name, to make sure
 	// the layer itself is hashed
+	layer, ok := sf.Get("foo")
+	if !ok {
+		t.Fatalf("couldn't get layer foo")
+	}
 	layer.Run = []string{"jmh"}
 
 	// ok, now re-load the persisted cache
-	cache, err = OpenCache(config, casext.Engine{}, StackerFiles{"dummy": sf})
+	cache, err = OpenCache(config, casext.Engine{}, types.StackerFiles{"dummy": sf})
 	if err != nil {
 		t.Fatalf("couldn't re-load cache %v", err)
 	}
 
-	_, ok, err := cache.Lookup("foo")
+	_, ok, err = cache.Lookup("foo")
 	if err != nil {
 		t.Errorf("lookup failed %v", err)
 	}

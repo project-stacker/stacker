@@ -55,7 +55,7 @@ type CacheEntry struct {
 	Name string
 
 	// The layer to cache
-	Layer *Layer
+	Layer *types.Layer
 
 	// If the layer is of type "built", this is a hash of the base layer's
 	// CacheEntry, which contains a hash of its imports. If there is a
@@ -66,13 +66,13 @@ type CacheEntry struct {
 
 type BuildCache struct {
 	path    string
-	sfm     StackerFiles
+	sfm     types.StackerFiles
 	Cache   map[string]CacheEntry `json:"cache"`
 	Version int                   `json:"version"`
 	config  types.StackerConfig
 }
 
-func OpenCache(config types.StackerConfig, oci casext.Engine, sfm StackerFiles) (*BuildCache, error) {
+func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerFiles) (*BuildCache, error) {
 	p := path.Join(config.StackerDir, "build.cache")
 	f, err := os.Open(p)
 	cache := &BuildCache{
@@ -278,7 +278,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 	}
 
 	switch l.From.Type {
-	case BuiltType:
+	case types.BuiltLayer:
 		// for built type, just use the hash of the cache entry
 		baseEnt, ok, err := c.Lookup(l.From.Tag)
 		if err != nil {
@@ -294,19 +294,19 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 		}
 
 		return fmt.Sprintf("%d", baseHash), nil
-	case ScratchType:
+	case types.ScratchLayer:
 		// no base, no hash :)
 		return "", nil
-	case TarType:
+	case types.TarLayer:
 		// use the hash of the input tarball
 		cacheDir := path.Join(c.config.StackerDir, "layer-bases")
 		tar := path.Join(cacheDir, path.Base(l.From.Url))
 		return lib.HashFile(tar, true)
-	case OCIType:
+	case types.OCILayer:
 		fallthrough
-	case DockerType:
+	case types.DockerLayer:
 		fallthrough
-	case ZotType:
+	case types.ZotLayer:
 		tag, err := l.From.ParseTag()
 		if err != nil {
 			return "", err

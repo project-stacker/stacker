@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/types"
 )
 
 // StackerDepsDAG processes the dependencies between different stacker recipes
@@ -10,7 +11,7 @@ type StackerFilesDAG struct {
 }
 
 // NewStackerDepsDAG properly initializes a StackerDepsProcessor
-func NewStackerFilesDAG(sfMap StackerFiles) (*StackerFilesDAG, error) {
+func NewStackerFilesDAG(sfMap types.StackerFiles) (*StackerFilesDAG, error) {
 	dag := lib.NewDAG()
 
 	// Add vertices to dag
@@ -43,9 +44,9 @@ func NewStackerFilesDAG(sfMap StackerFiles) (*StackerFilesDAG, error) {
 	return &p, nil
 }
 
-func (d *StackerFilesDAG) GetStackerFile(path string) *Stackerfile {
+func (d *StackerFilesDAG) GetStackerFile(path string) *types.Stackerfile {
 	value := d.dag.GetValue(path)
-	return value.(*Stackerfile)
+	return value.(*types.Stackerfile)
 }
 
 // Sort provides a serial build order for the stacker files

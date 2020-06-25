@@ -1,4 +1,4 @@
-package stacker
+package types
 
 import (
 	"io/ioutil"
@@ -39,7 +39,7 @@ func TestDockerFrom(t *testing.T) {
 		t.Fatalf("missing meshuggah layer")
 	}
 
-	if l.From.Type != DockerType {
+	if l.From.Type != DockerLayer {
 		t.Fatalf("bad type : %v", l.From)
 	}
 

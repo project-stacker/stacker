@@ -54,14 +54,14 @@ func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
 
 // Builder is responsible for building the layers based on stackerfiles
 type Builder struct {
-	builtStackerfiles StackerFiles // Keep track of all the Stackerfiles which were built
-	opts              *BuildArgs   // Build options
+	builtStackerfiles types.StackerFiles // Keep track of all the Stackerfiles which were built
+	opts              *BuildArgs         // Build options
 }
 
 // NewBuilder initializes a new Builder struct
 func NewBuilder(opts *BuildArgs) *Builder {
 	return &Builder{
-		builtStackerfiles: make(map[string]*Stackerfile, 1),
+		builtStackerfiles: make(map[string]*types.Stackerfile, 1),
 		opts:              opts,
 	}
 }
@@ -74,7 +74,7 @@ func (b *Builder) Build(file string) error {
 		os.RemoveAll(opts.Config.StackerDir)
 	}
 
-	sf, err := NewStackerfile(file, append(opts.Substitute, b.opts.Config.Substitutions()...))
+	sf, err := types.NewStackerfile(file, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (b *Builder) Build(file string) error {
 	// in. we don't care if it's not a git directory, because in that case
 	// we'll fall back to putting the whole stacker file contents in the
 	// metadata.
-	gitVersion, _ := GitVersion(sf.referenceDirectory)
+	gitVersion, _ := GitVersion(sf.ReferenceDirectory)
 
 	username := os.Getenv("SUDO_USER")
 
@@ -145,7 +145,7 @@ func (b *Builder) Build(file string) error {
 		// filesystem, since we don't know what the output of the
 		// parent build will be. so let's refuse to run in setup-only
 		// mode in this case.
-		if opts.SetupOnly && l.From.Type == BuiltType {
+		if opts.SetupOnly && l.From.Type == types.BuiltLayer {
 			return errors.Errorf("no built type layers (%s) allowed in setup mode", name)
 		}
 
@@ -532,7 +532,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	opts := b.opts
 
 	// Read all the stacker recipes
-	stackerFiles, err := NewStackerFiles(paths, append(opts.Substitute, b.opts.Config.Substitutions()...))
+	stackerFiles, err := types.NewStackerFiles(paths, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
 	}
