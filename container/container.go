@@ -91,7 +91,7 @@ func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, fmt.Sprintf("couldn't run in userns: %s", msg))
+		return errors.Wrapf(err, msg)
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return errors.Wrapf(cmd.Run(), fmt.Sprintf("couldn't run outside of userns: %s", msg))
+		return errors.Wrapf(cmd.Run(), msg)
 	}
 
 	return runInUserns(idmapSet, userCmd, msg)
