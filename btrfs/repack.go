@@ -7,8 +7,7 @@ import (
 )
 
 func (b *btrfs) Repack(ociDir, name, layerType string) error {
-	// ugh, need to thread "debug" through here.
-	return container.RunUmociSubcommand(b.c, false, []string{
+	return container.RunUmociSubcommand(b.c, []string{
 		"--oci-path", ociDir,
 		"--tag", name,
 		"--bundle-path", path.Join(b.c.RootFSDir, name),

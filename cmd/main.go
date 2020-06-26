@@ -133,11 +133,10 @@ func main() {
 			logFile.Close()
 		}
 	}()
-	debug := false
 	app.Before = func(ctx *cli.Context) error {
 		logLevel := log.InfoLevel
 		if ctx.Bool("debug") {
-			debug = true
+			config.Debug = true
 			logLevel = log.DebugLevel
 			if ctx.Bool("quiet") {
 				return errors.Errorf("debug and quiet don't make sense together")
@@ -196,7 +195,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		format := "error: %v\n"
-		if debug {
+		if config.Debug {
 			format = "error: %+v\n"
 		}
 

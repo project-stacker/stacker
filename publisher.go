@@ -18,7 +18,6 @@ import (
 
 type PublishArgs struct {
 	Config     types.StackerConfig
-	Debug      bool
 	ShowOnly   bool
 	Substitute []string
 	Tags       []string

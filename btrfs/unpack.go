@@ -78,8 +78,7 @@ func (b *btrfs) Unpack(ociDir, tag, name string) error {
 		return err
 	}
 
-	// ugh, need to thread "debug" through here.
-	err = container.RunUmociSubcommand(b.c, false, []string{
+	err = container.RunUmociSubcommand(b.c, []string{
 		"--oci-path", ociDir,
 		"--tag", tag,
 		"--bundle-path", bundlePath,

@@ -28,7 +28,6 @@ type BuildArgs struct {
 	OnRunFailure            string
 	ApplyConsiderTimestamps bool
 	LayerType               string
-	Debug                   bool
 	OrderOnly               bool
 	SetupOnly               bool
 	Progress                bool
@@ -186,7 +185,6 @@ func (b *Builder) Build(file string) error {
 			Cache:     buildCache,
 			OCI:       oci,
 			LayerType: opts.LayerType,
-			Debug:     opts.Debug,
 			Storage:   s,
 			Progress:  opts.Progress,
 		}

@@ -10,6 +10,7 @@ type StackerConfig struct {
 	StackerDir string `yaml:"stacker_dir"`
 	OCIDir     string `yaml:"oci_dir"`
 	RootFSDir  string `yaml:"rootfs_dir"`
+	Debug      bool   `yaml:"-"`
 }
 
 // Substitutions - return an array of substitutions for StackerFiles

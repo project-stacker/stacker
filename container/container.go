@@ -120,7 +120,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 	return runInUserns(idmapSet, userCmd, msg)
 }
 
-func RunUmociSubcommand(config types.StackerConfig, debug bool, args []string) error {
+func RunUmociSubcommand(config types.StackerConfig, args []string) error {
 	binary, err := os.Readlink("/proc/self/exe")
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func RunUmociSubcommand(config types.StackerConfig, debug bool, args []string) e
 		"--stacker-dir", config.StackerDir,
 	}
 
-	if debug {
+	if config.Debug {
 		cmd = append(cmd, "--debug")
 	}
 

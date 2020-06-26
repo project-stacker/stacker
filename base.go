@@ -32,7 +32,6 @@ type BaseLayerOpts struct {
 	Cache     *BuildCache
 	OCI       casext.Engine
 	LayerType string
-	Debug     bool
 	Storage   types.Storage
 	Progress  bool
 }
@@ -307,7 +306,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 }
 
 func umociInit(o BaseLayerOpts) error {
-	return container.RunUmociSubcommand(o.Config, o.Debug, []string{
+	return container.RunUmociSubcommand(o.Config, []string{
 		"--tag", o.Name,
 		"--oci-path", o.Config.OCIDir,
 		"--bundle-path", path.Join(o.Config.RootFSDir, o.Name),
