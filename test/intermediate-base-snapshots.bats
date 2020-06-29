@@ -87,23 +87,25 @@ EOF
     test_intermediate_layers squashfs
 }
 
-@test "intermediate base layers are used" {
+function test_intermediate_layers_used {
+    layer_type=$1
+
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: docker
-        url: docker://ubuntu:latest
+        type: oci
+        url: oci-import:ubuntu
 
 EOF
-    stacker build --leave-unladen
-    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    stacker build --leave-unladen --layer-type=$layer_type
+    manifest=$(cat oci-import/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
 
     # Let's do some manual surgery to the base layer. Then we see if our manual
     # surgery persists. If stacker for whatever reason doesn't use the cached
     # version, our surgery won't be there.
     accum=""
-    for i in $(seq 0 $(($(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))); do
-        accum="$accum$(cat oci/blobs/sha256/$manifest | jq -r ".layers[$i].digest")"
+    for i in $(seq 0 $(($(cat oci-import/blobs/sha256/$manifest | jq -r '.layers | length')-1))); do
+        accum="$accum$(cat oci-import/blobs/sha256/$manifest | jq -r ".layers[$i].digest")"
     done
     lastlayer_hash=$(echo -n "$accum" | sha256sum | cut -f1 -d" ")
     btrfs property set -ts "roots/$lastlayer_hash" ro false
@@ -116,8 +118,28 @@ EOF
     btrfs property set -ts "roots/test" ro false
     btrfs subvolume delete "roots/test"
 
-    stacker build --leave-unladen
+    stacker build --leave-unladen --layer-type=$layer_type
     [ -f roots/test/rootfs/surgery ]
+}
+
+@test "intermediate base layers are used" {
+    skopeo --insecure-policy copy docker://ubuntu:latest oci:oci-import:ubuntu
+    test_intermediate_layers_used tar oci-import:ubuntu
+}
+
+@test "intermediate base layers are used (squashfs)" {
+    cat > stacker.yaml <<EOF
+ubuntu:
+    from:
+        type: docker
+        url: docker://ubuntu:latest
+    run:
+        touch /foo
+EOF
+    stacker build --layer-type=squashfs
+    mv oci oci-import
+    stacker clean --all
+    test_intermediate_layers_used squashfs oci-import:ubuntu
 }
 
 @test "everything that gets umoci.json gets foo.mtree as well" {
