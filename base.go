@@ -192,6 +192,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 
 	// if the layer types are the same, just copy it over and be done
 	if o.LayerType == sourceLayerType {
+		log.Debugf("same layer type, no translation required")
 		// We just copied it to the cache, now let's copy that over to our image.
 		err = lib.ImageCopy(lib.ImageCopyOpts{
 			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
@@ -199,6 +200,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		})
 		return err
 	}
+	log.Debugf("translating from %s to %s", sourceLayerType, o.LayerType)
 
 	var blob io.ReadCloser
 
