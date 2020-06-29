@@ -17,7 +17,6 @@ const (
 	OCILayer     = "oci"
 	BuiltLayer   = "built"
 	ScratchLayer = "scratch"
-	ZotLayer     = "zot"
 )
 
 type Layer struct {

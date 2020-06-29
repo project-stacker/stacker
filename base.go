@@ -55,8 +55,6 @@ func GetBase(o BaseLayerOpts) error {
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:
-		fallthrough
-	case types.ZotLayer:
 		return importContainersImage(o.Layer.From, o.Config, o.Progress)
 	default:
 		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
@@ -101,8 +99,6 @@ func SetupRootfs(o BaseLayerOpts, sfm types.StackerFiles) error {
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:
-		fallthrough
-	case types.ZotLayer:
 		return setupContainersImageRootfs(o)
 	default:
 		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
@@ -405,7 +401,7 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm types.StackerFiles) error {
 		return umoci.NewImage(o.OCI, targetName)
 	}
 
-	if baseType != types.DockerLayer && baseType != types.OCILayer && baseType != types.ZotLayer {
+	if baseType != types.DockerLayer && baseType != types.OCILayer {
 		return lib.ImageCopy(lib.ImageCopyOpts{
 			Src:  fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, baseTag),
 			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, targetName),

@@ -305,8 +305,6 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:
-		fallthrough
-	case types.ZotLayer:
 		tag, err := l.From.ParseTag()
 		if err != nil {
 			return "", err

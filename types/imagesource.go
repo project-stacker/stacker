@@ -66,9 +66,6 @@ func NewImageSource(containersImageString string) (*ImageSource, error) {
 	case "docker":
 		ret.Type = DockerLayer
 		ret.Url = containersImageString
-	case "zot":
-		ret.Type = ZotLayer
-		ret.Url = containersImageString
 	default:
 		return nil, errors.Errorf("unknown image source type: %s", containersImageString)
 	}
@@ -84,8 +81,6 @@ func (is *ImageSource) ContainersImageURL() (string, error) {
 		return is.Url, nil
 	case OCILayer:
 		return fmt.Sprintf("oci:%s", is.Url), nil
-	case ZotLayer:
-		return is.Url, nil
 	default:
 		return "", errors.Errorf("can't get containers/image url for source type: %s", is.Type)
 	}
@@ -116,17 +111,6 @@ func (is *ImageSource) ParseTag() (string, error) {
 		}
 
 		return pieces[1], nil
-	case ZotLayer:
-		url, err := NewDockerishUrl(is.Url)
-		if err != nil {
-			return "", err
-		}
-
-		if url.Path != "" {
-			return path.Base(strings.Split(url.Path, ":")[0]), nil
-		}
-
-		return strings.Split(url.Host, ":")[0], nil
 	default:
 		return "", errors.Errorf("unsupported type: %s", is.Type)
 	}
