@@ -142,6 +142,59 @@ EOF
     test_intermediate_layers_used squashfs oci-import:ubuntu
 }
 
+function test_startfrom_respected {
+    layer_type=$1
+    cat > stacker.yaml <<EOF
+ubuntu:
+    from:
+        type: docker
+        url: docker://ubuntu:latest
+    run:
+        touch /foo
+EOF
+    stacker build --layer-type=$1
+    mv oci oci-import
+    stacker clean --all
+
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: oci-import:ubuntu
+
+EOF
+    stacker build --leave-unladen --layer-type=$layer_type
+    manifest=$(cat oci-import/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+
+    accum=""
+    for i in $(seq 0 $(($(cat oci-import/blobs/sha256/$manifest | jq -r '.layers | length')-1))); do
+        accum="$accum$(cat oci-import/blobs/sha256/$manifest | jq -r ".layers[$i].digest")"
+    done
+    penultimate_hash=$(echo -n "$accum" | sha256sum | cut -f1 -d" ")
+    echo penultimate "$penultimate_hash"
+
+    # delete the second to last layer, testing the startFrom extraction code
+    btrfs property set -ts "roots/$penultimate_hash" ro false
+    btrfs subvolume delete "roots/$penultimate_hash"
+
+    umoci rm --image oci:test
+    umoci gc --layout oci
+    btrfs property set -ts "roots/test" ro false
+    btrfs subvolume delete "roots/test"
+
+    stacker build --leave-unladen --layer-type=$layer_type
+    ls roots/test/rootfs
+    [ -f roots/test/rootfs/foo ]
+}
+
+@test "startFrom is respected" {
+    test_startfrom_respected tar
+}
+
+@test "startFrom is respected (squashfs)" {
+    test_startfrom_respected squashfs
+}
+
 @test "everything that gets umoci.json gets foo.mtree as well" {
     cat > stacker.yaml <<EOF
 t1:

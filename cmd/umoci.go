@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/btrfs"
+	"github.com/anuvu/stacker/log"
 	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
@@ -108,7 +109,13 @@ func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath str
 		return err
 	}
 
+	found := false
 	for _, layer := range manifest.Layers {
+		if !found && startFrom.MediaType != "" && layer.Digest.String() != startFrom.Digest.String() {
+			continue
+		}
+		found = true
+
 		rootfs := path.Join(bundlePath, "rootfs")
 		squashfsFile := path.Join(ociDir, "blobs", "sha256", layer.Digest.Encoded())
 		userCmd := []string{"unsquashfs", "-f", "-d", rootfs, squashfsFile}
@@ -192,6 +199,7 @@ func doUnpack(ctx *cli.Context) error {
 			return err
 		}
 
+		log.Debugf("creating intermediate snapshot %s", hash)
 		return storage.Snapshot(path.Base(bundlePath), hash)
 	}
 
