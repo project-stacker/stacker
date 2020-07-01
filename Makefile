@@ -8,16 +8,17 @@ BATS?=bats
 BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
 
 stacker: $(GO_SRC) go.mod go.sum
-	go fmt ./...
 	go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
+
+lint: $(GO_SRC)
+	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
+	bash test/static-analysis.sh
+	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 
 # make check TEST=basic will run only the basic test.
 .PHONY: check
-check: stacker
-	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
-	bash test/static-analysis.sh
+check: stacker lint
 	go test -tags "$(BUILD_TAGS)" ./...
-	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 	sudo -E "PATH=$$PATH" $(BATS) --jobs "$(JOBS)" -t $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup
