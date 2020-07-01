@@ -121,7 +121,7 @@ func ImageCopy(opts ImageCopyOpts) error {
 	// doesn't have a valid tag after a copy.
 	if destRef.Transport().Name() == "oci" {
 		// oci:$path:$tag
-		parts := strings.Split(opts.Dest, ":")
+		parts := strings.SplitN(opts.Dest, ":", 3)
 		if len(parts) != 3 {
 			return errors.Errorf("un-parsable oci dest %s", opts.Dest)
 		}
