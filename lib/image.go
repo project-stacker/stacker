@@ -50,9 +50,14 @@ type ImageCopyOpts struct {
 	DestPassword string
 	SkipTLS      bool
 	Progress     io.Writer
+	Context      context.Context
 }
 
 func ImageCopy(opts ImageCopyOpts) error {
+	if opts.Context == nil {
+		opts.Context = context.Background()
+	}
+
 	srcRef, err := localRefParser(opts.Src)
 	if err != nil {
 		return err
@@ -91,6 +96,6 @@ func ImageCopy(opts ImageCopyOpts) error {
 		}
 	}
 
-	_, err = copy.Image(context.Background(), policy, destRef, srcRef, args)
+	_, err = copy.Image(opts.Context, policy, destRef, srcRef, args)
 	return err
 }
