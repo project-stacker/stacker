@@ -67,6 +67,12 @@ var umociCmd = cli.Command{
 			},
 		},
 	},
+	Before: doBeforeUmociSubcommand,
+}
+
+func doBeforeUmociSubcommand(ctx *cli.Context) error {
+	log.Debugf("stacker subcommand: %v", os.Args)
+	return nil
 }
 
 func doInit(ctx *cli.Context) error {
