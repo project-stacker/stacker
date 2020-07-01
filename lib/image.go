@@ -10,6 +10,8 @@ import (
 	"github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/umoci"
 	"github.com/pkg/errors"
 )
 
@@ -97,5 +99,60 @@ func ImageCopy(opts ImageCopyOpts) error {
 	}
 
 	_, err = copy.Image(opts.Context, policy, destRef, srcRef, args)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// containers/image OCI as of
+	// https://github.com/containers/image/commit/ca5fe04cb38a1f0e0b960e9388a3c6372efd215a
+	// no longer deletes the old manifest from the index when it is
+	// re-tagged, it just deletes the tag from the manifest and leaves the
+	// manifest in the index untagged.
+	//
+	// umoci as of
+	// https://github.com/opencontainers/umoci/commit/f5eda69b4f5a2e59773fd34ac0866a107a1dbb67
+	// no longer ignores manifests in the index without tags when figuring
+	// out what to GC.
+	//
+	// This means that when we do a copy and a subsequent GC with both deps
+	// newer than the above hashes, the subsequent GC wouldn't do anything.
+	//
+	// Let's fix this by just deleting anything from the OCI repo that
+	// doesn't have a valid tag after a copy.
+	if destRef.Transport().Name() == "oci" {
+		// oci:$path:$tag
+		parts := strings.Split(opts.Dest, ":")
+		if len(parts) != 3 {
+			return errors.Errorf("un-parsable oci dest %s", opts.Dest)
+		}
+
+		oci, err := umoci.OpenLayout(parts[1])
+		if err != nil {
+			return err
+		}
+		defer oci.Close()
+
+		index, err := oci.GetIndex(opts.Context)
+		if err != nil {
+			return err
+		}
+
+		newIndex := []ispec.Descriptor{}
+		for _, desc := range index.Manifests {
+			name, ok := desc.Annotations[ispec.AnnotationRefName]
+			if !ok || name == "" {
+				continue
+			}
+
+			newIndex = append(newIndex, desc)
+		}
+
+		index.Manifests = newIndex
+		err = oci.PutIndex(opts.Context, index)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

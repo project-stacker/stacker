@@ -11,17 +11,26 @@ import (
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
 	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/stretchr/testify/assert"
 )
 
-func createImage(dir string) error {
-	oci, err := umoci.CreateLayout(path.Join(dir, "oci"))
+func createImage(dir string, tag string) error {
+	imageRoot := path.Join(dir, "oci")
+
+	var oci casext.Engine
+	_, err := os.Stat(imageRoot)
+	if err != nil {
+		oci, err = umoci.CreateLayout(imageRoot)
+	} else {
+		oci, err = umoci.OpenLayout(imageRoot)
+	}
 	if err != nil {
 		return err
 	}
 	defer oci.Close()
 
-	err = umoci.NewImage(oci, "foo")
+	err = umoci.NewImage(oci, tag)
 	if err != nil {
 		return err
 	}
@@ -33,7 +42,7 @@ func createImage(dir string) error {
 		return err
 	}
 
-	_, err = stackeroci.AddBlobNoCompression(oci, "foo", layer)
+	_, err = stackeroci.AddBlobNoCompression(oci, tag, layer)
 	if err != nil {
 		return err
 	}
@@ -47,7 +56,7 @@ func TestImageCompressionCopy(t *testing.T) {
 	assert.NoError(err)
 	defer os.RemoveAll(dir)
 
-	assert.NoError(createImage(dir))
+	assert.NoError(createImage(dir, "foo"))
 
 	assert.NoError(ImageCopy(ImageCopyOpts{
 		Src:  fmt.Sprintf("oci:%s/oci:foo", dir),
@@ -64,4 +73,33 @@ func TestImageCompressionCopy(t *testing.T) {
 		// generally break that :)
 		assert.Equal(origBlobs[i].Name(), copiedBlobs[i].Name())
 	}
+}
+
+func TestOldManifestReallyRemoved(t *testing.T) {
+	assert := assert.New(t)
+	dir, err := ioutil.TempDir("", "stacker-compression-copy-test")
+	assert.NoError(err)
+	defer os.RemoveAll(dir)
+
+	assert.NoError(createImage(dir, "a"))
+	assert.NoError(createImage(dir, "b"))
+
+	assert.NoError(ImageCopy(ImageCopyOpts{
+		Src:  fmt.Sprintf("oci:%s/oci:a", dir),
+		Dest: fmt.Sprintf("oci:%s/oci2:tag", dir),
+	}))
+	assert.NoError(ImageCopy(ImageCopyOpts{
+		Src:  fmt.Sprintf("oci:%s/oci:b", dir),
+		Dest: fmt.Sprintf("oci:%s/oci2:tag", dir),
+	}))
+
+	oci, err := umoci.OpenLayout(path.Join(dir, "oci2"))
+	assert.NoError(err)
+	defer oci.Close()
+
+	ctx := context.Background()
+
+	index, err := oci.GetIndex(ctx)
+	assert.NoError(err)
+	assert.Len(index.Manifests, 1)
 }
