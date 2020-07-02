@@ -1,7 +1,6 @@
 package btrfs
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -368,7 +367,7 @@ func (b *btrfs) Clean() error {
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
 // device and allows the specified uid to delete subvolumes on it.
 func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest string) error {
-	mounted, err := isMounted(loopback)
+	mounted, err := mount.IsMountpoint(dest)
 	if err != nil {
 		return err
 	}
@@ -454,22 +453,4 @@ func setupLoopback(path string, uid int, gid int, size int64) error {
 	}
 
 	return nil
-}
-
-func isMounted(path string) (bool, error) {
-	f, err := os.Open("/proc/self/mountinfo")
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, path) {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
