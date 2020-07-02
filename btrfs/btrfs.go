@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/log"
+	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
 	"github.com/freddierice/go-losetup"
 	"github.com/pkg/errors"
@@ -166,33 +167,6 @@ func (b *btrfs) Finalize(thing string) error {
 	return nil
 }
 
-func IsMountpoint(path string) (bool, error) {
-	return IsMountpointOfDevice(path, "")
-}
-
-func IsMountpointOfDevice(path, devicepath string) (bool, error) {
-	path = strings.TrimSuffix(path, "/")
-	f, err := os.Open("/proc/self/mounts")
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-		fields := strings.Fields(line)
-		if len(fields) <= 1 {
-			continue
-		}
-		if (fields[1] == path || path == "") && (fields[0] == devicepath || devicepath == "") {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // isBtrfsSubVolume returns true if the given Path is a btrfs subvolume else
 // false.
 func isBtrfsSubVolume(subvolPath string) (bool, error) {
@@ -210,7 +184,7 @@ func isBtrfsSubVolume(subvolPath string) (bool, error) {
 	// btrfs roots have the same inode as above, but they are not
 	// subvolumes (and we can't delete them) so exlcude the path if it is a
 	// mountpoint.
-	mountpoint, err := IsMountpoint(subvolPath)
+	mountpoint, err := mount.IsMountpoint(subvolPath)
 	if err != nil {
 		return false, err
 	}
