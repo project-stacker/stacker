@@ -167,7 +167,7 @@ func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.E
 		return err
 	}
 
-	fsEval := fseval.DefaultFsEval
+	fsEval := fseval.Default
 	rootfsPath := path.Join(bundlepath, "rootfs")
 	newDH, err := mtree.Walk(rootfsPath, nil, umoci.MtreeKeywords, fsEval)
 	if err != nil {

@@ -215,7 +215,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		defer blob.Close()
 	} else {
 		// sourced a non-tar layer, and wants a tar one.
-		diff, err := mtree.Check(rootfsPath, nil, umoci.MtreeKeywords, fseval.DefaultFsEval)
+		diff, err := mtree.Check(rootfsPath, nil, umoci.MtreeKeywords, fseval.Default)
 		if err != nil {
 			return err
 		}

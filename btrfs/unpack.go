@@ -206,7 +206,7 @@ func prepareUmociMetadata(storage *btrfs, name string, bundlePath string, dp cas
 	} else {
 		// Umoci's metadata wasn't present. Let's generate it.
 		log.Infof("generating mtree metadata for snapshot (this may take a bit)...")
-		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.DefaultFsEval)
+		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Default)
 		if err != nil {
 			return err
 		}
