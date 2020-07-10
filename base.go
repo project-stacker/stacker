@@ -20,9 +20,7 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
-	"github.com/opencontainers/umoci/pkg/fseval"
 	"github.com/pkg/errors"
-	"github.com/vbatts/go-mtree"
 )
 
 type BaseLayerOpts struct {
@@ -237,16 +235,7 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		}
 		defer blob.Close()
 	} else {
-		// sourced a non-tar layer, and wants a tar one.
-		diff, err := mtree.Check(rootfsPath, nil, umoci.MtreeKeywords, fseval.Default)
-		if err != nil {
-			return err
-		}
-
-		blob, err = layer.GenerateLayer(path.Join(bundlePath, "rootfs"), diff, nil)
-		if err != nil {
-			return err
-		}
+		blob = layer.GenerateInsertLayer(path.Join(bundlePath, "rootfs"), "/", false, nil)
 		defer blob.Close()
 	}
 
