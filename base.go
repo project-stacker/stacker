@@ -312,18 +312,9 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		return err
 	}
 
-	err = updateBundleMtree(bundlePath, desc)
-	if err != nil {
-		return err
-	}
-
-	err = umoci.WriteBundleMeta(bundlePath, umoci.Meta{
-		Version: umoci.MetaVersion,
-		From: casext.DescriptorPath{
-			Walk: []ispec.Descriptor{desc},
-		},
+	return o.Storage.UpdateFSMetadata(o.Name, casext.DescriptorPath{
+		Walk: []ispec.Descriptor{desc},
 	})
-	return err
 }
 
 func setupTarRootfs(o BaseLayerOpts) error {

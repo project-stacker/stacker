@@ -3,7 +3,6 @@
 //
 // Things still TODO:
 //
-// 1. get rid of mtree general invocations (only btrfs needs these)
 // 2. solve the layer generation problem described at
 //    overlay/pack.go:RepackOverlay()
 // 3. support squashfs
@@ -22,6 +21,7 @@ import (
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
+	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 )
@@ -209,6 +209,12 @@ func (o *overlay) Detach() error {
 		}
 	}
 
+	return nil
+}
+
+func (o *overlay) UpdateFSMetadata(name string, path casext.DescriptorPath) error {
+	// no-op; we get our layer contents by just looking at the contents of
+	// the upperdir
 	return nil
 }
 

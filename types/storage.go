@@ -1,5 +1,9 @@
 package types
 
+import (
+	"github.com/opencontainers/umoci/oci/casext"
+)
+
 type Storage interface {
 	// Name of this storage driver (e.g. "btrfs")
 	Name() string
@@ -30,6 +34,12 @@ type Storage interface {
 	// operation (in preparation for stacker to exit). No need to delete
 	// anything, though.
 	Detach() error
+
+	// UpdateFSMetadata updates the filesystem metadata (e.g. umoci's mtree
+	// files, or anything else needed) for generating deltas. This is used
+	// after e.g. a build is complete, but before the snapshot is
+	// Finalize()d.
+	UpdateFSMetadata(name string, path casext.DescriptorPath) error
 
 	// Finalize should seal the tag so it can no longer be modified
 	// (although it will be used later during Repack(), but in a read only

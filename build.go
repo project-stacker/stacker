@@ -33,25 +33,6 @@ type BuildArgs struct {
 	Progress                bool
 }
 
-func updateBundleMtree(rootPath string, newPath ispec.Descriptor) error {
-	newName := strings.Replace(newPath.Digest.String(), ":", "_", 1) + ".mtree"
-
-	infos, err := ioutil.ReadDir(rootPath)
-	if err != nil {
-		return err
-	}
-
-	for _, fi := range infos {
-		if !strings.HasSuffix(fi.Name(), ".mtree") {
-			continue
-		}
-
-		return os.Rename(path.Join(rootPath, fi.Name()), path.Join(rootPath, newName))
-	}
-
-	return nil
-}
-
 // Builder is responsible for building the layers based on stackerfiles
 type Builder struct {
 	builtStackerfiles types.StackerFiles // Keep track of all the Stackerfiles which were built
@@ -494,16 +475,7 @@ func (b *Builder) Build(file string) error {
 			return err
 		}
 
-		bundlePath := path.Join(opts.Config.RootFSDir, name)
-		// Now, we need to set the umoci data on the fs to tell it that
-		// it has a layer that corresponds to this fs.
-		err = updateBundleMtree(bundlePath, newPath.Descriptor())
-		if err != nil {
-			return err
-		}
-
-		umociMeta := umoci.Meta{Version: umoci.MetaVersion, From: newPath}
-		err = umoci.WriteBundleMeta(bundlePath, umociMeta)
+		err = s.UpdateFSMetadata(name, newPath)
 		if err != nil {
 			return err
 		}
