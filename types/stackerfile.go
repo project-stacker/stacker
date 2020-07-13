@@ -263,7 +263,6 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 
 		// Set the directory with the location where the layer was defined
 		layer.referenceDirectory = sf.ReferenceDirectory
-		layer.Name = name
 	}
 
 	return &sf, err
