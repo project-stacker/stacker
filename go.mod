@@ -38,7 +38,7 @@ require (
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208 // indirect
 	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae
 	google.golang.org/protobuf v1.25.0 // indirect
-	gopkg.in/lxc/go-lxc.v2 v2.0.0-20200518152310-1ee44cc86c87
+	gopkg.in/lxc/go-lxc.v2 v2.0.0-20191021220249-79d3cbb2d58e
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.3.0
