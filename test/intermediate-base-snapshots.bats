@@ -235,3 +235,54 @@ EOF
 	[ -f dest/rootfs/t2 ]
 	[ -f dest/rootfs/t3 ]
 }
+
+@test "unprivileged intermediate base snapshot mtree generation" {
+    require_storage btrfs
+    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+
+    cat > stacker.yaml <<EOF
+parent:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        touch /000
+        chmod 000 /000
+child:
+    from:
+        type: built
+        tag: parent
+    run: |
+        touch /child
+EOF
+
+    # first build a base image
+    stacker build
+    mv oci oci-import
+    stacker clean --all
+
+    stacker unpriv-setup
+    # now import that image twice, first the child image, then the parent
+    # image, to force a layer regeneration
+    cat > stacker.yaml <<'EOF'
+child-child:
+    from:
+        type: oci
+        url: oci-import:child
+    run: |
+        ls /
+        stat --format="%a" /000
+        [ "$(stat --format="%a" /000)" = "0" ]
+        [ -f /child ]
+parent-child:
+    from:
+        type: oci
+        url: oci-import:parent
+    run: |
+        ls /
+        [ "$(stat --format="%a" /000)" = "0" ]
+        [ ! -f /child ]
+EOF
+    chown -R $SUDO_USER:$SUDO_USER .
+    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
+}

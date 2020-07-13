@@ -270,7 +270,7 @@ func (a *Apply) applyImage(layer string) error {
 	// if it already exists, and it may exist because we restored from a
 	// previous snapshot.
 	os.RemoveAll(path.Join(bundlePath, newMtreeName+".mtree"))
-	err = umoci.GenerateBundleManifest(newMtreeName, bundlePath, fseval.Default)
+	err = umoci.GenerateBundleManifest(newMtreeName, bundlePath, fseval.Rootless)
 	if err != nil {
 		return err
 	}

@@ -161,7 +161,7 @@ func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath str
 	}
 
 	mtreeName := strings.Replace(dps[0].Descriptor().Digest.String(), ":", "_", 1)
-	err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Default)
+	err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Rootless)
 	if err != nil {
 		return err
 	}
