@@ -59,8 +59,9 @@ EOF
     local stacker_yaml="$tmpd/stacker.yaml" config_yaml="$tmpd/config.yaml"
     local expected="$tmpd/expected.txt"
 
-    printf "%s\n%s\n%s\n" \
-        "found rootfs=$rdir" "found oci=$odir" "found stacker=$sdir" > "$expected"
+    printf "%s\n%s\n%s\n%s\n" \
+        "found rootfs=$rdir" "found oci=$odir" "found stacker=$sdir" \
+        "found name=my-build" > "$expected"
 
     cat > "$stacker_yaml" <<"EOF"
 my-build:
@@ -79,6 +80,7 @@ my-build:
         found rootfs=${{STACKER_ROOTFS_DIR}}
         found oci=${{STACKER_OCI_DIR}}
         found stacker=${{STACKER_STACKER_DIR}}
+        found name=my-build
         EOF
         tar -cf output.tar content.txt
 
