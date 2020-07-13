@@ -217,7 +217,7 @@ func (b *Builder) Build(file string) error {
 		}
 		defer c.Close()
 
-		err = c.SetupLayerConfig(l)
+		err = c.SetupLayerConfig(l, name)
 		if err != nil {
 			return err
 		}

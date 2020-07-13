@@ -37,7 +37,6 @@ type Layer struct {
 	Binds              interface{}       `yaml:"binds"`
 	Apply              []string          `yaml:"apply"`
 	RuntimeUser        string            `yaml:"runtime_user"`
-	Name               string            // the name of this layer in the stacker file.
 	referenceDirectory string            // Location of the directory where the layer is defined
 }
 
@@ -93,9 +92,9 @@ func buildEnv(passThrough []string, newEnv map[string]string,
 	return ret, nil
 }
 
-func (l *Layer) BuildEnvironment() (map[string]string, error) {
+func (l *Layer) BuildEnvironment(name string) (map[string]string, error) {
 	env, err := buildEnv(l.BuildEnvPt, l.BuildEnv, os.Environ)
-	env["STACKER_LAYER_NAME"] = l.Name
+	env["STACKER_LAYER_NAME"] = name
 	return env, err
 }
 
