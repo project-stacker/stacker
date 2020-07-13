@@ -18,13 +18,20 @@ import (
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
 )
 
-func overlayPath(config types.StackerConfig, d digest.Digest, subdir string) string {
+func safeOverlayName(d digest.Digest) string {
 	// dirs used in overlay lowerdir args can't have : in them, so lets
 	// sanitize it
-	safeName := strings.ReplaceAll(d.String(), ":", "_")
-	return path.Join(config.RootFSDir, safeName, subdir)
+	return strings.ReplaceAll(d.String(), ":", "_")
+}
+
+func overlayPath(config types.StackerConfig, d digest.Digest, subdirs ...string) string {
+	safeName := safeOverlayName(d)
+	dirs := []string{config.RootFSDir, safeName}
+	dirs = append(dirs, subdirs...)
+	return path.Join(dirs...)
 }
 
 func (o *overlay) Unpack(ociDir, tag, name string) error {
@@ -114,7 +121,8 @@ func (o *overlay) Repack(ociDir, name, layerType string) error {
 	})
 }
 
-func generateLayer(mutator *mutate.Mutator, dir string) (bool, error) {
+func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name string) (bool, error) {
+	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return false, errors.Wrapf(err, "coudln't read overlay path %s", dir)
@@ -137,7 +145,49 @@ func generateLayer(mutator *mutate.Mutator, dir string) (bool, error) {
 		EmptyLayer: false,
 	}
 
-	return true, mutator.Add(context.Background(), uncompressed, history)
+	desc, err := mutator.Add(context.Background(), uncompressed, history)
+	if err != nil {
+		return false, err
+	}
+
+	// we're going to update the manifest at the end with these generated
+	// layers, so we need to "extract" them. but there's no need to
+	// actually extract them, we can just rename the contents we already
+	// have for the generated hash, since that's where it came from.
+	target := overlayPath(config, desc.Digest)
+	err = os.MkdirAll(target, 0755)
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't make new layer overlay dir")
+	}
+
+	err = os.Rename(dir, path.Join(target, "overlay"))
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't move overlay data to new location")
+	}
+
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't re-make overlay contents for %s", dir)
+	}
+
+	ovl := overlayMetadata{}
+	ovl.Manifest, err = mutator.Manifest(context.Background())
+	if err != nil {
+		return false, err
+	}
+
+	// unmount the old overlay
+	err = unix.Unmount(path.Join(config.RootFSDir, name, "rootfs"), 0)
+	if err != nil {
+		return false, errors.Wrapf(err, "couldn't unmount old overlay")
+	}
+
+	err = ovl.write(config, name)
+	if err != nil {
+		return false, err
+	}
+
+	return true, ovl.mount(config, name)
 }
 
 func RepackOverlay(config types.StackerConfig, name string) error {
@@ -165,7 +215,7 @@ func RepackOverlay(config types.StackerConfig, name string) error {
 	mutated := false
 	// generate blobs for each build layer
 	for _, buildLayer := range ovl.BuiltLayers {
-		didMutate, err := generateLayer(mutator, path.Join(config.RootFSDir, buildLayer, "overlay"))
+		didMutate, err := generateLayer(config, mutator, buildLayer)
 		if err != nil {
 			return err
 		}
@@ -174,47 +224,22 @@ func RepackOverlay(config types.StackerConfig, name string) error {
 		}
 	}
 
-	overlayPath := path.Join(config.RootFSDir, name, "overlay")
-	didMutate, err := generateLayer(mutator, overlayPath)
+	didMutate, err := generateLayer(config, mutator, name)
 	if err != nil {
 		return err
 	}
-	if didMutate {
-		mutated = true
-	}
 
 	// if we didn't do anything, don't do anything :)
-	if !mutated {
+	if !didMutate && !mutated {
 		return nil
 	}
 
+	// for the actual layer, we need to update the descriptor in the output
+	// too.
 	newPath, err := mutator.Commit(context.Background())
 	if err != nil {
 		return err
 	}
 
-	err = oci.UpdateReference(context.Background(), name, newPath.Root())
-	if err != nil {
-		return err
-	}
-	// TODO: right now we don't update the manifest in the overlay config,
-	// even though we just generated one. we could do that, but there's no
-	// extraction of the intermediate layer. we could do a copy to the new
-	// intermediate hash that we generated, but that's expensive and maybe
-	// useless. but maybe it's better than not sharing.
-	//
-	// the consequence is that for something like:
-	//    a:
-	//       from: docker://centos:latest
-	//    b:
-	//       from: a
-	//    c:
-	//       from: b
-	//    d:
-	//       from: b
-	//
-	// will cause the b layer to be generated twice in c and d, thus not
-	// sharing it. not clear how much this scenario actually occrus in the
-	// wild.
-	return nil
+	return oci.UpdateReference(context.Background(), name, newPath.Root())
 }

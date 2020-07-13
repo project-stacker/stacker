@@ -331,10 +331,8 @@ github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61 h1:INQxeLW5rI6NdK32NgVL+2q6p+ixmFuvvduSYmsCYGw=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61/go.mod h1:cdWJrB+PcHXXfp97Gizi9FJNWfNLgO6pt4CgxWpVA5Q=
-github.com/tych0/umoci v0.3.2-0.20200707230152-66a99b8ceb69 h1:gBaJ3z++c18GHcQ/CIJNmTTXX6oscjNY/5NmKSCajnI=
-github.com/tych0/umoci v0.3.2-0.20200707230152-66a99b8ceb69/go.mod h1:ax+DI5s1AIhU7q3nICDIdKTM8Ti/+3hn2FyvXz5zBqM=
-github.com/tych0/umoci v0.3.2-0.20200708211521-2b9f23b91053 h1:Jb+Ha2M62GcjcnuK88xb7hJMhFCH5X4Alh5kBBw5GFw=
-github.com/tych0/umoci v0.3.2-0.20200708211521-2b9f23b91053/go.mod h1:J81tYuoqLdUKOemyhg7VzTYsx7wqwkEreenieJocJzY=
+github.com/tych0/umoci v0.4.7-0.20200715211242-0c6604b79af0 h1:wVg7hbklx1v/fx/oVfEjVQb2sq/gkYLx2tCedJyNQB0=
+github.com/tych0/umoci v0.4.7-0.20200715211242-0c6604b79af0/go.mod h1:J81tYuoqLdUKOemyhg7VzTYsx7wqwkEreenieJocJzY=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ulikunitz/xz v0.5.7 h1:YvTNdFzX6+W5m9msiYg/zpkSURPPtOlzbqYjrFn7Yt4=
@@ -494,8 +492,6 @@ gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/fsnotify.v1 v1.4.7/go.mod h1:Tz8NjZHkW78fSQdbUxIjBTcgA1z1m8ZHf0WmKUhAMys=
 gopkg.in/lxc/go-lxc.v2 v2.0.0-20191021220249-79d3cbb2d58e h1:ulBvYh2hYVOqxSJo+P0fdXlkrhQNStzLkMlZOqdJ3u4=
 gopkg.in/lxc/go-lxc.v2 v2.0.0-20191021220249-79d3cbb2d58e/go.mod h1:4K0lbUXeslpmjwJZyW1lI6s5j97mrsj4+kpYwwvuLXo=
-gopkg.in/lxc/go-lxc.v2 v2.0.0-20200518152310-1ee44cc86c87 h1:Z3a2eajfAQT7ciu/AEfyl0PJDQMNohjD6Rx1bPUpR0M=
-gopkg.in/lxc/go-lxc.v2 v2.0.0-20200518152310-1ee44cc86c87/go.mod h1:4K0lbUXeslpmjwJZyW1lI6s5j97mrsj4+kpYwwvuLXo=
 gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 h1:E846t8CnR+lv5nE+VuiKTDG/v1U2stad0QzddfJC7kY=
 gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5/go.mod h1:hiOFpYm0ZJbusNj2ywpbrXowU3G8U6GIQzqn2mw1UIE=
 gopkg.in/square/go-jose.v2 v2.3.1 h1:SK5KegNXmKmqE342YYN2qPHEnUYeoMiXXl1poUlI+o4=

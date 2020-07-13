@@ -74,7 +74,7 @@ EOF
     # did run actually copy the favicon to the right place?
     [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
 
-    [ ! -f roots/layer1/rootfs/favicon.ico ]
+    [ ! -f roots/layer1/rootfs/favicon.ico ] || [ ! -f roots/layer1/overlay/favicon.ico ]
 
     [ "$(stat --format="%a" roots/centos/rootfs/usr/bin/executable)" = "755" ]
 

@@ -3,8 +3,6 @@
 //
 // Things still TODO:
 //
-// 2. solve the layer generation problem described at
-//    overlay/pack.go:RepackOverlay()
 // 3. support squashfs
 // 4. implement GC (nobody really uses this, it seems people just clean and
 //    rebuild, so...)

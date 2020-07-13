@@ -68,12 +68,18 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 	overlayArgs := bytes.NewBufferString("index=off,lowerdir=")
 	for _, layer := range ovl.Manifest.Layers {
 		contents := overlayPath(config, layer.Digest, "overlay")
+		if _, err := os.Stat(contents); err != nil {
+			return errors.Wrapf(err, "%s does not exist", contents)
+		}
 		overlayArgs.WriteString(contents)
 		overlayArgs.WriteString(":")
 	}
 
 	for _, layer := range ovl.BuiltLayers {
 		contents := path.Join(config.RootFSDir, layer, "overlay")
+		if _, err := os.Stat(contents); err != nil {
+			return errors.Wrapf(err, "%s does not exist", contents)
+		}
 		overlayArgs.WriteString(contents)
 		overlayArgs.WriteString(":")
 	}
