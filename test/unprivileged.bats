@@ -9,6 +9,35 @@ function teardown() {
     cleanup
 }
 
+@test "file with chmod 000 works" {
+    cat > stacker.yaml <<EOF
+parent:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        touch /etc/000
+        chmod 000 /etc/000
+child:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        echo "zomg" > /etc/000
+        chmod 000 /etc/000
+EOF
+    chown -R $SUDO_USER:$SUDO_USER .
+    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
+    umoci unpack --image oci:parent parent
+    [ -f parent/rootfs/etc/000 ]
+    [ "$(stat --format="%a" parent/rootfs/etc/000)" = "0" ]
+
+    umoci unpack --image oci:child child
+    [ -f child/rootfs/etc/000 ]
+    [ "$(stat --format="%a" child/rootfs/etc/000)" = "0" ]
+    [ "$(cat child/rootfs/etc/000)" = "zomg" ]
+}
+
 @test "unprivileged stacker" {
     [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
 
