@@ -24,6 +24,18 @@ line flags or stacker-config file.
     STACKER_ROOTFS_DIR  config name 'rootfs_dir', cli flag '--roots-dir'
     STACKER_OCI_DIR     config name 'oci_dir', cli flag '--oci-dir'
 
+
+The stacker build environment will have the following environment variables
+available for reference:
+
+  * `STACKER_LAYER_NAME`: the name of the layer being built.  `STACKER_LAYER_NAME`
+    will be `my-build` when the `run` section below is executed.
+
+      ```yaml
+      my-build:
+        run: echo "Your layer is ${STACKER_LAYER_NAME}"
+      ```
+
 #### `from`
 
 The `from` directive describes the base image that stacker will start from. It
