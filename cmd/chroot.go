@@ -54,8 +54,12 @@ func doChroot(ctx *cli.Context) error {
 	}
 
 	file := ctx.String("f")
-	sf, err := types.NewStackerfile(file, ctx.StringSlice("substitute"))
+	_, err = os.Stat(file)
 	if err != nil {
+		if !os.IsNotExist(err) {
+			return errors.Wrapf(err, "couldn't access %s", file)
+		}
+
 		log.Infof("couldn't find stacker file, chrooting to %s as best effort", tag)
 		c, err := stacker.NewContainer(config, tag)
 		if err != nil {
@@ -63,6 +67,10 @@ func doChroot(ctx *cli.Context) error {
 		}
 		defer c.Close()
 		return c.Execute(cmd, os.Stdin)
+	}
+	sf, err := types.NewStackerfile(file, ctx.StringSlice("substitute"))
+	if err != nil {
+		return err
 	}
 
 	if tag == "" {
