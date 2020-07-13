@@ -10,6 +10,8 @@ function teardown() {
 }
 
 @test "file with chmod 000 works" {
+    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+
     cat > stacker.yaml <<EOF
 parent:
     from:
