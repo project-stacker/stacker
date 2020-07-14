@@ -282,7 +282,19 @@ parent-child:
         ls /
         [ "$(stat --format="%a" /000)" = "0" ]
         [ ! -f /child ]
+        touch /foo
 EOF
     chown -R $SUDO_USER:$SUDO_USER .
     sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
+
+    manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
+    n_layers=$(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')
+    last_layer=$(cat oci/blobs/sha256/$manifest | jq -r ".layers[$(($n_layers-1))].digest" | cut -f2 -d:)
+
+    mkdir foo
+    tar -C foo -xf oci/blobs/sha256/$last_layer
+    ls -1 foo
+    [ "$(ls -1 foo | wc -l)" = "1" ]
+    # little bunny
+    [ -f foo/foo ]
 }

@@ -84,6 +84,16 @@ var umociCmd = cli.Command{
 			Name:   "repack-overlay",
 			Action: doRepackOverlay,
 		},
+		cli.Command{
+			Name:   "generate-bundle-manifest",
+			Action: doGenerateBundleManifest,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "mtree-name",
+					Usage: "the name of the file to write mtree data to",
+				},
+			},
+		},
 	},
 	Before: doBeforeUmociSubcommand,
 }
@@ -313,4 +323,10 @@ func doUnpackOne(ctx *cli.Context) error {
 func doRepackOverlay(ctx *cli.Context) error {
 	tag := ctx.GlobalString("tag")
 	return overlay.RepackOverlay(config, tag)
+}
+
+func doGenerateBundleManifest(ctx *cli.Context) error {
+	bundlePath := ctx.GlobalString("bundle-path")
+	mtreeName := ctx.String("mtree-name")
+	return umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Default)
 }

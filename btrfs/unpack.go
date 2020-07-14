@@ -15,7 +15,6 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
-	"github.com/opencontainers/umoci/pkg/fseval"
 	"github.com/pkg/errors"
 )
 
@@ -206,10 +205,15 @@ func prepareUmociMetadata(storage *btrfs, name string, bundlePath string, dp cas
 	} else {
 		// Umoci's metadata wasn't present. Let's generate it.
 		log.Infof("generating mtree metadata for snapshot (this may take a bit)...")
-		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Rootless)
+		err = container.RunUmociSubcommand(storage.c, []string{
+			"--bundle-path", bundlePath,
+			"generate-bundle-manifest",
+			"--mtree-name", mtreeName,
+		})
 		if err != nil {
 			return err
 		}
+
 	}
 
 	meta := umoci.Meta{
