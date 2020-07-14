@@ -6,7 +6,6 @@ function setup() {
 
 function teardown() {
     cleanup
-    rm executable import || true
 }
 
 @test "multiple stacker builds in a row" {
