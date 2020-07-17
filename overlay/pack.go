@@ -2,6 +2,7 @@ package overlay
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/container"
+	"github.com/anuvu/stacker/lib"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/go-digest"
@@ -34,8 +36,9 @@ func overlayPath(config types.StackerConfig, d digest.Digest, subdirs ...string)
 	return path.Join(dirs...)
 }
 
-func (o *overlay) Unpack(ociDir, tag, name string) error {
-	oci, err := umoci.OpenLayout(ociDir)
+func (o *overlay) Unpack(tag, name, layerType string, buildOnly bool) error {
+	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+	oci, err := umoci.OpenLayout(cacheDir)
 	if err != nil {
 		return err
 	}
@@ -74,7 +77,7 @@ func (o *overlay) Unpack(ociDir, tag, name string) error {
 			pool.Add(func(ctx context.Context) error {
 				return container.RunUmociSubcommand(o.config, []string{
 					"--tag", tag,
-					"--oci-path", ociDir,
+					"--oci-path", cacheDir,
 					"--bundle-path", contents,
 					"unpack-one",
 					"--digest", layer.Digest.String(),
@@ -107,7 +110,19 @@ func (o *overlay) Unpack(ociDir, tag, name string) error {
 		return err
 	}
 
-	return ovl.mount(o.config, name)
+	err = ovl.mount(o.config, name)
+	if err != nil {
+		return err
+	}
+
+	if buildOnly {
+		return nil
+	}
+
+	return lib.ImageCopy(lib.ImageCopyOpts{
+		Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, name),
+	})
 }
 
 func (o *overlay) Repack(ociDir, name, layerType string) error {

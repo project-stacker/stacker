@@ -1,22 +1,16 @@
 package stacker
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
 	"path"
-	"time"
 
 	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
 	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
-	"github.com/opencontainers/go-digest"
-	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
@@ -177,133 +171,12 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 	target := path.Join(o.Config.RootFSDir, o.Name)
 	log.Debugf("unpacking to %s", target)
 
-	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
 	cacheTag, err := o.Layer.From.ParseTag()
 	if err != nil {
 		return err
 	}
 
-	cacheOCI, err := umoci.OpenLayout(cacheDir)
-	if err != nil {
-		return err
-	}
-
-	sourceLayerType := "tar"
-	manifest, err := stackeroci.LookupManifest(cacheOCI, cacheTag)
-	if err != nil {
-		return err
-	}
-
-	if manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
-		sourceLayerType = "squashfs"
-	}
-
-	err = o.Storage.Unpack(cacheDir, cacheTag, o.Name)
-	if err != nil {
-		return err
-	}
-
-	if o.Layer.BuildOnly {
-		return nil
-	}
-
-	// if the layer types are the same, just copy it over and be done
-	if o.LayerType == sourceLayerType {
-		log.Debugf("same layer type, no translation required")
-		// We just copied it to the cache, now let's copy that over to our image.
-		err = lib.ImageCopy(lib.ImageCopyOpts{
-			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
-			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name),
-		})
-		return err
-	}
-	log.Debugf("translating from %s to %s", sourceLayerType, o.LayerType)
-
-	var blob io.ReadCloser
-
-	bundlePath := path.Join(o.Config.RootFSDir, o.Name)
-	rootfsPath := path.Join(bundlePath, "rootfs")
-	// otherwise, render the right layer type
-	if o.LayerType == "squashfs" {
-		// sourced a non-squashfs image and wants a squashfs layer,
-		// let's generate one.
-		o.OCI.GC(context.Background())
-
-		blob, err = squashfs.MakeSquashfs(o.Config.OCIDir, rootfsPath, nil)
-		if err != nil {
-			return err
-		}
-		defer blob.Close()
-	} else {
-		blob = layer.GenerateInsertLayer(path.Join(bundlePath, "rootfs"), "/", false, nil)
-		defer blob.Close()
-	}
-
-	layerDigest, layerSize, err := o.OCI.PutBlob(context.Background(), blob)
-	if err != nil {
-		return err
-	}
-
-	cacheManifest, err := stackeroci.LookupManifest(cacheOCI, cacheTag)
-	if err != nil {
-		return err
-	}
-
-	config, err := stackeroci.LookupConfig(cacheOCI, cacheManifest.Config)
-	if err != nil {
-		return err
-	}
-
-	layerType := stackeroci.MediaTypeLayerSquashfs
-	if o.LayerType == "tar" {
-		layerType = ispec.MediaTypeImageLayerGzip
-	}
-
-	desc := ispec.Descriptor{
-		MediaType: layerType,
-		Digest:    layerDigest,
-		Size:      layerSize,
-	}
-
-	manifest.Layers = []ispec.Descriptor{desc}
-	config.RootFS.DiffIDs = []digest.Digest{layerDigest}
-	now := time.Now()
-	config.History = []ispec.History{{
-		Created:   &now,
-		CreatedBy: fmt.Sprintf("stacker layer-type mismatch repack of %s", cacheTag),
-	},
-	}
-
-	configDigest, configSize, err := o.OCI.PutBlobJSON(context.Background(), config)
-	if err != nil {
-		return err
-	}
-
-	manifest.Config = ispec.Descriptor{
-		MediaType: ispec.MediaTypeImageConfig,
-		Digest:    configDigest,
-		Size:      configSize,
-	}
-
-	manifestDigest, manifestSize, err := o.OCI.PutBlobJSON(context.Background(), manifest)
-	if err != nil {
-		return err
-	}
-
-	desc = ispec.Descriptor{
-		MediaType: ispec.MediaTypeImageManifest,
-		Digest:    manifestDigest,
-		Size:      manifestSize,
-	}
-
-	err = o.OCI.UpdateReference(context.Background(), o.Name, desc)
-	if err != nil {
-		return err
-	}
-
-	return o.Storage.UpdateFSMetadata(o.Name, casext.DescriptorPath{
-		Walk: []ispec.Descriptor{desc},
-	})
+	return o.Storage.Unpack(cacheTag, o.Name, o.LayerType, o.Layer.BuildOnly)
 }
 
 func setupTarRootfs(o BaseLayerOpts) error {

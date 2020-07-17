@@ -58,13 +58,20 @@ type Storage interface {
 	// of those OCI dirs as well).
 	GC() error
 
-	// Unpack is the thing that unpacks the specfied tag from the specified
-	// ociDir into the specified "name" (working dir), whatever that means
+	// Unpack is the thing that unpacks the specfied tag layer-bases OCI
+	// cache into the specified "name" (working dir), whatever that means
 	// for this storage.
 	//
 	// Unpack can do fancy things like using previously cached unpacks to
 	// speed things up, etc.
-	Unpack(ociDir, tag, name string) error
+	//
+	// Finally, if !buildOnly, Unpack() should write a manifest to the
+	// output with "name" as the tag in the output dir with layers of the
+	// output layerType (doing any translation necessary).
+	//
+	// TODO: ociDir here is always the layer-bases cache dir, we can drop
+	// that param.
+	Unpack(tag, name, layerType string, buildOnly bool) error
 
 	// Repack repacks the specified working dir into the specified OCI dir.
 	//

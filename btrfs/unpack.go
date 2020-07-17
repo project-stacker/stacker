@@ -2,15 +2,20 @@ package btrfs
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
+	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
@@ -18,31 +23,43 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (b *btrfs) Unpack(ociDir, tag, name string) error {
-	oci, err := umoci.OpenLayout(ociDir)
+func (b *btrfs) Unpack(tag, name, layerType string, buildOnly bool) error {
+	oci, err := umoci.OpenLayout(b.c.OCIDir)
 	if err != nil {
 		return err
 	}
 	defer oci.Close()
 
-	manifest, err := stackeroci.LookupManifest(oci, tag)
+	cacheDir := path.Join(b.c.StackerDir, "layer-bases", "oci")
+	cacheOCI, err := umoci.OpenLayout(cacheDir)
 	if err != nil {
 		return err
+	}
+	defer cacheOCI.Close()
+
+	sourceLayerType := "tar"
+	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
+	if err != nil {
+		return err
+	}
+
+	if manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
+		sourceLayerType = "squashfs"
 	}
 
 	bundlePath := path.Join(b.c.RootFSDir, name)
-
-	lastLayer, highestHash, err := b.findPreviousExtraction(oci, manifest)
+	lastLayer, highestHash, err := b.findPreviousExtraction(cacheOCI, manifest)
 	if err != nil {
 		return err
 	}
 
-	if highestHash != "" {
-		dps, err := oci.ResolveReference(context.Background(), tag)
-		if err != nil {
-			return err
-		}
+	dps, err := cacheOCI.ResolveReference(context.Background(), tag)
+	if err != nil {
+		return err
+	}
 
+	// restore whatever we already extracted
+	if highestHash != "" {
 		// Delete the previously created working snapshot; we're about
 		// to create a new one.
 		err = b.Delete(name)
@@ -54,59 +71,149 @@ func (b *btrfs) Unpack(ociDir, tag, name string) error {
 		if err != nil {
 			return err
 		}
+	}
 
-		// If we resotred from the last extracted layer, we can just
-		// ensure the metadata is correct and return.
-		if lastLayer+1 == len(manifest.Layers) {
-			err = prepareUmociMetadata(b, name, bundlePath, dps[0], highestHash)
-			if err != nil {
-				return err
-			}
+	// if we're done, just prepare the metadata
+	if lastLayer+1 == len(manifest.Layers) {
+		err = prepareUmociMetadata(b, name, bundlePath, dps[0], highestHash)
+		if err != nil {
+			return err
+		}
+	} else {
+		// otherwise, finish extracting
+		startFrom := manifest.Layers[lastLayer+1]
 
-			return nil
+		// again, if we restored from something that already been unpacked but
+		// we're going to unpack stuff on top of it, we need to delete the old
+		// metadata.
+		err = cleanUmociMetadata(bundlePath)
+		if err != nil {
+			return err
+		}
+
+		err = container.RunUmociSubcommand(b.c, []string{
+			"--oci-path", cacheDir,
+			"--tag", tag,
+			"--bundle-path", bundlePath,
+			"unpack",
+			"--start-from", startFrom.Digest.String(),
+		})
+		if err != nil {
+			return err
+		}
+
+		// Ok, now that we have extracted and computed the mtree, let's
+		// re-snapshot. The problem is that the snapshot in the callback won't
+		// contain an mtree file, because the final mtree is generated after
+		// the callback is called.
+		hash, err := ComputeAggregateHash(manifest, manifest.Layers[len(manifest.Layers)-1])
+		if err != nil {
+			return err
+		}
+		err = b.Delete(hash)
+		if err != nil {
+			return err
+		}
+
+		err = b.Snapshot(name, hash)
+		if err != nil {
+			return err
 		}
 	}
 
-	startFrom := manifest.Layers[lastLayer+1]
+	// if this is build only, we don't need to write anything to the output
+	if buildOnly {
+		return nil
+	}
 
-	// again, if we restored from something that already been unpacked but
-	// we're going to unpack stuff on top of it, we need to delete the old
-	// metadata.
-	err = cleanUmociMetadata(bundlePath)
+	// if the layer types are the same, just copy it over and be done
+	if layerType == sourceLayerType {
+		log.Debugf("same layer type, no translation required")
+		// We just copied it to the cache, now let's copy that over to our image.
+		err = lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+			Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, name),
+		})
+		return err
+	}
+	log.Debugf("translating from %s to %s", sourceLayerType, layerType)
+
+	var blob io.ReadCloser
+
+	rootfsPath := path.Join(bundlePath, "rootfs")
+	// otherwise, render the right layer type
+	if layerType == "squashfs" {
+		// sourced a non-squashfs image and wants a squashfs layer,
+		// let's generate one.
+		blob, err = squashfs.MakeSquashfs(b.c.OCIDir, rootfsPath, nil)
+		if err != nil {
+			return err
+		}
+		defer blob.Close()
+	} else {
+		blob = layer.GenerateInsertLayer(path.Join(bundlePath, "rootfs"), "/", false, nil)
+		defer blob.Close()
+	}
+
+	layerDigest, layerSize, err := oci.PutBlob(context.Background(), blob)
 	if err != nil {
 		return err
 	}
 
-	err = container.RunUmociSubcommand(b.c, []string{
-		"--oci-path", ociDir,
-		"--tag", tag,
-		"--bundle-path", bundlePath,
-		"unpack",
-		"--start-from", startFrom.Digest.String(),
+	config, err := stackeroci.LookupConfig(cacheOCI, manifest.Config)
+	if err != nil {
+		return err
+	}
+
+	layerMediaType := stackeroci.MediaTypeLayerSquashfs
+	if layerType == "tar" {
+		layerMediaType = ispec.MediaTypeImageLayerGzip
+	}
+
+	desc := ispec.Descriptor{
+		MediaType: layerMediaType,
+		Digest:    layerDigest,
+		Size:      layerSize,
+	}
+
+	manifest.Layers = []ispec.Descriptor{desc}
+	config.RootFS.DiffIDs = []digest.Digest{layerDigest}
+	now := time.Now()
+	config.History = []ispec.History{{
+		Created:   &now,
+		CreatedBy: fmt.Sprintf("stacker layer-type mismatch repack of %s", tag),
+	}}
+
+	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), config)
+	if err != nil {
+		return err
+	}
+
+	manifest.Config = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageConfig,
+		Digest:    configDigest,
+		Size:      configSize,
+	}
+
+	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), manifest)
+	if err != nil {
+		return err
+	}
+
+	desc = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageManifest,
+		Digest:    manifestDigest,
+		Size:      manifestSize,
+	}
+
+	err = oci.UpdateReference(context.Background(), name, desc)
+	if err != nil {
+		return err
+	}
+
+	return b.UpdateFSMetadata(name, casext.DescriptorPath{
+		Walk: []ispec.Descriptor{desc},
 	})
-	if err != nil {
-		return err
-	}
-
-	// Ok, now that we have extracted and computed the mtree, let's
-	// re-snapshot. The problem is that the snapshot in the callback won't
-	// contain an mtree file, because the final mtree is generated after
-	// the callback is called.
-	hash, err := ComputeAggregateHash(manifest, manifest.Layers[len(manifest.Layers)-1])
-	if err != nil {
-		return err
-	}
-	err = b.Delete(hash)
-	if err != nil {
-		return err
-	}
-
-	err = b.Snapshot(name, hash)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (b *btrfs) findPreviousExtraction(oci casext.Engine, manifest ispec.Manifest) (int, string, error) {
