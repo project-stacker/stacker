@@ -243,9 +243,9 @@ func copyBuiltTypeBaseToOutput(o BaseLayerOpts, sfm types.StackerFiles) error {
 			break
 		}
 
-		base, ok = sfm.LookupLayerDefinition(base.From.Tag)
+		base, ok = sfm.LookupLayerDefinition(baseTag)
 		if !ok {
-			return errors.Errorf("missing base layer: %s?", base.From.Tag)
+			return errors.Errorf("missing base layer: %s?", baseTag)
 		}
 
 		if !base.BuildOnly {
