@@ -9,6 +9,29 @@ function teardown() {
     rm favicon.ico >& /dev/null || true
 }
 
+@test "build only + prerequisites work" {
+    cat > prereq.yaml <<EOF
+parent:
+    from:
+        type: docker
+        url: docker://centos:latest
+EOF
+
+    cat > stacker.yaml <<EOF
+config:
+    prerequisites:
+        - ./prereq.yaml
+child:
+    from:
+        type: built
+        tag: parent
+    run: echo "d2" > /bestgame
+EOF
+    stacker build
+    umoci unpack --image oci:child dest
+    [ "$(cat dest/rootfs/bestgame)" == "d2" ]
+}
+
 @test "after build only failure works" {
     cat > stacker.yaml <<EOF
 parent:
