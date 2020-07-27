@@ -9,6 +9,29 @@ function teardown() {
     rm favicon.ico >& /dev/null || true
 }
 
+@test "after build only failure works" {
+    cat > stacker.yaml <<EOF
+parent:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        false
+    build_only: true
+child:
+    from:
+        type: built
+        tag: parent
+    run: |
+        touch /child
+EOF
+    bad_stacker build
+    sed 's/false/true/g' -i stacker.yaml
+    stacker build
+    umoci unpack --image oci:child dest
+    [ -f dest/rootfs/child ]
+}
+
 @test "build only stacker" {
     cat > stacker.yaml <<EOF
 centos:
