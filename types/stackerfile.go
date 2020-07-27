@@ -271,11 +271,26 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 // DependencyOrder provides the list of layer names from a stackerfile
 // the current order to be built, note this method does not reorder the layers,
 // but it does validate they are specified in an order which makes sense
-func (s *Stackerfile) DependencyOrder() ([]string, error) {
+func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 	ret := []string{}
 	processed := map[string]bool{}
-	// Determine if the stackerfile has other stackerfiles as dependencies
-	hasPrerequisites := len(s.buildConfig.Prerequisites) > 0
+
+	for _, prereq := range s.buildConfig.Prerequisites {
+		absPrereq, err := filepath.Abs(prereq)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't determine abs path")
+		}
+
+		prereqFile, ok := sfm[absPrereq]
+		if !ok {
+			return nil, errors.Errorf("couldn't find prerequisite %s", prereq)
+		}
+
+		// prerequisites are processed beforehand
+		for thing := range prereqFile.internal {
+			processed[thing] = true
+		}
+	}
 
 	for i := 0; i < s.Len(); i++ {
 		for _, name := range s.FileOrder {
@@ -321,11 +336,6 @@ func (s *Stackerfile) DependencyOrder() ([]string, error) {
 			if allStackerImportsProcessed && (layer.From.Type != BuiltLayer || baseTagProcessed) {
 				// None of the imports using stacker:// are referencing unprocessed layers,
 				// and in case the base layer is type build we have already processed it
-				ret = append(ret, name)
-				processed[name] = true
-			} else if hasPrerequisites {
-				// Just assume the imports are based on images defined in one of the stacker
-				// files in the prerequisite paths
 				ret = append(ret, name)
 				processed[name] = true
 			}

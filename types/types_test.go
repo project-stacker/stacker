@@ -67,7 +67,7 @@ third:
         tag: second
 `
 	sf := parse(t, content)
-	do, err := sf.DependencyOrder()
+	do, err := sf.DependencyOrder(StackerFiles{})
 	if err != nil {
 		t.Fatalf("%s", err)
 	}

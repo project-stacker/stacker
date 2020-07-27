@@ -68,7 +68,7 @@ func (b *Builder) Build(file string) error {
 		defer s.Detach()
 	}
 
-	order, err := sf.DependencyOrder()
+	order, err := sf.DependencyOrder(b.builtStackerfiles)
 	if err != nil {
 		return err
 	}

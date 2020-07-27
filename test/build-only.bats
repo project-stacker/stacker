@@ -9,6 +9,28 @@ function teardown() {
     rm favicon.ico >& /dev/null || true
 }
 
+@test "build only + missing prereq fails" {
+    cat > prereq.yaml <<EOF
+parent:
+    from:
+        type: docker
+        url: docker://centos:latest
+EOF
+
+    cat > stacker.yaml <<EOF
+config:
+    prerequisites:
+        - ./prereq.yaml
+child:
+    from:
+        type: built
+        tag: zomg
+    run: echo "d2" > /bestgame
+EOF
+    bad_stacker build
+    echo $output | grep "couldn't resolve some dependencies"
+}
+
 @test "build only + prerequisites work" {
     cat > prereq.yaml <<EOF
 parent:
