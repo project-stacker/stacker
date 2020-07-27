@@ -276,11 +276,7 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 	processed := map[string]bool{}
 
 	for _, prereq := range s.buildConfig.Prerequisites {
-		absPrereq, err := filepath.Abs(prereq)
-		if err != nil {
-			return nil, errors.Wrapf(err, "couldn't determine abs path")
-		}
-
+		absPrereq := filepath.Join(filepath.Dir(s.path), prereq)
 		prereqFile, ok := sfm[absPrereq]
 		if !ok {
 			return nil, errors.Errorf("couldn't find prerequisite %s", prereq)
