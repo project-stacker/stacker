@@ -141,6 +141,7 @@ EOF
 }
 
 @test "squashfs + build only layers" {
+    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 build:
     from:

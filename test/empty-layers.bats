@@ -9,6 +9,7 @@ function teardown() {
 }
 
 @test "squashfs empty change no layer" {
+    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 parent:
     from:

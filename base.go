@@ -9,6 +9,7 @@ import (
 	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
+	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/umoci"
@@ -176,7 +177,43 @@ func setupContainersImageRootfs(o BaseLayerOpts) error {
 		return err
 	}
 
-	return o.Storage.Unpack(cacheTag, o.Name, o.LayerType, o.Layer.BuildOnly)
+	err = o.Storage.Unpack(cacheTag, o.Name)
+	if err != nil {
+		return err
+	}
+
+	// no need to copy to output
+	if o.Layer.BuildOnly {
+		return nil
+	}
+
+	cacheDir := path.Join(o.Config.StackerDir, "layer-bases", "oci")
+	cacheOCI, err := umoci.OpenLayout(cacheDir)
+	if err != nil {
+		return err
+	}
+	defer cacheOCI.Close()
+
+	sourceLayerType := "tar"
+	manifest, err := stackeroci.LookupManifest(cacheOCI, cacheTag)
+	if err != nil {
+		return err
+	}
+
+	if manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
+		sourceLayerType = "squashfs"
+	}
+
+	if o.LayerType == sourceLayerType {
+		log.Debugf("same layer type, no translation required")
+		return lib.ImageCopy(lib.ImageCopyOpts{
+			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
+			Dest: fmt.Sprintf("oci:%s:%s", o.Config.OCIDir, o.Name),
+		})
+	}
+
+	log.Debugf("translating from %s to %s", sourceLayerType, o.LayerType)
+	return o.Storage.ConvertAndOutput(cacheTag, o.Name, o.LayerType)
 }
 
 func setupTarRootfs(o BaseLayerOpts) error {

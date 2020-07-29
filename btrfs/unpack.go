@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (b *btrfs) Unpack(tag, name, layerType string, buildOnly bool) error {
+func (b *btrfs) Unpack(tag, name string) error {
 	oci, err := umoci.OpenLayout(b.c.OCIDir)
 	if err != nil {
 		return err
@@ -37,14 +37,9 @@ func (b *btrfs) Unpack(tag, name, layerType string, buildOnly bool) error {
 	}
 	defer cacheOCI.Close()
 
-	sourceLayerType := "tar"
 	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
 	if err != nil {
 		return err
-	}
-
-	if manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
-		sourceLayerType = "squashfs"
 	}
 
 	bundlePath := path.Join(b.c.RootFSDir, name)
@@ -120,28 +115,32 @@ func (b *btrfs) Unpack(tag, name, layerType string, buildOnly bool) error {
 			return err
 		}
 	}
+	return nil
+}
 
-	// if this is build only, we don't need to write anything to the output
-	if buildOnly {
-		return nil
-	}
-
-	// if the layer types are the same, just copy it over and be done
-	if layerType == sourceLayerType {
-		log.Debugf("same layer type, no translation required")
-		// We just copied it to the cache, now let's copy that over to our image.
-		err = lib.ImageCopy(lib.ImageCopyOpts{
-			Src:  fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-			Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, name),
-		})
+func (b *btrfs) ConvertAndOutput(tag, name, layerType string) error {
+	oci, err := umoci.OpenLayout(b.c.OCIDir)
+	if err != nil {
 		return err
 	}
-	log.Debugf("translating from %s to %s", sourceLayerType, layerType)
+	defer oci.Close()
 
-	var blob io.ReadCloser
+	cacheDir := path.Join(b.c.StackerDir, "layer-bases", "oci")
+	cacheOCI, err := umoci.OpenLayout(cacheDir)
+	if err != nil {
+		return err
+	}
+	defer cacheOCI.Close()
 
+	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
+	if err != nil {
+		return err
+	}
+
+	bundlePath := path.Join(b.c.RootFSDir, name)
 	rootfsPath := path.Join(bundlePath, "rootfs")
 	// otherwise, render the right layer type
+	var blob io.ReadCloser
 	if layerType == "squashfs" {
 		// sourced a non-squashfs image and wants a squashfs layer,
 		// let's generate one.

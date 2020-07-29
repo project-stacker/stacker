@@ -64,14 +64,12 @@ type Storage interface {
 	//
 	// Unpack can do fancy things like using previously cached unpacks to
 	// speed things up, etc.
-	//
-	// Finally, if !buildOnly, Unpack() should write a manifest to the
-	// output with "name" as the tag in the output dir with layers of the
-	// output layerType (doing any translation necessary).
-	//
-	// TODO: ociDir here is always the layer-bases cache dir, we can drop
-	// that param.
-	Unpack(tag, name, layerType string, buildOnly bool) error
+	Unpack(tag, name string) error
+
+	// ConvertAndOutput outputs the rootfs under `name` to the OCI as
+	// layerType. This will only be called if layerType was different than
+	// the imported layer type. The tag is the tag in the OCI cache.
+	ConvertAndOutput(tag, name, layerType string) error
 
 	// Repack repacks the specified working dir into the specified OCI dir.
 	//
