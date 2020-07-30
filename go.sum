@@ -333,6 +333,8 @@ github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61 h1:INQxeLW5rI6NdK
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61/go.mod h1:cdWJrB+PcHXXfp97Gizi9FJNWfNLgO6pt4CgxWpVA5Q=
 github.com/tych0/umoci v0.4.7-0.20200715211242-0c6604b79af0 h1:wVg7hbklx1v/fx/oVfEjVQb2sq/gkYLx2tCedJyNQB0=
 github.com/tych0/umoci v0.4.7-0.20200715211242-0c6604b79af0/go.mod h1:J81tYuoqLdUKOemyhg7VzTYsx7wqwkEreenieJocJzY=
+github.com/tych0/umoci v0.4.7-0.20200716160210-58e094f7008d h1:O7t2lvq1VUR3sgt8DaPdELxSHJRx9WYto98ILx5nPtg=
+github.com/tych0/umoci v0.4.7-0.20200716160210-58e094f7008d/go.mod h1:J81tYuoqLdUKOemyhg7VzTYsx7wqwkEreenieJocJzY=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ulikunitz/xz v0.5.7 h1:YvTNdFzX6+W5m9msiYg/zpkSURPPtOlzbqYjrFn7Yt4=

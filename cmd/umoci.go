@@ -78,11 +78,21 @@ var umociCmd = cli.Command{
 					Name:  "digest",
 					Usage: "digest of the layer to unpack",
 				},
+				cli.BoolFlag{
+					Name:  "squashfs",
+					Usage: "unpack as squashfs",
+				},
 			},
 		},
 		cli.Command{
 			Name:   "repack-overlay",
 			Action: doRepackOverlay,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "layer-type",
+					Usage: "layer type to emit when repacking",
+				},
+			},
 		},
 		cli.Command{
 			Name:   "generate-bundle-manifest",
@@ -300,6 +310,16 @@ func doUnpackOne(ctx *cli.Context) error {
 		return err
 	}
 
+	if ctx.Bool("squashfs") {
+		squashfsFile := path.Join(ociDir, "blobs", "sha256", digest.Encoded())
+		userCmd := []string{"unsquashfs", "-f", "-d", path.Join(bundlePath, "rootfs"), squashfsFile}
+		cmd := exec.Command(userCmd[0], userCmd[1:]...)
+		cmd.Stdin = nil
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+
 	oci, err := umoci.OpenLayout(ociDir)
 	if err != nil {
 		return err
@@ -322,7 +342,8 @@ func doUnpackOne(ctx *cli.Context) error {
 
 func doRepackOverlay(ctx *cli.Context) error {
 	tag := ctx.GlobalString("tag")
-	return overlay.RepackOverlay(config, tag)
+	layerType := ctx.String("layer-type")
+	return overlay.RepackOverlay(config, tag, layerType)
 }
 
 func doGenerateBundleManifest(ctx *cli.Context) error {

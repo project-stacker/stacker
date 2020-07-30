@@ -2,6 +2,8 @@ package overlay
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/anuvu/stacker/container"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -53,13 +56,18 @@ func (o *overlay) Unpack(tag, name string) error {
 		contents := overlayPath(o.config, layer.Digest, "overlay")
 		switch layer.MediaType {
 		case stackeroci.MediaTypeLayerSquashfs:
-			// TODO: we can do something smart here, we don't even
-			// need to unpack the layer, we can just mount it from
-			// the import cache; but we'll need unpriv mount of
-			// squashfs if we want to take advantage of that in our
-			// builds. So maybe we should try to mount and extract
-			// it if we can't? Anyway, punt for now.
-			return errors.Errorf("squashfs + overlay not implemented")
+			// don't really need to do this in parallel, but what
+			// the hell.
+			pool.Add(func(ctx context.Context) error {
+				return container.RunUmociSubcommand(o.config, []string{
+					"--tag", tag,
+					"--oci-path", cacheDir,
+					"--bundle-path", contents,
+					"unpack-one",
+					"--digest", layer.Digest.String(),
+					"--squashfs",
+				})
+			})
 		case ispec.MediaTypeImageLayer:
 			fallthrough
 		case ispec.MediaTypeImageLayerGzip:
@@ -112,7 +120,103 @@ func (o *overlay) Unpack(tag, name string) error {
 }
 
 func (o *overlay) ConvertAndOutput(tag, name, layerType string) error {
-	return errors.Errorf("overlay layer type conversion not supported")
+	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+	cacheOCI, err := umoci.OpenLayout(cacheDir)
+	if err != nil {
+		return err
+	}
+	defer cacheOCI.Close()
+
+	oci, err := umoci.OpenLayout(o.config.OCIDir)
+	if err != nil {
+		return err
+	}
+	defer oci.Close()
+
+	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
+	if err != nil {
+		return err
+	}
+
+	config, err := stackeroci.LookupConfig(cacheOCI, manifest.Config)
+	if err != nil {
+		return err
+	}
+
+	newManifest := manifest
+	newManifest.Layers = []ispec.Descriptor{}
+
+	newConfig := config
+	newConfig.RootFS.DiffIDs = []digest.Digest{}
+
+	for _, theLayer := range manifest.Layers {
+		bundlePath := overlayPath(o.config, theLayer.Digest)
+		overlayDir := path.Join(bundlePath, "overlay")
+
+		var blob io.ReadCloser
+		if layerType == "squashfs" {
+			// sourced a non-squashfs image and wants a squashfs layer,
+			// let's generate one.
+			blob, err = squashfs.MakeSquashfs(o.config.OCIDir, overlayDir, nil)
+			if err != nil {
+				return err
+			}
+			defer blob.Close()
+		} else {
+			blob = layer.GenerateInsertLayer(overlayDir, "/", false, nil)
+			defer blob.Close()
+		}
+
+		layerDigest, layerSize, err := oci.PutBlob(context.Background(), blob)
+		if err != nil {
+			return err
+		}
+
+		// slight hack, but this is much faster than a cp, and the
+		// layers are the same, just in different formats
+		err = os.Symlink(overlayPath(o.config, theLayer.Digest), overlayPath(o.config, layerDigest))
+		if err != nil {
+			return errors.Wrapf(err, "failed to create squashfs symlink")
+		}
+
+		layerMediaType := stackeroci.MediaTypeLayerSquashfs
+		if layerType == "tar" {
+			layerMediaType = ispec.MediaTypeImageLayerGzip
+		}
+
+		desc := ispec.Descriptor{
+			MediaType: layerMediaType,
+			Digest:    layerDigest,
+			Size:      layerSize,
+		}
+
+		newManifest.Layers = append(newManifest.Layers, desc)
+		newConfig.RootFS.DiffIDs = append(newConfig.RootFS.DiffIDs, layerDigest)
+	}
+
+	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), newConfig)
+	if err != nil {
+		return err
+	}
+
+	newManifest.Config = ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageConfig,
+		Digest:    configDigest,
+		Size:      configSize,
+	}
+
+	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), newManifest)
+	if err != nil {
+		return err
+	}
+
+	desc := ispec.Descriptor{
+		MediaType: ispec.MediaTypeImageManifest,
+		Digest:    manifestDigest,
+		Size:      manifestSize,
+	}
+
+	return oci.UpdateReference(context.Background(), name, desc)
 }
 
 func (o *overlay) Repack(ociDir, name, layerType string) error {
@@ -123,10 +227,11 @@ func (o *overlay) Repack(ociDir, name, layerType string) error {
 		"--tag", name,
 		"--oci-path", ociDir,
 		"repack-overlay",
+		"--layer-type", layerType,
 	})
 }
 
-func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name string) (bool, error) {
+func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name, layerType string) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -137,22 +242,37 @@ func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name str
 		return false, nil
 	}
 
-	// a hack, but GenerateInsertLayer() is the only thing that just takes
-	// everything in a dir and makes it a layer.
-	packOptions := layer.PackOptions{TranslateOverlayWhiteouts: true}
-	uncompressed := layer.GenerateInsertLayer(dir, "/", false, &packOptions)
-	defer uncompressed.Close()
-
 	now := time.Now()
 	history := &ispec.History{
 		Created:    &now,
-		CreatedBy:  "stacker umoci repack-overlay",
+		CreatedBy:  fmt.Sprintf("stacker layer-type mismatch repack of %s", name),
 		EmptyLayer: false,
 	}
 
-	desc, err := mutator.Add(context.Background(), uncompressed, history)
-	if err != nil {
-		return false, err
+	var desc ispec.Descriptor
+	if layerType == "tar" {
+		// a hack, but GenerateInsertLayer() is the only thing that just takes
+		// everything in a dir and makes it a layer.
+		packOptions := layer.PackOptions{TranslateOverlayWhiteouts: true}
+		uncompressed := layer.GenerateInsertLayer(dir, "/", false, &packOptions)
+		defer uncompressed.Close()
+
+		desc, err = mutator.Add(context.Background(), uncompressed, history, mutate.GzipCompressor)
+		if err != nil {
+			return false, err
+		}
+	} else {
+		compressor := mutate.NewNoopCompressor(stackeroci.MediaTypeLayerSquashfs)
+		blob, err := squashfs.MakeSquashfs(config.OCIDir, dir, nil)
+		if err != nil {
+			return false, err
+		}
+		defer blob.Close()
+
+		desc, err = mutator.Add(context.Background(), blob, history, compressor)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	// we're going to update the manifest at the end with these generated
@@ -195,7 +315,7 @@ func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name str
 	return true, ovl.mount(config, name)
 }
 
-func RepackOverlay(config types.StackerConfig, name string) error {
+func RepackOverlay(config types.StackerConfig, name, layerType string) error {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
@@ -220,7 +340,7 @@ func RepackOverlay(config types.StackerConfig, name string) error {
 	mutated := false
 	// generate blobs for each build layer
 	for _, buildLayer := range ovl.BuiltLayers {
-		didMutate, err := generateLayer(config, mutator, buildLayer)
+		didMutate, err := generateLayer(config, mutator, buildLayer, layerType)
 		if err != nil {
 			return err
 		}
@@ -229,7 +349,7 @@ func RepackOverlay(config types.StackerConfig, name string) error {
 		}
 	}
 
-	didMutate, err := generateLayer(config, mutator, name)
+	didMutate, err := generateLayer(config, mutator, name, layerType)
 	if err != nil {
 		return err
 	}

@@ -31,7 +31,6 @@ EOF
 }
 
 @test "squashfs yum install" {
-    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 centos1:
     from:
@@ -55,7 +54,6 @@ EOF
 }
 
 @test "squashfs import support" {
-    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 centos1:
     from:
@@ -79,7 +77,6 @@ EOF
 }
 
 @test "squashfs layer support" {
-    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -102,13 +99,9 @@ EOF
     mkdir layer1
     mount -t squashfs oci/blobs/sha256/$layer1 layer1
     [ -f layer1/1 ]
-
-    config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
-    [ "$(cat "oci/blobs/sha256/$config" | jq -r .history[0].created_by)" == "stacker layer-type mismatch repack of centos" ]
 }
 
 @test "squashfs file whiteouts" {
-    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -141,7 +134,6 @@ EOF
 }
 
 @test "squashfs + build only layers" {
-    require_storage btrfs # FIXME: overlay
     cat > stacker.yaml <<EOF
 build:
     from:
