@@ -21,16 +21,15 @@ import (
 )
 
 type BuildArgs struct {
-	Config                  types.StackerConfig
-	LeaveUnladen            bool
-	NoCache                 bool
-	Substitute              []string
-	OnRunFailure            string
-	ApplyConsiderTimestamps bool
-	LayerType               string
-	OrderOnly               bool
-	SetupOnly               bool
-	Progress                bool
+	Config       types.StackerConfig
+	LeaveUnladen bool
+	NoCache      bool
+	Substitute   []string
+	OnRunFailure string
+	LayerType    string
+	OrderOnly    bool
+	SetupOnly    bool
+	Progress     bool
 }
 
 // Builder is responsible for building the layers based on stackerfiles
@@ -197,16 +196,6 @@ func (b *Builder) Build(file string) error {
 		}
 
 		err = SetupRootfs(baseOpts, b.builtStackerfiles)
-		if err != nil {
-			return err
-		}
-
-		apply, err := NewApply(b.builtStackerfiles, baseOpts, s, opts.ApplyConsiderTimestamps)
-		if err != nil {
-			return err
-		}
-
-		err = apply.DoApply()
 		if err != nil {
 			return err
 		}

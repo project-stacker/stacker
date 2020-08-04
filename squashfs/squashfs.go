@@ -159,7 +159,7 @@ func GenerateSquashfsLayer(name, author, bundlepath, ocidir string, oci casext.E
 
 	mfh, err := os.Open(mtreePath)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "opening mtree")
 	}
 
 	spec, err := mtree.ParseSpec(mfh)

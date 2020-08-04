@@ -50,7 +50,7 @@ The hardest part of this is (I think) to socialize the idea of relaxing the
 
 ## Implementation
 
-The implementation stacker has today is fairly basic. Given a stacker file with
+The implementation stacker used to have was fairly basic. Given a stacker file with
 an apply section:
 
     app:
@@ -106,3 +106,12 @@ layer does conflict with the base. The resulting layer output will be:
     64fabd853e4de75a7ea3734d0a994047a1af9dc4 -> ssl:latest, included verbatim
     e05fab2a890d758805e3f67be201e60e838e99bc -> ubuntu:latest
     39ad9e63562e5d70875918ca574d9fe0c6f550ac
+
+## Retirement
+
+This implementation never saw any real world use, and was standing in the way
+of other innovations, so ultimately it was removed.
+
+Additionally, it had several problems relating merging binary package databases
+(rpm), or when two different layers would modify the ld.so.cache. Solving these
+problems remain future work :)

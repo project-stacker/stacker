@@ -151,24 +151,6 @@ Right now there is no awareness of change for any of these bind mounts, so
 --no-cache should be used to re-build if the content of the bind mount has
 changed.
 
-#### `apply`
-
-`apply`: specifies a list of OCI/docker layers to download and apply, in skopeo
-format. For example,
-
-    apply:
-        - docker://foo:latest
-        - oci:oci:foo
-
-For each entry in the list, apply will extract each layer in the image in
-order, unless it has already been extracted by some other apply statement or
-was part of the base layer (additionally, these layers will only be downloaded
-once).
-
-`apply` has a basic diff mechanism, so that two edits to the same file may
-possibly be merged. However, if there are conflicts, apply will fail, and you
-must regenerate the source layers yourself and resolve the conflicts.
-
 #### `config`
 
 `config` key is a special type of entry in the root in the `stacker.yaml` file.

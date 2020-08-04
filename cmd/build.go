@@ -46,10 +46,6 @@ func initCommonBuildFlags() []cli.Flag {
 			Name:  "shell-fail",
 			Usage: "exec /bin/sh inside the container if run fails (alias for --on-run-failure=/bin/sh)",
 		},
-		cli.BoolFlag{
-			Name:  "apply-consider-timestamps",
-			Usage: "for apply layer merging, fail if timestamps on files don't match",
-		},
 		cli.StringFlag{
 			Name:  "layer-type",
 			Usage: "set the output layer type (supported values: tar, squashfs)",
@@ -80,15 +76,14 @@ func beforeBuild(ctx *cli.Context) error {
 
 func newBuildArgs(ctx *cli.Context) stacker.BuildArgs {
 	return stacker.BuildArgs{
-		Config:                  config,
-		LeaveUnladen:            ctx.Bool("leave-unladen"),
-		NoCache:                 ctx.Bool("no-cache"),
-		Substitute:              ctx.StringSlice("substitute"),
-		OnRunFailure:            ctx.String("on-run-failure"),
-		ApplyConsiderTimestamps: ctx.Bool("apply-consider-timestamps"),
-		LayerType:               ctx.String("layer-type"),
-		OrderOnly:               ctx.Bool("order-only"),
-		Progress:                shouldShowProgress(ctx),
+		Config:       config,
+		LeaveUnladen: ctx.Bool("leave-unladen"),
+		NoCache:      ctx.Bool("no-cache"),
+		Substitute:   ctx.StringSlice("substitute"),
+		OnRunFailure: ctx.String("on-run-failure"),
+		LayerType:    ctx.String("layer-type"),
+		OrderOnly:    ctx.Bool("order-only"),
+		Progress:     shouldShowProgress(ctx),
 	}
 }
 

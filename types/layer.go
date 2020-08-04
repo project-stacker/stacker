@@ -35,7 +35,6 @@ type Layer struct {
 	WorkingDir         string            `yaml:"working_dir"`
 	BuildOnly          bool              `yaml:"build_only"`
 	Binds              interface{}       `yaml:"binds"`
-	Apply              []string          `yaml:"apply"`
 	RuntimeUser        string            `yaml:"runtime_user"`
 	referenceDirectory string            // Location of the directory where the layer is defined
 }
