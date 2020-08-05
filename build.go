@@ -26,7 +26,7 @@ type BuildArgs struct {
 	NoCache      bool
 	Substitute   []string
 	OnRunFailure string
-	LayerType    string
+	LayerTypes   []types.LayerType
 	OrderOnly    bool
 	SetupOnly    bool
 	Progress     bool
@@ -44,6 +44,229 @@ func NewBuilder(opts *BuildArgs) *Builder {
 		builtStackerfiles: make(map[string]*types.Stackerfile, 1),
 		opts:              opts,
 	}
+}
+
+func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storage, oci casext.Engine, layerType types.LayerType, l *types.Layer, name string) error {
+	opts := b.opts
+
+	layerName := layerType.LayerName(name)
+	descPaths, err := oci.ResolveReference(context.Background(), layerName)
+	if err != nil {
+		return err
+	}
+
+	mutator, err := mutate.New(oci, descPaths[0])
+	if err != nil {
+		return errors.Wrapf(err, "mutator failed")
+	}
+
+	imageConfig, err := mutator.Config(context.Background())
+	if err != nil {
+		return err
+	}
+
+	if imageConfig.Labels == nil {
+		imageConfig.Labels = map[string]string{}
+	}
+
+	generateLabels, err := l.ParseGenerateLabels()
+	if err != nil {
+		return err
+	}
+
+	if len(generateLabels) > 0 {
+		writable, cleanup, err := s.TemporaryWritableSnapshot(name)
+		if err != nil {
+			return err
+		}
+		defer cleanup()
+
+		dir, err := ioutil.TempDir(opts.Config.StackerDir, fmt.Sprintf("oci-labels-%s-", name))
+		if err != nil {
+			return errors.Wrapf(err, "failed to create oci-labels tempdir")
+		}
+		defer os.RemoveAll(dir)
+
+		c, err := NewContainer(opts.Config, writable)
+		if err != nil {
+			return err
+		}
+		defer c.Close()
+
+		err = c.bindMount(dir, "/oci-labels", "")
+		if err != nil {
+			return err
+		}
+
+		rootfs := path.Join(opts.Config.RootFSDir, writable, "rootfs")
+		runPath := path.Join(dir, ".stacker-run.sh")
+		err = GenerateShellForRunning(rootfs, generateLabels, runPath)
+		if err != nil {
+			return err
+		}
+
+		err = c.Execute("/oci-labels/.stacker-run.sh", nil)
+		if err != nil {
+			return err
+		}
+
+		ents, err := ioutil.ReadDir(dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read %s", dir)
+		}
+
+		for _, ent := range ents {
+			if ent.Name() == ".stacker-run.sh" {
+				continue
+			}
+
+			content, err := ioutil.ReadFile(path.Join(dir, ent.Name()))
+			if err != nil {
+				return errors.Wrapf(err, "couldn't read label %s", ent.Name())
+			}
+
+			imageConfig.Labels[ent.Name()] = string(content)
+		}
+	}
+
+	pathSet := false
+	for k, v := range l.Environment {
+		if k == "PATH" {
+			pathSet = true
+		}
+		imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	if !pathSet {
+		for _, s := range imageConfig.Env {
+			if strings.HasPrefix(s, "PATH=") {
+				pathSet = true
+				break
+			}
+		}
+	}
+
+	// if the user didn't specify a path, let's set a sane one
+	if !pathSet {
+		imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", ReasonableDefaultPath))
+	}
+
+	if l.Cmd != nil {
+		imageConfig.Cmd, err = l.ParseCmd()
+		if err != nil {
+			return err
+		}
+	}
+
+	if l.Entrypoint != nil {
+		imageConfig.Entrypoint, err = l.ParseEntrypoint()
+		if err != nil {
+			return err
+		}
+	}
+
+	if l.FullCommand != nil {
+		imageConfig.Cmd = nil
+		imageConfig.Entrypoint, err = l.ParseFullCommand()
+		if err != nil {
+			return err
+		}
+	}
+
+	if imageConfig.Volumes == nil {
+		imageConfig.Volumes = map[string]struct{}{}
+	}
+
+	for _, v := range l.Volumes {
+		imageConfig.Volumes[v] = struct{}{}
+	}
+
+	for k, v := range l.Labels {
+		imageConfig.Labels[k] = v
+	}
+
+	if l.WorkingDir != "" {
+		imageConfig.WorkingDir = l.WorkingDir
+	}
+
+	if l.RuntimeUser != "" {
+		imageConfig.User = l.RuntimeUser
+	}
+
+	meta, err := mutator.Meta(context.Background())
+	if err != nil {
+		return err
+	}
+
+	username := os.Getenv("SUDO_USER")
+
+	if username == "" {
+		user, err := user.Current()
+		if err != nil {
+			return err
+		}
+
+		username = user.Username
+	}
+
+	host, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+
+	author := fmt.Sprintf("%s@%s", username, host)
+
+	meta.Created = time.Now()
+	meta.Architecture = runtime.GOARCH
+	meta.OS = runtime.GOOS
+	meta.Author = author
+
+	annotations, err := mutator.Annotations(context.Background())
+	if err != nil {
+		return err
+	}
+
+	// compute the git version for the directory that the stacker file is
+	// in. we don't care if it's not a git directory, because in that case
+	// we'll fall back to putting the whole stacker file contents in the
+	// metadata.
+	gitVersion, _ := GitVersion(sf.ReferenceDirectory)
+
+	if gitVersion != "" {
+		log.Debugf("setting git version annotation to %s", gitVersion)
+		annotations[GitVersionAnnotation] = gitVersion
+	} else {
+		annotations[StackerContentsAnnotation] = sf.AfterSubstitutions
+	}
+
+	history := ispec.History{
+		EmptyLayer: true, // this is only the history for imageConfig edit
+		Created:    &meta.Created,
+		CreatedBy:  "stacker build",
+		Author:     author,
+	}
+
+	err = mutator.Set(context.Background(), imageConfig, meta, annotations, &history)
+	if err != nil {
+		return err
+	}
+
+	newPath, err := mutator.Commit(context.Background())
+	if err != nil {
+		return err
+	}
+
+	err = oci.UpdateReference(context.Background(), layerName, newPath.Root())
+	if err != nil {
+		return err
+	}
+
+	err = s.UpdateFSMetadata(name, newPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Build builds a single stackerfile
@@ -90,30 +313,6 @@ func (b *Builder) Build(file string) error {
 		return err
 	}
 
-	// compute the git version for the directory that the stacker file is
-	// in. we don't care if it's not a git directory, because in that case
-	// we'll fall back to putting the whole stacker file contents in the
-	// metadata.
-	gitVersion, _ := GitVersion(sf.ReferenceDirectory)
-
-	username := os.Getenv("SUDO_USER")
-
-	if username == "" {
-		user, err := user.Current()
-		if err != nil {
-			return err
-		}
-
-		username = user.Username
-	}
-
-	host, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-
-	author := fmt.Sprintf("%s@%s", username, host)
-
 	for _, name := range order {
 		l, ok := sf.Get(name)
 		if !ok {
@@ -159,14 +358,14 @@ func (b *Builder) Build(file string) error {
 		}
 
 		baseOpts := BaseLayerOpts{
-			Config:    opts.Config,
-			Name:      name,
-			Layer:     l,
-			Cache:     buildCache,
-			OCI:       oci,
-			LayerType: opts.LayerType,
-			Storage:   s,
-			Progress:  opts.Progress,
+			Config:     opts.Config,
+			Name:       name,
+			Layer:      l,
+			Cache:      buildCache,
+			OCI:        oci,
+			LayerTypes: opts.LayerTypes,
+			Storage:    s,
+			Progress:   opts.Progress,
 		}
 
 		if err := GetBase(baseOpts); err != nil {
@@ -185,14 +384,28 @@ func (b *Builder) Build(file string) error {
 						return err
 					}
 				}
+				continue
 			} else {
-				err = oci.UpdateReference(context.Background(), name, cacheEntry.Blob)
-				if err != nil {
-					return err
+				foundCount := 0
+				for _, layerType := range opts.LayerTypes {
+					blob, ok := cacheEntry.Manifests[layerType]
+					if !ok {
+						foundCount += 1
+						layerName := layerType.LayerName(name)
+						err = oci.UpdateReference(context.Background(), layerName, blob)
+						if err != nil {
+							return err
+						}
+						log.Infof("found cached layer %s\n", layerName)
+					}
 				}
+
+				if foundCount == len(opts.LayerTypes) {
+					continue
+				}
+
+				log.Infof("missing some cached layer output types, building anyway")
 			}
-			log.Infof("found cached layer %s\n", name)
-			continue
 		}
 
 		err = SetupRootfs(baseOpts)
@@ -265,207 +478,35 @@ func (b *Builder) Build(file string) error {
 			// of the name, so we can make sure it exists when
 			// there is a cache hit. We should probably make this
 			// into some sort of proper Either type.
-			if err := buildCache.Put(name, ispec.Descriptor{}); err != nil {
+			manifests := map[types.LayerType]ispec.Descriptor{opts.LayerTypes[0]: ispec.Descriptor{}}
+			if err := buildCache.Put(name, manifests); err != nil {
 				return err
 			}
 			continue
 		}
 
-		log.Infof("generating layer for %s", name)
-		err = s.Repack(name, opts.LayerType, b.builtStackerfiles)
+		err = s.Repack(name, opts.LayerTypes, b.builtStackerfiles)
 		if err != nil {
 			return err
 		}
 
-		descPaths, err := oci.ResolveReference(context.Background(), name)
-		if err != nil {
-			return err
-		}
-
-		mutator, err := mutate.New(oci, descPaths[0])
-		if err != nil {
-			return errors.Wrapf(err, "mutator failed")
-		}
-
-		imageConfig, err := mutator.Config(context.Background())
-		if err != nil {
-			return err
-		}
-
-		if imageConfig.Labels == nil {
-			imageConfig.Labels = map[string]string{}
-		}
-
-		generateLabels, err := l.ParseGenerateLabels()
-		if err != nil {
-			return err
-		}
-
-		if len(generateLabels) > 0 {
-			writable, cleanup, err := s.TemporaryWritableSnapshot(name)
-			if err != nil {
-				return err
-			}
-			defer cleanup()
-
-			dir, err := ioutil.TempDir(opts.Config.StackerDir, fmt.Sprintf("oci-labels-%s-", name))
-			if err != nil {
-				return errors.Wrapf(err, "failed to create oci-labels tempdir")
-			}
-			defer os.RemoveAll(dir)
-
-			c, err = NewContainer(opts.Config, writable)
-			if err != nil {
-				return err
-			}
-			defer c.Close()
-
-			err = c.bindMount(dir, "/oci-labels", "")
+		manifests := map[types.LayerType]ispec.Descriptor{}
+		for _, layerType := range opts.LayerTypes {
+			err = b.updateOCIConfigForOutput(sf, s, oci, layerType, l, name)
 			if err != nil {
 				return err
 			}
 
-			rootfs := path.Join(opts.Config.RootFSDir, writable, "rootfs")
-			runPath := path.Join(dir, ".stacker-run.sh")
-			err = GenerateShellForRunning(rootfs, generateLabels, runPath)
+			descPaths, err := oci.ResolveReference(context.Background(), layerType.LayerName(name))
 			if err != nil {
 				return err
 			}
 
-			err = c.Execute("/oci-labels/.stacker-run.sh", nil)
-			if err != nil {
-				return err
-			}
+			manifests[layerType] = descPaths[0].Descriptor()
 
-			ents, err := ioutil.ReadDir(dir)
-			if err != nil {
-				return errors.Wrapf(err, "failed to read %s", dir)
-			}
-
-			for _, ent := range ents {
-				if ent.Name() == ".stacker-run.sh" {
-					continue
-				}
-
-				content, err := ioutil.ReadFile(path.Join(dir, ent.Name()))
-				if err != nil {
-					return errors.Wrapf(err, "couldn't read label %s", ent.Name())
-				}
-
-				imageConfig.Labels[ent.Name()] = string(content)
-			}
 		}
 
-		pathSet := false
-		for k, v := range l.Environment {
-			if k == "PATH" {
-				pathSet = true
-			}
-			imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-
-		if !pathSet {
-			for _, s := range imageConfig.Env {
-				if strings.HasPrefix(s, "PATH=") {
-					pathSet = true
-					break
-				}
-			}
-		}
-
-		// if the user didn't specify a path, let's set a sane one
-		if !pathSet {
-			imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", ReasonableDefaultPath))
-		}
-
-		if l.Cmd != nil {
-			imageConfig.Cmd, err = l.ParseCmd()
-			if err != nil {
-				return err
-			}
-		}
-
-		if l.Entrypoint != nil {
-			imageConfig.Entrypoint, err = l.ParseEntrypoint()
-			if err != nil {
-				return err
-			}
-		}
-
-		if l.FullCommand != nil {
-			imageConfig.Cmd = nil
-			imageConfig.Entrypoint, err = l.ParseFullCommand()
-			if err != nil {
-				return err
-			}
-		}
-
-		if imageConfig.Volumes == nil {
-			imageConfig.Volumes = map[string]struct{}{}
-		}
-
-		for _, v := range l.Volumes {
-			imageConfig.Volumes[v] = struct{}{}
-		}
-
-		for k, v := range l.Labels {
-			imageConfig.Labels[k] = v
-		}
-
-		if l.WorkingDir != "" {
-			imageConfig.WorkingDir = l.WorkingDir
-		}
-
-		if l.RuntimeUser != "" {
-			imageConfig.User = l.RuntimeUser
-		}
-
-		meta, err := mutator.Meta(context.Background())
-		if err != nil {
-			return err
-		}
-
-		meta.Created = time.Now()
-		meta.Architecture = runtime.GOARCH
-		meta.OS = runtime.GOOS
-		meta.Author = author
-
-		annotations, err := mutator.Annotations(context.Background())
-		if err != nil {
-			return err
-		}
-
-		if gitVersion != "" {
-			log.Debugf("setting git version annotation to %s", gitVersion)
-			annotations[GitVersionAnnotation] = gitVersion
-		} else {
-			annotations[StackerContentsAnnotation] = sf.AfterSubstitutions
-		}
-
-		history := ispec.History{
-			EmptyLayer: true, // this is only the history for imageConfig edit
-			Created:    &meta.Created,
-			CreatedBy:  "stacker build",
-			Author:     author,
-		}
-
-		err = mutator.Set(context.Background(), imageConfig, meta, annotations, &history)
-		if err != nil {
-			return err
-		}
-
-		newPath, err := mutator.Commit(context.Background())
-		if err != nil {
-			return err
-		}
-
-		err = oci.UpdateReference(context.Background(), name, newPath.Root())
-		if err != nil {
-			return err
-		}
-
-		err = s.UpdateFSMetadata(name, newPath)
-		if err != nil {
+		if err := buildCache.Put(name, manifests); err != nil {
 			return err
 		}
 
@@ -475,14 +516,6 @@ func (b *Builder) Build(file string) error {
 
 		log.Infof("filesystem %s built successfully", name)
 
-		descPaths, err = oci.ResolveReference(context.Background(), name)
-		if err != nil {
-			return err
-		}
-
-		if err := buildCache.Put(name, descPaths[0].Descriptor()); err != nil {
-			return err
-		}
 	}
 
 	return oci.GC(context.Background())

@@ -17,14 +17,14 @@ import (
 )
 
 type BaseLayerOpts struct {
-	Config    types.StackerConfig
-	Name      string
-	Layer     *types.Layer
-	Cache     *BuildCache
-	OCI       casext.Engine
-	LayerType string
-	Storage   types.Storage
-	Progress  bool
+	Config     types.StackerConfig
+	Name       string
+	Layer      *types.Layer
+	Cache      *BuildCache
+	OCI        casext.Engine
+	LayerTypes []types.LayerType
+	Storage    types.Storage
+	Progress   bool
 }
 
 // GetBase grabs the base layer and puts it in the cache.

@@ -21,7 +21,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 7
+const currentCacheVersion = 8
 
 type ImportType int
 
@@ -43,8 +43,8 @@ type ImportHash struct {
 }
 
 type CacheEntry struct {
-	// The manifest that this corresponds to.
-	Blob ispec.Descriptor
+	// A map of LayerType:Manifest this build corresponds to.
+	Manifests map[types.LayerType]ispec.Descriptor
 
 	// A map of the import url to the base64 encoded result of mtree walk
 	// or sha256 sum of a file, depending on what Type is.
@@ -116,7 +116,13 @@ func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerF
 			// keep going.
 			_, err = os.Stat(path.Join(config.RootFSDir, ent.Name))
 		} else {
-			_, err = oci.FromDescriptor(context.Background(), ent.Blob)
+			for layerType, desc := range ent.Manifests {
+				_, err = oci.FromDescriptor(context.Background(), desc)
+				if err != nil {
+					log.Infof("missing build for layer type %s", layerType)
+					break
+				}
+			}
 		}
 
 		if err != nil {
@@ -332,7 +338,7 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 	}
 }
 
-func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
+func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descriptor) error {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 	if !ok {
 		return errors.Errorf("%s missing from stackerfile?", name)
@@ -344,11 +350,11 @@ func (c *BuildCache) Put(name string, blob ispec.Descriptor) error {
 	}
 
 	ent := CacheEntry{
-		Blob:    blob,
-		Imports: map[string]ImportHash{},
-		Name:    name,
-		Layer:   l,
-		Base:    baseHash,
+		Manifests: manifests,
+		Imports:   map[string]ImportHash{},
+		Name:      name,
+		Layer:     l,
+		Base:      baseHash,
 	}
 
 	imports, err := l.ParseImport()

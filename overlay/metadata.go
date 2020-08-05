@@ -18,20 +18,31 @@ import (
 )
 
 type overlayMetadata struct {
-	Manifest ispec.Manifest
+	Manifests map[types.LayerType]ispec.Manifest
 
 	// layers not yet rendered into the output image
 	BuiltLayers []string
 }
 
-func newOverlayMetadata(oci casext.Engine, tag string) (overlayMetadata, error) {
-	var ovl overlayMetadata
+func newOverlayMetadata() overlayMetadata {
+	return overlayMetadata{Manifests: map[types.LayerType]ispec.Manifest{}}
+}
+
+func newOverlayMetadataFromOCI(oci casext.Engine, tag string) (overlayMetadata, error) {
+	ovl := newOverlayMetadata()
 	var err error
-	ovl.Manifest, err = stackeroci.LookupManifest(oci, tag)
+
+	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
 		return overlayMetadata{}, err
 	}
 
+	layerType, err := types.NewLayerTypeManifest(manifest)
+	if err != nil {
+		return overlayMetadata{}, err
+	}
+
+	ovl.Manifests[layerType] = manifest
 	return ovl, nil
 }
 
@@ -68,7 +79,21 @@ func (ovl overlayMetadata) write(config types.StackerConfig, tag string) error {
 
 func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 	overlayArgs := bytes.NewBufferString("index=off,lowerdir=")
-	for _, layer := range ovl.Manifest.Layers {
+
+	// find *any* manifest to mount: we don't care if this is tar or
+	// squashfs, we just need to mount something. the code that generates
+	// the output needs to care about this, not this code.
+	//
+	// if there are no manifests (this came from a tar layer or whatever),
+	// that's fine too; we just end up with two workaround directories as
+	// below
+	var manifest ispec.Manifest
+	for _, m := range ovl.Manifests {
+		manifest = m
+		break
+	}
+
+	for _, layer := range manifest.Layers {
 		contents := overlayPath(config, layer.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
 			return errors.Wrapf(err, "%s does not exist", contents)
@@ -86,13 +111,13 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 		overlayArgs.WriteString(":")
 	}
 
-	if len(ovl.Manifest.Layers)+len(ovl.BuiltLayers) < 2 {
+	if len(manifest.Layers)+len(ovl.BuiltLayers) < 2 {
 		// overlayfs doesn't work with < 2 lowerdirs, so we add some
 		// workaround dirs if necessary (if e.g. the source only has
 		// one layer, or it's an empty rootfs with no layers, we still
 		// want an overlay mount to keep things consistent)
 
-		for i := 0; i < 2-len(ovl.Manifest.Layers)+len(ovl.BuiltLayers); i++ {
+		for i := 0; i < 2-len(manifest.Layers)+len(ovl.BuiltLayers); i++ {
 			workaround := path.Join(config.RootFSDir, tag, fmt.Sprintf("workaround%d", i))
 			err := os.MkdirAll(workaround, 0755)
 			if err != nil {

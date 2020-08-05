@@ -67,7 +67,5 @@ type Storage interface {
 	Unpack(tag, name string) error
 
 	// Repack repacks the specified working dir into the specified OCI dir.
-	//
-	// TODO: make layerType an enum :)
-	Repack(name, layerType string, sfm StackerFiles) error
+	Repack(name string, layerTypes []LayerType, sfm StackerFiles) error
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/anuvu/stacker"
+	"github.com/anuvu/stacker/types"
 )
 
 var buildCmd = cli.Command{
@@ -46,10 +47,10 @@ func initCommonBuildFlags() []cli.Flag {
 			Name:  "shell-fail",
 			Usage: "exec /bin/sh inside the container if run fails (alias for --on-run-failure=/bin/sh)",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:  "layer-type",
-			Usage: "set the output layer type (supported values: tar, squashfs)",
-			Value: "tar",
+			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
+			Value: &cli.StringSlice{"tar"},
 		},
 		cli.BoolFlag{
 			Name:  "order-only",
@@ -74,21 +75,26 @@ func beforeBuild(ctx *cli.Context) error {
 	return nil
 }
 
-func newBuildArgs(ctx *cli.Context) stacker.BuildArgs {
-	return stacker.BuildArgs{
+func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
+	args := stacker.BuildArgs{
 		Config:       config,
 		LeaveUnladen: ctx.Bool("leave-unladen"),
 		NoCache:      ctx.Bool("no-cache"),
 		Substitute:   ctx.StringSlice("substitute"),
 		OnRunFailure: ctx.String("on-run-failure"),
-		LayerType:    ctx.String("layer-type"),
 		OrderOnly:    ctx.Bool("order-only"),
 		Progress:     shouldShowProgress(ctx),
 	}
+	var err error
+	args.LayerTypes, err = types.NewLayerTypes(ctx.StringSlice("layer-type"))
+	return args, err
 }
 
 func doBuild(ctx *cli.Context) error {
-	args := newBuildArgs(ctx)
+	args, err := newBuildArgs(ctx)
+	if err != nil {
+		return err
+	}
 
 	builder := stacker.NewBuilder(&args)
 	return builder.BuildMultiple([]string{ctx.String("stacker-file")})

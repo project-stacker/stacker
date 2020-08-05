@@ -54,7 +54,10 @@ func beforeRecursiveBuild(ctx *cli.Context) error {
 }
 
 func doRecursiveBuild(ctx *cli.Context) error {
-	args := newBuildArgs(ctx)
+	args, err := newBuildArgs(ctx)
+	if err != nil {
+		return err
+	}
 
 	stackerFiles, err := lib.FindFiles(ctx.String("search-dir"), ctx.String("stacker-file-pattern"))
 	if err != nil {

@@ -46,7 +46,7 @@ EOF
 centos2:
     from:
         type: oci
-        url: oci:centos1
+        url: oci:centos1-squashfs
     run: |
         ls /usr/bin | grep wget
 EOF
@@ -69,7 +69,7 @@ EOF
 centos2:
     from:
         type: oci
-        url: oci-import:centos1
+        url: oci-import:centos1-squashfs
     run: |
         [ -f /1 ]
 EOF

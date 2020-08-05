@@ -16,6 +16,7 @@ import (
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/overlay"
 	"github.com/anuvu/stacker/squashfs"
+	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -90,9 +91,10 @@ var umociCmd = cli.Command{
 			Name:   "repack-overlay",
 			Action: doRepackOverlay,
 			Flags: []cli.Flag{
-				cli.StringFlag{
+				cli.StringSliceFlag{
 					Name:  "layer-type",
-					Usage: "layer type to emit when repacking",
+					Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
+					Value: &cli.StringSlice{"tar"},
 				},
 			},
 		},
@@ -307,7 +309,7 @@ func doRepack(ctx *cli.Context) error {
 	ociDir := ctx.GlobalString("oci-path")
 	bundlePath := ctx.GlobalString("bundle-path")
 
-	layerType := ctx.String("layer-type")
+	layerType := types.LayerType(ctx.String("layer-type"))
 
 	oci, err := umoci.OpenLayout(ociDir)
 	if err != nil {
@@ -330,6 +332,7 @@ func doRepack(ctx *cli.Context) error {
 		return err
 	}
 
+	layerName := layerType.LayerName(tag)
 	switch layerType {
 	case "tar":
 		now := time.Now()
@@ -341,9 +344,9 @@ func doRepack(ctx *cli.Context) error {
 		}
 
 		filters := []mtreefilter.FilterFunc{stackermtree.LayerGenerationIgnoreRoot}
-		return umoci.Repack(oci, tag, bundlePath, meta, history, filters, true, mutator)
+		return umoci.Repack(oci, layerName, bundlePath, meta, history, filters, true, mutator)
 	case "squashfs":
-		return squashfs.GenerateSquashfsLayer(tag, imageMeta.Author, bundlePath, ociDir, oci)
+		return squashfs.GenerateSquashfsLayer(layerName, imageMeta.Author, bundlePath, ociDir, oci)
 	default:
 		return errors.Errorf("unknown layer type %s", layerType)
 	}
@@ -389,8 +392,12 @@ func doUnpackOne(ctx *cli.Context) error {
 
 func doRepackOverlay(ctx *cli.Context) error {
 	tag := ctx.GlobalString("tag")
-	layerType := ctx.String("layer-type")
-	return overlay.RepackOverlay(config, tag, layerType)
+	layerTypes, err := types.NewLayerTypes(ctx.StringSlice("layer-type"))
+	if err != nil {
+		return err
+	}
+
+	return overlay.RepackOverlay(config, tag, layerTypes)
 }
 
 func doGenerateBundleManifest(ctx *cli.Context) error {

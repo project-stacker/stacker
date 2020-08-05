@@ -108,7 +108,7 @@ func (o *overlay) Unpack(tag, name string) error {
 		return err
 	}
 
-	ovl, err := newOverlayMetadata(oci, tag)
+	ovl, err := newOverlayMetadataFromOCI(oci, tag)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (o *overlay) Unpack(tag, name string) error {
 	return ovl.mount(o.config, name)
 }
 
-func (o *overlay) convertAndOutput(tag, name, layerType string) error {
+func (o *overlay) convertAndOutput(tag, name string, layerType types.LayerType) error {
 	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
 	cacheOCI, err := umoci.OpenLayout(cacheDir)
 	if err != nil {
@@ -218,50 +218,63 @@ func (o *overlay) convertAndOutput(tag, name, layerType string) error {
 		Size:      manifestSize,
 	}
 
-	return oci.UpdateReference(context.Background(), name, desc)
+	return oci.UpdateReference(context.Background(), layerType.LayerName(name), desc)
 }
 
-func (o *overlay) Repack(name, layerType string, sfm types.StackerFiles) error {
-	ovl, err := readOverlayMetadata(o.config, name)
+func lookupManifestInDir(dir, name string) (ispec.Manifest, error) {
+	oci, err := umoci.OpenLayout(dir)
+	if err != nil {
+		return ispec.Manifest{}, err
+	}
+	defer oci.Close()
+
+	return stackeroci.LookupManifest(oci, name)
+}
+
+func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerType, sfm types.StackerFiles) error {
+	baseTag, baseLayer, err := storage.FindFirstBaseInOutput(name, sfm)
 	if err != nil {
 		return err
 	}
 
 	initialized := false
-	if len(ovl.Manifest.Layers) != 0 {
-		baseTag, baseLayer, err := storage.FindFirstBaseInOutput(name, sfm)
-		if err != nil {
-			return err
-		}
-
-		if baseLayer != nil {
-			if !baseLayer.BuildOnly && baseTag != name {
-				// otherwise if it's already been built and the base
-				// types match, import it from there
+	if baseLayer != nil {
+		if !baseLayer.BuildOnly && baseTag != name {
+			// otherwise if it's already been built and the base
+			// types match, import it from there
+			for _, layerType := range layerTypes {
 				err = lib.ImageCopy(lib.ImageCopyOpts{
-					Src:  fmt.Sprintf("oci:%s:%s", o.config.OCIDir, baseTag),
-					Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, name),
+					Src:  fmt.Sprintf("oci:%s:%s", o.config.OCIDir, layerType.LayerName(baseTag)),
+					Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, layerType.LayerName(name)),
 				})
 				if err != nil {
 					return err
 				}
-				initialized = true
-			} else if types.IsContainersImageLayer(baseLayer.From.Type) {
-				cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
-				cacheTag, err := baseLayer.From.ParseTag()
-				if err != nil {
-					return err
-				}
+			}
 
-				sourceLayerType := "tar"
-				if ovl.Manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
-					sourceLayerType = "squashfs"
-				}
+			initialized = true
+		} else if types.IsContainersImageLayer(baseLayer.From.Type) {
+			cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+			cacheTag, err := baseLayer.From.ParseTag()
+			if err != nil {
+				return err
+			}
 
+			manifest, err := lookupManifestInDir(cacheDir, cacheTag)
+			if err != nil {
+				return err
+			}
+
+			sourceLayerType, err := types.NewLayerTypeManifest(manifest)
+			if err != nil {
+				return err
+			}
+
+			for _, layerType := range layerTypes {
 				if sourceLayerType == layerType {
 					err = lib.ImageCopy(lib.ImageCopyOpts{
 						Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
-						Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, name),
+						Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, layerType.LayerName(name)),
 					})
 					if err != nil {
 						return err
@@ -272,9 +285,9 @@ func (o *overlay) Repack(name, layerType string, sfm types.StackerFiles) error {
 						return err
 					}
 				}
-
-				initialized = true
 			}
+
+			initialized = true
 		}
 	}
 
@@ -285,24 +298,39 @@ func (o *overlay) Repack(name, layerType string, sfm types.StackerFiles) error {
 		}
 		defer oci.Close()
 
-		err = umoci.NewImage(oci, name)
-		if err != nil {
-			return err
+		for _, layerType := range layerTypes {
+			err = umoci.NewImage(oci, layerType.LayerName(name))
+			if err != nil {
+				return err
+			}
 		}
+	}
+
+	return nil
+}
+
+func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.StackerFiles) error {
+	err := o.initializeBasesInOutput(name, layerTypes, sfm)
+	if err != nil {
+		return err
 	}
 
 	// this is really just a wrapper for the function below, RepackOverlay.
 	// we just do this dance so it's run in a userns and the uids look
 	// right.
-	return container.RunUmociSubcommand(o.config, []string{
+	args := []string{
 		"--tag", name,
 		"--oci-path", o.config.OCIDir,
 		"repack-overlay",
-		"--layer-type", layerType,
-	})
+	}
+
+	for _, layerType := range layerTypes {
+		args = append(args, "--layer-type", string(layerType))
+	}
+	return container.RunUmociSubcommand(o.config, args)
 }
 
-func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name, layerType string) (bool, error) {
+func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -316,41 +344,47 @@ func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name, la
 	now := time.Now()
 	history := &ispec.History{
 		Created:    &now,
-		CreatedBy:  fmt.Sprintf("stacker layer-type mismatch repack of %s", name),
+		CreatedBy:  fmt.Sprintf("stacker build of %s", name),
 		EmptyLayer: false,
 	}
 
-	var desc ispec.Descriptor
-	if layerType == "tar" {
-		// a hack, but GenerateInsertLayer() is the only thing that just takes
-		// everything in a dir and makes it a layer.
-		packOptions := layer.PackOptions{TranslateOverlayWhiteouts: true}
-		uncompressed := layer.GenerateInsertLayer(dir, "/", false, &packOptions)
-		defer uncompressed.Close()
+	descs := []ispec.Descriptor{}
+	for i, layerType := range layerTypes {
+		mutator := mutators[i]
+		var desc ispec.Descriptor
+		if layerType == "tar" {
+			// a hack, but GenerateInsertLayer() is the only thing that just takes
+			// everything in a dir and makes it a layer.
+			packOptions := layer.PackOptions{TranslateOverlayWhiteouts: true}
+			uncompressed := layer.GenerateInsertLayer(dir, "/", false, &packOptions)
+			defer uncompressed.Close()
 
-		desc, err = mutator.Add(context.Background(), uncompressed, history, mutate.GzipCompressor)
-		if err != nil {
-			return false, err
-		}
-	} else {
-		compressor := mutate.NewNoopCompressor(stackeroci.MediaTypeLayerSquashfs)
-		blob, err := squashfs.MakeSquashfs(config.OCIDir, dir, nil)
-		if err != nil {
-			return false, err
-		}
-		defer blob.Close()
+			desc, err = mutator.Add(context.Background(), uncompressed, history, mutate.GzipCompressor)
+			if err != nil {
+				return false, err
+			}
+		} else {
+			compressor := mutate.NewNoopCompressor(stackeroci.MediaTypeLayerSquashfs)
+			blob, err := squashfs.MakeSquashfs(config.OCIDir, dir, nil)
+			if err != nil {
+				return false, err
+			}
+			defer blob.Close()
 
-		desc, err = mutator.Add(context.Background(), blob, history, compressor)
-		if err != nil {
-			return false, err
+			desc, err = mutator.Add(context.Background(), blob, history, compressor)
+			if err != nil {
+				return false, err
+			}
 		}
+
+		descs = append(descs, desc)
 	}
 
 	// we're going to update the manifest at the end with these generated
 	// layers, so we need to "extract" them. but there's no need to
 	// actually extract them, we can just rename the contents we already
 	// have for the generated hash, since that's where it came from.
-	target := overlayPath(config, desc.Digest)
+	target := overlayPath(config, descs[0].Digest)
 	err = os.MkdirAll(target, 0755)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't make new layer overlay dir")
@@ -366,41 +400,39 @@ func generateLayer(config types.StackerConfig, mutator *mutate.Mutator, name, la
 		return false, errors.Wrapf(err, "couldn't re-make overlay contents for %s", dir)
 	}
 
-	ovl := overlayMetadata{}
-	ovl.Manifest, err = mutator.Manifest(context.Background())
-	if err != nil {
-		return false, err
+	// now, as we do in convertAndOutput, we make a symlink for the hash
+	// for each additional layer type so that they see the same data
+	for _, desc := range descs[1:] {
+		err = os.Symlink(target, overlayPath(config, desc.Digest))
+		if err != nil {
+			return false, errors.Wrapf(err, "couldn't symlink additional layer type")
+		}
 	}
 
-	// unmount the old overlay
-	err = unix.Unmount(path.Join(config.RootFSDir, name, "rootfs"), 0)
-	if err != nil {
-		return false, errors.Wrapf(err, "couldn't unmount old overlay")
-	}
-
-	err = ovl.write(config, name)
-	if err != nil {
-		return false, err
-	}
-
-	return true, ovl.mount(config, name)
+	return true, nil
 }
 
-func RepackOverlay(config types.StackerConfig, name, layerType string) error {
+func RepackOverlay(config types.StackerConfig, name string, layerTypes []types.LayerType) error {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
 	}
 	defer oci.Close()
 
-	descPaths, err := oci.ResolveReference(context.Background(), name)
-	if err != nil {
-		return err
-	}
+	mutators := []*mutate.Mutator{}
 
-	mutator, err := mutate.New(oci, descPaths[0])
-	if err != nil {
-		return errors.Wrapf(err, "mutator failed")
+	for _, layerType := range layerTypes {
+		descPaths, err := oci.ResolveReference(context.Background(), layerType.LayerName(name))
+		if err != nil {
+			return err
+		}
+
+		mutator, err := mutate.New(oci, descPaths[0])
+		if err != nil {
+			return err
+		}
+
+		mutators = append(mutators, mutator)
 	}
 
 	ovl, err := readOverlayMetadata(config, name)
@@ -411,16 +443,32 @@ func RepackOverlay(config types.StackerConfig, name, layerType string) error {
 	mutated := false
 	// generate blobs for each build layer
 	for _, buildLayer := range ovl.BuiltLayers {
-		didMutate, err := generateLayer(config, mutator, buildLayer, layerType)
+		didMutate, err := generateLayer(config, mutators, buildLayer, layerTypes)
 		if err != nil {
 			return err
 		}
 		if didMutate {
 			mutated = true
+			ovl, err := readOverlayMetadata(config, buildLayer)
+			if err != nil {
+				return err
+			}
+
+			for i, layerType := range layerTypes {
+				ovl.Manifests[layerType], err = mutators[i].Manifest(context.Background())
+				if err != nil {
+					return err
+				}
+			}
+
+			err = ovl.write(config, buildLayer)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	didMutate, err := generateLayer(config, mutator, name, layerType)
+	didMutate, err := generateLayer(config, mutators, name, layerTypes)
 	if err != nil {
 		return err
 	}
@@ -430,12 +478,38 @@ func RepackOverlay(config types.StackerConfig, name, layerType string) error {
 		return nil
 	}
 
-	// for the actual layer, we need to update the descriptor in the output
-	// too.
-	newPath, err := mutator.Commit(context.Background())
+	// now, reset the overlay metadata; we can use the newly generated
+	// manifest since we generated all the layers above.
+	ovl = newOverlayMetadata()
+	for i, layerType := range layerTypes {
+		mutator := mutators[i]
+		newPath, err := mutator.Commit(context.Background())
+		if err != nil {
+			return err
+		}
+
+		ovl.Manifests[layerType], err = mutator.Manifest(context.Background())
+		if err != nil {
+			return err
+		}
+
+		err = oci.UpdateReference(context.Background(), layerType.LayerName(name), newPath.Root())
+		if err != nil {
+			return err
+		}
+	}
+
+	// unmount the old overlay
+	err = unix.Unmount(path.Join(config.RootFSDir, name, "rootfs"), 0)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unmount old overlay")
+	}
+
+	err = ovl.write(config, name)
 	if err != nil {
 		return err
 	}
 
-	return oci.UpdateReference(context.Background(), name, newPath.Root())
+	return ovl.mount(config, name)
+
 }

@@ -70,7 +70,7 @@ foo:
 		t.Fatalf("couldn't fake successful bulid %v", err)
 	}
 
-	err = cache.Put("foo", ispec.Descriptor{})
+	err = cache.Put("foo", map[types.LayerType]ispec.Descriptor{})
 	if err != nil {
 		t.Fatalf("couldn't put to cache %v", err)
 	}

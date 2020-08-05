@@ -10,40 +10,40 @@ import (
 	"github.com/anuvu/stacker/storage"
 	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/umoci"
+	"github.com/pkg/errors"
 )
 
-func (b *btrfs) initEmptyLayer(name string) error {
+func (b *btrfs) initEmptyLayer(name string, layerType types.LayerType) error {
 	return container.RunUmociSubcommand(b.c, []string{
-		"--tag", name,
+		"--tag", layerType.LayerName(name),
 		"--oci-path", b.c.OCIDir,
 		"--bundle-path", path.Join(b.c.RootFSDir, name),
 		"init-empty",
 	})
 }
 
-func determineLayerType(ociDir, tag string) (string, error) {
+func determineLayerType(ociDir, tag string) (types.LayerType, error) {
 	oci, err := umoci.OpenLayout(ociDir)
 	if err != nil {
-		return "", err
+		return types.LayerType(""), err
 	}
 	defer oci.Close()
 
 	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
-		return "", err
+		return types.LayerType(""), err
 	}
 
-	sourceLayerType := "tar"
-	if len(manifest.Layers) == 0 {
-		return sourceLayerType, nil
-	}
-	if manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
-		sourceLayerType = "squashfs"
-	}
-	return sourceLayerType, nil
+	return types.NewLayerTypeManifest(manifest)
 }
 
-func (b *btrfs) Repack(name, layerType string, sfm types.StackerFiles) error {
+func (b *btrfs) Repack(name string, layerTypes []types.LayerType, sfm types.StackerFiles) error {
+	if len(layerTypes) != 1 {
+		return errors.Errorf("btrfs backend does not support multiple layer types")
+	}
+
+	layerType := layerTypes[0]
+
 	// first, let's copy whatever we can from wherever we can, either
 	// import from the output if we already built a layer with this, or
 	// import from the cache if nothing was ever built based on this
@@ -69,7 +69,7 @@ func (b *btrfs) Repack(name, layerType string, sfm types.StackerFiles) error {
 			if layerType == sourceLayerType {
 				err = lib.ImageCopy(lib.ImageCopyOpts{
 					Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
-					Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, name),
+					Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, layerType.LayerName(name)),
 				})
 				if err != nil {
 					return err
@@ -81,7 +81,7 @@ func (b *btrfs) Repack(name, layerType string, sfm types.StackerFiles) error {
 			// types match, import it from there
 			err = lib.ImageCopy(lib.ImageCopyOpts{
 				Src:  fmt.Sprintf("oci:%s:%s", b.c.OCIDir, baseTag),
-				Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, name),
+				Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, layerType.LayerName(name)),
 			})
 			if err != nil {
 				return err
@@ -91,7 +91,7 @@ func (b *btrfs) Repack(name, layerType string, sfm types.StackerFiles) error {
 	}
 
 	if !initialized {
-		if err = b.initEmptyLayer(name); err != nil {
+		if err = b.initEmptyLayer(name, layerType); err != nil {
 			return err
 		}
 	}
@@ -101,6 +101,6 @@ func (b *btrfs) Repack(name, layerType string, sfm types.StackerFiles) error {
 		"--tag", name,
 		"--bundle-path", path.Join(b.c.RootFSDir, name),
 		"repack",
-		"--layer-type", layerType,
+		"--layer-type", string(layerType),
 	})
 }

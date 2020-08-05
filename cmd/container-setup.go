@@ -33,7 +33,11 @@ We reserve the right to change this behavior at any time :)
 }
 
 func doContainerSetup(ctx *cli.Context) error {
-	args := newBuildArgs(ctx)
+	args, err := newBuildArgs(ctx)
+	if err != nil {
+		return err
+	}
+
 	args.SetupOnly = true
 
 	builder := stacker.NewBuilder(&args)

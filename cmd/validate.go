@@ -24,14 +24,20 @@ func validateBuildFailureFlags(ctx *cli.Context) error {
 }
 
 func validateLayerTypeFlags(ctx *cli.Context) error {
+	layerTypes := ctx.StringSlice("layer-type")
+	if len(layerTypes) == 0 {
+		return errors.Errorf("must specify at least one output --layer-type")
+	}
 
-	switch ctx.String("layer-type") {
-	case "tar":
-		break
-	case "squashfs":
-		break
-	default:
-		return errors.Errorf("unknown layer type: %s", ctx.String("layer-type"))
+	for _, layerType := range layerTypes {
+		switch layerType {
+		case "tar":
+			break
+		case "squashfs":
+			break
+		default:
+			return errors.Errorf("unknown layer type: %s", layerType)
+		}
 	}
 
 	return nil

@@ -97,7 +97,7 @@ function test_intermediate_layers_used {
 test:
     from:
         type: oci
-        url: oci-import:ubuntu
+        url: $2
 
 EOF
     stacker build --leave-unladen --layer-type=$layer_type
@@ -144,11 +144,15 @@ EOF
     stacker build --layer-type=squashfs
     mv oci oci-import
     stacker clean --all
-    test_intermediate_layers_used squashfs oci-import:ubuntu
+    test_intermediate_layers_used squashfs oci-import:ubuntu-squashfs
 }
 
 function test_startfrom_respected {
     layer_type=$1
+    squashfs_suffix=
+    if [ "$layer_type" == "squashfs" ]; then
+        squashfs_suffix=-squashfs
+    fi
     cat > stacker.yaml <<EOF
 ubuntu:
     from:
@@ -165,7 +169,7 @@ EOF
 test:
     from:
         type: oci
-        url: oci-import:ubuntu
+        url: oci-import:ubuntu$squashfs_suffix
 
 EOF
     stacker build --leave-unladen --layer-type=$layer_type
