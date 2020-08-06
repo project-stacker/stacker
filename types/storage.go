@@ -74,5 +74,5 @@ type Storage interface {
 	// Repack repacks the specified working dir into the specified OCI dir.
 	//
 	// TODO: make layerType an enum :)
-	Repack(ociDir, name, layerType string) error
+	Repack(name, layerType string) error
 }

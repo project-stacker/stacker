@@ -6,9 +6,9 @@ import (
 	"github.com/anuvu/stacker/container"
 )
 
-func (b *btrfs) Repack(ociDir, name, layerType string) error {
+func (b *btrfs) Repack(name, layerType string) error {
 	return container.RunUmociSubcommand(b.c, []string{
-		"--oci-path", ociDir,
+		"--oci-path", b.c.OCIDir,
 		"--tag", name,
 		"--bundle-path", path.Join(b.c.RootFSDir, name),
 		"repack",

@@ -272,7 +272,7 @@ func (b *Builder) Build(file string) error {
 		}
 
 		log.Infof("generating layer for %s", name)
-		err = s.Repack(opts.Config.OCIDir, name, opts.LayerType)
+		err = s.Repack(name, opts.LayerType)
 		if err != nil {
 			return err
 		}

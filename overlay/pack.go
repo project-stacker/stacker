@@ -219,13 +219,13 @@ func (o *overlay) ConvertAndOutput(tag, name, layerType string) error {
 	return oci.UpdateReference(context.Background(), name, desc)
 }
 
-func (o *overlay) Repack(ociDir, name, layerType string) error {
+func (o *overlay) Repack(name, layerType string) error {
 	// this is really just a wrapper for the function below, RepackOverlay.
 	// we just do this dance so it's run in a userns and the uids look
 	// right.
 	return container.RunUmociSubcommand(o.config, []string{
 		"--tag", name,
-		"--oci-path", ociDir,
+		"--oci-path", o.config.OCIDir,
 		"repack-overlay",
 		"--layer-type", layerType,
 	})
