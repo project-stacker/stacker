@@ -2,20 +2,15 @@ package btrfs
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
-	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
@@ -116,103 +111,6 @@ func (b *btrfs) Unpack(tag, name string) error {
 		}
 	}
 	return nil
-}
-
-func (b *btrfs) ConvertAndOutput(tag, name, layerType string) error {
-	oci, err := umoci.OpenLayout(b.c.OCIDir)
-	if err != nil {
-		return err
-	}
-	defer oci.Close()
-
-	cacheDir := path.Join(b.c.StackerDir, "layer-bases", "oci")
-	cacheOCI, err := umoci.OpenLayout(cacheDir)
-	if err != nil {
-		return err
-	}
-	defer cacheOCI.Close()
-
-	manifest, err := stackeroci.LookupManifest(cacheOCI, tag)
-	if err != nil {
-		return err
-	}
-
-	bundlePath := path.Join(b.c.RootFSDir, name)
-	rootfsPath := path.Join(bundlePath, "rootfs")
-	// otherwise, render the right layer type
-	var blob io.ReadCloser
-	if layerType == "squashfs" {
-		// sourced a non-squashfs image and wants a squashfs layer,
-		// let's generate one.
-		blob, err = squashfs.MakeSquashfs(b.c.OCIDir, rootfsPath, nil)
-		if err != nil {
-			return err
-		}
-		defer blob.Close()
-	} else {
-		blob = layer.GenerateInsertLayer(path.Join(bundlePath, "rootfs"), "/", false, nil)
-		defer blob.Close()
-	}
-
-	layerDigest, layerSize, err := oci.PutBlob(context.Background(), blob)
-	if err != nil {
-		return err
-	}
-
-	config, err := stackeroci.LookupConfig(cacheOCI, manifest.Config)
-	if err != nil {
-		return err
-	}
-
-	layerMediaType := stackeroci.MediaTypeLayerSquashfs
-	if layerType == "tar" {
-		layerMediaType = ispec.MediaTypeImageLayerGzip
-	}
-
-	desc := ispec.Descriptor{
-		MediaType: layerMediaType,
-		Digest:    layerDigest,
-		Size:      layerSize,
-	}
-
-	manifest.Layers = []ispec.Descriptor{desc}
-	config.RootFS.DiffIDs = []digest.Digest{layerDigest}
-	now := time.Now()
-	config.History = []ispec.History{{
-		Created:   &now,
-		CreatedBy: fmt.Sprintf("stacker layer-type mismatch repack of %s", tag),
-	}}
-
-	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), config)
-	if err != nil {
-		return err
-	}
-
-	manifest.Config = ispec.Descriptor{
-		MediaType: ispec.MediaTypeImageConfig,
-		Digest:    configDigest,
-		Size:      configSize,
-	}
-
-	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), manifest)
-	if err != nil {
-		return err
-	}
-
-	desc = ispec.Descriptor{
-		MediaType: ispec.MediaTypeImageManifest,
-		Digest:    manifestDigest,
-		Size:      manifestSize,
-	}
-
-	err = oci.UpdateReference(context.Background(), name, desc)
-	if err != nil {
-		return err
-	}
-
-	return b.UpdateFSMetadata(name, casext.DescriptorPath{
-		Walk: []ispec.Descriptor{desc},
-	})
 }
 
 func (b *btrfs) findPreviousExtraction(oci casext.Engine, manifest ispec.Manifest) (int, string, error) {

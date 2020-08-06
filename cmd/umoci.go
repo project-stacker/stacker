@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/btrfs"
+	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
@@ -47,8 +49,8 @@ var umociCmd = cli.Command{
 	},
 	Subcommands: []cli.Command{
 		cli.Command{
-			Name:   "init",
-			Action: doInit,
+			Name:   "init-empty",
+			Action: doInitEmpty,
 		},
 		cli.Command{
 			Name:   "unpack",
@@ -113,9 +115,10 @@ func doBeforeUmociSubcommand(ctx *cli.Context) error {
 	return nil
 }
 
-func doInit(ctx *cli.Context) error {
+func doInitEmpty(ctx *cli.Context) error {
 	tag := ctx.GlobalString("tag")
 	ociDir := ctx.GlobalString("oci-path")
+	bundlePath := ctx.GlobalString("bundle-path")
 	var oci casext.Engine
 	var err error
 
@@ -127,7 +130,45 @@ func doInit(ctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "Failed creating layout for %s", ociDir)
 	}
-	return umoci.NewImage(oci, tag)
+
+	err = umoci.NewImage(oci, tag)
+	if err != nil {
+		return err
+	}
+
+	// kind of a hack, but the API won't let us init an empty image in a
+	// bundle with data already in it, which is probably reasonable. so
+	// what we do instead is: unpack the empty image above into a temp
+	// directory, then copy the mtree/umoci metadata over to our rootfs.
+	dir, err := ioutil.TempDir("", "umoci-init-empty")
+	if err != nil {
+		return errors.Wrapf(err, "couldn't create temp dir")
+	}
+	defer os.RemoveAll(dir)
+
+	err = doDoUnpack(tag, ociDir, dir, "")
+	if err != nil {
+		return err
+	}
+
+	ents, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't read temp dir")
+	}
+
+	for _, ent := range ents {
+		if ent.Name() == "rootfs" {
+			continue
+		}
+
+		// copy all metadata to the real dir
+		err = lib.FileCopy(path.Join(bundlePath, ent.Name()), path.Join(dir, ent.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func tarUnpack(oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
@@ -199,11 +240,8 @@ func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath str
 	return nil
 }
 
-func doUnpack(ctx *cli.Context) error {
-	tag := ctx.GlobalString("tag")
-	ociDir := ctx.GlobalString("oci-path")
-	bundlePath := ctx.GlobalString("bundle-path")
-
+// heh, dodo
+func doDoUnpack(tag, ociDir, bundlePath, startFromDigest string) error {
 	oci, err := umoci.OpenLayout(ociDir)
 	if err != nil {
 		return err
@@ -223,14 +261,14 @@ func doUnpack(ctx *cli.Context) error {
 
 	startFrom := ispec.Descriptor{}
 	for _, desc := range manifest.Layers {
-		if desc.Digest.String() == ctx.String("start-from") {
+		if desc.Digest.String() == startFromDigest {
 			startFrom = desc
 			break
 		}
 	}
 
-	if ctx.String("start-from") != "" && startFrom.MediaType == "" {
-		return errors.Errorf("couldn't find starting hash %s", ctx.String("start-from"))
+	if startFromDigest != "" && startFrom.MediaType == "" {
+		return errors.Errorf("couldn't find starting hash %s", startFromDigest)
 	}
 
 	var callback layer.AfterLayerUnpackCallback
@@ -253,6 +291,15 @@ func doUnpack(ctx *cli.Context) error {
 	}
 
 	return tarUnpack(oci, tag, bundlePath, callback, startFrom)
+}
+
+func doUnpack(ctx *cli.Context) error {
+	tag := ctx.GlobalString("tag")
+	ociDir := ctx.GlobalString("oci-path")
+	bundlePath := ctx.GlobalString("bundle-path")
+	startFrom := ctx.String("start-from")
+
+	return doDoUnpack(tag, ociDir, bundlePath, startFrom)
 }
 
 func doRepack(ctx *cli.Context) error {

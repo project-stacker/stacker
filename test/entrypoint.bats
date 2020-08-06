@@ -33,7 +33,6 @@ EOF
 
     manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
-    [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Cmd | join("")')" = "foo" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join("")')" = "bar" ]
 
     manifest=$(cat oci/index.json | jq -r .manifests[2].digest | cut -f2 -d:)

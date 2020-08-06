@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/container"
+	"github.com/anuvu/stacker/lib"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
+	"github.com/anuvu/stacker/storage"
 	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -119,7 +121,7 @@ func (o *overlay) Unpack(tag, name string) error {
 	return ovl.mount(o.config, name)
 }
 
-func (o *overlay) ConvertAndOutput(tag, name, layerType string) error {
+func (o *overlay) convertAndOutput(tag, name, layerType string) error {
 	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
 	cacheOCI, err := umoci.OpenLayout(cacheDir)
 	if err != nil {
@@ -219,7 +221,76 @@ func (o *overlay) ConvertAndOutput(tag, name, layerType string) error {
 	return oci.UpdateReference(context.Background(), name, desc)
 }
 
-func (o *overlay) Repack(name, layerType string) error {
+func (o *overlay) Repack(name, layerType string, sfm types.StackerFiles) error {
+	ovl, err := readOverlayMetadata(o.config, name)
+	if err != nil {
+		return err
+	}
+
+	initialized := false
+	if len(ovl.Manifest.Layers) != 0 {
+		baseTag, baseLayer, err := storage.FindFirstBaseInOutput(name, sfm)
+		if err != nil {
+			return err
+		}
+
+		if baseLayer != nil {
+			if !baseLayer.BuildOnly && baseTag != name {
+				// otherwise if it's already been built and the base
+				// types match, import it from there
+				err = lib.ImageCopy(lib.ImageCopyOpts{
+					Src:  fmt.Sprintf("oci:%s:%s", o.config.OCIDir, baseTag),
+					Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, name),
+				})
+				if err != nil {
+					return err
+				}
+				initialized = true
+			} else if types.IsContainersImageLayer(baseLayer.From.Type) {
+				cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+				cacheTag, err := baseLayer.From.ParseTag()
+				if err != nil {
+					return err
+				}
+
+				sourceLayerType := "tar"
+				if ovl.Manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
+					sourceLayerType = "squashfs"
+				}
+
+				if sourceLayerType == layerType {
+					err = lib.ImageCopy(lib.ImageCopyOpts{
+						Src:  fmt.Sprintf("oci:%s:%s", cacheDir, cacheTag),
+						Dest: fmt.Sprintf("oci:%s:%s", o.config.OCIDir, name),
+					})
+					if err != nil {
+						return err
+					}
+				} else {
+					err = o.convertAndOutput(cacheTag, name, layerType)
+					if err != nil {
+						return err
+					}
+				}
+
+				initialized = true
+			}
+		}
+	}
+
+	if !initialized {
+		oci, err := umoci.OpenLayout(o.config.OCIDir)
+		if err != nil {
+			return err
+		}
+		defer oci.Close()
+
+		err = umoci.NewImage(oci, name)
+		if err != nil {
+			return err
+		}
+	}
+
 	// this is really just a wrapper for the function below, RepackOverlay.
 	// we just do this dance so it's run in a userns and the uids look
 	// right.

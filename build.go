@@ -195,7 +195,7 @@ func (b *Builder) Build(file string) error {
 			continue
 		}
 
-		err = SetupRootfs(baseOpts, b.builtStackerfiles)
+		err = SetupRootfs(baseOpts)
 		if err != nil {
 			return err
 		}
@@ -272,7 +272,7 @@ func (b *Builder) Build(file string) error {
 		}
 
 		log.Infof("generating layer for %s", name)
-		err = s.Repack(name, opts.LayerType)
+		err = s.Repack(name, opts.LayerType, b.builtStackerfiles)
 		if err != nil {
 			return err
 		}

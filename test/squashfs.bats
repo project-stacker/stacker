@@ -76,7 +76,33 @@ EOF
     stacker build --layer-type=squashfs
 }
 
-@test "squashfs layer support" {
+# the way we generate the underlying squashfs layer is different between btrfs
+# and overlay, in that we glob the run: delta in with the base layer in btrfs,
+# but not in overlay. so these two tests look different.
+@test "squashfs layer support (btrfs)" {
+    require_storage btrfs
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        touch /1
+EOF
+
+    stacker build --layer-type=squashfs
+
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
+
+    mkdir layer0
+    mount -t squashfs oci/blobs/sha256/$layer0 layer0
+    [ -f layer0/bin/bash ]
+    [ -f layer0/1 ]
+}
+
+@test "squashfs layer support (overlay)" {
+    require_storage squashfs
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -101,7 +127,8 @@ EOF
     [ -f layer1/1 ]
 }
 
-@test "squashfs file whiteouts" {
+@test "squashfs file whiteouts (overlay)" {
+    require_storage overlay
     cat > stacker.yaml <<EOF
 centos:
     from:

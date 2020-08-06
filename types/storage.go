@@ -66,13 +66,8 @@ type Storage interface {
 	// speed things up, etc.
 	Unpack(tag, name string) error
 
-	// ConvertAndOutput outputs the rootfs under `name` to the OCI as
-	// layerType. This will only be called if layerType was different than
-	// the imported layer type. The tag is the tag in the OCI cache.
-	ConvertAndOutput(tag, name, layerType string) error
-
 	// Repack repacks the specified working dir into the specified OCI dir.
 	//
 	// TODO: make layerType an enum :)
-	Repack(name, layerType string) error
+	Repack(name, layerType string, sfm StackerFiles) error
 }

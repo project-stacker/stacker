@@ -19,6 +19,17 @@ const (
 	ScratchLayer = "scratch"
 )
 
+func IsContainersImageLayer(from string) bool {
+	switch from {
+	case DockerLayer:
+		return true
+	case OCILayer:
+		return true
+	}
+
+	return false
+}
+
 type Layer struct {
 	From               *ImageSource      `yaml:"from"`
 	Import             interface{}       `yaml:"import"`
