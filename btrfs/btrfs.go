@@ -328,7 +328,7 @@ func (b *btrfs) Delete(source string) error {
 
 func (b *btrfs) Detach() error {
 	if b.needsUmount {
-		err := syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
+		err := syscall.Unmount(b.c.RootFSDir, 0)
 		err2 := os.RemoveAll(b.c.RootFSDir)
 		if err != nil {
 			return err
