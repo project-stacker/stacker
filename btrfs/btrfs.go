@@ -392,7 +392,7 @@ func (b *btrfs) Clean() error {
 	var umountErr error
 	_, err := os.Stat(loopback)
 	if err == nil {
-		umountErr = syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
+		umountErr = syscall.Unmount(b.c.RootFSDir, 0)
 	}
 	if subvolErr != nil && umountErr != nil {
 		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)
