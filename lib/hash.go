@@ -14,13 +14,13 @@ func HashFile(path string, includeMode bool) (string, error) {
 	h := sha256.New()
 	f, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "couldn't open %s for hashing", path)
 	}
 	defer f.Close()
 
 	_, err = io.Copy(h, f)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "couldn't copy %s for hashing", path)
 	}
 
 	if includeMode {
@@ -31,7 +31,7 @@ func HashFile(path string, includeMode bool) (string, error) {
 
 		fi, err := f.Stat()
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "couldn't stat %s for hashing", path)
 		}
 
 		_, err = h.Write([]byte(fmt.Sprintf("%v", fi.Mode())))
