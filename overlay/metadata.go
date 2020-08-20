@@ -11,7 +11,6 @@ import (
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/types"
-	//"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
