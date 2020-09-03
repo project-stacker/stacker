@@ -26,6 +26,7 @@ type PublishArgs struct {
 	Password   string
 	Force      bool
 	Progress   bool
+	LayerTypes []types.LayerType
 }
 
 // Publisher is responsible for publishing the layers based on stackerfiles
@@ -113,40 +114,44 @@ func (p *Publisher) Publish(file string) error {
 
 		// Iterate through all tags
 		for _, tag := range tags {
-			// Determine full destination URL
-			var destUrl string
-			switch is.Type {
-			case types.DockerLayer:
-				destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, tag)
-			case types.OCILayer:
-				destUrl = fmt.Sprintf("%s:%s_%s", opts.Url, name, tag)
-			default:
-				return errors.Errorf("can't save layers to destination type: %s", is.Type)
-			}
+			for _, layerType := range opts.LayerTypes {
+				layerTypeTag := layerType.LayerName(tag)
+				layerName := layerType.LayerName(name)
+				// Determine full destination URL
+				var destUrl string
+				switch is.Type {
+				case types.DockerLayer:
+					destUrl = fmt.Sprintf("%s/%s:%s", strings.TrimRight(opts.Url, "/"), name, layerTypeTag)
+				case types.OCILayer:
+					destUrl = fmt.Sprintf("%s:%s_%s", opts.Url, name, layerTypeTag)
+				default:
+					return errors.Errorf("can't save layers to destination type: %s", is.Type)
+				}
 
-			if opts.ShowOnly {
-				// User has requested only to see what would be published
-				log.Infof("would publish: %s %s to %s", file, name, destUrl)
-				continue
-			}
+				if opts.ShowOnly {
+					// User has requested only to see what would be published
+					log.Infof("would publish: %s %s to %s", file, name, destUrl)
+					continue
+				}
 
-			var progressWriter io.Writer
-			if p.opts.Progress {
-				progressWriter = os.Stderr
-			}
+				var progressWriter io.Writer
+				if p.opts.Progress {
+					progressWriter = os.Stderr
+				}
 
-			// Store the layers to new destination
-			log.Infof("publishing %s %s to %s\n", file, name, destUrl)
-			err = lib.ImageCopy(lib.ImageCopyOpts{
-				Src:          fmt.Sprintf("oci:%s:%s", opts.Config.OCIDir, name),
-				Dest:         destUrl,
-				DestUsername: opts.Username,
-				DestPassword: opts.Password,
-				Progress:     progressWriter,
-				SkipTLS:      true,
-			})
-			if err != nil {
-				return err
+				// Store the layers to new destination
+				log.Infof("publishing %s %s to %s\n", file, layerName, destUrl)
+				err = lib.ImageCopy(lib.ImageCopyOpts{
+					Src:          fmt.Sprintf("oci:%s:%s", opts.Config.OCIDir, layerName),
+					Dest:         destUrl,
+					DestUsername: opts.Username,
+					DestPassword: opts.Password,
+					Progress:     progressWriter,
+					SkipTLS:      true,
+				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

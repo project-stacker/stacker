@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -54,6 +55,11 @@ var publishCmd = cli.Command{
 			Name:  "force",
 			Usage: "force publishing the images present in the OCI layout even if they should be rebuilt",
 		},
+		cli.StringSliceFlag{
+			Name:  "layer-type",
+			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
+			Value: &cli.StringSlice{"tar"},
+		},
 	},
 	Before: beforePublish,
 }
@@ -86,6 +92,11 @@ func beforePublish(ctx *cli.Context) error {
 }
 
 func doPublish(ctx *cli.Context) error {
+	layerTypes, err := types.NewLayerTypes(ctx.StringSlice("layer-type"))
+	if err != nil {
+		return err
+	}
+
 	args := stacker.PublishArgs{
 		Config:     config,
 		ShowOnly:   ctx.Bool("show-only"),
@@ -96,10 +107,10 @@ func doPublish(ctx *cli.Context) error {
 		Password:   ctx.String("password"),
 		Force:      ctx.Bool("force"),
 		Progress:   shouldShowProgress(ctx),
+		LayerTypes: layerTypes,
 	}
 
 	var stackerFiles []string
-	var err error
 	if len(ctx.String("search-dir")) > 0 {
 		// Need to search for all the paths matching the stacker-file regex under search-dir
 		stackerFiles, err = lib.FindFiles(ctx.String("search-dir"), ctx.String("stacker-file-pattern"))

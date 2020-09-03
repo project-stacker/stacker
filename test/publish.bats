@@ -131,3 +131,24 @@ function teardown() {
     # Check the output does not contain the tag since no images should be published
     [[ ${output} =~ "will not publish: ocibuilds/sub3/stacker.yaml build_only layer3" ]]
 }
+
+@test "publish multiple layer types" {
+    require_storage overlay
+
+    stacker --storage-type overlay build -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs
+    stacker --storage-type overlay publish -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs --url oci:oci_publish --tag test1
+
+    mkdir dest
+
+    # check that we have the right tar output
+    umoci unpack --image oci_publish:layer4_test1 dest/layer4_test1
+    [ -f dest/layer4_test1/rootfs/root/ls_out ]
+
+    # and the squashfs output?
+    umoci ls --layout oci_publish | grep layer4_test1-squashfs
+    manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
+    layer1=$(cat oci/blobs/sha256/$manifest | jq -r .layers[1].digest | cut -f2 -d:)
+    mkdir layer1
+    mount -t squashfs oci/blobs/sha256/$layer1 layer1
+    [ -f layer1/root/ls_out ]
+}
