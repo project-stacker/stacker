@@ -28,6 +28,7 @@ import (
 	"github.com/opencontainers/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"golang.org/x/sys/unix"
 )
 
 var umociCmd = cli.Command{
@@ -188,11 +189,78 @@ func tarUnpack(oci casext.Engine, tag string, bundlePath string, callback layer.
 	return umoci.Unpack(oci, tag, bundlePath, opts)
 }
 
+func which(name string) string {
+	return whichSearch(name, strings.Split(os.Getenv("PATH"), ":"))
+}
+
+func whichSearch(name string, paths []string) string {
+	var search []string
+
+	if strings.ContainsRune(name, os.PathSeparator) {
+		if path.IsAbs(name) {
+			search = []string{name}
+		} else {
+			search = []string{"./" + name}
+		}
+	} else {
+		search = []string{}
+		for _, p := range paths {
+			search = append(search, path.Join(p, name))
+		}
+	}
+
+	for _, fPath := range search {
+		if err := unix.Access(fPath, unix.X_OK); err == nil {
+			return fPath
+		}
+	}
+
+	return ""
+}
+
+func extractSingleSquash(squashFile string, extractDir string, rootless bool) error {
+	err := os.MkdirAll(extractDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	var uCmd []string
+	if which("squashtool") != "" {
+		uCmd = []string{"squashtool", "extract", "--whiteouts", "--perms"}
+		if !rootless {
+			uCmd = append(uCmd, "--devs", "--sockets", "--owners")
+		}
+		uCmd = append(uCmd, squashFile, extractDir)
+	} else {
+		uCmd = []string{"unsquashfs", "-f", "-d", extractDir, squashFile}
+	}
+
+	cmd := exec.Command(uCmd[0], uCmd[1:]...)
+	cmd.Stdin = nil
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func isUnpriv() bool {
+	v := os.Getenv("STACKER_UNPRIV")
+	if v == "" {
+		return os.Geteuid() != 0
+	} else if v == "false" {
+		return false
+	} else if v == "true" {
+		return true
+	}
+	panic("Invalid value for STACKER_UNPRIV")
+}
+
 func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
 	manifest, err := stackeroci.LookupManifest(oci, tag)
 	if err != nil {
 		return err
 	}
+
+	rootless := isUnpriv()
 
 	found := false
 	for _, layer := range manifest.Layers {
@@ -203,12 +271,7 @@ func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath str
 
 		rootfs := path.Join(bundlePath, "rootfs")
 		squashfsFile := path.Join(ociDir, "blobs", "sha256", layer.Digest.Encoded())
-		userCmd := []string{"unsquashfs", "-f", "-d", rootfs, squashfsFile}
-		cmd := exec.Command(userCmd[0], userCmd[1:]...)
-		cmd.Stdin = nil
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err = cmd.Run()
+		err = extractSingleSquash(squashfsFile, rootfs, rootless)
 		if err != nil {
 			return err
 		}
@@ -361,16 +424,9 @@ func doUnpackOne(ctx *cli.Context) error {
 	}
 
 	if ctx.Bool("squashfs") {
-		if err = os.MkdirAll(bundlePath, 0755); err != nil {
-			return errors.Wrapf(err, "couldn't make bundle dir")
-		}
-		squashfsFile := path.Join(ociDir, "blobs", "sha256", digest.Encoded())
-		userCmd := []string{"unsquashfs", "-f", "-d", bundlePath, squashfsFile}
-		cmd := exec.Command(userCmd[0], userCmd[1:]...)
-		cmd.Stdin = nil
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return errors.Wrapf(cmd.Run(), "couldn't unsquashfs one layer")
+		return extractSingleSquash(
+			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
+			path.Join(bundlePath, "rootfs"), isUnpriv())
 	}
 
 	oci, err := umoci.OpenLayout(ociDir)
