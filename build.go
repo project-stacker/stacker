@@ -556,7 +556,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 
 	// Build all Stackerfiles
 	for i, p := range sortedPaths {
-		log.Debugf("building: %d %s\n", i, p)
+		log.Debugf("building: %d %s", i, p)
 
 		err = b.Build(s, p)
 		if err != nil {
