@@ -103,6 +103,9 @@ type overlay struct {
 }
 
 func NewOverlay(config types.StackerConfig) types.Storage {
+	// TODO: we should go through all the non-sha things in
+	// config.RootFSDir and mount anything that looks like it might be
+	// used (Deatch() will unmount it all).
 	return &overlay{config}
 }
 
