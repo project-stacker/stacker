@@ -78,8 +78,6 @@ func (ovl overlayMetadata) write(config types.StackerConfig, tag string) error {
 }
 
 func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
-	overlayArgs := bytes.NewBufferString("index=off,lowerdir=")
-
 	// find *any* manifest to mount: we don't care if this is tar or
 	// squashfs, we just need to mount something. the code that generates
 	// the output needs to care about this, not this code.
@@ -93,13 +91,13 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 		break
 	}
 
+	lowerdirs := []string{}
 	for _, layer := range manifest.Layers {
 		contents := overlayPath(config, layer.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
 			return errors.Wrapf(err, "%s does not exist", contents)
 		}
-		overlayArgs.WriteString(contents)
-		overlayArgs.WriteString(":")
+		lowerdirs = append(lowerdirs, contents)
 	}
 
 	for _, layer := range ovl.BuiltLayers {
@@ -107,27 +105,32 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 		if _, err := os.Stat(contents); err != nil {
 			return errors.Wrapf(err, "%s does not exist", contents)
 		}
-		overlayArgs.WriteString(contents)
-		overlayArgs.WriteString(":")
+		lowerdirs = append(lowerdirs, contents)
 	}
 
-	if len(manifest.Layers)+len(ovl.BuiltLayers) < 2 {
-		// overlayfs doesn't work with < 2 lowerdirs, so we add some
-		// workaround dirs if necessary (if e.g. the source only has
-		// one layer, or it's an empty rootfs with no layers, we still
-		// want an overlay mount to keep things consistent)
-
-		for i := 0; i < 2-len(manifest.Layers)+len(ovl.BuiltLayers); i++ {
-			workaround := path.Join(config.RootFSDir, tag, fmt.Sprintf("workaround%d", i))
-			err := os.MkdirAll(workaround, 0755)
-			if err != nil {
-				return errors.Wrapf(err, "couldn't make workaround dir")
-			}
-
-			overlayArgs.WriteString(workaround)
-			overlayArgs.WriteString(":")
+	// overlayfs doesn't work with < 2 lowerdirs, so we add some
+	// workaround dirs if necessary (if e.g. the source only has
+	// one layer, or it's an empty rootfs with no layers, we still
+	// want an overlay mount to keep things consistent)
+	for i := 0; i < 2-len(lowerdirs); i++ {
+		workaround := path.Join(config.RootFSDir, tag, fmt.Sprintf("workaround%d", i))
+		err := os.MkdirAll(workaround, 0755)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't make workaround dir")
 		}
 
+		lowerdirs = append(lowerdirs, workaround)
+	}
+
+	// The OCI spec says that the first layer should be the bottom most
+	// layer (i.e. the last layer in the manifest.Layers) list, and in
+	// overlayfs it's the top most layer. So above, we've created this list
+	// in exactly the backwards order. So, let's emit it to the args buffer
+	// in reverse order.
+	overlayArgs := bytes.NewBufferString("index=off,lowerdir=")
+	for i := len(lowerdirs) - 1; i >= 0; i-- {
+		overlayArgs.WriteString(lowerdirs[i])
+		overlayArgs.WriteString(":")
 	}
 
 	// chop off the last : from lowerdir= above
