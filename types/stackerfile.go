@@ -339,6 +339,12 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 	}
 
 	if len(ret) != s.Len() {
+		for _, name := range s.FileOrder {
+			_, ok := processed[name]
+			if !ok {
+				log.Infof("couldn't find dependencies for %s", name)
+			}
+		}
 		return nil, errors.Errorf("couldn't resolve some dependencies")
 	}
 
