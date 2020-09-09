@@ -6,7 +6,6 @@ function setup() {
 
 function teardown() {
     cleanup
-    rm -rf tree1 tree2 link foo executable tar.tar content.txt >& /dev/null || true
 }
 
 @test "from: tar layer rebuilds on change" {
