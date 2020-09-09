@@ -154,3 +154,52 @@ EOF
     [ -f dest/layer4_2/rootfs/root/import4 ]
     [ -f dest/layer4_2/rootfs/root/import0 ]
 }
+
+@test "nested prerequisites work" {
+    cat > stacker1.yaml <<EOF
+one:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        touch /one
+EOF
+    cat > stacker2.yaml <<EOF
+config:
+    prerequisites:
+        - stacker1.yaml
+two:
+    from:
+        type: built
+        tag: one
+    run: |
+        touch /two
+EOF
+    cat > stacker3.yaml <<EOF
+config:
+    prerequisites:
+        - stacker2.yaml
+three:
+    from:
+        type: built
+        tag: two
+    run: |
+        touch /three
+nested:
+    from:
+        type: built
+        tag: one
+    run: |
+        touch /nested
+EOF
+    stacker build -f stacker3.yaml
+
+    umoci unpack --image oci:three three
+    [ -f three/rootfs/one ]
+    [ -f three/rootfs/two ]
+    [ -f three/rootfs/three ]
+
+    umoci unpack --image oci:nested nested
+    [ -f nested/rootfs/one ]
+    [ -f nested/rootfs/nested ]
+}

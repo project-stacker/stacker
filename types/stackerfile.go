@@ -268,6 +268,27 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	return &sf, err
 }
 
+func (s *Stackerfile) addPrerequisites(processed map[string]bool, sfm StackerFiles) error {
+	for _, prereq := range s.buildConfig.Prerequisites {
+		absPrereq := filepath.Join(filepath.Dir(s.path), prereq)
+		prereqFile, ok := sfm[absPrereq]
+		if !ok {
+			return errors.Errorf("couldn't find prerequisite %s", prereq)
+		}
+
+		// prerequisites are processed beforehand
+		for thing := range prereqFile.internal {
+			processed[thing] = true
+		}
+
+		err := prereqFile.addPrerequisites(processed, sfm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // DependencyOrder provides the list of layer names from a stackerfile
 // the current order to be built, note this method does not reorder the layers,
 // but it does validate they are specified in an order which makes sense
@@ -275,17 +296,9 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 	ret := []string{}
 	processed := map[string]bool{}
 
-	for _, prereq := range s.buildConfig.Prerequisites {
-		absPrereq := filepath.Join(filepath.Dir(s.path), prereq)
-		prereqFile, ok := sfm[absPrereq]
-		if !ok {
-			return nil, errors.Errorf("couldn't find prerequisite %s", prereq)
-		}
-
-		// prerequisites are processed beforehand
-		for thing := range prereqFile.internal {
-			processed[thing] = true
-		}
+	err := s.addPrerequisites(processed, sfm)
+	if err != nil {
+		return nil, err
 	}
 
 	for i := 0; i < s.Len(); i++ {
