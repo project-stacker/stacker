@@ -109,3 +109,20 @@ EOF
     mount -t squashfs oci/blobs/sha256/$layer2 layer2
     [ "$(cat layer2/sucks)" == "primus" ]
 }
+
+@test "multiple output types cache correctly" {
+    require_storage overlay
+
+    cat > stacker.yaml <<EOF
+parent:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        echo meshuggah > /rocks
+EOF
+    stacker build --layer-type tar --layer-type squashfs
+    stacker build --layer-type tar --layer-type squashfs
+    echo $output | grep "found cached layer parent"
+    echo $output | grep "found cached layer parent-squashfs"
+}

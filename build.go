@@ -381,14 +381,14 @@ func (b *Builder) Build(s types.Storage, file string) error {
 				foundCount := 0
 				for _, layerType := range opts.LayerTypes {
 					blob, ok := cacheEntry.Manifests[layerType]
-					if !ok {
+					if ok {
 						foundCount += 1
 						layerName := layerType.LayerName(name)
 						err = oci.UpdateReference(context.Background(), layerName, blob)
 						if err != nil {
 							return err
 						}
-						log.Infof("found cached layer %s\n", layerName)
+						log.Infof("found cached layer %s", layerName)
 					}
 				}
 
