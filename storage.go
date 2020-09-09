@@ -24,7 +24,7 @@ func NewStorage(c types.StackerConfig) (types.Storage, error) {
 		if !overlayOk {
 			return nil, errors.Errorf("can't do overlay operations but overlay backend requested")
 		}
-		return overlay.NewOverlay(c), nil
+		return overlay.NewOverlay(c)
 	case "btrfs":
 		isBtrfs, err := btrfs.DetectBtrfs(c.RootFSDir)
 		if err != nil {

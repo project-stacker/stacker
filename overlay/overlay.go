@@ -19,6 +19,7 @@ import (
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
+	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
@@ -102,11 +103,36 @@ type overlay struct {
 	config types.StackerConfig
 }
 
-func NewOverlay(config types.StackerConfig) types.Storage {
-	// TODO: we should go through all the non-sha things in
-	// config.RootFSDir and mount anything that looks like it might be
-	// used (Deatch() will unmount it all).
-	return &overlay{config}
+func NewOverlay(config types.StackerConfig) (types.Storage, error) {
+	// let's go through and mount anything that looks like it might be used
+	// (i.e. is not a sha256 dir); this will all be unmounted in Detach(),
+	// and this way we don't have to reason about what needs to be mounted
+	// in order to satisfy imports or whatnot.
+	ents, err := ioutil.ReadDir(config.RootFSDir)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, errors.Wrapf(err, "couldn't read overlay roots dir")
+	}
+
+	for _, ent := range ents {
+		// is this a known digest? let's ignore it then
+		_, err := digest.Parse(strings.ReplaceAll(ent.Name(), "_", ":"))
+		if err == nil {
+			continue
+		}
+
+		// otherwise, read the overlay metadata and mount it
+		ovl, err := readOverlayMetadata(config, ent.Name())
+		if err != nil {
+			return nil, err
+		}
+
+		err = ovl.mount(config, ent.Name())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &overlay{config}, nil
 }
 
 func (o *overlay) Name() string {
