@@ -77,6 +77,7 @@ func canWriteWhiteouts() (bool, error) {
 
 	err = unix.Mknod(path.Join(dir, "test"), syscall.S_IFCHR|0666, int(unix.Mkdev(0, 0)))
 	if err != nil {
+		log.Debugf("can't create overlay whiteouts: %v", err)
 		if os.IsPermission(err) {
 			return false, nil
 		}
