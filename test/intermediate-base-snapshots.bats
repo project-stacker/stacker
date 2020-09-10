@@ -92,6 +92,10 @@ EOF
 
 function test_intermediate_layers_used {
     layer_type=$1
+    squashfs_suffix=
+    if [ "$layer_type" == "squashfs" ]; then
+        squashfs_suffix=-squashfs
+    fi
 
     cat > stacker.yaml <<EOF
 test:
@@ -116,7 +120,7 @@ EOF
     btrfs property set -ts "roots/$lastlayer_hash" ro true
 
     # now delete the old cached copy to force it to rebuild
-    umoci rm --image oci:test
+    umoci rm --image oci:test$squashfs_suffix
     umoci gc --layout oci
     btrfs property set -ts "roots/test" ro false
     btrfs subvolume delete "roots/test"
@@ -186,7 +190,7 @@ EOF
     btrfs property set -ts "roots/$penultimate_hash" ro false
     btrfs subvolume delete "roots/$penultimate_hash"
 
-    umoci rm --image oci:test
+    umoci rm --image oci:test$squashfs_suffix
     umoci gc --layout oci
     btrfs property set -ts "roots/test" ro false
     btrfs subvolume delete "roots/test"
