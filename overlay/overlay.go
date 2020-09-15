@@ -60,7 +60,7 @@ func canMountOverlay() (bool, error) {
 	err = unix.Mount("overlay", mountpoint, "overlay", 0, opts)
 	defer unix.Unmount(mountpoint, 0)
 	if err != nil {
-		log.Debugf("can't mount overlayfs: %v", err)
+		log.Infof("can't mount overlayfs: %v", err)
 	}
 	return err == nil, nil
 }
@@ -77,7 +77,7 @@ func canWriteWhiteouts() (bool, error) {
 
 	err = unix.Mknod(path.Join(dir, "test"), syscall.S_IFCHR|0666, int(unix.Mkdev(0, 0)))
 	if err != nil {
-		log.Debugf("can't create overlay whiteouts: %v", err)
+		log.Infof("can't create overlay whiteouts: %v", err)
 		if os.IsPermission(err) {
 			return false, nil
 		}
