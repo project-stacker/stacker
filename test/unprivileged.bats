@@ -85,3 +85,24 @@ EOF
     sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
     stacker clean --all
 }
+
+@test "unprivileged read-only imports can be re-cached" {
+    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+
+    mkdir -p import
+    touch import/this
+    chmod -w import
+
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import:
+        - import
+EOF
+    chown -R $SUDO_USER:$SUDO_USER .
+    sudo -u $SUDO_USER stacker build
+    echo that > import/this
+    sudo -u $SUDO_USER stacker build
+}

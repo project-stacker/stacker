@@ -65,6 +65,23 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 	return !eq, nil
 }
 
+func chmodParentAndRemove(destpath string) (func(), error) {
+	// in the unpriv case, the dir might be -w (centos distributes its
+	// /root this way), and non-real root can't delete stuff that's -w,
+	// even if it is the owner. so let's chmod +w .. and try again.
+	dir := path.Dir(destpath)
+	orig, err := os.Stat(dir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't chmod +w ..")
+	}
+
+	err = os.Chmod(dir, 0700)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't chmod +w ..")
+	}
+	return func() { os.Chmod(dir, orig.Mode()) }, os.RemoveAll(destpath)
+}
+
 func importFile(imp string, cacheDir string) (string, error) {
 	e1, err := os.Lstat(imp)
 	if err != nil {
@@ -121,9 +138,20 @@ func importFile(imp string, cacheDir string) (string, error) {
 	for _, d := range diff {
 		switch d.Type() {
 		case mtree.Missing:
-			err := os.RemoveAll(path.Join(cacheDir, path.Base(imp), d.Path()))
+			p := path.Join(cacheDir, path.Base(imp), d.Path())
+			err := os.RemoveAll(p)
 			if err != nil {
-				return "", errors.Wrapf(err, "couldn't remove missing import %s", path.Join(cacheDir, path.Base(imp), d.Path()))
+				if os.IsPermission(err) {
+					var cleanup func()
+					cleanup, err = chmodParentAndRemove(p)
+					if cleanup != nil {
+						defer cleanup()
+					}
+				}
+
+				if err != nil {
+					return "", errors.Wrapf(err, "couldn't remove missing import %s", path.Join(cacheDir, path.Base(imp), d.Path()))
+				}
 			}
 		case mtree.Modified:
 			fallthrough
@@ -133,7 +161,17 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 			err = os.RemoveAll(destpath)
 			if err != nil && !os.IsNotExist(err) {
-				return "", errors.Wrapf(err, "couldn't remove to replace import %s", destpath)
+				if os.IsPermission(err) {
+					var cleanup func()
+					cleanup, err = chmodParentAndRemove(destpath)
+					if cleanup != nil {
+						defer cleanup()
+					}
+				}
+
+				if err != nil {
+					return "", errors.Wrapf(err, "couldn't remove to replace import %s", destpath)
+				}
 			}
 
 			sdirinfo, err := os.Lstat(path.Dir(srcpath))
