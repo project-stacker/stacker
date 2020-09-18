@@ -133,12 +133,12 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 			err = os.RemoveAll(destpath)
 			if err != nil && !os.IsNotExist(err) {
-				return "", err
+				return "", errors.Wrapf(err, "couldn't remove to replace import %s", destpath)
 			}
 
 			sdirinfo, err := os.Lstat(path.Dir(srcpath))
 			if err != nil {
-				return "", err
+				return "", errors.Wrapf(err, "couldn't stat source import %s", srcpath)
 			}
 
 			destdir := path.Dir(destpath)
