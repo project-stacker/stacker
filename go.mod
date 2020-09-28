@@ -23,13 +23,12 @@ require (
 	github.com/opencontainers/umoci v0.4.7-0.20200707151043-3ab7c681dab8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1 // indirect
-	github.com/sergi/go-diff v1.1.0
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.6.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
-	github.com/urfave/cli v1.22.4
+	github.com/urfave/cli v1.22.5-0.20200826140443-af7fa3de115a
 	github.com/vbatts/go-mtree v0.5.0
 	github.com/vbauerster/mpb/v5 v5.2.3 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
@@ -49,5 +48,3 @@ replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20200
 replace github.com/freddierice/go-losetup => github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61
 
 replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20200716160210-58e094f7008d
-
-replace github.com/urfave/cli => github.com/tych0/cli v1.22.5-0.20200805152240-7c493f6b0531

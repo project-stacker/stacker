@@ -287,8 +287,6 @@ github.com/russross/blackfriday/v2 v2.0.1 h1:lPqVAte+HuHNfhJ/0LC98ESWRz8afy9tM/0
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/sergi/go-diff v1.0.0 h1:Kpca3qRNrduNnOQeazBd0ysaKrUJiIuISHxogkT9RPQ=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
-github.com/sergi/go-diff v1.1.0 h1:we8PVUC3FE2uYfodKH/nBHMSetSfHDR6scGdBi+erh0=
-github.com/sergi/go-diff v1.1.0/go.mod h1:STckp+ISIX8hZLjrqAeVduY0gWCT9IjLuqbuNXdaHfM=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
@@ -329,8 +327,6 @@ github.com/tj/go-kinesis v0.0.0-20171128231115-08b17f58cb1b/go.mod h1:/yhzCV0xPf
 github.com/tj/go-spin v1.1.0/go.mod h1:Mg1mzmePZm4dva8Qz60H2lHwmJ2loum4VIrLgVnKwh4=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1LnyzV7yuijHlBtiq6lH5T/mljw=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
-github.com/tych0/cli v1.22.5-0.20200805152240-7c493f6b0531 h1:HlfnWX+rQDMo5oQA8GER7mLGt46Nmz+ODZoquf5h8sQ=
-github.com/tych0/cli v1.22.5-0.20200805152240-7c493f6b0531/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61 h1:INQxeLW5rI6NdK32NgVL+2q6p+ixmFuvvduSYmsCYGw=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61/go.mod h1:cdWJrB+PcHXXfp97Gizi9FJNWfNLgO6pt4CgxWpVA5Q=
 github.com/tych0/umoci v0.4.7-0.20200716160210-58e094f7008d h1:O7t2lvq1VUR3sgt8DaPdELxSHJRx9WYto98ILx5nPtg=
@@ -339,6 +335,10 @@ github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ulikunitz/xz v0.5.7 h1:YvTNdFzX6+W5m9msiYg/zpkSURPPtOlzbqYjrFn7Yt4=
 github.com/ulikunitz/xz v0.5.7/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+github.com/urfave/cli v0.0.0-20171014202726-7bc6a0acffa5/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
+github.com/urfave/cli v1.22.4/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
+github.com/urfave/cli v1.22.5-0.20200826140443-af7fa3de115a h1:z9/ZE0IW1SukOJHQkR0ItzsOjEKQZW98R17wB61irgQ=
+github.com/urfave/cli v1.22.5-0.20200826140443-af7fa3de115a/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/vbatts/go-mtree v0.5.0 h1:dM+5XZdqH0j9CSZeerhoN/tAySdwnmevaZHO1XGW2Vc=
 github.com/vbatts/go-mtree v0.5.0/go.mod h1:7JbaNHyBMng+RP8C3Q4E+4Ca8JnGQA2R/MB+jb4tSOk=
 github.com/vbatts/tar-split v0.11.1 h1:0Odu65rhcZ3JZaPHxl7tCI3V/C/Q9Zf82UFravl02dE=
