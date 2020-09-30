@@ -356,23 +356,22 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 		if layerType == "tar" {
 			// a hack, but GenerateInsertLayer() is the only thing that just takes
 			// everything in a dir and makes it a layer.
-			packOptions := layer.PackOptions{TranslateOverlayWhiteouts: true}
+			packOptions := layer.RepackOptions{TranslateOverlayWhiteouts: true}
 			uncompressed := layer.GenerateInsertLayer(dir, "/", false, &packOptions)
 			defer uncompressed.Close()
 
-			desc, err = mutator.Add(context.Background(), uncompressed, history, mutate.GzipCompressor)
+			desc, err = mutator.Add(context.Background(), ispec.MediaTypeImageLayer, uncompressed, history, mutate.GzipCompressor)
 			if err != nil {
 				return false, err
 			}
 		} else {
-			compressor := mutate.NewNoopCompressor(stackeroci.MediaTypeLayerSquashfs)
 			blob, err := squashfs.MakeSquashfs(config.OCIDir, dir, nil)
 			if err != nil {
 				return false, err
 			}
 			defer blob.Close()
 
-			desc, err = mutator.Add(context.Background(), blob, history, compressor)
+			desc, err = mutator.Add(context.Background(), stackeroci.MediaTypeLayerSquashfs, blob, history, mutate.NoopCompressor)
 			if err != nil {
 				return false, err
 			}

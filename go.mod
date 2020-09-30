@@ -20,7 +20,7 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
-	github.com/opencontainers/umoci v0.4.7-0.20200707151043-3ab7c681dab8
+	github.com/opencontainers/umoci v0.4.7-0.20200930143527-05c30365a674
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect
@@ -46,5 +46,3 @@ require (
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20200615203753-755940754545
 
 replace github.com/freddierice/go-losetup => github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61
-
-replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20200716160210-58e094f7008d
