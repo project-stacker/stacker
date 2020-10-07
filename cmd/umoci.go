@@ -362,7 +362,7 @@ func doUnpackOne(ctx *cli.Context) error {
 
 	if ctx.Bool("squashfs") {
 		squashfsFile := path.Join(ociDir, "blobs", "sha256", digest.Encoded())
-		userCmd := []string{"unsquashfs", "-f", "-d", path.Join(bundlePath, "rootfs"), squashfsFile}
+		userCmd := []string{"unsquashfs", "-f", "-d", bundlePath, squashfsFile}
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
