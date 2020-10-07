@@ -46,3 +46,5 @@ require (
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20200615203753-755940754545
 
 replace github.com/freddierice/go-losetup => github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61
+
+replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20201007164856-3fdad911f88d
