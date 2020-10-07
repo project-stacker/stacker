@@ -361,13 +361,16 @@ func doUnpackOne(ctx *cli.Context) error {
 	}
 
 	if ctx.Bool("squashfs") {
+		if err = os.MkdirAll(bundlePath, 0755); err != nil {
+			return errors.Wrapf(err, "couldn't make bundle dir")
+		}
 		squashfsFile := path.Join(ociDir, "blobs", "sha256", digest.Encoded())
 		userCmd := []string{"unsquashfs", "-f", "-d", bundlePath, squashfsFile}
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		return errors.Wrapf(cmd.Run(), "couldn't unsquashfs one layer")
 	}
 
 	oci, err := umoci.OpenLayout(ociDir)
