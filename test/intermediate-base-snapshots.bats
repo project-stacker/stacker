@@ -147,7 +147,7 @@ ubuntu:
 EOF
     stacker build --layer-type=squashfs
     mv oci oci-import
-    stacker clean --all
+    stacker clean
     test_intermediate_layers_used squashfs oci-import:ubuntu-squashfs
 }
 
@@ -167,7 +167,7 @@ ubuntu:
 EOF
     stacker build --layer-type=$1
     mv oci oci-import
-    stacker clean --all
+    stacker clean
 
     cat > stacker.yaml <<EOF
 test:
@@ -267,7 +267,7 @@ EOF
     # first build a base image
     stacker build
     mv oci oci-import
-    stacker clean --all
+    stacker clean
 
     stacker unpriv-setup
     # now import that image twice, first the child image, then the parent

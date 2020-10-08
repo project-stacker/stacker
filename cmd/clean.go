@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"path"
 
 	"github.com/anuvu/stacker"
 	"github.com/anuvu/stacker/log"
@@ -17,7 +16,7 @@ var cleanCmd = cli.Command{
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:  "all",
-			Usage: "clean imports, not just build products",
+			Usage: "no-op; this used to do soemthing, and is left in for compatibility",
 		},
 	},
 }
@@ -25,8 +24,6 @@ var cleanCmd = cli.Command{
 func doClean(ctx *cli.Context) error {
 	fail := false
 
-	// Explicitly don't check errors. We want to do what we can to just
-	// clean everything up.
 	if _, err := os.Stat(config.RootFSDir); !os.IsNotExist(err) {
 		s, err := stacker.NewStorage(config)
 		if err != nil {
@@ -37,30 +34,22 @@ func doClean(ctx *cli.Context) error {
 		if err != nil {
 			log.Infof("problem cleaning roots %v", err)
 		}
-		os.RemoveAll(config.RootFSDir)
+		err = os.RemoveAll(config.RootFSDir)
+		if err != nil {
+			log.Infof("problem cleaning roots %v", err)
+			fail = true
+		}
 	}
 
-	os.RemoveAll(config.OCIDir)
+	if err := os.RemoveAll(config.OCIDir); err != nil {
+		log.Infof("problem cleaning oci dir %v", err)
+		fail = true
+	}
 
-	if !ctx.Bool("all") {
-		if err := os.Remove(path.Join(config.StackerDir, "build.cache")); err != nil {
-			if !os.IsNotExist(err) {
-				log.Infof("error deleting logs dir: %v", err)
-				fail = true
-			}
-		}
-		if err := os.Remove(path.Join(config.StackerDir, "btrfs.loop")); err != nil {
-			if !os.IsNotExist(err) {
-				log.Infof("error deleting btrfs loop: %v", err)
-				fail = true
-			}
-		}
-	} else {
-		if err := os.RemoveAll(config.StackerDir); err != nil {
-			if !os.IsNotExist(err) {
-				log.Infof("error deleting stacker dir: %v", err)
-				fail = true
-			}
+	if err := os.RemoveAll(config.StackerDir); err != nil {
+		if !os.IsNotExist(err) {
+			log.Infof("error deleting stacker dir: %v", err)
+			fail = true
 		}
 	}
 

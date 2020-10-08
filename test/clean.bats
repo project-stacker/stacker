@@ -17,7 +17,7 @@ function teardown() {
     mount -o loop,user_subvol_rm_allowed btrfs.loop parent
     mkdir -p parent/roots
 
-    stacker --roots-dir=parent/roots clean --all
+    stacker --roots-dir=parent/roots clean
 }
 
 @test "clean in the face of subvolumes works" {
@@ -38,7 +38,7 @@ function teardown() {
     btrfs property set -ts parent/roots/c ro true
 
     # stacker clean with a roots dir that is already on btrfs should succeed
-    stacker --roots-dir=parent/roots clean --all
+    stacker --roots-dir=parent/roots clean
 
     [ -d parent ]
     [ ! -d parent/roots ]
@@ -93,6 +93,6 @@ test:
         url: docker://centos:latest
 EOF
     stacker build --leave-unladen
-    stacker clean --all
+    stacker clean
     [ ! -d roots ]
 }

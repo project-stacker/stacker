@@ -83,7 +83,7 @@ centos:
 EOF
     chown -R $SUDO_USER:$SUDO_USER .
     sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
-    stacker clean --all
+    stacker clean
 }
 
 @test "unprivileged read-only imports can be re-cached" {

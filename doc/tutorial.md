@@ -55,7 +55,7 @@ The next thing to note is that if we do another rebuild, less things happen:
 	found cached layer first
 
 Stacker will cache all of the inputs to stacker files, and only rebuild when
-one of them changes. The cache (and all of stacker's metadata) live in the `.stacker` directory where you run stacker from. Stacker's metadata can be cleaned with `stacker clean`, and its entire cache can be removed with `stacker clean --all`.
+one of them changes. The cache (and all of stacker's metadata) live in the `.stacker` directory where you run stacker from. Stacker's metadata can be cleaned with `stacker clean`, and its entire cache can be removed with `stacker clean`.
 
 So far, the only input is a base image, but what about if we want to import a
 script to run or a config file? Consider the next example:
