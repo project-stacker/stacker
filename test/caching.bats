@@ -120,6 +120,28 @@ EOF
     stacker build
 }
 
+@test "remove from a dir - no stackerfile changes" {
+    cat > stacker.yaml <<EOF
+a:
+    from:
+        type: docker
+        url: docker://centos:latest
+    import:
+        - foo
+    run: |
+        ls /stacker/foo/
+EOF
+
+    mkdir -p foo
+    touch foo/bar
+    stacker build
+    [ "$status" -eq 0 ]
+
+    rm foo/bar
+    stacker build
+    [ "$status" -eq 0 ]
+}
+
 @test "bind rebuilds" {
     cat > stacker.yaml <<"EOF"
 bind-test:
