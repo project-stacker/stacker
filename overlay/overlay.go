@@ -124,7 +124,21 @@ func NewOverlay(config types.StackerConfig) (types.Storage, error) {
 		// otherwise, read the overlay metadata and mount it
 		ovl, err := readOverlayMetadata(config, ent.Name())
 		if err != nil {
-			return nil, err
+			// sometimes, e.g. if there was a stacker bug, we may
+			// have created an image, but not finally written out
+			// the overlay metadata. in this case, the image is
+			// invalid (we don't know how to build the overlay or
+			// what's in this level of it), so let's just delete
+			// the dir and start over.
+			if os.IsNotExist(errors.Cause(err)) {
+				err = os.RemoveAll(path.Join(config.RootFSDir, ent.Name()))
+				if err != nil {
+					return nil, errors.Wrapf(err, "couldn't cleanup invalid overlay dir")
+				}
+				continue
+			} else {
+				return nil, err
+			}
 		}
 
 		err = ovl.mount(config, ent.Name())
