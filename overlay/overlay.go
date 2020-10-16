@@ -68,8 +68,8 @@ func canMountOverlay() (bool, error) {
 // canWriteWhiteouts detects whether the current task can write whiteouts. The
 // upstream kernel as of v5.8 a3c751a50fe6 ("vfs: allow unprivileged whiteout
 // creation") allows this as an unprivileged user.
-func canWriteWhiteouts() (bool, error) {
-	dir, err := ioutil.TempDir("", "stacker-overlay-whiteout-")
+func canWriteWhiteouts(config types.StackerConfig) (bool, error) {
+	dir, err := ioutil.TempDir(config.RootFSDir, "stacker-overlay-whiteout-")
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't create overlay tmpdir")
 	}
@@ -88,7 +88,7 @@ func canWriteWhiteouts() (bool, error) {
 	return true, nil
 }
 
-func CanDoOverlay() (bool, error) {
+func CanDoOverlay(config types.StackerConfig) (bool, error) {
 	canMount, err := canMountOverlay()
 	if err != nil {
 		return false, err
@@ -97,7 +97,7 @@ func CanDoOverlay() (bool, error) {
 		return false, nil
 	}
 
-	return canWriteWhiteouts()
+	return canWriteWhiteouts(config)
 }
 
 type overlay struct {

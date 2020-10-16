@@ -16,7 +16,7 @@ func NewStorage(c types.StackerConfig) (types.Storage, error) {
 
 	switch c.StorageType {
 	case "overlay":
-		overlayOk, err := overlay.CanDoOverlay()
+		overlayOk, err := overlay.CanDoOverlay(c)
 		if err != nil {
 			return nil, err
 		}
