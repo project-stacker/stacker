@@ -65,10 +65,33 @@ func canMountOverlay() (bool, error) {
 	return err == nil, nil
 }
 
+func isOverlayfs(dir string) (bool, error) {
+	fs := syscall.Statfs_t{}
+
+	err := syscall.Statfs(dir, &fs)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to stat for overlayfs")
+	}
+
+	/* overlayfs superblock magic number */
+	return fs.Type == 0x794c7630, nil
+}
+
 // canWriteWhiteouts detects whether the current task can write whiteouts. The
 // upstream kernel as of v5.8 a3c751a50fe6 ("vfs: allow unprivileged whiteout
 // creation") allows this as an unprivileged user.
 func canWriteWhiteouts(config types.StackerConfig) (bool, error) {
+	// if the underlying filesystem is an overlay, we can't do this mknod
+	// because it is explicitly forbidden in the kernel.
+	isOverlay, err := isOverlayfs(config.RootFSDir)
+	if err != nil {
+		return false, err
+	}
+
+	if isOverlay {
+		return false, errors.Errorf("can't create overlay whiteout on overlayfs")
+	}
+
 	dir, err := ioutil.TempDir(config.RootFSDir, "stacker-overlay-whiteout-")
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't create overlay tmpdir")
