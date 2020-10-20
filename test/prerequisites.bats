@@ -203,3 +203,36 @@ EOF
     [ -f nested/rootfs/one ]
     [ -f nested/rootfs/nested ]
 }
+
+@test "absolute prerequisites work" {
+    mkdir one
+    mkdir two
+    cat > one/stacker.yaml <<EOF
+one:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: |
+        touch /one
+EOF
+    cat > two/stacker.yaml <<'EOF'
+config:
+    prerequisites:
+        - ${{PWD}}/one/stacker.yaml
+two:
+    from:
+        type: built
+        tag: one
+    run: |
+        touch /zomg
+EOF
+    stacker build -f two/stacker.yaml --substitute PWD=$(pwd)
+    umoci unpack --image oci:two dest
+    [ -f dest/rootfs/zomg ]
+    rm -rf dest
+
+    sed -i 's/zomg/wtf/g' two/stacker.yaml
+    stacker build -f two/stacker.yaml --substitute PWD=$(pwd)
+    umoci unpack --image oci:two dest
+    [ -f dest/rootfs/wtf ]
+}

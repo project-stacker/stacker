@@ -270,7 +270,10 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 
 func (s *Stackerfile) addPrerequisites(processed map[string]bool, sfm StackerFiles) error {
 	for _, prereq := range s.buildConfig.Prerequisites {
-		absPrereq := filepath.Join(filepath.Dir(s.path), prereq)
+		absPrereq := prereq
+		if !filepath.IsAbs(absPrereq) {
+			absPrereq = filepath.Join(filepath.Dir(s.path), prereq)
+		}
 		prereqFile, ok := sfm[absPrereq]
 		if !ok {
 			return errors.Errorf("couldn't find prerequisite %s", absPrereq)
