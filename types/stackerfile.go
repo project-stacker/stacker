@@ -133,7 +133,7 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 	if url.Scheme == "" {
 		raw, err = ioutil.ReadFile(stackerfile)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "couldn't read stacker file")
 		}
 
 		// Make sure we use the absolute path to the Stackerfile
