@@ -276,6 +276,11 @@ func (s *Stackerfile) addPrerequisites(processed map[string]bool, sfm StackerFil
 		}
 		prereqFile, ok := sfm[absPrereq]
 		if !ok {
+			processedPrereqs := []string{}
+			for prereqPath := range sfm {
+				processedPrereqs = append(processedPrereqs, prereqPath)
+			}
+			log.Debugf("processed prereqs %v", processedPrereqs)
 			return errors.Errorf("couldn't find prerequisite %s", absPrereq)
 		}
 
