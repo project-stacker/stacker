@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/anuvu/stacker/btrfs"
+	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/overlay"
 	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
