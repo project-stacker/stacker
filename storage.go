@@ -14,6 +14,7 @@ func NewStorage(c types.StackerConfig) (types.Storage, error) {
 		return nil, err
 	}
 
+	log.Infof("using storage backend %s", c.StorageType)
 	switch c.StorageType {
 	case "overlay":
 		overlayOk, err := overlay.CanDoOverlay(c)
