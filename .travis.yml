@@ -17,5 +17,8 @@ before_install:
     - GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
     - sudo cp $GOPATH/bin/umoci /usr/bin
     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0
+    - sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools
+    - (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
+    - (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
 script:
     - env GO111MODULE=on BATS=/usr/bin/bats make check
