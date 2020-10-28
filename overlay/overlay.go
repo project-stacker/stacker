@@ -16,7 +16,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/go-digest"
@@ -30,10 +29,10 @@ var _ types.Storage = &overlay{}
 // canMountOverlay detects whether the current task can mount overlayfs
 // successfully (some kernels (ubuntu) support unprivileged overlay mounts, and
 // some do not).
-func canMountOverlay() (bool, error) {
+func canMountOverlay() error {
 	dir, err := ioutil.TempDir("", "stacker-overlay-mount-")
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't create overlay tmpdir")
+		return errors.Wrapf(err, "couldn't create overlay tmpdir")
 	}
 	defer os.RemoveAll(dir)
 
@@ -41,28 +40,28 @@ func canMountOverlay() (bool, error) {
 	lower1 := path.Join(dir, "lower1")
 	err = os.Mkdir(lower1, 0755)
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't create overlay lower dir")
+		return errors.Wrapf(err, "couldn't create overlay lower dir")
 	}
 
 	lower2 := path.Join(dir, "lower2")
 	err = os.Mkdir(lower2, 0755)
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't create overlay lower dir")
+		return errors.Wrapf(err, "couldn't create overlay lower dir")
 	}
 
 	mountpoint := path.Join(dir, "mountpoint")
 	err = os.Mkdir(mountpoint, 0755)
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't create overlay mountpoint dir")
+		return errors.Wrapf(err, "couldn't create overlay mountpoint dir")
 	}
 
 	opts := fmt.Sprintf("lowerdir=%s:%s", lower1, lower2)
 	err = unix.Mount("overlay", mountpoint, "overlay", 0, opts)
 	defer unix.Unmount(mountpoint, 0)
 	if err != nil {
-		log.Infof("can't mount overlayfs: %v", err)
+		return errors.Wrapf(err, "couldn't mount overlayfs")
 	}
-	return err == nil, nil
+	return nil
 }
 
 func isOverlayfs(dir string) (bool, error) {
@@ -80,44 +79,40 @@ func isOverlayfs(dir string) (bool, error) {
 // canWriteWhiteouts detects whether the current task can write whiteouts. The
 // upstream kernel as of v5.8 a3c751a50fe6 ("vfs: allow unprivileged whiteout
 // creation") allows this as an unprivileged user.
-func canWriteWhiteouts(config types.StackerConfig) (bool, error) {
+func canWriteWhiteouts(config types.StackerConfig) error {
 	// if the underlying filesystem is an overlay, we can't do this mknod
 	// because it is explicitly forbidden in the kernel.
 	isOverlay, err := isOverlayfs(config.RootFSDir)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if isOverlay {
-		return false, errors.Errorf("can't create overlay whiteout on overlayfs")
+		return errors.Errorf("can't create overlay whiteout on underlying overlayfs in %s", config.RootFSDir)
 	}
 
 	dir, err := ioutil.TempDir(config.RootFSDir, "stacker-overlay-whiteout-")
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't create overlay tmpdir")
+		return errors.Wrapf(err, "couldn't create overlay tmpdir")
 	}
 	defer os.RemoveAll(dir)
 
 	err = unix.Mknod(path.Join(dir, "test"), syscall.S_IFCHR|0666, int(unix.Mkdev(0, 0)))
 	if err != nil {
-		log.Infof("can't create overlay whiteouts: %v", err)
 		if os.IsPermission(err) {
-			return false, nil
+			return errors.Errorf("can't create overlay whiteouts (use a kernel >= 5.8)")
 		}
 
-		return false, err
+		return errors.Wrapf(err, "couldn't create overlay whiteout")
 	}
 
-	return true, nil
+	return nil
 }
 
-func CanDoOverlay(config types.StackerConfig) (bool, error) {
-	canMount, err := canMountOverlay()
+func CanDoOverlay(config types.StackerConfig) error {
+	err := canMountOverlay()
 	if err != nil {
-		return false, err
-	}
-	if !canMount {
-		return false, nil
+		return err
 	}
 
 	return canWriteWhiteouts(config)
