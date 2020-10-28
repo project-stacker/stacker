@@ -225,7 +225,11 @@ func extractSingleSquash(squashFile string, extractDir string) error {
 	}
 
 	var uCmd []string
-	if which("squashtool") != "" {
+	if config.StorageType == "btrfs" {
+		if which("squashtool") == "" {
+			return errors.Errorf("must have squashtool (https://github.com/anuvu/squashfs) to correctly extract squashfs using btrfs storage backend")
+		}
+
 		uCmd = []string{"squashtool", "extract", "--whiteouts", "--perms",
 			"--devs", "--sockets", "--owners"}
 		uCmd = append(uCmd, squashFile, extractDir)
