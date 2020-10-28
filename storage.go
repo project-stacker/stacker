@@ -18,14 +18,11 @@ func NewStorage(c types.StackerConfig) (types.Storage, error) {
 	log.Infof("using storage backend %s", c.StorageType)
 	switch c.StorageType {
 	case "overlay":
-		overlayOk, err := overlay.CanDoOverlay(c)
+		err := overlay.CanDoOverlay(c)
 		if err != nil {
 			return nil, err
 		}
 
-		if !overlayOk {
-			return nil, errors.Errorf("can't do overlay operations but overlay backend requested")
-		}
 		return overlay.NewOverlay(c)
 	case "btrfs":
 		isBtrfs, err := btrfs.DetectBtrfs(c.RootFSDir)
