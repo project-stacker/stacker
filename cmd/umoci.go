@@ -109,6 +109,10 @@ var umociCmd = cli.Command{
 				},
 			},
 		},
+		cli.Command{
+			Name:   "check-overlay",
+			Action: doCheckOverlay,
+		},
 	},
 	Before: doBeforeUmociSubcommand,
 }
@@ -116,6 +120,10 @@ var umociCmd = cli.Command{
 func doBeforeUmociSubcommand(ctx *cli.Context) error {
 	log.Debugf("stacker subcommand: %v", os.Args)
 	return nil
+}
+
+func doCheckOverlay(ctx *cli.Context) error {
+	return overlay.CanDoOverlay(config)
 }
 
 func doInitEmpty(ctx *cli.Context) error {
