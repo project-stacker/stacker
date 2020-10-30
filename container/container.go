@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"strconv"
 
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
@@ -12,20 +13,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ResolveIdmapSet() (*idmap.IdmapSet, error) {
-	// TODO: we should try to use user namespaces when we're root as well.
-	// For now we don't.
-	if os.Geteuid() == 0 {
-		log.Debugf("No uid mappings, running as root")
-		return nil, nil
-	}
-
+func ResolveCurrentIdmapSet() (*idmap.IdmapSet, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't resolve current user")
 	}
+	return ResolveIdmapSet(currentUser)
+}
 
-	idmapSet, err := idmap.DefaultIdmapSet("", currentUser.Username)
+func ResolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
+	idmapSet, err := idmap.DefaultIdmapSet("", user.Username)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed parsing /etc/sub{u,g}idmap")
 	}
@@ -34,16 +31,25 @@ func ResolveIdmapSet() (*idmap.IdmapSet, error) {
 		/* Let's make our current user the root user in the ns, so that when
 		 * stacker emits files, it does them as the right user.
 		 */
+		uid, err := strconv.Atoi(user.Uid)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't decode uid")
+		}
+
+		gid, err := strconv.Atoi(user.Gid)
+		if err != nil {
+			return nil, errors.Wrapf(err, "couldn't decode gid")
+		}
 		hostMap := []idmap.IdmapEntry{
 			idmap.IdmapEntry{
 				Isuid:    true,
-				Hostid:   int64(os.Getuid()),
+				Hostid:   int64(uid),
 				Nsid:     0,
 				Maprange: 1,
 			},
 			idmap.IdmapEntry{
 				Isgid:    true,
-				Hostid:   int64(os.Getgid()),
+				Hostid:   int64(gid),
 				Nsid:     0,
 				Maprange: 1,
 			},
@@ -60,7 +66,7 @@ func ResolveIdmapSet() (*idmap.IdmapSet, error) {
 	return idmapSet, nil
 }
 
-func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
+func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
 	if idmapSet == nil {
 		return errors.Errorf("no subuids!")
 	}
@@ -100,7 +106,18 @@ func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
 // A wrapper which runs things in a userns if we're an unprivileged user with
 // an idmap, or runs things on the host if we're root and don't.
 func MaybeRunInUserns(userCmd []string, msg string) error {
-	idmapSet, err := ResolveIdmapSet()
+	// TODO: we should try to use user namespaces when we're root as well.
+	// For now we don't.
+	if os.Geteuid() == 0 {
+		log.Debugf("No uid mappings, running as root")
+		cmd := exec.Command(userCmd[0], userCmd[1:]...)
+		cmd.Stdin = nil
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return errors.Wrapf(cmd.Run(), msg)
+	}
+
+	idmapSet, err := ResolveCurrentIdmapSet()
 	if err != nil {
 		return err
 	}
@@ -110,14 +127,9 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 			return errors.Errorf("no idmap and not root, can't run %v", userCmd)
 		}
 
-		cmd := exec.Command(userCmd[0], userCmd[1:]...)
-		cmd.Stdin = nil
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return errors.Wrapf(cmd.Run(), msg)
 	}
 
-	return runInUserns(idmapSet, userCmd, msg)
+	return RunInUserns(idmapSet, userCmd, msg)
 }
 
 func RunUmociSubcommand(config types.StackerConfig, args []string) error {

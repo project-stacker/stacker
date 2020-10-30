@@ -57,7 +57,7 @@ func NewContainer(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, err
 	}
 
-	idmapSet, err := container.ResolveIdmapSet()
+	idmapSet, err := container.ResolveCurrentIdmapSet()
 	if err != nil {
 		return nil, err
 	}
