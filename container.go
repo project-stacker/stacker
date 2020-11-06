@@ -62,6 +62,12 @@ func NewContainer(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, err
 	}
 
+	// similar to the hard coding in MaybeRunInUserns(), for now root
+	// containers run as root.
+	if os.Geteuid() == 0 {
+		idmapSet = nil
+	}
+
 	if idmapSet != nil {
 		for _, idm := range idmapSet.Idmap {
 			if err := idm.Usable(); err != nil {
