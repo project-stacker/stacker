@@ -95,4 +95,5 @@ EOF
     stacker build --leave-unladen
     stacker clean
     [ ! -d roots ]
+    [ ! -f .stacker/btrfs.loop ]
 }
