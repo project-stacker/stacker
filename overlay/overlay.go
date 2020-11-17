@@ -302,6 +302,10 @@ func (o *overlay) TemporaryWritableSnapshot(source string) (string, func(), erro
 }
 
 func (o *overlay) Clean() error {
+	err := o.Detach()
+	if err != nil {
+		return errors.Wrapf(err, "problem unmounting overlays")
+	}
 	return errors.Wrapf(os.RemoveAll(o.config.RootFSDir), "couldn't clean rootfs dir")
 }
 

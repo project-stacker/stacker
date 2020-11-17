@@ -65,7 +65,6 @@ type CacheEntry struct {
 }
 
 type BuildCache struct {
-	path    string
 	sfm     types.StackerFiles
 	Cache   map[string]CacheEntry `json:"cache"`
 	Version int                   `json:"version"`
@@ -73,10 +72,8 @@ type BuildCache struct {
 }
 
 func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerFiles) (*BuildCache, error) {
-	p := path.Join(config.StackerDir, "build.cache")
-	f, err := os.Open(p)
+	f, err := os.Open(config.CacheFile())
 	cache := &BuildCache{
-		path:   p,
 		sfm:    sfm,
 		config: config,
 	}
@@ -101,7 +98,7 @@ func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerF
 
 	if cache.Version != currentCacheVersion {
 		log.Infof("old cache version found, clearing cache and rebuilding from scratch...")
-		os.Remove(p)
+		os.Remove(config.CacheFile())
 		cache.Cache = map[string]CacheEntry{}
 		cache.Version = currentCacheVersion
 		return cache, nil
@@ -399,5 +396,5 @@ func (c *BuildCache) persist() error {
 		return err
 	}
 
-	return ioutil.WriteFile(c.path, content, 0600)
+	return ioutil.WriteFile(c.config.CacheFile(), content, 0600)
 }

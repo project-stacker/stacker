@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"path"
 )
 
 // StackerConfig is a struct that contains global (or widely used) stacker
@@ -21,4 +22,8 @@ func (sc *StackerConfig) Substitutions() []string {
 		fmt.Sprintf("STACKER_STACKER_DIR=%s", sc.StackerDir),
 		fmt.Sprintf("STACKER_OCI_DIR=%s", sc.OCIDir),
 	}
+}
+
+func (sc *StackerConfig) CacheFile() string {
+	return path.Join(sc.StackerDir, "build.cache")
 }

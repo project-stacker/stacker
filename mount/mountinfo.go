@@ -70,7 +70,7 @@ func FindMount(target string) (Mount, bool, error) {
 	}
 
 	for _, mount := range mounts {
-		if mount.Target == target {
+		if mount.Target == strings.TrimRight(target, "/") {
 			return mount, true, nil
 		}
 	}

@@ -30,7 +30,7 @@ func DetectBtrfs(p string) (bool, error) {
 
 	err := syscall.Statfs(p, &fs)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "couldn't stat to detect btrfs")
 	}
 
 	/* btrfs superblock magic number */
