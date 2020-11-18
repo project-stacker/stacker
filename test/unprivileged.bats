@@ -105,7 +105,7 @@ centos:
         - import
 EOF
     chown -R $SUDO_USER:$SUDO_USER .
-    sudo -u $SUDO_USER stacker --storage-type=$STORAGE_TYPE build
+    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE build
     echo that > import/this
-    sudo -u $SUDO_USER stacker --storage-type=$STORAGE_TYPE build
+    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE build
 }
