@@ -1,0 +1,38 @@
+name: ci
+
+on:
+    push:
+    pull_request:
+    schedule:
+        - cron: '0 0 * * 0' # weekly
+
+jobs:
+    build:
+        runs-on: ubuntu-20.04
+        name: "golang ${{ matrix.go-version }} storage-type ${{ matrix.storage-backend }}"
+        strategy:
+            matrix:
+                go-version: [1.14.x, 1.15.x]
+                storage-backend: [btrfs, overlay]
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up golang ${{ matrix.go-version }}
+              uses: actions/setup-go@v2
+              with:
+                  go-version: ${{ matrix.go-version }}
+            - name: install dependencies
+              run: |
+                  source /etc/os-release
+                  source /etc/os-release && echo "deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${NAME}_${VERSION_ID}/ /"
+                  source /etc/os-release && sudo -E sh -c "echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${NAME}_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
+                  source /etc/os-release && wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/x${NAME}_${VERSION_ID}/Release.key -O- | sudo apt-key add -
+                  sudo add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
+                  sudo apt-get update
+                  sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev skopeo jq libcap-dev libbtrfs-dev bats parallel
+                  GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
+                  sudo cp ~/go/bin/umoci /usr/bin
+                  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0
+                  sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools
+                  (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
+                  (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
+            - run: make lint check-${{ matrix.storage-backend }}
