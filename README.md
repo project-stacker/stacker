@@ -1,4 +1,4 @@
-# stacker [![Build Status](https://travis-ci.org/anuvu/stacker.svg?branch=master)](https://travis-ci.org/anuvu/stacker)
+# stacker [![Build Status](https://github.com/anuvu/stacker/workflows/ci/badge.svg?branch=master)](https://github.com/anuvu/stacker/actions)
 
 Stacker is a tool for building OCI images via a declarative yaml format.
 
