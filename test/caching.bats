@@ -151,10 +151,15 @@ EOF
     out=$(stacker build --substitute bind_path=${bind_path})
     [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
 
+    # TODO: FIXME: need to change the import. If stacker re-builds exactly the
+    # same layer (possible if things go fast enough that the mtimes are within
+    # the same second), it will come up with the same hash and fail. For now we
+    # just hack it.
+    echo baz >> tree2/foo/zomg
     # The layer should be rebuilt since the there is a bind configuration in stacker.yaml
-    out=$(stacker build --substitute bind_path=${bind_path})
-    [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
-    [[ ! "${out}" =~ ^(.*found cached layer bind-test)$ ]]
+    stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI
+    [[ "${output}" =~ ^(.*filesystem bind-test built successfully)$ ]]
+    [[ ! "${output}" =~ ^(.*found cached layer bind-test)$ ]]
 }
 
 @test "mode change is re-imported" {
