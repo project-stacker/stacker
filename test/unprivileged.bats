@@ -10,7 +10,7 @@ function teardown() {
 }
 
 @test "file with chmod 000 works" {
-    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
     require_storage btrfs # TODO: uncomment this when more people have >= 5.8 kernel
 
     cat > stacker.yaml <<EOF
@@ -42,7 +42,7 @@ EOF
 }
 
 @test "unprivileged stacker" {
-    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
     require_storage btrfs # TODO: uncomment this when more people have >= 5.8 kernel
 
     cat > stacker.yaml <<EOF
@@ -70,7 +70,7 @@ EOF
 }
 
 @test "unprivileged btrfs cleanup" {
-    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
     require_storage btrfs
 
     cat > stacker.yaml <<'EOF'
@@ -89,7 +89,7 @@ EOF
 }
 
 @test "unprivileged read-only imports can be re-cached" {
-    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
     require_storage btrfs # TODO: uncomment this when more people have >= 5.8 kernel
 
     mkdir -p import

@@ -246,7 +246,7 @@ EOF
 
 @test "unprivileged intermediate base snapshot mtree generation" {
     require_storage btrfs
-    [ -z "$TRAVIS" ] || skip "skipping unprivileged test in travis"
+    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
 
     cat > stacker.yaml <<EOF
 parent:
