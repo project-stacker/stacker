@@ -4,6 +4,9 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
+export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
+
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
 }

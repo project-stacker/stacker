@@ -14,14 +14,14 @@ function teardown() {
     cat > stacker.yaml <<EOF
 a:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     binds:
         - ./a -> /a
 b:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     binds:
         - ./b -> /b
 EOF
@@ -48,8 +48,8 @@ EOF
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     build_env:
         FOO: bar
 EOF

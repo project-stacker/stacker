@@ -7,16 +7,16 @@ function setup() {
     cat > ocibuilds/sub1/stacker.yaml <<EOF
 layer1_1:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - import1
     run: |
         cp /stacker/import1 /root/import1
 layer1_2:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run:
         touch /root/import0
 EOF
@@ -159,8 +159,8 @@ EOF
     cat > stacker1.yaml <<EOF
 one:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         touch /one
 EOF
@@ -210,8 +210,8 @@ EOF
     cat > one/stacker.yaml <<EOF
 one:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         touch /one
 EOF

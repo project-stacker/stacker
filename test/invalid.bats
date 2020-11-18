@@ -12,8 +12,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 bad:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - stacker://idontexist/file
 EOF
@@ -42,7 +42,7 @@ config:
 layer2:
     from:
         type: built
-        url: docker://centos:latest
+        url: $CENTOS_OCI
 EOF
     bad_stacker build -f stacker2.yaml
 }

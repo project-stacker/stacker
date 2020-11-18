@@ -13,8 +13,8 @@ function setup() {
     cat > img/stacker1.yaml <<EOF
 centos_base:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         ls
 EOF

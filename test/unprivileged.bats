@@ -16,15 +16,15 @@ function teardown() {
     cat > stacker.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         touch /etc/000
         chmod 000 /etc/000
 child:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         echo "zomg" > /etc/000
         chmod 000 /etc/000
@@ -48,8 +48,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - https://www.cisco.com/favicon.ico
     run: |
@@ -73,11 +73,11 @@ EOF
     [ -z "$CI" ] || skip "skipping unprivileged test in ci"
     require_storage btrfs
 
-    cat > stacker.yaml <<'EOF'
+    cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - https://www.cisco.com/favicon.ico
     run: |
@@ -99,8 +99,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - import
 EOF

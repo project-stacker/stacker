@@ -89,8 +89,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
 EOF
     stacker build --leave-unladen
     stacker clean

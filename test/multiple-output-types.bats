@@ -14,8 +14,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         echo meshuggah > /rocks
 EOF
@@ -39,8 +39,8 @@ EOF
     cat > stacker.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         echo meshuggah > /rocks
 child:
@@ -77,8 +77,8 @@ EOF
     cat > stacker.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         echo meshuggah > /rocks
     build_only: true
@@ -116,8 +116,8 @@ EOF
     cat > stacker.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         echo meshuggah > /rocks
 EOF

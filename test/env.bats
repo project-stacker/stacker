@@ -15,8 +15,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         # make sure that /stacker is readonly
         grep "/stacker" /proc/mounts | grep -P "\sro[\s,]"

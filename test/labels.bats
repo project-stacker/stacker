@@ -12,8 +12,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 label:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     generate_labels: |
         echo -n "rocks" > /oci-labels/meshuggah
 EOF

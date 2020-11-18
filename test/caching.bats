@@ -34,9 +34,9 @@ test:
         type: oci
         url: oci:base
 EOF
-    skopeo --insecure-policy copy docker://centos:latest oci:oci:base
+    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:oci:base
     stacker build
-    skopeo --insecure-policy copy docker://ubuntu:latest oci:oci:base
+    skopeo --insecure-policy copy oci:$UBUNTU_OCI oci:oci:base
     stacker build
     umoci unpack --image oci:test dest
     grep -q Ubuntu dest/rootfs/etc/issue
@@ -46,8 +46,8 @@ EOF
     cat > stacker.yaml <<EOF
 build-base:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
 base:
     from:
         type: built
@@ -69,8 +69,8 @@ EOF
     cat > stacker.yaml <<EOF
 import-cache:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - link/foo
     run: cp /stacker/foo/zomg /zomg
@@ -93,8 +93,8 @@ EOF
     cat > stacker.yaml <<EOF
 a:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - foo
     run: |
@@ -109,8 +109,8 @@ EOF
     cat > stacker.yaml <<EOF
 a:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - foo
     run: |
@@ -124,8 +124,8 @@ EOF
     cat > stacker.yaml <<"EOF"
 bind-test:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: ${{CENTOS_OCI}}
     import:
         - tree1/foo/zomg
     binds:
@@ -147,8 +147,8 @@ EOF
     bind_path=$(realpath tree2/foo)
 
     # The layer should be built
-    stacker build --substitute bind_path=${bind_path}
-    out=$(stacker build --substitute bind_path=${bind_path})
+    stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI
+    out=$(stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI)
     [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
 
     # TODO: FIXME: need to change the import. If stacker re-builds exactly the
@@ -163,16 +163,17 @@ EOF
 }
 
 @test "mode change is re-imported" {
-    cat > stacker.yaml <<"EOF"
+    cat > stacker.yaml <<EOF
 mode-test:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - executable
     run: cp /stacker/executable /executable
 EOF
     touch executable
+    cat stacker.yaml
     stacker build
 
     chmod +x executable

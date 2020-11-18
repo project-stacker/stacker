@@ -13,8 +13,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 broken_link:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - dir
     run: cp -a /stacker/dir/testln /testln

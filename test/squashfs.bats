@@ -17,8 +17,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 build:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     build_only: true
 importer:
     from:
@@ -34,8 +34,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos1:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         yum install -y wget
         ls /usr/bin/wget || true
@@ -57,8 +57,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos1:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         touch /1
 EOF
@@ -84,8 +84,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         touch /1
 EOF
@@ -106,8 +106,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         touch /1
 EOF
@@ -132,8 +132,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         rm -rf /etc/selinux
         rm -f /usr/bin/ls
@@ -164,13 +164,13 @@ EOF
     cat > stacker.yaml <<EOF
 build:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     build_only: true
 importer:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - stacker://build/bin/ls
     run: |

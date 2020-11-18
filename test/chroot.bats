@@ -13,8 +13,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 thing:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: touch /test
 EOF
     stacker build

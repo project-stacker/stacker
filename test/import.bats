@@ -13,8 +13,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 thing:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - https://bing.com/favicon.ico
 EOF
@@ -33,8 +33,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - recursive
     run: |
@@ -51,8 +51,8 @@ EOF
     cat > stacker.yaml <<EOF
 first:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - recursive
     run: |
@@ -61,8 +61,8 @@ first:
         cp -a /stacker/recursive /recursive
 second:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import:
         - stacker://first/recursive
     run: |

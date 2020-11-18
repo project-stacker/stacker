@@ -13,8 +13,8 @@ function teardown() {
     cat > prereq.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
 EOF
 
     cat > stacker.yaml <<EOF
@@ -35,8 +35,8 @@ EOF
     cat > prereq.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
 EOF
 
     cat > stacker.yaml <<EOF
@@ -58,8 +58,8 @@ EOF
     cat > stacker.yaml <<EOF
 parent:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     run: |
         false
     build_only: true
@@ -81,8 +81,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import: https://www.cisco.com/favicon.ico
     run: |
         cp /stacker/favicon.ico /favicon.ico
@@ -106,8 +106,8 @@ EOF
     cat > stacker.yaml <<EOF
 centos:
     from:
-        type: docker
-        url: docker://centos:latest
+        type: oci
+        url: $CENTOS_OCI
     import: https://www.cisco.com/favicon.ico
     run: |
         cp /stacker/favicon.ico /favicon.ico
