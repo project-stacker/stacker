@@ -55,7 +55,7 @@ function teardown() {
     [ "$(sha reference/nm_orig)" == "$(sha dest/img/rootfs/root/nm)" ]
 }
 
-@test "importing cached file from http url with matching lenght" {
+@test "importing cached file from http url with matching length" {
     # Build base image
     stacker build -f img/stacker1.yaml
     umoci ls --layout oci
