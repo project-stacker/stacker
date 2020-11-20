@@ -123,7 +123,13 @@ func maybeSwitchStorage(c types.StackerConfig) error {
 		return err
 	}
 
-	return errors.Wrapf(os.Remove(c.CacheFile()), "couldn't delete old cache")
+	err = os.Remove(c.CacheFile())
+	// it's ok if it didn't exist, this is probably a new run of stacker
+	if os.IsNotExist(err) {
+		err = nil
+	}
+
+	return errors.Wrapf(err, "couldn't delete old cache")
 }
 
 func NewStorage(c types.StackerConfig) (types.Storage, error) {
