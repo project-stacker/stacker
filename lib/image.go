@@ -50,7 +50,8 @@ type ImageCopyOpts struct {
 	Dest         string
 	DestUsername string
 	DestPassword string
-	SkipTLS      bool
+	SrcSkipTLS   bool
+	DestSkipTLS  bool
 	Progress     io.Writer
 	Context      context.Context
 }
@@ -83,13 +84,17 @@ func ImageCopy(opts ImageCopyOpts) error {
 		ReportWriter: opts.Progress,
 	}
 
-	if opts.SkipTLS {
+	if opts.SrcSkipTLS {
 		args.SourceCtx = &types.SystemContext{
 			DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 		}
 	}
 
 	args.DestinationCtx = &types.SystemContext{}
+
+	if opts.DestSkipTLS {
+		args.DestinationCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+	}
 
 	if opts.DestUsername != "" {
 		args.DestinationCtx.DockerAuthConfig = &types.DockerAuthConfig{

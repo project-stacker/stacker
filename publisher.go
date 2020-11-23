@@ -147,7 +147,7 @@ func (p *Publisher) Publish(file string) error {
 					DestUsername: opts.Username,
 					DestPassword: opts.Password,
 					Progress:     progressWriter,
-					SkipTLS:      true,
+					SrcSkipTLS:   true,
 				})
 				if err != nil {
 					return err
