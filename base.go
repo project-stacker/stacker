@@ -124,10 +124,10 @@ func importContainersImage(is *types.ImageSource, config types.StackerConfig, pr
 
 	log.Infof("loading %s", toImport)
 	err = lib.ImageCopy(lib.ImageCopyOpts{
-		Src:      toImport,
-		Dest:     fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		SkipTLS:  is.Insecure,
-		Progress: progressWriter,
+		Src:        toImport,
+		Dest:       fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		SrcSkipTLS: is.Insecure,
+		Progress:   progressWriter,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "couldn't import base layer %s", tag)
