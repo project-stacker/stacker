@@ -47,6 +47,8 @@ func localRefParser(ref string) (types.ImageReference, error) {
 
 type ImageCopyOpts struct {
 	Src          string
+	SrcUsername  string
+	SrcPassword  string
 	Dest         string
 	DestUsername string
 	DestPassword string
@@ -84,9 +86,16 @@ func ImageCopy(opts ImageCopyOpts) error {
 		ReportWriter: opts.Progress,
 	}
 
+	args.SourceCtx = &types.SystemContext{}
+
 	if opts.SrcSkipTLS {
-		args.SourceCtx = &types.SystemContext{
-			DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+		args.SourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+	}
+
+	if opts.SrcUsername != "" {
+		args.SourceCtx.DockerAuthConfig = &types.DockerAuthConfig{
+			Username: opts.SrcUsername,
+			Password: opts.SrcPassword,
 		}
 	}
 
