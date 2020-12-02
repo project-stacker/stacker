@@ -397,6 +397,10 @@ func (b *btrfs) Clean() error {
 	return umountErr
 }
 
+func (b *btrfs) GetLXCRootfsConfig(name string) (string, error) {
+	return fmt.Sprintf("dir:%s", path.Join(b.c.RootFSDir, name, "rootfs")), nil
+}
+
 // MakeLoopbackBtrfs creates a btrfs filesystem mounted at dest out of a loop
 // device and allows the specified uid to delete subvolumes on it.
 func MakeLoopbackBtrfs(loopback string, size int64, uid int, gid int, dest string) error {

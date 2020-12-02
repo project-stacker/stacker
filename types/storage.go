@@ -68,4 +68,8 @@ type Storage interface {
 
 	// Repack repacks the specified working dir into the specified OCI dir.
 	Repack(name string, layerTypes []LayerType, sfm StackerFiles) error
+
+	// GetLXCRootfsConfig returns the string that should be set as
+	// lxc.rootfs.path in the LXC container's config.
+	GetLXCRootfsConfig(name string) (string, error)
 }

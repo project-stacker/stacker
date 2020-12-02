@@ -87,7 +87,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		}
 		defer os.RemoveAll(dir)
 
-		c, err := NewContainer(opts.Config, writable)
+		c, err := NewContainer(opts.Config, s, writable)
 		if err != nil {
 			return err
 		}
@@ -336,7 +336,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
-		if err := Import(opts.Config, name, imports, opts.Progress); err != nil {
+		if err := Import(opts.Config, s, name, imports, opts.Progress); err != nil {
 			return err
 		}
 
@@ -405,7 +405,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
-		c, err := NewContainer(opts.Config, name)
+		c, err := NewContainer(opts.Config, s, name)
 		if err != nil {
 			return err
 		}

@@ -199,7 +199,7 @@ func importFile(imp string, cacheDir string) (string, error) {
 
 }
 
-func acquireUrl(c types.StackerConfig, i string, cache string, progress bool) (string, error) {
+func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, progress bool) (string, error) {
 	url, err := types.NewDockerishUrl(i)
 	if err != nil {
 		return "", err
@@ -247,7 +247,7 @@ func CleanImportsDir(c types.StackerConfig, name string, imports []string, cache
 	return nil
 }
 
-func Import(c types.StackerConfig, name string, imports []string, progress bool) error {
+func Import(c types.StackerConfig, storage types.Storage, name string, imports []string, progress bool) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -260,7 +260,7 @@ func Import(c types.StackerConfig, name string, imports []string, progress bool)
 	}
 
 	for _, i := range imports {
-		name, err := acquireUrl(c, i, dir, progress)
+		name, err := acquireUrl(c, storage, i, dir, progress)
 		if err != nil {
 			return err
 		}

@@ -8,8 +8,8 @@ import (
 	"github.com/anuvu/stacker/types"
 )
 
-func Grab(sc types.StackerConfig, name string, source string, targetDir string) error {
-	c, err := NewContainer(sc, name)
+func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string) error {
+	c, err := NewContainer(sc, storage, name)
 	if err != nil {
 		return err
 	}

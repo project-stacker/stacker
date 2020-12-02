@@ -29,7 +29,7 @@ type Container struct {
 	c  *lxc.Container
 }
 
-func NewContainer(sc types.StackerConfig, name string) (*Container, error) {
+func NewContainer(sc types.StackerConfig, storage types.Storage, name string) (*Container, error) {
 	if !lxc.VersionAtLeast(2, 1, 0) {
 		return nil, errors.Errorf("stacker requires liblxc >= 2.1.0")
 	}
@@ -119,8 +119,12 @@ func NewContainer(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, err
 	}
 
-	rootfs := path.Join(sc.RootFSDir, name, "rootfs")
-	err = c.setConfig("lxc.rootfs.path", fmt.Sprintf("dir:%s", rootfs))
+	rootfs, err := storage.GetLXCRootfsConfig(name)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.setConfig("lxc.rootfs.path", rootfs)
 	if err != nil {
 		return nil, err
 	}

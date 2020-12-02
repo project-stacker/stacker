@@ -312,3 +312,7 @@ func (o *overlay) Clean() error {
 func (o *overlay) GC() error {
 	return errors.Errorf("todo")
 }
+
+func (o *overlay) GetLXCRootfsConfig(name string) (string, error) {
+	return fmt.Sprintf("dir:%s", path.Join(o.config.RootFSDir, name, "rootfs")), nil
+}
