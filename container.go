@@ -181,7 +181,7 @@ func (c *Container) containerError(theErr error, msg string) error {
 	for _, err := range lxcErrors {
 		log.Debugf(err)
 	}
-	return theErr
+	return errors.Wrapf(theErr, msg)
 }
 
 func (c *Container) Execute(args string, stdin io.Reader) error {
