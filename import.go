@@ -212,8 +212,17 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		// otherwise, we need to download it
 		return Download(cache, i, progress)
 	} else if url.Scheme == "stacker" {
-		p := path.Join(c.RootFSDir, url.Host, "rootfs", url.Path)
-		return importFile(p, cache)
+		// we always Grab() things from stacker://, because we need to
+		// mount the container's rootfs to get them and don't
+		// necessarily have a good way to do that. so this i/o is
+		// always done.
+		p := path.Join(cache, path.Base(url.Path))
+		snap, cleanup, err := storage.TemporaryWritableSnapshot(url.Host)
+		if err != nil {
+			return "", err
+		}
+		defer cleanup()
+		return p, Grab(c, storage, snap, url.Path, cache)
 	}
 
 	return "", errors.Errorf("unsupported url scheme %s", i)
