@@ -329,29 +329,12 @@ func (c *Container) Close() {
 }
 
 // GenerateShellForRunning generates a shell script to run inside the
-// container, and writes it to the contianer. It does a few additional checks:
-// does the script already have a shebang? If so, it leaves it as is, otherwise
-// it prepends a shebang. It also makes sure the rootfs has a shell.
+// container, and writes it to the contianer. It checks that the script already
+// have a shebang? If so, it leaves it as is, otherwise it prepends a shebang.
 func GenerateShellForRunning(rootfs string, cmd []string, outFile string) error {
 	shebangLine := "#!/bin/sh -xe\n"
 	if strings.HasPrefix(cmd[0], "#!") {
 		shebangLine = ""
-	} else {
-		// make sure *something* is at /bin/sh. busybox uses a symlink
-		// to /bin/busybox, which will be incorrect (we're not
-		// chrooted, so it'll check the host's /bin). If the /bin/sh
-		// symlink is busted, then exec will still fail, but this is
-		// really just about rendering a prettier error message anyway,
-		// so...
-		_, err := os.Lstat(path.Join(rootfs, "bin/sh"))
-		if err != nil {
-			if os.IsNotExist(err) {
-				return errors.Errorf("rootfs %s does not have a /bin/sh", rootfs)
-			} else {
-				return errors.Wrapf(err, "problem finding shell in %s", rootfs)
-			}
-		}
 	}
-
 	return ioutil.WriteFile(outFile, []byte(shebangLine+strings.Join(cmd, "\n")+"\n"), 0755)
 }
