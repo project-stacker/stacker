@@ -25,7 +25,7 @@ child:
         cat /proc/self/mountinfo
         touch /root/child
 EOF
-    stacker build --leave-unladen
+    stacker build
 
     umoci --log=debug unpack --image oci:parent dest/parent
     [ "$status" -eq 0 ]

@@ -205,8 +205,11 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	}
 
 	// we want to be sure to remove the /stacker from the generated
-	// filesystem after execution.
+	// filesystem after execution. TODO: parameterize this by storage
+	// backend? it will always be "rootfs" for btrfs and "overlay" for the
+	// overlay backend. Maybe this shouldn't even live here.
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "rootfs", "stacker"))
+	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
 
 	// Just in case the binary has chdir'd somewhere since it started,
 	// let's readlink /proc/self/exe to figure out what to exec.

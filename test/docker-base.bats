@@ -25,8 +25,8 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
-    stacker build --leave-unladen
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
+    stacker build
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(stacker_chroot sha /favicon.ico)" ]
     umoci unpack --image oci:layer1 dest
     [ ! -f dest/rootfs/favicon.ico ]
 }

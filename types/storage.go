@@ -72,4 +72,8 @@ type Storage interface {
 	// GetLXCRootfsConfig returns the string that should be set as
 	// lxc.rootfs.path in the LXC container's config.
 	GetLXCRootfsConfig(name string) (string, error)
+
+	// TarExtractLocation returns the location that a tar-based rootfs
+	// should be extracted to
+	TarExtractLocation(name string) string
 }

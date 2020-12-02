@@ -14,7 +14,6 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
-	"golang.org/x/sys/unix"
 )
 
 type overlayMetadata struct {
@@ -77,7 +76,7 @@ func (ovl overlayMetadata) write(config types.StackerConfig, tag string) error {
 	return nil
 }
 
-func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
+func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag string) (string, error) {
 	// find *any* manifest to mount: we don't care if this is tar or
 	// squashfs, we just need to mount something. the code that generates
 	// the output needs to care about this, not this code.
@@ -95,7 +94,7 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 	for _, layer := range manifest.Layers {
 		contents := overlayPath(config, layer.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
-			return errors.Wrapf(err, "%s does not exist", contents)
+			return "", errors.Wrapf(err, "%s does not exist", contents)
 		}
 		lowerdirs = append(lowerdirs, contents)
 	}
@@ -103,7 +102,7 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 	for _, layer := range ovl.BuiltLayers {
 		contents := path.Join(config.RootFSDir, layer, "overlay")
 		if _, err := os.Stat(contents); err != nil {
-			return errors.Wrapf(err, "%s does not exist", contents)
+			return "", errors.Wrapf(err, "%s does not exist", contents)
 		}
 		lowerdirs = append(lowerdirs, contents)
 	}
@@ -116,7 +115,7 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 		workaround := path.Join(config.RootFSDir, tag, fmt.Sprintf("workaround%d", i))
 		err := os.MkdirAll(workaround, 0755)
 		if err != nil {
-			return errors.Wrapf(err, "couldn't make workaround dir")
+			return "", errors.Wrapf(err, "couldn't make workaround dir")
 		}
 
 		lowerdirs = append(lowerdirs, workaround)
@@ -127,7 +126,7 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 	// overlayfs it's the top most layer. So above, we've created this list
 	// in exactly the backwards order. So, let's emit it to the args buffer
 	// in reverse order.
-	overlayArgs := bytes.NewBufferString("index=off,lowerdir=")
+	overlayArgs := bytes.NewBufferString("overlayfs:")
 	for i := len(lowerdirs) - 1; i >= 0; i-- {
 		overlayArgs.WriteString(lowerdirs[i])
 		overlayArgs.WriteString(":")
@@ -136,17 +135,10 @@ func (ovl overlayMetadata) mount(config types.StackerConfig, tag string) error {
 	// chop off the last : from lowerdir= above
 	overlayArgs.Truncate(overlayArgs.Len() - 1)
 
-	overlayArgs.WriteString(",")
+	overlayArgs.WriteString(":")
 
-	overlayArgs.WriteString("upperdir=")
 	overlayArgs.WriteString(path.Join(config.RootFSDir, tag, "overlay"))
-	overlayArgs.WriteString(",")
 
-	overlayArgs.WriteString("workdir=")
-	overlayArgs.WriteString(path.Join(config.RootFSDir, tag, "work"))
-
-	rootfs := path.Join(config.RootFSDir, tag, "rootfs")
-	log.Debugf("mount overlay args %s", overlayArgs.String())
-	err := unix.Mount("overlay", rootfs, "overlay", 0, overlayArgs.String())
-	return errors.Wrapf(err, "failed to mount overlay for %s", tag)
+	log.Debugf("lxc rootfs overlay arg %s", overlayArgs.String())
+	return overlayArgs.String(), nil
 }

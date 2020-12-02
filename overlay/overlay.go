@@ -11,12 +11,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 	"syscall"
 
-	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
-	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
@@ -121,48 +118,6 @@ type overlay struct {
 }
 
 func NewOverlay(config types.StackerConfig) (types.Storage, error) {
-	// let's go through and mount anything that looks like it might be used
-	// (i.e. is not a sha256 dir); this will all be unmounted in Detach(),
-	// and this way we don't have to reason about what needs to be mounted
-	// in order to satisfy imports or whatnot.
-	ents, err := ioutil.ReadDir(config.RootFSDir)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, errors.Wrapf(err, "couldn't read overlay roots dir")
-	}
-
-	for _, ent := range ents {
-		// is this a known digest? let's ignore it then
-		_, err := digest.Parse(strings.ReplaceAll(ent.Name(), "_", ":"))
-		if err == nil {
-			continue
-		}
-
-		// otherwise, read the overlay metadata and mount it
-		ovl, err := readOverlayMetadata(config, ent.Name())
-		if err != nil {
-			// sometimes, e.g. if there was a stacker bug, we may
-			// have created an image, but not finally written out
-			// the overlay metadata. in this case, the image is
-			// invalid (we don't know how to build the overlay or
-			// what's in this level of it), so let's just delete
-			// the dir and start over.
-			if os.IsNotExist(errors.Cause(err)) {
-				err = os.RemoveAll(path.Join(config.RootFSDir, ent.Name()))
-				if err != nil {
-					return nil, errors.Wrapf(err, "couldn't cleanup invalid overlay dir")
-				}
-				continue
-			} else {
-				return nil, err
-			}
-		}
-
-		err = ovl.mount(config, ent.Name())
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &overlay{config}, nil
 }
 
@@ -172,11 +127,6 @@ func (o *overlay) Name() string {
 
 func (o *overlay) Create(source string) error {
 	err := os.MkdirAll(path.Join(o.config.RootFSDir, source, "overlay"), 0755)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't create %s", source)
-	}
-
-	err = os.MkdirAll(path.Join(o.config.RootFSDir, source, "work"), 0755)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't create %s", source)
 	}
@@ -191,12 +141,7 @@ func (o *overlay) Create(source string) error {
 
 func (o *overlay) SetupEmptyRootfs(name string) error {
 	ovl := overlayMetadata{}
-	err := ovl.write(o.config, name)
-	if err != nil {
-		return err
-	}
-
-	return ovl.mount(o.config, name)
+	return ovl.write(o.config, name)
 }
 
 func (o *overlay) snapshot(source string, target string) error {
@@ -213,12 +158,7 @@ func (o *overlay) snapshot(source string, target string) error {
 
 	ovl.BuiltLayers = append(ovl.BuiltLayers, source)
 
-	err = ovl.write(o.config, target)
-	if err != nil {
-		return err
-	}
-
-	return ovl.mount(o.config, target)
+	return ovl.write(o.config, target)
 }
 
 func (o *overlay) Snapshot(source, target string) error {
@@ -230,18 +170,6 @@ func (o *overlay) Restore(source, target string) error {
 }
 
 func (o *overlay) Delete(thing string) error {
-	rootfs := path.Join(o.config.RootFSDir, thing, "rootfs")
-	mounted, err := mount.IsMountpoint(rootfs)
-	if err != nil {
-		return err
-	}
-
-	if mounted {
-		err := unix.Unmount(rootfs, 0)
-		if err != nil {
-			return errors.Wrapf(err, "couldn't unmount %s", thing)
-		}
-	}
 	return errors.Wrapf(os.RemoveAll(path.Join(o.config.RootFSDir, thing)), "couldn't delete %s", thing)
 }
 
@@ -251,22 +179,6 @@ func (o *overlay) Exists(thing string) bool {
 }
 
 func (o *overlay) Detach() error {
-	mounts, err := mount.ParseMounts("/proc/self/mountinfo")
-	if err != nil {
-		return err
-	}
-
-	for _, mount := range mounts {
-		if !strings.HasPrefix(mount.Target, o.config.RootFSDir) {
-			continue
-		}
-
-		err = unix.Unmount(mount.Target, 0)
-		if err != nil {
-			return errors.Wrapf(err, "failed to unmount %s", mount.Target)
-		}
-	}
-
 	return nil
 }
 
@@ -314,5 +226,19 @@ func (o *overlay) GC() error {
 }
 
 func (o *overlay) GetLXCRootfsConfig(name string) (string, error) {
-	return fmt.Sprintf("dir:%s", path.Join(o.config.RootFSDir, name, "rootfs")), nil
+	ovl, err := readOverlayMetadata(o.config, name)
+	if err != nil {
+		return "", err
+	}
+
+	lxcRootfsString, err := ovl.lxcRootfsString(o.config, name)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("overlay:%s", lxcRootfsString), nil
+}
+
+func (o *overlay) TarExtractLocation(name string) string {
+	return path.Join(o.config.RootFSDir, name, "overlay")
 }

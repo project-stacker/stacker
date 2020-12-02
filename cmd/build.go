@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/anuvu/stacker"
@@ -60,6 +61,9 @@ func initCommonBuildFlags() []cli.Flag {
 }
 
 func beforeBuild(ctx *cli.Context) error {
+	if config.StorageType == "overlay" && ctx.Bool("leave-unladen") {
+		return errors.Errorf("cannot use --storage-type=overlay and --leave-unladen together")
+	}
 
 	// Validate build failure arguments
 	err := validateBuildFailureFlags(ctx)

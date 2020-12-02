@@ -19,10 +19,9 @@ test:
 EOF
 
     stacker "--oci-dir=$tmpd/args-oci" "--stacker-dir=$tmpd/args-stacker" \
-        "--roots-dir=$tmpd/args-roots" build --leave-unladen
+        "--roots-dir=$tmpd/args-roots" build
     [ -d "$tmpd/args-oci" ]
     [ -d "$tmpd/args-stacker" ]
-    [ -d "$tmpd/args-roots" ]
 }
 
 @test "config file works" {
@@ -40,11 +39,10 @@ oci_dir: $tmpd/config-oci
 rootfs_dir: $tmpd/config-roots
 EOF
 
-    stacker "--config=$tmpd/config.yaml" build --leave-unladen
+    stacker "--config=$tmpd/config.yaml" build
     ls
     [ -d "$tmpd/config-oci" ]
     [ -d "$tmpd/config-stacker" ]
-    [ -d "$tmpd/config-roots" ]
 }
 
 @test "config file substitutions work" {
@@ -87,7 +85,8 @@ my-build:
 my-base:
     from:
         type: tar
-        url: ${{STACKER_ROOTFS_DIR}}/my-build/rootfs/my-publish/output.tar
+        url: stacker://my-build/my-publish/output.tar
+    build_only: true
 EOF
 
     cat > "$config_yaml" <<EOF
@@ -96,7 +95,14 @@ oci_dir: $odir
 rootfs_dir: $rdir
 EOF
 
-    stacker "--config=$config_yaml" build "--stacker-file=$stacker_yaml" --substitute CENTOS_OCI=$CENTOS_OCI --leave-unladen
+    stacker "--config=$config_yaml" build "--stacker-file=$stacker_yaml" --substitute CENTOS_OCI=$CENTOS_OCI
 
-    cmp_files "$expected" "$rdir/my-base/rootfs/content.txt"
+    # check the right place for the particular storage type
+    [ "$STORAGE_TYPE" != "overlay" ] || cmp_files "$expected" "$rdir/my-base/overlay/content.txt"
+    [ "$STORAGE_TYPE" != "btrfs" ] || {
+        mkdir -p "$rdir"
+        mount -o loop "$sdir/btrfs.loop" "$rdir"
+        tree "$rdir"
+        cmp_files "$expected" "$rdir/my-base/rootfs/content.txt"
+    }
 }

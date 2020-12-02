@@ -65,18 +65,18 @@ EOF
     tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
     rm -rf dest
 
-    stacker build --substitute "FAVICON=favicon.ico" --leave-unladen
+    stacker build --substitute "FAVICON=favicon.ico"
     [ "$status" -eq 0 ]
 
     # did we really download the image to the right place?
     [ -f .stacker/layer-bases/centos.tar ]
 
     # did run actually copy the favicon to the right place?
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(stacker_chroot sha /favicon.ico)" ]
 
     [ ! -f roots/layer1/rootfs/favicon.ico ] || [ ! -f roots/layer1/overlay/favicon.ico ]
 
-    [ "$(stat --format="%a" roots/centos/rootfs/usr/bin/executable)" = "755" ]
+    [ "$(stacker_chroot stat --format="%a" /usr/bin/executable)" = "755" ]
 
     # did we do a copy correctly?
     [ "$(sha .stacker/imports/centos/stacker.yaml)" == "$(sha ./stacker.yaml)" ]

@@ -65,7 +65,7 @@ EOF
     sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE build
     umoci unpack --image oci:layer1 dest
 
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha roots/centos/rootfs/favicon.ico)" ]
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(stacker_chroot sha /favicon.ico)" ]
     [ ! -f dest/rootfs/favicon.ico ]
 }
 

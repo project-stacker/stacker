@@ -154,7 +154,7 @@ func setupTarRootfs(o BaseLayerOpts) error {
 	tar := path.Join(cacheDir, path.Base(o.Layer.From.Url))
 
 	// TODO: make this respect ID maps
-	layerPath := path.Join(o.Config.RootFSDir, o.Name, "rootfs")
+	layerPath := o.Storage.TarExtractLocation(o.Name)
 	tarReader, err := os.Open(tar)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't open %s", tar)

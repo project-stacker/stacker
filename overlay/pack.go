@@ -23,7 +23,6 @@ import (
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
-	"golang.org/x/sys/unix"
 )
 
 func safeOverlayName(d digest.Digest) string {
@@ -114,12 +113,7 @@ func (o *overlay) Unpack(tag, name string) error {
 		return err
 	}
 
-	err = ovl.write(o.config, name)
-	if err != nil {
-		return err
-	}
-
-	return ovl.mount(o.config, name)
+	return ovl.write(o.config, name)
 }
 
 func (o *overlay) convertAndOutput(tag, name string, layerType types.LayerType) error {
@@ -499,17 +493,5 @@ func RepackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		}
 	}
 
-	// unmount the old overlay
-	err = unix.Unmount(path.Join(config.RootFSDir, name, "rootfs"), 0)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't unmount old overlay")
-	}
-
-	err = ovl.write(config, name)
-	if err != nil {
-		return err
-	}
-
-	return ovl.mount(config, name)
-
+	return ovl.write(config, name)
 }

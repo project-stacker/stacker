@@ -40,6 +40,15 @@ function strace_stacker {
     [ "$status" -eq 0 ]
 }
 
+function stacker_chroot {
+    chroot_run=$(mktemp -p ${TEST_TMPDIR} chroot_runfile.XXXXXXX)
+    chroot_stderr=$(mktemp -p ${TEST_TMPDIR} chroot_stderr.XXXXXXX)
+    cat "${ROOT_DIR}/test/helpers.bash" >> "${chroot_run}"
+    echo "$@" >> "${chroot_run}"
+    cat "${chroot_run}" | "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug chroot 2>"${chroot_stderr}"
+    [ "$?" -eq 0 ] || (cat "${chroot_stderr}" && false)
+}
+
 function require_storage {
     [ "$STORAGE_TYPE" = "$1" ] || skip "test not valid for storage type $STORAGE_TYPE"
 }

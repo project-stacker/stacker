@@ -25,7 +25,7 @@ child:
     run: |
         touch /link/test
 EOF
-    stacker --storage-type=overlay build --layer-type=squashfs --leave-unladen
+    stacker --storage-type=overlay build --layer-type=squashfs
 
     manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
     layer1=$(cat oci/blobs/sha256/$manifest | jq -r .layers[1].digest | cut -f2 -d:)
