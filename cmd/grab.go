@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	"github.com/anuvu/stacker"
@@ -37,5 +38,10 @@ func doGrab(ctx *cli.Context) error {
 	}
 	defer cleanup()
 
-	return stacker.Grab(config, name, parts[1])
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	return stacker.Grab(config, name, parts[1], cwd)
 }
