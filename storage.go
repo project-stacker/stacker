@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/anuvu/stacker/btrfs"
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/overlay"
 	"github.com/anuvu/stacker/storage"
@@ -20,7 +21,7 @@ var storageTypeFile = "storage.type"
 func openStorage(c types.StackerConfig, storageType string) (types.Storage, error) {
 	switch storageType {
 	case "overlay":
-		err := overlay.CanDoOverlay(c)
+		err := container.RunUmociSubcommand(c, []string{"check-overlay"})
 		if err != nil {
 			return nil, err
 		}
