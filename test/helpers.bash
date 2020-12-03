@@ -7,6 +7,12 @@ fi
 export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
 export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
 
+function skip_if_no_unpriv_overlay {
+    [ "$STORAGE_TYPE" == "overlay" ] || return
+    run stacker umoci check-overlay
+    [ "$status" -eq 0 ] || skip "need newer kernel for unpriv overlay"
+}
+
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
 }
@@ -35,6 +41,7 @@ function bad_stacker {
 }
 
 function unpriv_stacker {
+    skip_if_no_unpriv_overlay
     run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
     echo "$output"
     [ "$status" -eq 0 ]

@@ -11,7 +11,6 @@ function teardown() {
 
 @test "file with chmod 000 works" {
     [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-    require_storage btrfs # TODO: uncomment this when more people have >= 5.8 kernel
 
     cat > stacker.yaml <<EOF
 parent:
@@ -42,7 +41,6 @@ EOF
 
 @test "unprivileged stacker" {
     [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-    require_storage btrfs # TODO: uncomment this when more people have >= 5.8 kernel
 
     cat > stacker.yaml <<EOF
 centos:
@@ -87,7 +85,6 @@ EOF
 
 @test "unprivileged read-only imports can be re-cached" {
     [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-    require_storage btrfs # TODO: uncomment this when more people have >= 5.8 kernel
 
     sudo -s -u $SUDO_USER <<EOF
         mkdir -p import
