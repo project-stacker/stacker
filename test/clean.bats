@@ -60,7 +60,7 @@ function teardown() {
     btrfs property set -ts parent/roots/a/b ro true
     btrfs property set -ts parent/roots/a ro true
 
-    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --roots-dir=parent/roots clean
+    unpriv_stacker --roots-dir=parent/roots clean
     [ ! -d parent/roots/a ]
     [ ! -d parent/roots/a/b ]
 }

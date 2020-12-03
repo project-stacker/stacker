@@ -34,6 +34,17 @@ function bad_stacker {
     [ "$status" -ne 0 ]
 }
 
+function unpriv_stacker {
+    run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
+function unpriv_setup {
+    stacker unpriv-setup
+    chown -R $SUDO_USER:$SUDO_USER .
+}
+
 function strace_stacker {
     run strace -f -s 4096 "${ROOT_DIR}/stacker" --debug "$@"
     echo "$output"

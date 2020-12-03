@@ -269,7 +269,7 @@ EOF
     mv oci oci-import
     stacker clean
 
-    stacker unpriv-setup
+    unpriv_setup
     # now import that image twice, first the child image, then the parent
     # image, to force a layer regeneration
     cat > stacker.yaml <<'EOF'
@@ -292,8 +292,7 @@ parent-child:
         [ ! -f /child ]
         touch /foo
 EOF
-    chown -R $SUDO_USER:$SUDO_USER .
-    sudo -u $SUDO_USER "${ROOT_DIR}/stacker" build
+    unpriv_stacker build
 
     manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
     n_layers=$(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')
