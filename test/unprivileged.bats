@@ -10,8 +10,6 @@ function teardown() {
 }
 
 @test "file with chmod 000 works" {
-    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-
     cat > stacker.yaml <<EOF
 parent:
     from:
@@ -40,8 +38,6 @@ EOF
 }
 
 @test "unprivileged stacker" {
-    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -66,7 +62,6 @@ EOF
 }
 
 @test "unprivileged btrfs cleanup" {
-    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
     require_storage btrfs
 
     cat > stacker.yaml <<EOF
@@ -84,8 +79,6 @@ EOF
 }
 
 @test "unprivileged read-only imports can be re-cached" {
-    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-
     sudo -s -u $SUDO_USER <<EOF
 mkdir -p import
 touch import/this
@@ -107,8 +100,6 @@ EOF
 }
 
 @test "/stacker in unprivileged mode gets deleted" {
-    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
-
     sudo -s -u $SUDO_USER <<EOF
 touch first
 touch second
