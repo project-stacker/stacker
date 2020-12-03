@@ -102,7 +102,6 @@ EOF
     [ "$STORAGE_TYPE" != "btrfs" ] || {
         mkdir -p "$rdir"
         mount -o loop "$sdir/btrfs.loop" "$rdir"
-        tree "$rdir"
         cmp_files "$expected" "$rdir/my-base/rootfs/content.txt"
     }
 }
