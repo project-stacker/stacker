@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -112,6 +113,20 @@ var umociCmd = cli.Command{
 		cli.Command{
 			Name:   "check-overlay",
 			Action: doCheckOverlay,
+		},
+		cli.Command{
+			Name:   "unpack-tar",
+			Action: doUnpackTar,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "tar",
+					Usage: "the name of the tar file to extract",
+				},
+				cli.StringFlag{
+					Name:  "dest-dir",
+					Usage: "the name of the tar file to extract",
+				},
+			},
 		},
 	},
 	Before: doBeforeUmociSubcommand,
@@ -459,4 +474,27 @@ func doGenerateBundleManifest(ctx *cli.Context) error {
 	bundlePath := ctx.GlobalString("bundle-path")
 	mtreeName := ctx.String("mtree-name")
 	return umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Default)
+}
+
+func doUnpackTar(ctx *cli.Context) error {
+	destDir := ctx.String("dest-dir")
+	tar := ctx.String("tar")
+	tarReader, err := os.Open(tar)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't open %s", tar)
+	}
+	defer tarReader.Close()
+	var uncompressed io.ReadCloser
+	uncompressed, err = pgzip.NewReader(tarReader)
+	if err != nil {
+		_, err = tarReader.Seek(0, os.SEEK_SET)
+		if err != nil {
+			return errors.Wrapf(err, "failed to 0 seek %s", tar)
+		}
+		uncompressed = tarReader
+	} else {
+		defer uncompressed.Close()
+	}
+
+	return layer.UnpackLayer(destDir, uncompressed, &layer.UnpackOptions{KeepDirlinks: true})
 }

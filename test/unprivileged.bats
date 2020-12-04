@@ -105,3 +105,38 @@ EOF
     echo that | sudo -u $SUDO_USER tee import/this
     unpriv_stacker build
 }
+
+@test "/stacker in unprivileged mode gets deleted" {
+    [ -z "$CI" ] || skip "skipping unprivileged test in ci"
+
+    sudo -s -u $SUDO_USER <<EOF
+touch first
+touch second
+EOF
+
+    cat > stacker.yaml <<EOF
+base:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - first
+        - second
+    run: |
+        ls -alh /stacker
+        tar -C /stacker -cv -f /base.tar.gz first second
+next:
+    from:
+        type: tar
+        url: stacker://base/base.tar.gz
+EOF
+    unpriv_stacker build
+
+    umoci unpack --image oci:base base
+    [ ! -d base/rootfs/stacker ]
+
+    umoci unpack --image oci:next next
+    [ -f next/rootfs/first ]
+    [ -f next/rootfs/second ]
+    [ ! -d next/rootfs/stacker ]
+}
