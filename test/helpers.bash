@@ -9,7 +9,7 @@ export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
 
 function skip_if_no_unpriv_overlay {
     [ "$STORAGE_TYPE" == "overlay" ] || return 0
-    run stacker umoci check-overlay
+    run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" umoci check-overlay
     [ "$status" -eq 0 ] || skip "need newer kernel for unpriv overlay"
 }
 
