@@ -87,10 +87,10 @@ EOF
     [ -z "$CI" ] || skip "skipping unprivileged test in ci"
 
     sudo -s -u $SUDO_USER <<EOF
-        mkdir -p import
-        touch import/this
-        chmod -w import
-    EOF
+mkdir -p import
+touch import/this
+chmod -w import
+EOF
 
     cat > stacker.yaml <<EOF
 centos:
