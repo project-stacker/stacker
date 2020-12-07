@@ -13,3 +13,24 @@ See the [tutorial](doc/tutorial.md) for a short introduction to how to use stack
 
 See the [`stacker.yaml` specification](doc/stacker_yaml.md) for full details on
 the `stacker.yaml` specification.
+
+### TODO / Roadmap
+
+* Upstream something to containers/image that allows for automatic detection
+  of compression
+* Design/implement OCIv2 drafts + final spec when it comes out
+* Rearrange tests so there's more unprivileged coverage (really should be
+  another row/column in the test matrix like storage type is)
+
+### Conference Talks
+
+* An Operator Centric Way to Update Application Containers FOSDEM 2019
+    * [video](https://archive.fosdem.org/2019/schedule/event/containers_atomfs/)
+    * [slides](doc/talks/FOSDEM_2019.pdf)
+* Building OCI Images without Privilege OSS EU 2018
+    * [slides](doc/talks/OSS_EU_2018.pdf)
+* Building OCI Images without Privilege OSS NA 2018
+    * [slides](doc/talks/OSS_NA_2018.pdf)
+
+(Note that despite the similarity in name of the 2018 talks, the content is
+mostly disjoint; I need to be more creative with naming.)
