@@ -55,27 +55,10 @@ layer1:
         - rm /favicon.ico
 EOF
     unpriv_stacker build
-    umoci unpack --image oci:layer1 dest
-
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(stacker_chroot sha /favicon.ico)" ]
-    [ ! -f dest/rootfs/favicon.ico ]
-}
-
-@test "unprivileged btrfs cleanup" {
-    require_storage btrfs
-
-    cat > stacker.yaml <<EOF
-centos:
-    from:
-        type: oci
-        url: $CENTOS_OCI
-    import:
-        - https://www.cisco.com/favicon.ico
-    run: |
-        cp /stacker/favicon.ico /favicon.ico
-EOF
-    unpriv_stacker build
-    stacker clean
+    umoci unpack --image oci:centos centos
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha centos/rootfs/favicon.ico)" ]
+    umoci unpack --image oci:layer1 layer1
+    [ ! -f layer1/rootfs/favicon.ico ]
 }
 
 @test "unprivileged read-only imports can be re-cached" {
@@ -130,4 +113,20 @@ EOF
     [ -f next/rootfs/first ]
     [ -f next/rootfs/second ]
     [ ! -d next/rootfs/stacker ]
+}
+
+@test "stacker switching privilege modes fails" {
+    cat > stacker.yaml <<EOF
+base:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - test
+    run: cat /stacker/test
+EOF
+    echo unpriv | sudo -s -u $SUDO_USER tee test
+    unpriv_stacker build
+    echo priv > test
+    bad_stacker build
 }

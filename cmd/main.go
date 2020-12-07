@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"syscall"
 
 	stackerlog "github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
@@ -185,6 +186,22 @@ func main() {
 		}
 
 		config.StorageType = ctx.String("storage-type")
+
+		fi, err := os.Stat(config.CacheFile())
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return err
+			}
+		} else {
+			stat, ok := fi.Sys().(*syscall.Stat_t)
+			if !ok {
+				return errors.Errorf("unknown sys stat type %T", fi.Sys())
+			}
+
+			if uint64(os.Geteuid()) != uint64(stat.Uid) {
+				return errors.Errorf("previous run of stacker found with uid %d", stat.Uid)
+			}
+		}
 
 		var handler log.Handler
 		handler = stackerlog.NewTextHandler(os.Stderr)
