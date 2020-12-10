@@ -12,7 +12,8 @@ stacker: $(GO_SRC) go.mod go.sum
 
 .PHONY: lint
 lint: $(GO_SRC)
-	go fmt ./... && ([ -z $(TRAVIS) ] || git diff --quiet)
+	go mod tidy
+	go fmt ./... && ([ -z $(CI) ] || git diff --quiet)
 	bash test/static-analysis.sh
 	go test -tags "$(BUILD_TAGS)" ./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
