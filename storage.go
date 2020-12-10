@@ -21,7 +21,7 @@ var storageTypeFile = "storage.type"
 func openStorage(c types.StackerConfig, storageType string) (types.Storage, error) {
 	switch storageType {
 	case "overlay":
-		err := container.RunUmociSubcommand(c, []string{"check-overlay"})
+		err := container.RunInternalGoSubcommand(c, []string{"check-overlay"})
 		if err != nil {
 			return nil, err
 		}

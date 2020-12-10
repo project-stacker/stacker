@@ -61,7 +61,7 @@ func (o *overlay) Unpack(tag, name string) error {
 			// don't really need to do this in parallel, but what
 			// the hell.
 			pool.Add(func(ctx context.Context) error {
-				return container.RunUmociSubcommand(o.config, []string{
+				return container.RunInternalGoSubcommand(o.config, []string{
 					"--tag", tag,
 					"--oci-path", cacheDir,
 					"--bundle-path", contents,
@@ -83,7 +83,7 @@ func (o *overlay) Unpack(tag, name string) error {
 			// shifting, we can use the fancier features of context
 			// cancelling in the thread pool...
 			pool.Add(func(ctx context.Context) error {
-				return container.RunUmociSubcommand(o.config, []string{
+				return container.RunInternalGoSubcommand(o.config, []string{
 					"--tag", tag,
 					"--oci-path", cacheDir,
 					"--bundle-path", contents,
@@ -322,7 +322,7 @@ func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.St
 	for _, layerType := range layerTypes {
 		args = append(args, "--layer-type", string(layerType))
 	}
-	return container.RunUmociSubcommand(o.config, args)
+	return container.RunInternalGoSubcommand(o.config, args)
 }
 
 func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {

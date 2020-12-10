@@ -81,7 +81,7 @@ func (b *btrfs) Unpack(tag, name string) error {
 			return err
 		}
 
-		err = container.RunUmociSubcommand(b.c, []string{
+		err = container.RunInternalGoSubcommand(b.c, []string{
 			"--oci-path", cacheDir,
 			"--tag", tag,
 			"--bundle-path", bundlePath,
@@ -209,7 +209,7 @@ func prepareUmociMetadata(storage *btrfs, name string, bundlePath string, dp cas
 	} else {
 		// Umoci's metadata wasn't present. Let's generate it.
 		log.Infof("generating mtree metadata for snapshot (this may take a bit)...")
-		err = container.RunUmociSubcommand(storage.c, []string{
+		err = container.RunInternalGoSubcommand(storage.c, []string{
 			"--bundle-path", bundlePath,
 			"generate-bundle-manifest",
 			"--mtree-name", mtreeName,

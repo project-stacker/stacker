@@ -6,5 +6,5 @@ import (
 )
 
 func UnprivSetup(config types.StackerConfig, uid, gid int) error {
-	return container.RunUmociSubcommand(config, []string{"check-overlay"})
+	return container.RunInternalGoSubcommand(config, []string{"check-overlay"})
 }

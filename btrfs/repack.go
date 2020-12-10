@@ -14,7 +14,7 @@ import (
 )
 
 func (b *btrfs) initEmptyLayer(name string, layerType types.LayerType) error {
-	return container.RunUmociSubcommand(b.c, []string{
+	return container.RunInternalGoSubcommand(b.c, []string{
 		"--tag", layerType.LayerName(name),
 		"--oci-path", b.c.OCIDir,
 		"--bundle-path", path.Join(b.c.RootFSDir, name),
@@ -96,7 +96,7 @@ func (b *btrfs) Repack(name string, layerTypes []types.LayerType, sfm types.Stac
 		}
 	}
 
-	return container.RunUmociSubcommand(b.c, []string{
+	return container.RunInternalGoSubcommand(b.c, []string{
 		"--oci-path", b.c.OCIDir,
 		"--tag", name,
 		"--bundle-path", path.Join(b.c.RootFSDir, name),

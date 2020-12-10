@@ -32,9 +32,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var umociCmd = cli.Command{
-	// TODO: rename this, it's not really "umoci" any more.
-	Name:   "umoci",
+var internalGoCmd = cli.Command{
+	Name:   "internal-go",
 	Hidden: true,
 	Flags: []cli.Flag{
 		cli.StringFlag{

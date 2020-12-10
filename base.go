@@ -153,7 +153,7 @@ func setupTarRootfs(o BaseLayerOpts) error {
 	tar := path.Join(cacheDir, path.Base(o.Layer.From.Url))
 
 	layerPath := o.Storage.TarExtractLocation(o.Name)
-	return container.RunUmociSubcommand(o.Config, []string{
+	return container.RunInternalGoSubcommand(o.Config, []string{
 		"unpack-tar",
 		"--tar", tar,
 		"--dest-dir", layerPath,

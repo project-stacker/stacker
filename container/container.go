@@ -132,7 +132,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 	return RunInUserns(idmapSet, userCmd, msg)
 }
 
-func RunUmociSubcommand(config types.StackerConfig, args []string) error {
+func RunInternalGoSubcommand(config types.StackerConfig, args []string) error {
 	binary, err := os.Readlink("/proc/self/exe")
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func RunUmociSubcommand(config types.StackerConfig, args []string) error {
 		cmd = append(cmd, "--debug")
 	}
 
-	cmd = append(cmd, "umoci")
+	cmd = append(cmd, "internal-go")
 	cmd = append(cmd, args...)
 	return MaybeRunInUserns(cmd, "image unpack failed")
 }
