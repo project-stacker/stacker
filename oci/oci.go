@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MediaTypeLayerSquashfs = "application/vnd.oci.image.layer.squashfs"
+	MediaTypeLayerSquashfs = "application/vnd.stacker.image.layer.squashfs"
 )
 
 func LookupManifest(oci casext.Engine, tag string) (ispec.Manifest, error) {
