@@ -27,6 +27,8 @@ func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	}
 
 	switch manifest.Layers[0].MediaType {
+	case stackeroci.ImpoliteMediaTypeLayerSquashfs:
+		fallthrough
 	case stackeroci.MediaTypeLayerSquashfs:
 		return NewLayerType("squashfs")
 	case ispec.MediaTypeImageLayerGzip:

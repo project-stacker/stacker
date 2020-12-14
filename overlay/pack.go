@@ -57,6 +57,8 @@ func (o *overlay) Unpack(tag, name string) error {
 		digest := layer.Digest
 		contents := overlayPath(o.config, digest, "overlay")
 		switch layer.MediaType {
+		case stackeroci.ImpoliteMediaTypeLayerSquashfs:
+			fallthrough
 		case stackeroci.MediaTypeLayerSquashfs:
 			// don't really need to do this in parallel, but what
 			// the hell.
