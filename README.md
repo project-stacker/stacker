@@ -34,3 +34,9 @@ the `stacker.yaml` specification.
 
 (Note that despite the similarity in name of the 2018 talks, the content is
 mostly disjoint; I need to be more creative with naming.)
+
+### License
+
+`stacker` is released under the [Apache License, Version 2.0](LICENSE), and is:
+
+Copyright (C) 2017-2020 Cisco Systems, Inc.
