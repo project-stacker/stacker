@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/otiai10/copy"
 )
 
 func FileCopy(dest string, source string) error {
@@ -49,6 +51,11 @@ func FileCopy(dest string, source string) error {
 
 	_, err = io.Copy(d, s)
 	return err
+}
+
+// DirCopy - copy a directory recursively (think 'cp -a src dest')
+func DirCopy(dest string, source string) error {
+	return copy.Copy(source, dest, copy.Options{})
 }
 
 // FindFiles searches for paths matching a particular regex under a given folder

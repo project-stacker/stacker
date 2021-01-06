@@ -21,6 +21,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/opencontainers/umoci v0.4.7-0.20201029051143-b09d036cbfde
+	github.com/otiai10/copy v1.4.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect

@@ -3,7 +3,6 @@ package stacker
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 
 	"github.com/anuvu/stacker/lib"
@@ -186,9 +185,19 @@ func importFile(imp string, cacheDir string) (string, error) {
 				return "", errors.Wrapf(err, "failed to create dir %s", destdir)
 			}
 
-			output, err := exec.Command("cp", "-a", srcpath, destdir).CombinedOutput()
+			e1, err := os.Lstat(srcpath)
 			if err != nil {
-				return "", errors.Wrapf(err, "couldn't copy %s: %s", path.Join(imp, d.Path()), string(output))
+				return "", errors.Wrapf(err, "couldn't stat import %s", srcpath)
+			}
+
+			if e1.IsDir() {
+				if err := lib.DirCopy(destdir, srcpath); err != nil {
+					return "", errors.Wrapf(err, "couldn't copy dir %s -> %s: %v", srcpath, destdir, err)
+				}
+			} else {
+				if err := lib.FileCopy(destpath, srcpath); err != nil {
+					return "", errors.Wrapf(err, "couldn't copy %s -> %s: %v", srcpath, destdir, err)
+				}
 			}
 		case mtree.ErrorDifference:
 			return "", errors.Errorf("failed to diff %s", d.Path())
