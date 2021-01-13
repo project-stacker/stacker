@@ -14,6 +14,8 @@ See the [tutorial](doc/tutorial.md) for a short introduction to how to use stack
 See the [`stacker.yaml` specification](doc/stacker_yaml.md) for full details on
 the `stacker.yaml` specification.
 
+Additionally, there are some [tips and tricks](doc/tricks.md) for common usage.
+
 ### TODO / Roadmap
 
 * Upstream something to containers/image that allows for automatic detection
