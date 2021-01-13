@@ -61,8 +61,6 @@ Hub.
 `built`: `tag` is required, everything else is ignored. `built` bases this
 layer on a previously specified layer in the stacker file.
 
-`scratch`: `scratch` means a completely empty layer.
-
 #### `import`
 
 The `import` directive describes what files should be made available in

@@ -297,9 +297,6 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 		}
 
 		return fmt.Sprintf("%d", baseHash), nil
-	case types.ScratchLayer:
-		// no base, no hash :)
-		return "", nil
 	case types.TarLayer:
 		// use the hash of the input tarball
 		cacheDir := path.Join(c.config.StackerDir, "layer-bases")

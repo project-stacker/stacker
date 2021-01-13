@@ -15,7 +15,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: scratch
+        type: oci
+        url: $CENTOS_OCI
 EOF
 
     stacker "--oci-dir=$tmpd/args-oci" "--stacker-dir=$tmpd/args-stacker" \
@@ -31,7 +32,8 @@ EOF
     cat > stacker.yaml <<EOF
 test:
     from:
-        type: scratch
+        type: oci
+        url: $CENTOS_OCI
 EOF
     cat > "$tmpd/config.yaml" <<EOF
 stacker_dir: $tmpd/config-stacker

@@ -12,11 +12,10 @@ import (
 )
 
 const (
-	DockerLayer  = "docker"
-	TarLayer     = "tar"
-	OCILayer     = "oci"
-	BuiltLayer   = "built"
-	ScratchLayer = "scratch"
+	DockerLayer = "docker"
+	TarLayer    = "tar"
+	OCILayer    = "oci"
+	BuiltLayer  = "built"
 )
 
 func IsContainersImageLayer(from string) bool {

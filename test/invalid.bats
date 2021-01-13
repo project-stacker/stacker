@@ -33,7 +33,8 @@ EOF
     cat > stacker1.yaml <<EOF
 layer1:
     from:
-        type: scratch
+        type: oci
+        url: $CENTOS_OCI
 EOF
     cat > stacker2.yaml <<EOF
 config:
