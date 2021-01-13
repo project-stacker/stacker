@@ -12,7 +12,8 @@ function teardown() {
     cat > stacker.yaml <<EOF
 base:
     from:
-        type: scratch
+        type: oci
+        url: $CENTOS_OCI
     cmd: foo
 layer1:
     from:

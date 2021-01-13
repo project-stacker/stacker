@@ -27,6 +27,10 @@ The best way to accomplish this is as follows:
             type: tar
             url: stacker://build/contents.tar
 
+Note that stacker generally [expects a reasonable
+rootfs](running.md#whats-inside-the-container) in order to function, so when
+generating a layer like the above, it should be the final layer in a chain.
+
 Or e.g. to bootstrap a base layer for CentoOS 7:
 
     build:

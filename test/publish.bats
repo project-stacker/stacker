@@ -35,7 +35,8 @@ EOF
     cat > ocibuilds/sub3/stacker.yaml <<EOF
 layer3:
     from:
-        type: scratch
+        type: oci
+        url: $CENTOS_OCI
     build_only: true
 EOF
     mkdir -p ocibuilds/sub4

@@ -31,8 +31,6 @@ func GetBase(o BaseLayerOpts) error {
 	switch o.Layer.From.Type {
 	case types.BuiltLayer:
 		return nil
-	case types.ScratchLayer:
-		return nil
 	case types.TarLayer:
 		cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
 		if err := os.MkdirAll(cacheDir, 0755); err != nil {
@@ -77,8 +75,6 @@ func SetupRootfs(o BaseLayerOpts) error {
 			return err
 		}
 		return setupTarRootfs(o)
-	case types.ScratchLayer:
-		return o.Storage.SetupEmptyRootfs(o.Name)
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:

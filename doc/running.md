@@ -12,6 +12,12 @@ because the overlayfs backend requires a very new kernel and at least one out
 of tree feature that is unlikely to land in-tree soon. See below for
 discussion.
 
+### What's inside the container
+
+Note that unlike other container tools, stacker generally assumes what's inside
+the container is a "sane" rootfs, i.e. it can exec things like `bash` and `cp`
+(`stacker://foo/bar.baz` imports require `cp`, for example).
+
 ### The overlay backend
 
 The overlayfs backend is considerably faster than the btrfs version, because it
