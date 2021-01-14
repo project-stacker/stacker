@@ -214,3 +214,78 @@ EOF
     cat layer1/message
     [ "$(cat layer1/message)" == "foo bar" ]
 }
+
+@test "built type with squashfs build-only base works (btrfs)" {
+    require_storage btrfs
+    mkdir -p .stacker/layer-bases
+    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
+    umoci unpack --image .stacker/layer-bases/oci:centos dest
+    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    rm -rf dest
+
+	cat > stacker.yaml <<EOF
+base:
+  from:
+    type: tar
+    url: .stacker/layer-bases/centos.tar
+  run: |
+    echo "hello world" > /message
+  build_only: true
+
+myroot:
+  from:
+    type: built
+    tag: base
+  run: |
+    echo "foo bar" > /message
+EOF
+    stacker build --layer-type=squashfs
+
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
+
+    cat oci/blobs/sha256/$manifest | jq -r .layers
+
+    mkdir layer0
+    mount -t squashfs oci/blobs/sha256/$layer0 layer0
+    cat layer0/message
+    [ "$(cat layer0/message)" == "foo bar" ]
+}
+
+@test "built type with squashfs build-only base works (overlay)" {
+    require_storage overlay
+    mkdir -p .stacker/layer-bases
+    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
+    umoci unpack --image .stacker/layer-bases/oci:centos dest
+    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    rm -rf dest
+
+	cat > stacker.yaml <<EOF
+base:
+  from:
+    type: tar
+    url: .stacker/layer-bases/centos.tar
+  run: |
+    echo "hello world" > /message
+  build_only: true
+
+myroot:
+  from:
+    type: built
+    tag: base
+  run: |
+    echo "foo bar" > /message
+EOF
+    stacker build --layer-type=squashfs
+
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
+    layer1=$(cat oci/blobs/sha256/$manifest | jq -r .layers[1].digest | cut -f2 -d:)
+
+    cat oci/blobs/sha256/$manifest | jq -r .layers
+
+    mkdir layer1
+    mount -t squashfs oci/blobs/sha256/$layer1 layer1
+    cat layer1/message
+    [ "$(cat layer1/message)" == "foo bar" ]
+}

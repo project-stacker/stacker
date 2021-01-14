@@ -58,6 +58,10 @@ func readOverlayMetadata(config types.StackerConfig, tag string) (overlayMetadat
 		return overlayMetadata{}, errors.Wrapf(err, "couldnt' unmarshal overlay metadata %s", metadataFile)
 	}
 
+	if ovl.Manifests == nil {
+		ovl.Manifests = map[types.LayerType]ispec.Manifest{}
+	}
+
 	return ovl, err
 }
 
