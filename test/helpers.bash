@@ -9,8 +9,10 @@ export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
 
 function skip_if_no_unpriv_overlay {
     [ "$STORAGE_TYPE" == "overlay" ] || return 0
-    run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" umoci check-overlay
-    [ "$status" -eq 0 ] || skip "need newer kernel for unpriv overlay"
+    run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug internal-go testsuite-check-overlay
+    echo $output
+    [ "$status" -eq 50 ] && skip "need newer kernel for unpriv overlay"
+    [ "$status" -eq 0 ]
 }
 
 function sha() {
