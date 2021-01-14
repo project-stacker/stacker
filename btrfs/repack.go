@@ -80,7 +80,7 @@ func (b *btrfs) Repack(name string, layerTypes []types.LayerType, sfm types.Stac
 			// otherwise if it's already been built and the base
 			// types match, import it from there
 			err = lib.ImageCopy(lib.ImageCopyOpts{
-				Src:  fmt.Sprintf("oci:%s:%s", b.c.OCIDir, baseTag),
+				Src:  fmt.Sprintf("oci:%s:%s", b.c.OCIDir, layerType.LayerName(baseTag)),
 				Dest: fmt.Sprintf("oci:%s:%s", b.c.OCIDir, layerType.LayerName(name)),
 			})
 			if err != nil {
