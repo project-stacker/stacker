@@ -76,7 +76,7 @@ func (b *btrfs) Repack(name string, layerTypes []types.LayerType, sfm types.Stac
 				}
 				initialized = true
 			}
-		} else {
+		} else if !baseLayer.BuildOnly {
 			// otherwise if it's already been built and the base
 			// types match, import it from there
 			err = lib.ImageCopy(lib.ImageCopyOpts{
