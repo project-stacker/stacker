@@ -13,6 +13,7 @@ import (
 
 	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
+	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
 	"github.com/anuvu/stacker/storage"
@@ -372,6 +373,7 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 				return false, err
 			}
 		}
+		log.Debugf("generated %s layer %s from %s", layerType, desc.Digest, dir)
 
 		descs = append(descs, desc)
 	}
