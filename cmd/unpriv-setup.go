@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 
 	"github.com/anuvu/stacker"
@@ -41,6 +42,16 @@ func beforeUnprivSetup(ctx *cli.Context) error {
 	return nil
 }
 
+func recursiveChown(dir string, uid int, gid int) error {
+	return filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		return os.Chown(p, uid, gid)
+	})
+}
+
 func doUnprivSetup(ctx *cli.Context) error {
 	_, err := os.Stat(config.StackerDir)
 	if err == nil {
@@ -67,5 +78,15 @@ func doUnprivSetup(ctx *cli.Context) error {
 		return err
 	}
 
-	return stacker.UnprivSetup(config, uid, gid)
+	err = stacker.UnprivSetup(config, uid, gid)
+	if err != nil {
+		return err
+	}
+
+	err = recursiveChown(config.StackerDir, uid, gid)
+	if err != nil {
+		return err
+	}
+
+	return recursiveChown(config.RootFSDir, uid, gid)
 }
