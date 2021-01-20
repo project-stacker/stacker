@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 
@@ -68,12 +67,12 @@ func doUnprivSetup(ctx *cli.Context) error {
 		return errors.Wrapf(err, "couldn't convert gid %s", ctx.String("gid"))
 	}
 
-	err = os.MkdirAll(path.Join(config.StackerDir), 0755)
+	err = os.MkdirAll(config.StackerDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(path.Join(config.RootFSDir), 0755)
+	err = os.MkdirAll(config.RootFSDir, 0755)
 	if err != nil {
 		return err
 	}
