@@ -7,6 +7,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+const stackerFilePathRegex = "\\/stacker.yaml$"
+
 var recursiveBuildCmd = cli.Command{
 	Name:   "recursive-build",
 	Usage:  "finds stacker yaml files under a directory and builds all OCI layers they define",
@@ -21,7 +23,7 @@ func initRecursiveBuildFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:  "stacker-file-pattern, p",
 			Usage: "regex pattern to use when searching for stackerfile paths",
-			Value: "stacker.yaml",
+			Value: stackerFilePathRegex,
 		},
 		cli.StringFlag{
 			Name:  "search-dir, d",

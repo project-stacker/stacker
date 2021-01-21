@@ -21,7 +21,7 @@ var publishCmd = cli.Command{
 		cli.StringFlag{
 			Name:  "stacker-file-pattern, p",
 			Usage: "regex pattern to use when searching for stackerfile paths",
-			Value: "stacker.yaml",
+			Value: stackerFilePathRegex,
 		},
 		cli.StringFlag{
 			Name:  "search-dir, d",
