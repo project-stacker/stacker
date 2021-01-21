@@ -13,7 +13,6 @@ require (
 	github.com/flosch/pongo2 v0.0.0-20200529170236-5abacdfa4915 // indirect
 	github.com/freddierice/go-losetup v0.0.0-20170407175016-fc9adea44124
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/klauspost/compress v1.10.10 // indirect
 	github.com/klauspost/pgzip v1.2.4
 	github.com/lxc/lxd v0.0.0-20200706202337-814c96fcec74
 	github.com/mattn/go-colorable v0.1.7 // indirect
@@ -46,3 +45,5 @@ require (
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20200615203753-755940754545
 
 replace github.com/freddierice/go-losetup => github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61
+
+replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20210121200051-7ac4c56af9ee
