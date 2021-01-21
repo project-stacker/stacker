@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"sort"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/types"
 )
@@ -14,8 +15,19 @@ type StackerFilesDAG struct {
 func NewStackerFilesDAG(sfMap types.StackerFiles) (*StackerFilesDAG, error) {
 	dag := lib.NewDAG()
 
+	// The DAG.Sort() method uses Topological sort which for acyclical graphs
+	// will return an order dependent upon which node it starts.  To ensure
+	// we build the same Graph, sort the list of input files so we get the
+	// same starting Node for DAG.Sort() resulting in a consistent build order.
+	keys := make([]string, 0, len(sfMap))
+	for k, _ := range sfMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	// Add vertices to dag
-	for path, sf := range sfMap {
+	for _, path := range keys {
+		sf := sfMap[path]
 		// Add a vertex for every StackerFile object
 		err := dag.AddVertex(path, sf)
 		if err != nil {
