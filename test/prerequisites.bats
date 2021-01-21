@@ -236,3 +236,20 @@ EOF
     umoci unpack --image oci:two dest
     [ -f dest/rootfs/wtf ]
 }
+
+@test "recurisve-build default matching only builds reasonable things" {
+    echo 'this is not valid yaml trolololololo - - - :' > test_stacker.yaml
+    cp test_stacker.yaml .stacker.yaml.swp
+
+    cat > stacker.yaml <<EOF
+one:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+EOF
+
+    stacker recursive-build
+    umoci ls --layout oci
+    # ugh, grep because all the gunk in setup() above needs to move
+    [ "$(umoci ls --layout oci | grep one)" == "one" ]
+}
