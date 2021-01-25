@@ -383,6 +383,7 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 	// actually extract them, we can just rename the contents we already
 	// have for the generated hash, since that's where it came from.
 	target := overlayPath(config, descs[0].Digest)
+
 	err = os.MkdirAll(target, 0755)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't make new layer overlay dir")
@@ -390,7 +391,22 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 
 	err = os.Rename(dir, path.Join(target, "overlay"))
 	if err != nil {
-		return false, errors.Wrapf(err, "couldn't move overlay data to new location")
+		if !os.IsExist(err) {
+			return false, errors.Wrapf(err, "couldn't move overlay data to new location")
+		}
+		// however, it's possible that we've *already* generated a layer that
+		// has this hash. This can happen when two filesystems are based on the
+		// same type: built rfs but make no local changes. They will have
+		// non-empty overlay/ dirs since the content will be from the previous
+		// type: built layer things were based on, but it will be identical
+		// since the builds made no additional changes. In this case, it's safe
+		// to just delete this layer's overlay/ and symlink it into the right
+		// place below, instead of moving it.
+		log.Debugf("target exists, simply removing %s", dir)
+		err = os.RemoveAll(dir)
+		if err != nil {
+			return false, errors.Wrapf(err, "couldn't delete duplicate layer")
+		}
 	}
 
 	err = os.MkdirAll(dir, 0755)
@@ -401,10 +417,47 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 	// now, as we do in convertAndOutput, we make a symlink for the hash
 	// for each additional layer type so that they see the same data
 	for _, desc := range descs[1:] {
-		err = os.Symlink(target, overlayPath(config, desc.Digest))
+		linkPath := overlayPath(config, desc.Digest)
+
+		err = os.Symlink(target, linkPath)
 		if err != nil {
-			return false, errors.Wrapf(err, "couldn't symlink additional layer type")
+			// as above, this symlink may already exist; if it does, we can
+			// skip symlinking
+			if !os.IsExist(err) {
+				return false, errors.Wrapf(err, "couldn't symlink additional layer type")
+			}
+
+			// This sucks. Ideally, we'd be able to do:
+			//
+			// if fi, err := os.Lstat(linkPath); err == nil {
+			// 	if fi.Mode()&os.ModeSymlink == 0 {
+			// 		continue
+			// 	}
+			// 	existingLink, err := os.Readlink(linkPath)
+			//
+			// 	if err != nil {
+			// 		return false, errors.Wrapf(err, "couldn't readlink %s", target)
+			// 	}
+			//
+			// 	if existingLink != target {
+			// 		return false, errors.Errorf("existing symlink %s doesn't point to %s (%s)", linkPath, target, existingLink)
+			// 	}
+			// }
+			//
+			// ...but we can't. Because umoci's tar generation
+			// depends on golang maps which are randomized (e.g.
+			// for when recording xattrs), it can generate tar
+			// files with different hashes for the same directory.
+			// So if this directory has already been repacked once,
+			// we may have gotten a different hash for the same
+			// thing.
+			//
+			// For now, we just punt and say "it's ok", but if
+			// anyone ever implements GC() for overlay they'll want
+			// to fix the assertion above.
+			continue
 		}
+
 	}
 
 	return true, nil
