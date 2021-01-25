@@ -126,3 +126,112 @@ EOF
     echo $output | grep "found cached layer parent"
     echo $output | grep "found cached layer parent-squashfs"
 }
+
+@test "chained built type layers are OK (tar first)" {
+    require_storage overlay
+
+    cat > stacker.yaml <<EOF
+one:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+two:
+    build_only: true
+    from:
+        type: built
+        tag: one
+    run: |
+        echo 2 > /2
+three:
+    build_only: true
+    from:
+        type: built
+        tag: two
+    run: |
+        echo 3 > /3
+        tar -cv -f /contents.tar 2 3
+four:
+    from:
+        type: tar
+        url: stacker://three/contents.tar
+five:
+    from:
+        type: tar
+        url: stacker://three/contents.tar
+EOF
+
+    stacker build --layer-type=tar --layer-type=squashfs
+    umoci unpack --image oci:four four
+    [ -f four/rootfs/2 ]
+    [ -f four/rootfs/3 ]
+
+    umoci unpack --image oci:five five
+    [ -f five/rootfs/2 ]
+    [ -f five/rootfs/3 ]
+
+    four_manifest=$(cat oci/index.json | jq -r .manifests[3].digest | cut -f2 -d:)
+    four_lastlayer=$(cat oci/blobs/sha256/$four_manifest | jq -r .layers[-1].digest | cut -f2 -d:)
+
+    five_manifest=$(cat oci/index.json | jq -r .manifests[5].digest | cut -f2 -d:)
+    five_lastlayer=$(cat oci/blobs/sha256/$five_manifest | jq -r .layers[-1].digest | cut -f2 -d:)
+
+    mkdir lastlayer
+    mount -t squashfs oci/blobs/sha256/$five_lastlayer lastlayer
+    [ -f lastlayer/2 ]
+    [ -f lastlayer/3 ]
+}
+
+@test "chained built type layers are OK (squashfs first)" {
+    require_storage overlay
+
+    cat > stacker.yaml <<EOF
+one:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+two:
+    build_only: true
+    from:
+        type: built
+        tag: one
+    run: |
+        echo 2 > /2
+three:
+    build_only: true
+    from:
+        type: built
+        tag: two
+    run: |
+        echo 3 > /3
+        tar -cv -f /contents.tar 2 3
+four:
+    from:
+        type: tar
+        url: stacker://three/contents.tar
+five:
+    from:
+        type: tar
+        url: stacker://three/contents.tar
+EOF
+
+    stacker build --layer-type=squashfs --layer-type=tar
+    umoci unpack --image oci:four four
+    [ -f four/rootfs/2 ]
+    [ -f four/rootfs/3 ]
+
+    umoci unpack --image oci:five five
+    [ -f five/rootfs/2 ]
+    [ -f five/rootfs/3 ]
+
+    four_manifest=$(cat oci/index.json | jq -r .manifests[2].digest | cut -f2 -d:)
+    four_lastlayer=$(cat oci/blobs/sha256/$four_manifest | jq -r .layers[-1].digest | cut -f2 -d:)
+
+    five_manifest=$(cat oci/index.json | jq -r .manifests[4].digest | cut -f2 -d:)
+    five_lastlayer=$(cat oci/blobs/sha256/$five_manifest | jq -r .layers[-1].digest | cut -f2 -d:)
+
+    mkdir lastlayer
+    mount -t squashfs oci/blobs/sha256/$five_lastlayer lastlayer
+
+    [ -f lastlayer/2 ]
+    [ -f lastlayer/3 ]
+}

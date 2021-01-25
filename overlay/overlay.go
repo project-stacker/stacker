@@ -222,6 +222,7 @@ func (o *overlay) Clean() error {
 }
 
 func (o *overlay) GC() error {
+	// see note in pack.go about implementing this
 	return errors.Errorf("todo")
 }
 
