@@ -12,6 +12,17 @@ because the overlayfs backend requires a very new kernel and at least one out
 of tree feature that is unlikely to land in-tree soon. See below for
 discussion.
 
+`stacker` builds things in the host's network namespace, re-exports any of
+`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` and their lowercase counterparts inside
+the environment, and bind mounts in the host's /etc/resolv.conf. This means
+that the network experience inside the container should be identical to the
+network experience that is on the host. Since stacker is only used for building
+images, this is safe and most intuitive for users on corporate networks with
+complicated proxy and other setups. However, it does mean that packaging that
+expects to be able to modify things in `/sys` will fail, since `/sys` is bind
+mounted from the host's `/sys` (sysfs cannot be mounted in a network namespace
+that a user doesn't own).
+
 ### What's inside the container
 
 Note that unlike other container tools, stacker generally assumes what's inside
