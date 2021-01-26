@@ -23,6 +23,14 @@ expects to be able to modify things in `/sys` will fail, since `/sys` is bind
 mounted from the host's `/sys` (sysfs cannot be mounted in a network namespace
 that a user doesn't own).
 
+When running as an unprivileged user, stacker will attempt to run things inside
+a user namespace owned by the user that executed the command, and will try to
+map 65k user and group ids to meet the POSIX standard. This means that
+`/etc/sub{u,g}id` should be configured with enough uids to map things
+correctly. This configuration can be done automatically via `stacker
+unpriv-setup`. See below for discussion on unprivileged use with particular
+storage backends.
+
 ### What's inside the container
 
 Note that unlike other container tools, stacker generally assumes what's inside
