@@ -132,6 +132,21 @@ var internalGoCmd = cli.Command{
 				},
 			},
 		},
+		cli.Command{
+			Name:   "overlay-convert-and-output",
+			Action: doOverlayConvertAndOutput,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "tag",
+				},
+				cli.StringFlag{
+					Name: "name",
+				},
+				cli.StringFlag{
+					Name: "layer-type",
+				},
+			},
+		},
 	},
 	Before: doBeforeUmociSubcommand,
 }
@@ -525,4 +540,12 @@ func doUnpackTar(ctx *cli.Context) error {
 	}
 
 	return layer.UnpackLayer(destDir, uncompressed, &layer.UnpackOptions{KeepDirlinks: true})
+}
+
+func doOverlayConvertAndOutput(ctx *cli.Context) error {
+	tag := ctx.String("tag")
+	name := ctx.String("name")
+	layerType := types.LayerType(ctx.String("layer-type"))
+
+	return overlay.ConvertAndOutput(config, tag, name, layerType)
 }

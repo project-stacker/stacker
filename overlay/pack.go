@@ -119,15 +119,15 @@ func (o *overlay) Unpack(tag, name string) error {
 	return ovl.write(o.config, name)
 }
 
-func (o *overlay) convertAndOutput(tag, name string, layerType types.LayerType) error {
-	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType types.LayerType) error {
+	cacheDir := path.Join(config.StackerDir, "layer-bases", "oci")
 	cacheOCI, err := umoci.OpenLayout(cacheDir)
 	if err != nil {
 		return err
 	}
 	defer cacheOCI.Close()
 
-	oci, err := umoci.OpenLayout(o.config.OCIDir)
+	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (o *overlay) convertAndOutput(tag, name string, layerType types.LayerType) 
 		return err
 	}
 
-	config, err := stackeroci.LookupConfig(cacheOCI, manifest.Config)
+	imageConfig, err := stackeroci.LookupConfig(cacheOCI, manifest.Config)
 	if err != nil {
 		return err
 	}
@@ -146,18 +146,18 @@ func (o *overlay) convertAndOutput(tag, name string, layerType types.LayerType) 
 	newManifest := manifest
 	newManifest.Layers = []ispec.Descriptor{}
 
-	newConfig := config
+	newConfig := imageConfig
 	newConfig.RootFS.DiffIDs = []digest.Digest{}
 
 	for _, theLayer := range manifest.Layers {
-		bundlePath := overlayPath(o.config, theLayer.Digest)
+		bundlePath := overlayPath(config, theLayer.Digest)
 		overlayDir := path.Join(bundlePath, "overlay")
 
 		var blob io.ReadCloser
 		if layerType == "squashfs" {
 			// sourced a non-squashfs image and wants a squashfs layer,
 			// let's generate one.
-			blob, err = squashfs.MakeSquashfs(o.config.OCIDir, overlayDir, nil)
+			blob, err = squashfs.MakeSquashfs(config.OCIDir, overlayDir, nil)
 			if err != nil {
 				return err
 			}
@@ -174,7 +174,7 @@ func (o *overlay) convertAndOutput(tag, name string, layerType types.LayerType) 
 
 		// slight hack, but this is much faster than a cp, and the
 		// layers are the same, just in different formats
-		err = os.Symlink(overlayPath(o.config, theLayer.Digest), overlayPath(o.config, layerDigest))
+		err = os.Symlink(overlayPath(config, theLayer.Digest), overlayPath(config, layerDigest))
 		if err != nil {
 			return errors.Wrapf(err, "failed to create squashfs symlink")
 		}
@@ -278,7 +278,13 @@ func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerT
 						return err
 					}
 				} else {
-					err = o.convertAndOutput(cacheTag, name, layerType)
+					args := []string{
+						"overlay-convert-and-output",
+						"--tag", cacheTag,
+						"--name", name,
+						"--layer-type", string(layerType),
+					}
+					err = container.RunInternalGoSubcommand(o.config, args)
 					if err != nil {
 						return err
 					}
@@ -383,7 +389,6 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 	// actually extract them, we can just rename the contents we already
 	// have for the generated hash, since that's where it came from.
 	target := overlayPath(config, descs[0].Digest)
-
 	err = os.MkdirAll(target, 0755)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't make new layer overlay dir")
