@@ -60,9 +60,9 @@ For unprivileged use, the overlayfs backend requires one fairly new kernel
 change, a3c751a50fe6 ("vfs: allow unprivileged whiteout creation"). This is
 available in all kernels >= 5.8, and may be backported to some distribution
 kernels. It also requires that unprivileged users be able to mount overlay
-filesystems, something which is allowed in Ubuntu kernels, but not general
-upstream kernels (specifically, the overlay filesystem must have the
-FS\_USERNS\_MOUNT fs flag).
+filesystems, something which is allowed in Ubuntu kernels and will be allowed in
+upstream kernels as of 459c7c565ac3 ("ovl: unprivieged mounts"), which will be
+released in 5.11.
 
 Stacker has checks to ensure that it can run with all these environment
 requirements, and will fail fast if it can't do something it should be able to
