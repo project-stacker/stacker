@@ -84,6 +84,31 @@ will not be reflected.
 
 Will grab /path/to/file from the previously built layer `$name`.
 
+#### `import hash`
+
+The `import` directive also supports specifying the hash(sha256sum) of import source,
+for all the three forms presented above, for example:
+```
+import:
+  - path: config.json
+    hash: f55af805b012017bc....
+  - path: http://example.com/foo.tar.gz
+    hash: b458dfd63e7883a64....
+  - path: stacker://$name/path/to/file
+    hash: f805b012017bc769a....
+```
+Before copying the file it will check if the requested hash matches the actual one.
+This new import mode can be combined with the old one, for example:
+```
+import:
+  - path: "config.json
+    hash: "BEEFcafeaaaaAAAA...."
+  - /path/to/file
+```
+
+
+
+
 #### `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`, `user`
 
 These all correspond exactly to the similarly named bits in the [OCI image

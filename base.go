@@ -37,7 +37,7 @@ func GetBase(o BaseLayerOpts) error {
 			return err
 		}
 
-		_, err := acquireUrl(o.Config, o.Storage, o.Layer.From.Url, cacheDir, o.Progress)
+		_, err := acquireUrl(o.Config, o.Storage, o.Layer.From.Url, cacheDir, o.Progress, "")
 		return err
 	/* now we can do all the containers/image types */
 	case types.OCILayer:

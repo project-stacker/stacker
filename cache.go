@@ -149,6 +149,7 @@ func walkImport(path string) (*mtree.DirectoryHierarchy, error) {
 
 func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
+
 	if !ok {
 		return nil, false, nil
 	}
@@ -193,26 +194,26 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	}
 
 	for _, imp := range imports {
-		cachedImport, ok := result.Imports[imp]
+		cachedImport, ok := result.Imports[imp.Path]
 		if !ok {
-			log.Infof("cache miss because of new import: %s", imp)
+			log.Infof("cache miss because of new import: %s", imp.Path)
 			return nil, false, nil
 		}
 
-		fname := path.Base(imp)
+		fname := path.Base(imp.Path)
 		importsDir := path.Join(c.config.StackerDir, "imports")
 		diskPath := path.Join(importsDir, name, fname)
 		st, err := os.Stat(diskPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				log.Infof("cache miss because import was missing: %s", imp)
+				log.Infof("cache miss because import was missing: %s", imp.Path)
 				return nil, false, nil
 			}
 			return nil, false, err
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
-			log.Infof("cache miss because import type changed: %s", imp)
+			log.Infof("cache miss because import type changed: %s", imp.Path)
 			return nil, false, err
 		}
 
@@ -238,7 +239,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 
 			if len(diff) > 0 {
-				log.Infof("cache miss because import dir content changed: %s", imp)
+				log.Infof("cache miss because import dir content changed: %s", imp.Path)
 				return nil, false, nil
 			}
 		} else {
@@ -248,7 +249,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 
 			if h != cachedImport.Hash {
-				log.Infof("cache miss because import content changed: %s", imp)
+				log.Infof("cache miss because import content changed: %s", imp.Path)
 				return nil, false, nil
 			}
 		}
@@ -357,7 +358,7 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 	}
 
 	for _, imp := range imports {
-		fname := path.Base(imp)
+		fname := path.Base(imp.Path)
 		importsDir := path.Join(c.config.StackerDir, "imports")
 		diskPath := path.Join(importsDir, name, fname)
 		st, err := os.Stat(diskPath)
@@ -380,7 +381,7 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 			}
 		}
 
-		ent.Imports[imp] = ih
+		ent.Imports[imp.Path] = ih
 	}
 
 	c.Cache[name] = ent
