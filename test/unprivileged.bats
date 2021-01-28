@@ -130,3 +130,23 @@ EOF
     echo priv > test
     bad_stacker build
 }
+
+@test "underlying layer output conversion happens in a user namespace" {
+    require_storage overlay
+
+    cat > stacker.yaml <<EOF
+image:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+EOF
+
+    unpriv_stacker build --layer-type squashfs
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
+
+    mkdir layer0
+    mount -t squashfs oci/blobs/sha256/$layer0 layer0
+    echo "mount has uid $(stat --format "%u" layer0/usr/bin/mount)"
+    [ "$(stat --format "%u" layer0/usr/bin/mount)" = "0" ]
+}
