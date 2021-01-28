@@ -1,6 +1,9 @@
 package types
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/anuvu/stacker/log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -29,9 +32,16 @@ func IsContainersImageLayer(from string) bool {
 	return false
 }
 
+type Import struct {
+	Path string `yaml:"path"`
+	Hash string `yaml:"hash"`
+}
+
+type Imports []Import
+
 type Layer struct {
 	From               *ImageSource      `yaml:"from"`
-	Import             interface{}       `yaml:"import"`
+	Import             Imports           `yaml:"import"`
 	Run                interface{}       `yaml:"run"`
 	Cmd                interface{}       `yaml:"cmd"`
 	Entrypoint         interface{}       `yaml:"entrypoint"`
@@ -47,6 +57,76 @@ type Layer struct {
 	Binds              interface{}       `yaml:"binds"`
 	RuntimeUser        string            `yaml:"runtime_user"`
 	referenceDirectory string            // Location of the directory where the layer is defined
+}
+
+func getImportFromInterface(v interface{}) Import {
+	m, ok := v.(map[interface{}]interface{})
+	var hash string
+	if ok {
+		// check for nil hash so that we won't end up with "nil" string values
+		if m["hash"] == nil {
+			hash = ""
+		} else {
+			hash = fmt.Sprintf("%v", m["hash"])
+		}
+		return Import{Hash: hash, Path: fmt.Sprintf("%v", m["path"])}
+	}
+
+	m2, ok := v.(map[string]interface{})
+	if ok {
+		// check for nil hash so that we won't end up with "nil" string values
+		if m["hash"] == nil {
+			hash = ""
+		} else {
+			hash = fmt.Sprintf("%v", m["hash"])
+		}
+		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["Path"])}
+	}
+
+	// if it's not a map then it's a string
+	s, ok := v.(string)
+	if ok {
+		return Import{Hash: "", Path: fmt.Sprintf("%v", s)}
+	}
+	log.Infof("Didn't find a matching type for: %#v", v)
+	return Import{}
+}
+
+func customUnmarshal(im *Imports, data interface{}) {
+	imports, ok := data.([]interface{})
+	if ok {
+		// imports are a list of either strings or maps
+		for _, v := range imports {
+			*im = append(*im, getImportFromInterface(v))
+		}
+	} else {
+		if data != nil {
+			// import are either string or map
+			*im = append(*im, getImportFromInterface(data))
+		}
+	}
+}
+
+// Custom UnmarshalJSON from string/map/slice of strings/slice of maps into Imports
+func (im *Imports) UnmarshalJSON(b []byte) error {
+	var data interface{}
+	if err := json.Unmarshal(b, &data); err != nil {
+		return err
+	}
+	customUnmarshal(im, data)
+
+	return nil
+}
+
+// Custom UnmarshalYAML from string/map/slice of strings/slice of maps into Imports
+func (im *Imports) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var data interface{}
+	if err := unmarshal(&data); err != nil {
+		return err
+	}
+	customUnmarshal(im, data)
+
+	return nil
 }
 
 func filterEnv(matchList []string, curEnv map[string]string) (map[string]string, error) {
@@ -125,20 +205,15 @@ func (l *Layer) ParseFullCommand() ([]string, error) {
 	})
 }
 
-func (l *Layer) ParseImport() ([]string, error) {
-	rawImports, err := l.getStringOrStringSlice(l.Import, func(s string) ([]string, error) {
-		return strings.Split(s, "\n"), nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var absImports []string
-	for _, rawImport := range rawImports {
-		absImport, err := l.getAbsPath(rawImport)
+func (l *Layer) ParseImport() (Imports, error) {
+	var absImports Imports
+	var absImport Import
+	for _, rawImport := range l.Import {
+		absImportPath, err := l.getAbsPath(rawImport.Path)
 		if err != nil {
 			return nil, err
 		}
+		absImport = Import{Hash: rawImport.Hash, Path: absImportPath}
 		absImports = append(absImports, absImport)
 	}
 	return absImports, nil

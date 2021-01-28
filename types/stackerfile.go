@@ -334,7 +334,7 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 			// layer which has not been processed
 			allStackerImportsProcessed := true
 			for _, imp := range imports {
-				url, err := NewDockerishUrl(imp)
+				url, err := NewDockerishUrl(imp.Path)
 				if err != nil {
 					return nil, err
 				}
