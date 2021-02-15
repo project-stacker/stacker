@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/anuvu/stacker/log"
 	"os"
@@ -105,17 +104,6 @@ func customUnmarshal(im *Imports, data interface{}) {
 			*im = append(*im, getImportFromInterface(data))
 		}
 	}
-}
-
-// Custom UnmarshalJSON from string/map/slice of strings/slice of maps into Imports
-func (im *Imports) UnmarshalJSON(b []byte) error {
-	var data interface{}
-	if err := json.Unmarshal(b, &data); err != nil {
-		return err
-	}
-	customUnmarshal(im, data)
-
-	return nil
 }
 
 // Custom UnmarshalYAML from string/map/slice of strings/slice of maps into Imports
