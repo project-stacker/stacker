@@ -164,3 +164,17 @@ EOF
 
     stacker build
 }
+
+@test "invalid import " {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - "zomg"
+        - - "one"
+          - "two"
+EOF
+    bad_stacker build
+}
