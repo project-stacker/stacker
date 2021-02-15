@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/anuvu/stacker/log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -58,7 +57,7 @@ type Layer struct {
 	referenceDirectory string            // Location of the directory where the layer is defined
 }
 
-func getImportFromInterface(v interface{}) Import {
+func getImportFromInterface(v interface{}) (Import, error) {
 	m, ok := v.(map[interface{}]interface{})
 	var hash string
 	if ok {
@@ -68,7 +67,7 @@ func getImportFromInterface(v interface{}) Import {
 		} else {
 			hash = fmt.Sprintf("%v", m["hash"])
 		}
-		return Import{Hash: hash, Path: fmt.Sprintf("%v", m["path"])}
+		return Import{Hash: hash, Path: fmt.Sprintf("%v", m["path"])}, nil
 	}
 
 	m2, ok := v.(map[string]interface{})
@@ -79,31 +78,40 @@ func getImportFromInterface(v interface{}) Import {
 		} else {
 			hash = fmt.Sprintf("%v", m["hash"])
 		}
-		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["Path"])}
+		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["Path"])}, nil
 	}
 
 	// if it's not a map then it's a string
 	s, ok := v.(string)
 	if ok {
-		return Import{Hash: "", Path: fmt.Sprintf("%v", s)}
+		return Import{Hash: "", Path: fmt.Sprintf("%v", s)}, nil
 	}
-	log.Infof("Didn't find a matching type for: %#v", v)
-	return Import{}
+	return Import{}, errors.Errorf("Didn't find a matching type for: %#v", v)
 }
 
-func customUnmarshal(im *Imports, data interface{}) {
+func customUnmarshal(im *Imports, data interface{}) error {
 	imports, ok := data.([]interface{})
 	if ok {
 		// imports are a list of either strings or maps
 		for _, v := range imports {
-			*im = append(*im, getImportFromInterface(v))
+			imp, err := getImportFromInterface(v)
+			if err != nil {
+				return err
+			}
+			*im = append(*im, imp)
 		}
 	} else {
 		if data != nil {
 			// import are either string or map
-			*im = append(*im, getImportFromInterface(data))
+			imp, err := getImportFromInterface(data)
+			if err != nil {
+				return err
+			}
+			*im = append(*im, imp)
 		}
 	}
+
+	return nil
 }
 
 // Custom UnmarshalYAML from string/map/slice of strings/slice of maps into Imports
@@ -112,9 +120,7 @@ func (im *Imports) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&data); err != nil {
 		return err
 	}
-	customUnmarshal(im, data)
-
-	return nil
+	return customUnmarshal(im, data)
 }
 
 func filterEnv(matchList []string, curEnv map[string]string) (map[string]string, error) {
