@@ -60,7 +60,7 @@ EOF
     touch executable
     chmod +x executable
     mkdir -p .stacker/layer-bases
-    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
+    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
     umoci unpack --image .stacker/layer-bases/oci:centos dest
     tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
     rm -rf dest

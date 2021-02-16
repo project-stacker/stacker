@@ -34,9 +34,9 @@ test:
         type: oci
         url: oci:base
 EOF
-    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:oci:base
+    image_copy oci:$CENTOS_OCI oci:oci:base
     stacker build
-    skopeo --insecure-policy copy oci:$UBUNTU_OCI oci:oci:base
+    image_copy oci:$UBUNTU_OCI oci:oci:base
     stacker build
     umoci unpack --image oci:test dest
     grep -q Ubuntu dest/rootfs/etc/issue

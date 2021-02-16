@@ -115,10 +115,6 @@ var internalGoCmd = cli.Command{
 			Action: doCheckOverlay,
 		},
 		cli.Command{
-			Name:   "testsuite-check-overlay",
-			Action: doTestsuiteCheckOverlay,
-		},
-		cli.Command{
 			Name:   "unpack-tar",
 			Action: doUnpackTar,
 			Flags: []cli.Flag{
@@ -146,6 +142,18 @@ var internalGoCmd = cli.Command{
 					Name: "layer-type",
 				},
 			},
+		},
+		/*
+		 * these two below are not actually used by stacker, but are
+		 * entrypoints to the code for use in the test suite.
+		 */
+		cli.Command{
+			Name:   "testsuite-check-overlay",
+			Action: doTestsuiteCheckOverlay,
+		},
+		cli.Command{
+			Name:   "copy",
+			Action: doImageCopy,
 		},
 	},
 	Before: doBeforeUmociSubcommand,
@@ -548,4 +556,16 @@ func doOverlayConvertAndOutput(ctx *cli.Context) error {
 	layerType := types.LayerType(ctx.String("layer-type"))
 
 	return overlay.ConvertAndOutput(config, tag, name, layerType)
+}
+
+func doImageCopy(ctx *cli.Context) error {
+	if len(ctx.Args()) != 2 {
+		return errors.Errorf("wrong number of args")
+	}
+
+	return lib.ImageCopy(lib.ImageCopyOpts{
+		Src:      ctx.Args()[0],
+		Dest:     ctx.Args()[1],
+		Progress: os.Stdout,
+	})
 }

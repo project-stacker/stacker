@@ -19,8 +19,8 @@ lint: $(GO_SRC)
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 
 check-%: stacker
-	[ -f ./test/centos/index.json ] || skopeo --insecure-policy copy docker://centos:latest oci:./test/centos:latest
-	[ -f ./test/ubuntu/index.json ] || skopeo --insecure-policy copy docker://ubuntu:latest oci:./test/ubuntu:latest
+	[ -f ./test/centos/index.json ] || ./stacker internal-go copy docker://centos:latest oci:./test/centos:latest
+	[ -f ./test/ubuntu/index.json ] || ./stacker internal-go copy docker://ubuntu:latest oci:./test/ubuntu:latest
 	sudo -E "PATH=$$PATH" STORAGE_TYPE=$(subst check-,,$@) $(BATS) --jobs "$(JOBS)" -t $(patsubst %,test/%.bats,$(TEST))
 
 # make check TEST=basic will run only the basic test.

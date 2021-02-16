@@ -60,6 +60,12 @@ function strace_stacker {
     [ "$status" -eq 0 ]
 }
 
+function image_copy {
+    run "${ROOT_DIR}/stacker" internal-go copy "$@"
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
 function stacker_chroot {
     chroot_run=$(mktemp -p ${TEST_TMPDIR} chroot_runfile.XXXXXXX)
     chroot_stderr=$(mktemp -p ${TEST_TMPDIR} chroot_stderr.XXXXXXX)
