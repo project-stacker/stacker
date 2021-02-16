@@ -14,8 +14,8 @@ function teardown() {
     # get a linux to do stuff on
     # (double copy so we can take advantage of caching)
     mkdir -p .stacker/layer-bases
-    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
-    skopeo --insecure-policy copy oci:.stacker/layer-bases/oci:centos oci:test-oci:a-linux
+    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
+    image_copy oci:.stacker/layer-bases/oci:centos oci:test-oci:a-linux
 
     cat > stacker.yaml <<EOF
 # do some stuff
@@ -131,7 +131,7 @@ EOF
 
 @test "intermediate base layers are used" {
     require_storage btrfs
-    skopeo --insecure-policy copy oci:$UBUNTU_OCI oci:oci-import:ubuntu
+    image_copy oci:$UBUNTU_OCI oci:oci-import:ubuntu
     test_intermediate_layers_used tar oci-import:ubuntu
 }
 

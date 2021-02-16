@@ -20,7 +20,7 @@ output2:
         url: oci:centos
 EOF
 
-    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:oci:centos
+    image_copy oci:$CENTOS_OCI oci:oci:centos
     stacker build
 
     name0=$(cat oci/index.json | jq -r .manifests[0].annotations.'"org.opencontainers.image.ref.name"')
@@ -38,7 +38,7 @@ centos2:
         type: oci
         url: dest:centos
 EOF
-    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:dest:centos
+    image_copy oci:$CENTOS_OCI oci:dest:centos
     stacker build
     [ "$(umoci ls --layout ./oci)" == "$(printf "centos2")" ]
 }
@@ -52,7 +52,7 @@ centos3:
     run:
         touch /zomg
 EOF
-    skopeo --insecure-policy copy oci:$CENTOS_OCI oci:dest:centos:0.1.1
+    image_copy oci:$CENTOS_OCI oci:dest:centos:0.1.1
     stacker build
     [ "$(umoci ls --layout ./oci)" == "$(printf "centos3")" ]
     umoci unpack --image oci:centos3 dest

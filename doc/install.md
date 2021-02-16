@@ -37,7 +37,6 @@ To run `make check` you will also need:
 
     sudo add-apt-repository ppa:projectatomic/ppa
     sudo apt update
-    sudo apt install skopeo
     sudo apt install bats jq
 
 #### Fedora 31
@@ -47,7 +46,7 @@ packages:
 
     sudo dnf install lxc-devel libcap-devel libacl-devel gpgme-devel
     sudo dnf install btrfs-progs
-    sudo dnf install skopeo bats jq
+    sudo dnf install bats jq
 
 ### Building the Stacker Binary
 
