@@ -126,3 +126,26 @@ EOF
     [ -f favicon.ico ]
     [ "$(sha favicon.ico)" == "$(sha .stacker/imports/centos/favicon.ico)" ]
 }
+
+@test "build only + unpriv + overlay clears state" {
+    require_storage overlay
+    unpriv_setup
+    cat > stacker.yaml <<"EOF"
+first:
+    from:
+        type: oci
+        url: ${{CENTOS_OCI}}
+    build_only: true
+    run: |
+        echo "run number ${{RUN_NUMBER}}"
+        THEPATH=/root/dir
+        [ ! -d $THEPATH ]
+        mkdir -p $THEPATH
+
+        # make it readonly to host stacker
+        chmod 500 $THEPATH
+EOF
+
+    unpriv_stacker build --layer-type=squashfs --substitute "RUN_NUMBER=1" --substitute CENTOS_OCI=$CENTOS_OCI
+    unpriv_stacker build --layer-type=squashfs --substitute "RUN_NUMBER=2" --substitute CENTOS_OCI=$CENTOS_OCI
+}
