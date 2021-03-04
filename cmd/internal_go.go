@@ -143,6 +143,16 @@ var internalGoCmd = cli.Command{
 				},
 			},
 		},
+		cli.Command{
+			Name:   "overlay-storage-delete",
+			Action: doOverlayStorageDelete,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "name",
+				},
+			},
+		},
+
 		/*
 		 * these two below are not actually used by stacker, but are
 		 * entrypoints to the code for use in the test suite.
@@ -568,4 +578,9 @@ func doImageCopy(ctx *cli.Context) error {
 		Dest:     ctx.Args()[1],
 		Progress: os.Stdout,
 	})
+}
+
+func doOverlayStorageDelete(ctx *cli.Context) error {
+	name := ctx.String("name")
+	return errors.Wrapf(os.RemoveAll(path.Join(config.RootFSDir, name)), "couldn't delete %s", name)
 }
