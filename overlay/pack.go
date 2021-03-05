@@ -11,13 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
 	"github.com/anuvu/stacker/storage"
 	"github.com/anuvu/stacker/types"
+	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
@@ -64,14 +64,7 @@ func (o *overlay) Unpack(tag, name string) error {
 			// don't really need to do this in parallel, but what
 			// the hell.
 			pool.Add(func(ctx context.Context) error {
-				return container.RunInternalGoSubcommand(o.config, []string{
-					"--tag", tag,
-					"--oci-path", cacheDir,
-					"--bundle-path", contents,
-					"unpack-one",
-					"--digest", digest.String(),
-					"--squashfs",
-				})
+				return unpackOne(cacheDir, contents, digest, true)
 			})
 		case ispec.MediaTypeImageLayer:
 			fallthrough
@@ -86,13 +79,7 @@ func (o *overlay) Unpack(tag, name string) error {
 			// shifting, we can use the fancier features of context
 			// cancelling in the thread pool...
 			pool.Add(func(ctx context.Context) error {
-				return container.RunInternalGoSubcommand(o.config, []string{
-					"--tag", tag,
-					"--oci-path", cacheDir,
-					"--bundle-path", contents,
-					"unpack-one",
-					"--digest", digest.String(),
-				})
+				return unpackOne(cacheDir, contents, digest, false)
 			})
 		default:
 			return errors.Errorf("unknown media type %s", layer.MediaType)
@@ -278,13 +265,7 @@ func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerT
 						return err
 					}
 				} else {
-					args := []string{
-						"overlay-convert-and-output",
-						"--tag", cacheTag,
-						"--name", name,
-						"--layer-type", string(layerType),
-					}
-					err = container.RunInternalGoSubcommand(o.config, args)
+					err = ConvertAndOutput(o.config, cacheTag, name, layerType)
 					if err != nil {
 						return err
 					}
@@ -319,19 +300,7 @@ func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.St
 		return err
 	}
 
-	// this is really just a wrapper for the function below, RepackOverlay.
-	// we just do this dance so it's run in a userns and the uids look
-	// right.
-	args := []string{
-		"--tag", name,
-		"--oci-path", o.config.OCIDir,
-		"repack-overlay",
-	}
-
-	for _, layerType := range layerTypes {
-		args = append(args, "--layer-type", string(layerType))
-	}
-	return container.RunInternalGoSubcommand(o.config, args)
+	return repackOverlay(o.config, name, layerTypes)
 }
 
 func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
@@ -468,7 +437,7 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 	return true, nil
 }
 
-func RepackOverlay(config types.StackerConfig, name string, layerTypes []types.LayerType) error {
+func repackOverlay(config types.StackerConfig, name string, layerTypes []types.LayerType) error {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
@@ -556,4 +525,31 @@ func RepackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	}
 
 	return ovl.write(config, name)
+}
+
+func unpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashfs bool) error {
+	if isSquashfs {
+		return squashfs.ExtractSingleSquash(
+			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
+			path.Join(bundlePath, "rootfs"), "overlay")
+	}
+
+	oci, err := umoci.OpenLayout(ociDir)
+	if err != nil {
+		return err
+	}
+	defer oci.Close()
+
+	compressed, err := oci.GetBlob(context.Background(), digest)
+	if err != nil {
+		return err
+	}
+	defer compressed.Close()
+
+	uncompressed, err := pgzip.NewReader(compressed)
+	if err != nil {
+		return err
+	}
+
+	return layer.UnpackLayer(bundlePath, uncompressed, nil)
 }

@@ -103,14 +103,6 @@ func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
 	return nil
 }
 
-func Run(userCmd []string, msg string) error {
-	cmd := exec.Command(userCmd[0], userCmd[1:]...)
-	cmd.Stdin = nil
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return errors.Wrapf(cmd.Run(), msg)
-}
-
 // A wrapper which runs things in a userns if we're an unprivileged user with
 // an idmap, or runs things on the host if we're root and don't.
 func MaybeRunInUserns(userCmd []string, msg string) error {
@@ -160,5 +152,5 @@ func RunInternalGoSubcommand(config types.StackerConfig, args []string) error {
 
 	cmd = append(cmd, "internal-go")
 	cmd = append(cmd, args...)
-	return Run(cmd, "image unpack failed")
+	return MaybeRunInUserns(cmd, "image unpack failed")
 }

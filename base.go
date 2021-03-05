@@ -6,12 +6,13 @@ import (
 	"os"
 	"path"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
+	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
+	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
 )
 
@@ -153,9 +154,26 @@ func setupTarRootfs(o BaseLayerOpts) error {
 	tar := path.Join(cacheDir, path.Base(o.Layer.From.Url))
 
 	layerPath := o.Storage.TarExtractLocation(o.Name)
-	return container.RunInternalGoSubcommand(o.Config, []string{
-		"unpack-tar",
-		"--tar", tar,
-		"--dest-dir", layerPath,
-	})
+	return unpackTar(layerPath, tar)
+}
+
+func unpackTar(destDir string, tar string) error {
+	tarReader, err := os.Open(tar)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't open %s", tar)
+	}
+	defer tarReader.Close()
+	var uncompressed io.ReadCloser
+	uncompressed, err = pgzip.NewReader(tarReader)
+	if err != nil {
+		_, err = tarReader.Seek(0, os.SEEK_SET)
+		if err != nil {
+			return errors.Wrapf(err, "failed to 0 seek %s", tar)
+		}
+		uncompressed = tarReader
+	} else {
+		defer uncompressed.Close()
+	}
+
+	return layer.UnpackLayer(destDir, uncompressed, &layer.UnpackOptions{KeepDirlinks: true})
 }

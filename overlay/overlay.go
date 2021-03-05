@@ -13,7 +13,6 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
@@ -171,10 +170,7 @@ func (o *overlay) Restore(source, target string) error {
 }
 
 func (o *overlay) Delete(thing string) error {
-	return container.RunInternalGoSubcommand(o.config, []string{
-		"overlay-storage-delete",
-		"--name", thing,
-	})
+	return errors.Wrapf(os.RemoveAll(path.Join(o.config.RootFSDir, thing)), "couldn't delete %s", thing)
 }
 
 func (o *overlay) Exists(thing string) bool {

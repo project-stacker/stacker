@@ -1,25 +1,82 @@
 package btrfs
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path"
+	"time"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
+	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
 	"github.com/anuvu/stacker/storage"
 	"github.com/anuvu/stacker/types"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/mutate"
+	"github.com/opencontainers/umoci/oci/casext"
+	"github.com/opencontainers/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
 )
 
 func (b *btrfs) initEmptyLayer(name string, layerType types.LayerType) error {
-	return container.RunInternalGoSubcommand(b.c, []string{
-		"--tag", layerType.LayerName(name),
-		"--oci-path", b.c.OCIDir,
-		"--bundle-path", path.Join(b.c.RootFSDir, name),
-		"init-empty",
-	})
+	var oci casext.Engine
+	var err error
+
+	tag := layerType.LayerName(name)
+	ociDir := b.c.OCIDir
+	bundlePath := path.Join(b.c.RootFSDir, name)
+
+	if _, statErr := os.Stat(ociDir); statErr != nil {
+		oci, err = umoci.CreateLayout(ociDir)
+	} else {
+		oci, err = umoci.OpenLayout(ociDir)
+	}
+	if err != nil {
+		return errors.Wrapf(err, "Failed creating layout for %s", ociDir)
+	}
+
+	err = umoci.NewImage(oci, tag)
+	if err != nil {
+		return err
+	}
+
+	// kind of a hack, but the API won't let us init an empty image in a
+	// bundle with data already in it, which is probably reasonable. so
+	// what we do instead is: unpack the empty image above into a temp
+	// directory, then copy the mtree/umoci metadata over to our rootfs.
+	dir, err := ioutil.TempDir("", "umoci-init-empty")
+	if err != nil {
+		return errors.Wrapf(err, "couldn't create temp dir")
+	}
+	defer os.RemoveAll(dir)
+
+	err = doUnpack(b.c, tag, ociDir, dir, "")
+	if err != nil {
+		return err
+	}
+
+	ents, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't read temp dir")
+	}
+
+	for _, ent := range ents {
+		if ent.Name() == "rootfs" {
+			continue
+		}
+
+		// copy all metadata to the real dir
+		err = lib.FileCopy(path.Join(bundlePath, ent.Name()), path.Join(dir, ent.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func determineLayerType(ociDir, tag string) (types.LayerType, error) {
@@ -96,11 +153,47 @@ func (b *btrfs) Repack(name string, layerTypes []types.LayerType, sfm types.Stac
 		}
 	}
 
-	return container.RunInternalGoSubcommand(b.c, []string{
-		"--oci-path", b.c.OCIDir,
-		"--tag", name,
-		"--bundle-path", path.Join(b.c.RootFSDir, name),
-		"repack",
-		"--layer-type", string(layerType),
-	})
+	return doRepack(name, b.c.OCIDir, path.Join(b.c.RootFSDir, name), layerType)
+}
+
+func doRepack(tag string, ociDir string, bundlePath string, layerType types.LayerType) error {
+	oci, err := umoci.OpenLayout(ociDir)
+	if err != nil {
+		return err
+	}
+	defer oci.Close()
+
+	meta, err := umoci.ReadBundleMeta(bundlePath)
+	if err != nil {
+		return err
+	}
+
+	mutator, err := mutate.New(oci, meta.From)
+	if err != nil {
+		return err
+	}
+
+	imageMeta, err := mutator.Meta(context.Background())
+	if err != nil {
+		return err
+	}
+
+	layerName := layerType.LayerName(tag)
+	switch layerType {
+	case "tar":
+		now := time.Now()
+		history := &ispec.History{
+			Author:     imageMeta.Author,
+			Created:    &now,
+			CreatedBy:  "stacker umoci repack",
+			EmptyLayer: false,
+		}
+
+		filters := []mtreefilter.FilterFunc{stackermtree.LayerGenerationIgnoreRoot}
+		return umoci.Repack(oci, layerName, bundlePath, meta, history, filters, true, mutator)
+	case "squashfs":
+		return squashfs.GenerateSquashfsLayer(layerName, imageMeta.Author, bundlePath, ociDir, oci)
+	default:
+		return errors.Errorf("unknown layer type %s", layerType)
+	}
 }
