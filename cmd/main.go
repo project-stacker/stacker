@@ -105,6 +105,11 @@ func main() {
 			// default to btrfs for now since it's less experimental
 			Value: "btrfs",
 		},
+		cli.BoolFlag{
+			Name:   "internal-userns",
+			Usage:  "used to reexec stacker in a user namespace",
+			Hidden: true,
+		},
 	}
 
 	/*
@@ -186,6 +191,10 @@ func main() {
 		}
 
 		config.StorageType = ctx.String("storage-type")
+
+		if ctx.Bool("internal-userns") {
+			config.Userns = true
+		}
 
 		fi, err := os.Stat(config.CacheFile())
 		if err != nil {
