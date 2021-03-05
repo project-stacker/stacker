@@ -1,11 +1,13 @@
 package main
 
 import (
-	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"os"
 
 	"github.com/anuvu/stacker"
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/types"
+	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 )
 
 var buildCmd = cli.Command{
@@ -100,6 +102,20 @@ func doBuild(ctx *cli.Context) error {
 		return err
 	}
 
+	if !args.Config.Userns {
+		binary, err := os.Readlink("/proc/self/exe")
+		if err != nil {
+			return err
+		}
+
+		cmd := os.Args
+		cmd[0] = binary
+		cmd = append(cmd[:2], cmd[1:]...)
+		cmd[1] = "--internal-userns"
+
+		err = container.MaybeRunInUserns(cmd, "Build in container")
+		return err
+	}
 	builder := stacker.NewBuilder(&args)
 	return builder.BuildMultiple([]string{ctx.String("stacker-file")})
 }

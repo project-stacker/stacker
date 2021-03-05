@@ -13,6 +13,7 @@ type StackerConfig struct {
 	RootFSDir   string `yaml:"rootfs_dir"`
 	Debug       bool   `yaml:"-"`
 	StorageType string `yaml:"-"`
+	Userns      bool   `yaml:"-"`
 }
 
 // Substitutions - return an array of substitutions for StackerFiles

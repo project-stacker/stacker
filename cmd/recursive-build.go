@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/anuvu/stacker"
-	"github.com/anuvu/stacker/lib"
+	"os"
 
+	"github.com/anuvu/stacker"
+	"github.com/anuvu/stacker/container"
+	"github.com/anuvu/stacker/lib"
 	"github.com/urfave/cli"
 )
 
@@ -63,6 +65,21 @@ func doRecursiveBuild(ctx *cli.Context) error {
 
 	stackerFiles, err := lib.FindFiles(ctx.String("search-dir"), ctx.String("stacker-file-pattern"))
 	if err != nil {
+		return err
+	}
+
+	if !args.Config.Userns {
+		binary, err := os.Readlink("/proc/self/exe")
+		if err != nil {
+			return err
+		}
+
+		cmd := os.Args
+		cmd[0] = binary
+		cmd = append(cmd[:2], cmd[1:]...)
+		cmd[1] = "--internal-userns"
+
+		err = container.MaybeRunInUserns(cmd, "Build in container")
 		return err
 	}
 
