@@ -7,14 +7,16 @@ import (
 	"path"
 	"strings"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	stackeroci "github.com/anuvu/stacker/oci"
+	"github.com/anuvu/stacker/squashfs"
+	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
+	"github.com/opencontainers/umoci/pkg/fseval"
 	"github.com/pkg/errors"
 )
 
@@ -81,13 +83,8 @@ func (b *btrfs) Unpack(tag, name string) error {
 			return err
 		}
 
-		err = container.RunInternalGoSubcommand(b.c, []string{
-			"--oci-path", cacheDir,
-			"--tag", tag,
-			"--bundle-path", bundlePath,
-			"unpack",
-			"--start-from", startFrom.Digest.String(),
-		})
+		err = doUnpack(b.c, tag, cacheDir, bundlePath, startFrom.Digest.String())
+
 		if err != nil {
 			return err
 		}
@@ -132,6 +129,123 @@ func (b *btrfs) findPreviousExtraction(oci casext.Engine, manifest ispec.Manifes
 	}
 
 	return lastLayer, highestHash, nil
+}
+
+func doUnpack(config types.StackerConfig, tag, ociDir, bundlePath, startFromDigest string) error {
+	oci, err := umoci.OpenLayout(ociDir)
+	if err != nil {
+		return err
+	}
+	defer oci.Close()
+
+	// Other unpack drivers will probably want to do something fancier for
+	// their unpacks and will exec a different code path, so we can/should
+	// assume this is btrfs for now. Additionally, we can assume its an
+	// existing btrfs, since the loopback device should have been mounted
+	// by the parent.
+	storage := NewExisting(config)
+	manifest, err := stackeroci.LookupManifest(oci, tag)
+	if err != nil {
+		return err
+	}
+
+	startFrom := ispec.Descriptor{}
+	for _, desc := range manifest.Layers {
+		if desc.Digest.String() == startFromDigest {
+			startFrom = desc
+			break
+		}
+	}
+
+	if startFromDigest != "" && startFrom.MediaType == "" {
+		return errors.Errorf("couldn't find starting hash %s", startFromDigest)
+	}
+
+	var callback layer.AfterLayerUnpackCallback
+	if config.StorageType == "btrfs" {
+		// TODO: we could always share the empty layer, but that's more code
+		// and seems extreme...
+		callback = func(manifest ispec.Manifest, desc ispec.Descriptor) error {
+			hash, err := ComputeAggregateHash(manifest, desc)
+			if err != nil {
+				return err
+			}
+
+			log.Debugf("creating intermediate snapshot %s", hash)
+			return storage.Snapshot(path.Base(bundlePath), hash)
+		}
+	}
+
+	if len(manifest.Layers) != 0 && manifest.Layers[0].MediaType == stackeroci.MediaTypeLayerSquashfs {
+		log.Debugf("Unpack squashfs: %s", tag)
+		return squashfsUnpack(ociDir, oci, tag, bundlePath, callback, startFrom)
+	}
+
+	return tarUnpack(config, oci, tag, bundlePath, callback, startFrom)
+}
+
+func squashfsUnpack(ociDir string, oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
+	manifest, err := stackeroci.LookupManifest(oci, tag)
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for _, layer := range manifest.Layers {
+		if !found && startFrom.MediaType != "" && layer.Digest.String() != startFrom.Digest.String() {
+			continue
+		}
+		found = true
+
+		rootfs := path.Join(bundlePath, "rootfs")
+		squashfsFile := path.Join(ociDir, "blobs", "sha256", layer.Digest.Encoded())
+		err = squashfs.ExtractSingleSquash(squashfsFile, rootfs, "btrfs")
+		if err != nil {
+			return err
+		}
+		err = callback(manifest, layer)
+		if err != nil {
+			return err
+		}
+	}
+
+	dps, err := oci.ResolveReference(context.Background(), tag)
+	if err != nil {
+		return err
+	}
+
+	mtreeName := strings.Replace(dps[0].Descriptor().Digest.String(), ":", "_", 1)
+	err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Rootless)
+	if err != nil {
+		return err
+	}
+
+	err = umoci.WriteBundleMeta(bundlePath, umoci.Meta{
+		Version: umoci.MetaVersion,
+		From: casext.DescriptorPath{
+			Walk: []ispec.Descriptor{dps[0].Descriptor()},
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func tarUnpack(config types.StackerConfig, oci casext.Engine, tag string, bundlePath string, callback layer.AfterLayerUnpackCallback, startFrom ispec.Descriptor) error {
+	whiteoutMode := layer.OCIStandardWhiteout
+	if config.StorageType == "overlay" {
+		whiteoutMode = layer.OverlayFSWhiteout
+	}
+
+	opts := layer.UnpackOptions{
+		KeepDirlinks:     true,
+		AfterLayerUnpack: callback,
+		StartFrom:        startFrom,
+		WhiteoutMode:     whiteoutMode,
+	}
+	return umoci.Unpack(oci, tag, bundlePath, opts)
 }
 
 func prepareUmociMetadata(storage *btrfs, name string, bundlePath string, dp casext.DescriptorPath, highestHash string) error {
@@ -209,11 +323,7 @@ func prepareUmociMetadata(storage *btrfs, name string, bundlePath string, dp cas
 	} else {
 		// Umoci's metadata wasn't present. Let's generate it.
 		log.Infof("generating mtree metadata for snapshot (this may take a bit)...")
-		err = container.RunInternalGoSubcommand(storage.c, []string{
-			"--bundle-path", bundlePath,
-			"generate-bundle-manifest",
-			"--mtree-name", mtreeName,
-		})
+		err = umoci.GenerateBundleManifest(mtreeName, bundlePath, fseval.Default)
 		if err != nil {
 			return err
 		}
