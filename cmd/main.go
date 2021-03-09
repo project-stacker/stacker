@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
 	"syscall"
 
+	"github.com/anuvu/stacker/container"
 	stackerlog "github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	"github.com/apex/log"
@@ -34,6 +36,27 @@ func shouldShowProgress(ctx *cli.Context) bool {
 
 	/* otherise, show it when we're attached to a terminal */
 	return terminal.IsTerminal(int(os.Stdout.Fd()))
+}
+
+func stackerResult(err error) {
+	if err != nil {
+		format := "error: %v\n"
+		if config.Debug {
+			format = "error: %+v\n"
+		}
+
+		fmt.Fprintf(os.Stderr, format, err)
+
+		// propagate the wrapped execution's error code if we're in the
+		// userns wrapper
+		exitErr, ok := errors.Cause(err).(*exec.ExitError)
+		if ok {
+			os.Exit(exitErr.ExitCode())
+		}
+		os.Exit(1)
+	} else {
+		os.Exit(0)
+	}
 }
 
 func main() {
@@ -192,10 +215,6 @@ func main() {
 
 		config.StorageType = ctx.String("storage-type")
 
-		if ctx.Bool("internal-userns") {
-			config.Userns = true
-		}
-
 		fi, err := os.Stat(config.CacheFile())
 		if err != nil {
 			if !os.IsNotExist(err) {
@@ -224,16 +243,22 @@ func main() {
 
 		stackerlog.FilterNonStackerLogs(handler, logLevel)
 		stackerlog.Debugf("stacker version %s", version)
+
+		if !ctx.Bool("internal-userns") {
+			binary, err := os.Readlink("/proc/self/exe")
+			if err != nil {
+				return err
+			}
+
+			cmd := os.Args
+			cmd[0] = binary
+			cmd = append(cmd[:2], cmd[1:]...)
+			cmd[1] = "--internal-userns"
+
+			stackerResult(container.MaybeRunInUserns(cmd, ""))
+		}
 		return nil
 	}
 
-	if err := app.Run(os.Args); err != nil {
-		format := "error: %v\n"
-		if config.Debug {
-			format = "error: %+v\n"
-		}
-
-		fmt.Fprintf(os.Stderr, format, err)
-		os.Exit(1)
-	}
+	stackerResult(app.Run(os.Args))
 }

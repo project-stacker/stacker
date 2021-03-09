@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/overlay"
@@ -24,10 +23,6 @@ var internalGoCmd = cli.Command{
 			Action: doTestsuiteCheckOverlay,
 		},
 		cli.Command{
-			Name:   "check-overlay",
-			Action: doCheckOverlay,
-		},
-		cli.Command{
 			Name:   "copy",
 			Action: doImageCopy,
 		},
@@ -38,10 +33,6 @@ var internalGoCmd = cli.Command{
 func doBeforeUmociSubcommand(ctx *cli.Context) error {
 	log.Debugf("stacker subcommand: %v", os.Args)
 	return nil
-}
-
-func doCheckOverlay(ctx *cli.Context) error {
-	return overlay.CanDoOverlay(config)
 }
 
 // doTestsuiteCheckOverlay is only called from the stacker test suite to
@@ -59,7 +50,7 @@ func doTestsuiteCheckOverlay(ctx *cli.Context) error {
 		return errors.Wrapf(err, "couldn't make rootfs dir for testsuite check")
 	}
 
-	err = container.RunInternalGoSubcommand(config, []string{"check-overlay"})
+	err = overlay.CanDoOverlay(config)
 	if err != nil {
 		log.Infof("%s", err)
 		os.Exit(50)

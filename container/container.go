@@ -97,7 +97,10 @@ func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, msg)
+		if msg != "" {
+			return errors.Wrapf(err, msg)
+		}
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -111,7 +114,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 	if os.Geteuid() == 0 {
 		log.Debugf("No uid mappings, running as root")
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)
-		cmd.Stdin = nil
+		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return errors.Wrapf(cmd.Run(), msg)

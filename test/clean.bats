@@ -97,3 +97,17 @@ EOF
     [ ! -d roots ]
     [ ! -f .stacker/btrfs.loop ]
 }
+
+@test "clean of unpriv overlay works" {
+    require_storage overlay
+    unpriv_setup
+
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+EOF
+    unpriv_stacker build
+    unpriv_stacker clean
+}
