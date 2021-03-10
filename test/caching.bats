@@ -182,3 +182,25 @@ EOF
     umoci unpack --image oci:mode-test dest
     [ -x dest/rootfs/executable ]
 }
+
+@test "can read previous version's cache" {
+    git clone https://github.com/anuvu/stacker
+    (cd stacker && make)
+
+    # some additional testing that the cache can be read by older versions of
+    # stacker (cache_test.go has the full test for the type, this just checks
+    # the mechanics of filepaths and such)
+    touch foo
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - foo
+    run: cp /stacker/foo /foo
+EOF
+
+    ./stacker/stacker --storage-type=$STORAGE_TYPE build
+    stacker build
+}
