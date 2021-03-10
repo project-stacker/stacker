@@ -204,3 +204,15 @@ EOF
     ./stacker/stacker --storage-type=$STORAGE_TYPE build
     stacker build
 }
+
+@test "different old cache version is ok" {
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+EOF
+    stacker build
+    echo '{"version": 1, "cache": "lolnope"}' > .stacker/build.cache
+    stacker build
+}

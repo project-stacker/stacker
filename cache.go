@@ -71,6 +71,19 @@ type BuildCache struct {
 	config  types.StackerConfig
 }
 
+type versionCheck struct {
+	Version int `json:"version"`
+}
+
+func versionMatches(content []byte) (bool, error) {
+	v := versionCheck{}
+	if err := json.Unmarshal(content, &v); err != nil {
+		return false, errors.Wrapf(err, "error parsing version")
+	}
+
+	return v.Version == currentCacheVersion, nil
+}
+
 func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerFiles) (*BuildCache, error) {
 	f, err := os.Open(config.CacheFile())
 	cache := &BuildCache{
@@ -92,16 +105,21 @@ func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerF
 		return nil, err
 	}
 
-	if err := json.Unmarshal(content, cache); err != nil {
+	cacheOk, err := versionMatches(content)
+	if err != nil {
 		return nil, err
 	}
 
-	if cache.Version != currentCacheVersion {
+	if !cacheOk {
 		log.Infof("old cache version found, clearing cache and rebuilding from scratch...")
 		os.Remove(config.CacheFile())
 		cache.Cache = map[string]CacheEntry{}
 		cache.Version = currentCacheVersion
 		return cache, nil
+	}
+
+	if err := json.Unmarshal(content, cache); err != nil {
+		return nil, errors.Wrapf(err, "error parsing cache")
 	}
 
 	pruned := false
