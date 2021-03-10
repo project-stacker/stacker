@@ -16,7 +16,7 @@ import (
 	"github.com/apex/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"gopkg.in/yaml.v2"
 )
 
@@ -35,7 +35,7 @@ func shouldShowProgress(ctx *cli.Context) bool {
 	}
 
 	/* otherise, show it when we're attached to a terminal */
-	return terminal.IsTerminal(int(os.Stdout.Fd()))
+	return term.IsTerminal(int(os.Stdout.Fd()))
 }
 
 func stackerResult(err error) {
@@ -148,7 +148,7 @@ func main() {
 	 * see shouldShowProgress() for how we resolve whether or not to
 	 * actually show it.
 	 */
-	isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
+	isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
 	if isTerminal {
 		app.Flags = append(app.Flags, cli.BoolFlag{
 			Name:  "no-progress",
