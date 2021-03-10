@@ -221,6 +221,8 @@ github.com/opencontainers/runtime-spec v1.0.2 h1:UfAcuLBJB9Coz72x1hgl8O5RVzTdNia
 github.com/opencontainers/runtime-spec v1.0.2/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.5.2 h1:F6DgIsjgBIcDksLW4D5RG9bXok6oqZ3nvMwj4ZoFu/Q=
 github.com/opencontainers/selinux v1.5.2/go.mod h1:yTcKuYAh6R95iDpefGLQaPaRwJFwyzAJufJyiTt7s0g=
+github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10 h1:eHipLb0mTNrnnPsHQiFQRF0t6nJRU8XfieX2E/dI4TI=
+github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10/go.mod h1:MrN+59KhghyYciyVTN9P2E+lBBGbahcogj/Fjg7y5Rs=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG6YJVEWopen4avK3VNQSnALmmjvniMmni/YFYAwc=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
@@ -295,8 +297,6 @@ github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61 h1:INQxeLW5rI6NdK32NgVL+2q6p+ixmFuvvduSYmsCYGw=
 github.com/tych0/go-losetup v0.0.0-20200513233514-d9566aa43a61/go.mod h1:cdWJrB+PcHXXfp97Gizi9FJNWfNLgO6pt4CgxWpVA5Q=
-github.com/tych0/umoci v0.4.7-0.20210121200051-7ac4c56af9ee h1:hE4txW1WL7NTdciJ+q9HMwY4pVuSDbOI9EZyXBkNXcM=
-github.com/tych0/umoci v0.4.7-0.20210121200051-7ac4c56af9ee/go.mod h1:bfixRGOWHQ4t9pBxtrvmveH4oYtERhCO88rusKgePjM=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ulikunitz/xz v0.5.7 h1:YvTNdFzX6+W5m9msiYg/zpkSURPPtOlzbqYjrFn7Yt4=
@@ -351,7 +351,6 @@ golang.org/x/net v0.0.0-20190613194153-d28f0bde5980/go.mod h1:z5CRVTTTmAJ677TzLL
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20191004110552-13f9640d40b9/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e/go.mod h1:qpuaurCH72eLCgpAm/N6yyVIVM9cpaDIP3A8BGJEC5A=
-golang.org/x/net v0.0.0-20200602114024-627f9648deb9/go.mod h1:qpuaurCH72eLCgpAm/N6yyVIVM9cpaDIP3A8BGJEC5A=
 golang.org/x/net v0.0.0-20200707034311-ab3426394381 h1:VXak5I6aEWmAXeQjA+QSZzlgNrpq9mjcfDemuexIKsU=
 golang.org/x/net v0.0.0-20200707034311-ab3426394381/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
