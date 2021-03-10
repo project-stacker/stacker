@@ -7,9 +7,11 @@ import (
 	"testing"
 
 	"github.com/anuvu/stacker/types"
+	"github.com/mitchellh/hashstructure"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLayerHashing(t *testing.T) {
@@ -96,4 +98,21 @@ foo:
 	if ok {
 		t.Errorf("found cached entry when I shouldn't have?")
 	}
+}
+
+func TestCacheEntryChanged(t *testing.T) {
+	assert := assert.New(t)
+
+	h, err := hashstructure.Hash(CacheEntry{}, nil)
+	assert.NoError(err)
+
+	// The goal here is to make sure that the types of things in CacheEntry
+	// haven't changed; if they have (aka this test fails), you should do
+	// currentCacheVersion++, since stackers with an old cache will be
+	// invalid with your current patch.
+	//
+	// This test works because the type information is included in the
+	// hashstructure hash above, so using a zero valued CacheEntry is
+	// enough to capture changes in types.
+	assert.Equal(uint64(0x5acbeb0345d4eeaa), h)
 }
