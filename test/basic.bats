@@ -38,6 +38,7 @@ centos:
         - ./executable
     run:
         - cp /stacker/\$FAVICON /\$FAVICON
+        - ls -al /stacker
         - cp /stacker/executable /usr/bin/executable
     entrypoint: echo hello world
     environment:
@@ -60,6 +61,7 @@ EOF
     touch executable
     chmod +x executable
     mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
     image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
     umoci unpack --image .stacker/layer-bases/oci:centos dest
     tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
@@ -72,11 +74,14 @@ EOF
     [ -f .stacker/layer-bases/centos.tar ]
 
     # did run actually copy the favicon to the right place?
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(stacker_chroot sha /favicon.ico)" ]
+    stacker grab centos:/favicon.ico
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha favicon.ico)" ]
 
     [ ! -f roots/layer1/rootfs/favicon.ico ] || [ ! -f roots/layer1/overlay/favicon.ico ]
 
-    [ "$(stacker_chroot stat --format="%a" /usr/bin/executable)" = "755" ]
+    rm executable
+    stacker grab centos:/usr/bin/executable
+    [ "$(stat --format="%a" executable)" = "755" ]
 
     # did we do a copy correctly?
     [ "$(sha .stacker/imports/centos/stacker.yaml)" == "$(sha ./stacker.yaml)" ]
@@ -100,7 +105,19 @@ EOF
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Labels["foo"]')" = "bar" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Labels["bar"]')" = "baz" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.WorkingDir')" = "/meshuggah/rocks" ]
-    [ "$(cat oci/blobs/sha256/$config | jq -r '.author')" = "$SUDO_USER@$(hostname)" ]
+
+    # TODO: this kind of sucks and is backwards, but now when running as a
+    # privileged container, stacker's code will render $SUDO_USER as the user.
+    # However, when running as an unprivileged user, the re-exec will cause
+    # stacker to think that it is running as root, and render the author as
+    # root. We could/should fix this, but AFAIK nobody pays attention to this
+    # anyway...
+    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+        [ "$(cat oci/blobs/sha256/$config | jq -r '.author')" = "$SUDO_USER@$(hostname)" ]
+    else
+        [ "$(cat oci/blobs/sha256/$config | jq -r '.author')" = "root@$(hostname)" ]
+    fi
+    cat oci/blobs/sha256/$config | jq -r '.author'
 
     manifest2=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     [ "$manifest" = "$manifest2" ]

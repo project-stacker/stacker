@@ -10,6 +10,7 @@ function teardown() {
 
 @test "btrfs -> overlay -> btrfs works" {
     require_storage btrfs # only run this once
+    require_privilege priv
 
     cat > stacker.yaml <<EOF
 test:
@@ -32,6 +33,7 @@ EOF
 
 @test "overlay -> btrfs -> overlay works" {
     require_storage btrfs # only run this once
+    require_privilege priv
 
     cat > stacker.yaml <<EOF
 test:

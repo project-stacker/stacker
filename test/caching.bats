@@ -201,7 +201,13 @@ test:
     run: cp /stacker/foo /foo
 EOF
 
-    ./stacker/stacker --storage-type=$STORAGE_TYPE build
+    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+        ./stacker/stacker --storage-type=$STORAGE_TYPE --debug build
+    else
+        skip_if_no_unpriv_overlay
+        sudo -u $SUDO_USER ./stacker/stacker --storage-type=$STORAGE_TYPE --debug build
+    fi
+
     stacker build
 }
 

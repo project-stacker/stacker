@@ -55,6 +55,7 @@ layer3_2:
     run: |
         cp /root/import0 /root/import0_copied
 EOF
+    chown -R $SUDO_USER:$SUDO_USER .
 }
 
 function teardown() {
@@ -71,9 +72,9 @@ function teardown() {
 }
 
 @test "search for multiple stackerfiles using default settings" {
-    cd ocibuilds
     # Search for all stackerfiles under current directory and produce a build order
     stacker recursive-build --order-only
+    echo $output
     [[ "${lines[-1]}" =~ ^(2 build .*ocibuilds\/sub3\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml .*\/sub2\/stacker\.yaml\])$ ]]
     [[ "${lines[-2]}" =~ ^(1 build .*ocibuilds\/sub2\/stacker\.yaml: requires: \[.*\/sub1\/stacker\.yaml\])$ ]]
     [[ "${lines[-3]}" =~ ^(0 build .*ocibuilds\/sub1\/stacker\.yaml: requires: \[\])$ ]]
