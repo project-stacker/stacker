@@ -11,6 +11,7 @@ function teardown() {
 @test "/stacker is ro" {
     mkdir -p .stacker/imports/test
     touch .stacker/imports/test/foo
+    chmod -R 777 .stacker/imports
 
     cat > stacker.yaml <<EOF
 test:

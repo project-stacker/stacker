@@ -129,7 +129,6 @@ EOF
 
 @test "build only + unpriv + overlay clears state" {
     require_storage overlay
-    unpriv_setup
     cat > stacker.yaml <<"EOF"
 first:
     from:
@@ -146,6 +145,6 @@ first:
         chmod 500 $THEPATH
 EOF
 
-    unpriv_stacker build --layer-type=squashfs --substitute "RUN_NUMBER=1" --substitute CENTOS_OCI=$CENTOS_OCI
-    unpriv_stacker build --layer-type=squashfs --substitute "RUN_NUMBER=2" --substitute CENTOS_OCI=$CENTOS_OCI
+    stacker build --layer-type=squashfs --substitute "RUN_NUMBER=1" --substitute CENTOS_OCI=$CENTOS_OCI
+    stacker build --layer-type=squashfs --substitute "RUN_NUMBER=2" --substitute CENTOS_OCI=$CENTOS_OCI
 }

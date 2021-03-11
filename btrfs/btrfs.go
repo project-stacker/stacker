@@ -19,6 +19,7 @@ import (
 	"github.com/anuvu/stacker/mount"
 	"github.com/anuvu/stacker/types"
 	"github.com/freddierice/go-losetup"
+	"github.com/lxc/lxd/shared"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
@@ -204,7 +205,7 @@ func isBtrfsSubVolume(subvolPath string) (bool, error) {
 	fs := syscall.Stat_t{}
 	err := syscall.Lstat(subvolPath, &fs)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "failed testing %s for subvol", subvolPath)
 	}
 
 	// Check if BTRFS_FIRST_FREE_OBJECTID
@@ -306,7 +307,7 @@ func btrfsSubVolumesDelete(root string) error {
 
 		err = os.RemoveAll(path.Join(root, subvol))
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to delete subvolume %s", subvol)
 		}
 	}
 
@@ -383,8 +384,20 @@ func (b *btrfs) Clean() error {
 	var umountErr error
 	_, err := os.Stat(loopback)
 	if err == nil {
-		umountErr = syscall.Unmount(b.c.RootFSDir, 0)
-		os.RemoveAll(loopback)
+		// if we are inside a userns we can't unmount the loopback
+		// (probably because someone did `sudo stacker unpriv-setup`);
+		// they'll need to be root to unmount it as well.
+		if shared.RunningInUserNS() {
+			return errors.Errorf("can't fully clean btrfs from userns (try stacker clean ... as root)")
+		}
+
+		umountErr = errors.Wrapf(syscall.Unmount(b.c.RootFSDir, 0), "unable to umount rootfs")
+		if err = os.RemoveAll(loopback); err != nil {
+			log.Infof("failed removing btrfs loopback file: %v", err)
+		}
+	}
+	if err = os.RemoveAll(b.c.RootFSDir); err != nil {
+		log.Infof("failed removing roots dir: %v", err)
 	}
 	if subvolErr != nil && umountErr != nil {
 		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)

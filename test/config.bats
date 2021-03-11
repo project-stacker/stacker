@@ -10,6 +10,8 @@ function teardown() {
 }
 
 @test "config args work" {
+    require_privilege priv
+
     local tmpd=$(pwd)
     echo "tmpd $tmpd"
     cat > stacker.yaml <<EOF
@@ -26,6 +28,8 @@ EOF
 }
 
 @test "config file works" {
+    require_privilege priv
+
     local tmpd=$(pwd)
     echo "tmpd $tmpd"
     find $tmpd
@@ -48,6 +52,8 @@ EOF
 }
 
 @test "config file substitutions work" {
+    require_privilege priv
+
     # the stacker file provided runs a 'my-build' that creates /my-publish/output.tar
     # output.tar's content.txt file should have the rendered values
     # for STACKER_ROOTFS_DIR STACKER_OCI_DIR and STACKER_STACKER_DIR

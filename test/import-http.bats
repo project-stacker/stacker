@@ -39,6 +39,8 @@ function teardown() {
 }
 
 @test "importing from cache works for unreachable http urls" {
+    require_privilege priv
+
     # Build base image
     stacker build -f img/stacker1.yaml
     umoci ls --layout oci

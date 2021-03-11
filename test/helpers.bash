@@ -4,9 +4,6 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
-export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
-
 function skip_if_no_unpriv_overlay {
     [ "$STORAGE_TYPE" == "overlay" ] || return 0
     run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug internal-go testsuite-check-overlay
@@ -15,6 +12,26 @@ function skip_if_no_unpriv_overlay {
     [ "$status" -eq 0 ]
 }
 
+function run_stacker {
+    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+        run "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
+    else
+        skip_if_no_unpriv_overlay
+        run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
+    fi
+}
+
+function image_copy {
+    run_stacker internal-go copy "$@"
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
+[ -f "$ROOT_DIR/test/centos/index.json" ] || image_copy docker://centos:latest "oci:$ROOT_DIR/test/centos:latest"
+export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
+[ -f "$ROOT_DIR/test/ubuntu/index.json" ] || image_copy docker://ubuntu:latest "oci:$ROOT_DIR/test/ubuntu:latest"
+export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
+
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
 }
@@ -22,6 +39,13 @@ function sha() {
 function stacker_setup() {
     export TEST_TMPDIR=$(tmpd $BATS_TEST_NAME)
     cd $TEST_TMPDIR
+
+    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+        return
+    fi
+
+    "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE unpriv-setup
+    chown -R $SUDO_USER:$SUDO_USER .
 }
 
 function cleanup() {
@@ -30,53 +54,32 @@ function cleanup() {
     rm -rf "$TEST_TMPDIR" || true
 }
 
+function run_as {
+    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+        "$@"
+    else
+        sudo -u "$SUDO_USER" "$@"
+    fi
+}
+
 function stacker {
-    run "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
+    run_stacker "$@"
     echo "$output"
     [ "$status" -eq 0 ]
 }
 
 function bad_stacker {
-    run "${ROOT_DIR}/stacker" --debug "$@"
+    run_stacker "$@"
     echo "$output"
     [ "$status" -ne 0 ]
 }
 
-function unpriv_stacker {
-    skip_if_no_unpriv_overlay
-    run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
-    echo "$output"
-    [ "$status" -eq 0 ]
-}
-
-function unpriv_setup {
-    stacker unpriv-setup
-    chown -R $SUDO_USER:$SUDO_USER .
-}
-
-function strace_stacker {
-    run strace -f -s 4096 "${ROOT_DIR}/stacker" --debug "$@"
-    echo "$output"
-    [ "$status" -eq 0 ]
-}
-
-function image_copy {
-    run "${ROOT_DIR}/stacker" internal-go copy "$@"
-    echo "$output"
-    [ "$status" -eq 0 ]
-}
-
-function stacker_chroot {
-    chroot_run=$(mktemp -p ${TEST_TMPDIR} chroot_runfile.XXXXXXX)
-    chroot_stderr=$(mktemp -p ${TEST_TMPDIR} chroot_stderr.XXXXXXX)
-    cat "${ROOT_DIR}/test/helpers.bash" >> "${chroot_run}"
-    echo "$@" >> "${chroot_run}"
-    cat "${chroot_run}" | "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug chroot 2>"${chroot_stderr}"
-    [ "$?" -eq 0 ] || (cat "${chroot_stderr}" && false)
-}
-
 function require_storage {
     [ "$STORAGE_TYPE" = "$1" ] || skip "test not valid for storage type $STORAGE_TYPE"
+}
+
+function require_privilege {
+    [ "$PRIVILEGE_LEVEL" = "$1" ] || skip "test not valid for privilege level $PRIVILEGE_LEVEL"
 }
 
 function tmpd() {

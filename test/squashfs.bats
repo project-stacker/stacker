@@ -181,6 +181,7 @@ EOF
 
 @test "built type with squashfs works" {
     mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
     image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
     umoci unpack --image .stacker/layer-bases/oci:centos dest
     tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
@@ -218,6 +219,7 @@ EOF
 @test "built type with squashfs build-only base works (btrfs)" {
     require_storage btrfs
     mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
     image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
     umoci unpack --image .stacker/layer-bases/oci:centos dest
     tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
@@ -255,6 +257,7 @@ EOF
 @test "built type with squashfs build-only base works (overlay)" {
     require_storage overlay
     mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
     image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
     umoci unpack --image .stacker/layer-bases/oci:centos dest
     tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .

@@ -26,18 +26,8 @@ layer1:
         - rm /favicon.ico
 EOF
     stacker build
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(stacker_chroot sha /favicon.ico)" ]
+    stacker grab centos:/favicon.ico
+    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha favicon.ico)" ]
     umoci unpack --image oci:layer1 dest
     [ ! -f dest/rootfs/favicon.ico ]
-}
-
-@test "unprivileged importing from docker hub" {
-    cat > stacker.yaml <<EOF
-centos:
-    from:
-        type: docker
-        url: docker://centos:latest
-EOF
-    unpriv_setup
-    unpriv_stacker build
 }

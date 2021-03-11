@@ -14,6 +14,7 @@ function teardown() {
     # get a linux to do stuff on
     # (double copy so we can take advantage of caching)
     mkdir -p .stacker/layer-bases
+    chmod -R 777 .stacker/layer-bases
     image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
     image_copy oci:.stacker/layer-bases/oci:centos oci:test-oci:a-linux
 
@@ -39,6 +40,7 @@ EOF
     # change the manifest so it is different, oh my!
     umoci config --image test-oci:a-linux --config.workingdir /usr
     umoci --log info gc --layout test-oci
+    chmod -R 777 .stacker/layer-bases test-oci
 
     # now try it a second time...
     cat > stacker.yaml <<EOF
@@ -131,12 +133,14 @@ EOF
 
 @test "intermediate base layers are used" {
     require_storage btrfs
+    require_privilege priv
     image_copy oci:$UBUNTU_OCI oci:oci-import:ubuntu
     test_intermediate_layers_used tar oci-import:ubuntu
 }
 
 @test "intermediate base layers are used (squashfs)" {
     require_storage btrfs
+    require_privilege priv
     cat > stacker.yaml <<EOF
 ubuntu:
     from:
@@ -202,11 +206,13 @@ EOF
 
 @test "startFrom is respected" {
     require_storage btrfs
+    require_privilege priv
     test_startfrom_respected tar
 }
 
 @test "startFrom is respected (squashfs)" {
     require_storage btrfs
+    require_privilege priv
     test_startfrom_respected squashfs
 }
 
@@ -266,9 +272,8 @@ EOF
     # first build a base image
     stacker build
     mv oci oci-import
-    stacker clean
+    stacker clean || true
 
-    unpriv_setup
     # now import that image twice, first the child image, then the parent
     # image, to force a layer regeneration
     cat > stacker.yaml <<'EOF'
@@ -291,7 +296,7 @@ parent-child:
         [ ! -f /child ]
         touch /foo
 EOF
-    unpriv_stacker build
+    stacker build
 
     manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
     n_layers=$(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')

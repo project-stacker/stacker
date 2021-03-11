@@ -29,6 +29,7 @@ func openStorage(c types.StackerConfig, storageType string) (types.Storage, erro
 	case "btrfs":
 		isBtrfs, err := btrfs.DetectBtrfs(c.RootFSDir)
 		if err != nil {
+			log.Infof("error from DetectBtrfs %v", err)
 			return nil, err
 		}
 
@@ -74,8 +75,8 @@ func tryToDetectStorageType(c types.StackerConfig) (string, error) {
 	}
 
 	for _, ent := range ents {
-		log.Debugf("detected some overlay layers, assuming previous storage type overlay")
 		if _, err := os.Stat(path.Join(c.RootFSDir, ent.Name(), "overlay")); err == nil {
+			log.Debugf("detected some overlay layers, assuming previous storage type overlay")
 			return "overlay", nil
 		}
 	}
@@ -122,6 +123,7 @@ func maybeSwitchStorage(c types.StackerConfig) error {
 	if err != nil {
 		return err
 	}
+	log.Infof("after clean")
 
 	err = os.Remove(c.CacheFile())
 	// it's ok if it didn't exist, this is probably a new run of stacker

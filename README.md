@@ -21,8 +21,6 @@ Additionally, there are some [tips and tricks](doc/tricks.md) for common usage.
 * Upstream something to containers/image that allows for automatic detection
   of compression
 * Design/implement OCIv2 drafts + final spec when it comes out
-* Rearrange tests so there's more unprivileged coverage (really should be
-  another row/column in the test matrix like storage type is)
 
 ### Conference Talks
 

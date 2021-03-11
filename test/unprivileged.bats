@@ -2,7 +2,6 @@ load helpers
 
 function setup() {
     stacker_setup
-    unpriv_setup
 }
 
 function teardown() {
@@ -26,7 +25,7 @@ child:
         echo "zomg" > /etc/000
         chmod 000 /etc/000
 EOF
-    unpriv_stacker build
+    stacker build
     umoci unpack --image oci:parent parent
     [ -f parent/rootfs/etc/000 ]
     [ "$(stat --format="%a" parent/rootfs/etc/000)" = "0" ]
@@ -54,7 +53,7 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
-    unpriv_stacker build
+    stacker build
     umoci unpack --image oci:centos centos
     [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha centos/rootfs/favicon.ico)" ]
     umoci unpack --image oci:layer1 layer1
@@ -62,6 +61,8 @@ EOF
 }
 
 @test "unprivileged read-only imports can be re-cached" {
+    require_privilege unpriv
+
     sudo -s -u $SUDO_USER <<EOF
 mkdir -p import
 touch import/this
@@ -76,13 +77,15 @@ centos:
     import:
         - import
 EOF
-    unpriv_stacker build
+    stacker build
     ls -al import import/*
     echo that | sudo -u $SUDO_USER tee import/this
-    unpriv_stacker build
+    stacker build
 }
 
 @test "/stacker in unprivileged mode gets deleted" {
+    require_privilege unpriv
+
     sudo -s -u $SUDO_USER <<EOF
 touch first
 touch second
@@ -104,7 +107,7 @@ next:
         type: tar
         url: stacker://base/base.tar.gz
 EOF
-    unpriv_stacker build
+    stacker build
 
     umoci unpack --image oci:base base
     [ ! -d base/rootfs/stacker ]
@@ -116,6 +119,8 @@ EOF
 }
 
 @test "stacker switching privilege modes fails" {
+    require_privilege unpriv
+
     cat > stacker.yaml <<EOF
 base:
     from:
@@ -126,9 +131,13 @@ base:
     run: cat /stacker/test
 EOF
     echo unpriv | sudo -s -u $SUDO_USER tee test
-    unpriv_stacker build
+    stacker build
     echo priv > test
-    bad_stacker build
+
+    # always run as privileged...
+    run "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug build
+    echo $output
+    [ "$status" -ne 0 ]
 }
 
 @test "underlying layer output conversion happens in a user namespace" {
@@ -141,7 +150,7 @@ image:
         url: $CENTOS_OCI
 EOF
 
-    unpriv_stacker build --layer-type squashfs
+    stacker build --layer-type squashfs
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
 

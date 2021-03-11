@@ -3,7 +3,6 @@ load helpers
 function setup() {
     stacker_setup
     mkdir -p ocibuilds/sub1
-    mkdir oci_publish
     touch ocibuilds/sub1/import1
     cat > ocibuilds/sub1/stacker.yaml <<EOF
 layer1:

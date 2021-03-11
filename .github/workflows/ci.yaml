@@ -9,11 +9,12 @@ on:
 jobs:
     build:
         runs-on: ubuntu-20.04
-        name: "golang ${{ matrix.go-version }} storage-type ${{ matrix.storage-backend }}"
+        name: "golang ${{ matrix.go-version }} storage-type ${{ matrix.storage-type }} privilege ${{ matrix.privilege-level }}"
         strategy:
             matrix:
                 go-version: [1.15.x, 1.16.x]
-                storage-backend: [btrfs, overlay]
+                storage-type: [btrfs, overlay]
+                privilege-level: [priv, unpriv]
         steps:
             - uses: actions/checkout@v2
             - name: Set up golang ${{ matrix.go-version }}
@@ -32,4 +33,5 @@ jobs:
                   sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools
                   (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
                   (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
-            - run: make lint check-${{ matrix.storage-backend }}
+            - run: |
+                  make check STORAGE_TYPE=${{ matrix.storage-type }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}

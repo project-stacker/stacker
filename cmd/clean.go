@@ -33,10 +33,6 @@ func doClean(ctx *cli.Context) error {
 		err = s.Clean()
 		if err != nil {
 			log.Infof("problem cleaning roots %v", err)
-		}
-		err = os.RemoveAll(config.RootFSDir)
-		if err != nil {
-			log.Infof("problem cleaning roots %v", err)
 			fail = true
 		}
 	}
