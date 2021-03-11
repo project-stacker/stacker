@@ -83,7 +83,8 @@ func ImageCopy(opts ImageCopyOpts) error {
 	}
 
 	args := &copy.Options{
-		ReportWriter: opts.Progress,
+		ReportWriter:     opts.Progress,
+		RemoveSignatures: true,
 	}
 
 	args.SourceCtx = &types.SystemContext{}
