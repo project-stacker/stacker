@@ -23,7 +23,8 @@ jobs:
                   go-version: ${{ matrix.go-version }}
             - name: install dependencies
               run: |
-                  source /etc/os-release
+                  sudo ls /etc/apt/sources.list.d/*
+                  sudo rm -rf /etc/apt/sources.list.d/*
                   sudo add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
                   sudo apt-get update
                   sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libbtrfs-dev bats parallel
