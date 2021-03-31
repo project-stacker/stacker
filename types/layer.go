@@ -33,6 +33,7 @@ func IsContainersImageLayer(from string) bool {
 type Import struct {
 	Path string `yaml:"path"`
 	Hash string `yaml:"hash"`
+	Dest string `yaml:"dest"`
 }
 
 type Imports []Import
@@ -60,6 +61,7 @@ type Layer struct {
 func getImportFromInterface(v interface{}) (Import, error) {
 	m, ok := v.(map[interface{}]interface{})
 	var hash string
+	var dest string
 	if ok {
 		// check for nil hash so that we won't end up with "nil" string values
 		if m["hash"] == nil {
@@ -67,24 +69,34 @@ func getImportFromInterface(v interface{}) (Import, error) {
 		} else {
 			hash = fmt.Sprintf("%v", m["hash"])
 		}
-		return Import{Hash: hash, Path: fmt.Sprintf("%v", m["path"])}, nil
+		if m["dest"] == nil {
+			dest = "/"
+		} else {
+			dest = fmt.Sprintf("%v", m["dest"])
+		}
+		return Import{Hash: hash, Path: fmt.Sprintf("%v", m["path"]), Dest: dest}, nil
 	}
 
 	m2, ok := v.(map[string]interface{})
 	if ok {
 		// check for nil hash so that we won't end up with "nil" string values
-		if m["hash"] == nil {
+		if m2["hash"] == nil {
 			hash = ""
 		} else {
-			hash = fmt.Sprintf("%v", m["hash"])
+			hash = fmt.Sprintf("%v", m2["hash"])
 		}
-		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["Path"])}, nil
+		if m2["dest"] == nil {
+			dest = "/"
+		} else {
+			dest = fmt.Sprintf("%v", m2["dest"])
+		}
+		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["Path"]), Dest: dest}, nil
 	}
 
 	// if it's not a map then it's a string
 	s, ok := v.(string)
 	if ok {
-		return Import{Hash: "", Path: fmt.Sprintf("%v", s)}, nil
+		return Import{Hash: "", Path: fmt.Sprintf("%v", s), Dest: "/"}, nil
 	}
 	return Import{}, errors.Errorf("Didn't find a matching type for: %#v", v)
 }
@@ -207,7 +219,7 @@ func (l *Layer) ParseImport() (Imports, error) {
 		if err != nil {
 			return nil, err
 		}
-		absImport = Import{Hash: rawImport.Hash, Path: absImportPath}
+		absImport = Import{Hash: rawImport.Hash, Path: absImportPath, Dest: rawImport.Dest}
 		absImports = append(absImports, absImport)
 	}
 	return absImports, nil

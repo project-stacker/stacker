@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"fmt"
 	"github.com/opencontainers/go-digest"
 	"io/ioutil"
 	"os"
@@ -279,7 +280,6 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		if err != nil {
 			return "", err
 		}
-
 		err = verifyImportFileHash(p, hash)
 		if err != nil {
 			return "", err
@@ -353,5 +353,77 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 		}
 	}
 
+	return nil
+}
+
+// Copy imports to a container rootfs
+func copyImportsInRootfs(name string, imports types.Imports, sc types.StackerConfig, storage types.Storage) error {
+	cacheDir := path.Join(sc.StackerDir, "imports", name)
+	for _, i := range imports {
+		url, err := types.NewDockerishUrl(i.Path)
+		if err != nil {
+			return err
+		}
+		rootfsDir := "rootfs"
+		source := path.Join(cacheDir, path.Base(i.Path))
+
+		// logic for overlay storage
+		// we need to mount host's import dir
+		if storage.Name() == "overlay" {
+			c, err := NewContainer(sc, storage, name)
+			if err != nil {
+				return err
+			}
+			defer c.Close()
+
+			err = c.bindMount(cacheDir, "/stacker", "")
+			if err != nil {
+				return err
+			}
+			//defer os.Remove(path.Join(sc.RootFSDir, name, "rootfs", "stacker"))
+			// mkdir destination if it doesn't exist
+			dest := path.Join(i.Dest, path.Base(i.Path))
+			if i.Dest != "/" {
+				err = c.Execute(fmt.Sprintf("mkdir -p %s", i.Dest), nil)
+				if err != nil {
+					return err
+				}
+			}
+			err = c.Execute(fmt.Sprintf("cp -r --preserve=all --no-preserve=ownership /stacker/%s %s", path.Base(i.Path), dest), nil)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		// logic for btrfs storage
+		dest := path.Join(sc.RootFSDir, name, rootfsDir, i.Dest, path.Base(i.Path))
+		// mkdir destination if it doesn't exist
+		if _, err := os.Stat(dest); os.IsNotExist(err) {
+			if err = os.MkdirAll(dest, 0755); err != nil {
+				return err
+			}
+		}
+
+		if url.Scheme == "http" || url.Scheme == "https" {
+			// import is file
+			if err = lib.FileCopy(dest, source); err != nil {
+				return err
+			}
+		} else {
+			e1, err := os.Lstat(source)
+			if err != nil {
+				return err
+			}
+			if e1.IsDir() {
+				if err = lib.DirCopy(dest, source); err != nil {
+					return err
+				}
+			} else {
+				if err = lib.FileCopy(dest, source); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }

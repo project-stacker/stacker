@@ -178,3 +178,88 @@ centos:
 EOF
     bad_stacker build
 }
+
+@test "copy imports in rootfs test" {
+    touch test_import
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - test_import
+    run: |
+        [ -f /test_import ]
+EOF
+    stacker build
+}
+
+@test "test import dest directive" {
+    touch test_import
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: test_import
+          dest: /tmp
+    run: |
+        [ -f /tmp/test_import ]
+EOF
+    stacker build
+}
+
+@test "test import dest directive creates dir" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://bing.com/favicon.ico
+          dest: /tmp/dirThatNotExists/dir2
+    run: |
+        [ -f /tmp/dirThatNotExists/dir2/favicon.ico ]
+EOF
+    stacker build
+}
+
+@test "test import dest works with stacker:// import" {
+    cat > stacker.yaml <<EOF
+first:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        path: https://bing.com/favicon.ico
+        dest: /tmp/favicon
+    build_only: true
+second:
+    from:
+        type: built
+        tag: first
+    import:
+        path: stacker://first/tmp/favicon/favicon.ico
+        dest: /tmp/favicon
+    run: |
+        [ -f /tmp/favicon/favicon.ico ]
+EOF
+    stacker build
+}
+
+@test "executability is preserved" {
+    touch executable
+    chmod +x executable
+    cat > stacker.yaml <<EOF
+first:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        path: executable
+    run: |
+        [ -x /executable ]
+EOF
+    stacker build
+}

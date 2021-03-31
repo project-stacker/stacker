@@ -405,6 +405,13 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
+		// code for copy imports in rootfs
+		log.Debugf("Copying imports into %s's rootfs", name)
+		err = copyImportsInRootfs(name, imports, opts.Config, s)
+		if err != nil {
+			return err
+		}
+
 		c, err := NewContainer(opts.Config, s, name)
 		if err != nil {
 			return err

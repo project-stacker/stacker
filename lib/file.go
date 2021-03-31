@@ -31,17 +31,34 @@ func FileCopy(dest string, source string) error {
 	}
 	defer s.Close()
 
-	fi, err := s.Stat()
-	if err != nil {
-		return err
-	}
-
 	d, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
 	defer d.Close()
 
+	fi, err := s.Stat()
+	if err != nil {
+		return err
+	}
+
+	//if preservePermissions {
+	//	err = d.Chmod(fi.Mode())
+	//	if err != nil {
+	//		return err
+	//	}
+	//} else {
+	//	// preserve executable
+	//	if IsExecOwner(fi.Mode()) {
+	//		err = d.Chmod(0700)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//	// preserve time
+	//	if err = os.Chtimes(dest, fi.ModTime(), fi.ModTime()); err != nil {
+	//		return err
+	//	}
 	err = d.Chmod(fi.Mode())
 	if err != nil {
 		return err
@@ -80,4 +97,8 @@ func FindFiles(base, pattern string) ([]string, error) {
 	err = filepath.Walk(base, visit)
 
 	return paths, err
+}
+
+func IsExecOwner(mode os.FileMode) bool {
+	return mode&0100 != 0
 }
