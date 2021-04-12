@@ -99,6 +99,14 @@ EOF
         dirty="-dirty" || dirty=""
     [ "$publishedGitVersion" = "$myGitVersion$dirty" ]
 
+    # need to trim the extra newline from jq
+    cat oci/blobs/sha256/$manifest | jq -r '.annotations."com.cisco.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
+
+    # now we need to do --substitute FAVICON=favicon.ico
+    sed -e 's/$FAVICON/favicon.ico/g' stacker.yaml > stacker_after_subs
+
+    diff -U5 stacker_yaml_annotation stacker_after_subs
+
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Env[0]')" = "FOO=bar" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.User')" = "1000" ]
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Volumes["/data/db"]')" = "{}" ]

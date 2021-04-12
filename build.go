@@ -235,9 +235,9 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 	if gitVersion != "" {
 		log.Debugf("setting git version annotation to %s", gitVersion)
 		annotations[GitVersionAnnotation] = gitVersion
-	} else {
-		annotations[StackerContentsAnnotation] = sf.AfterSubstitutions
 	}
+
+	annotations[StackerContentsAnnotation] = sf.AfterSubstitutions
 
 	history := ispec.History{
 		EmptyLayer: true, // this is only the history for imageConfig edit
