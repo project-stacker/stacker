@@ -398,6 +398,8 @@ func (b *Builder) Build(s types.Storage, file string) error {
 
 				log.Infof("missing some cached layer output types, building anyway")
 			}
+		} else if len(binds) > 0 {
+			log.Infof("rebuilding cached layer due to use of binds in stacker file")
 		}
 
 		err = SetupRootfs(baseOpts)
