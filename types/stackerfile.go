@@ -309,6 +309,36 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 		return nil, err
 	}
 
+	getUnprocessedStackerImports := func(layer *Layer) ([]string, error) {
+		unprocessed := []string{}
+
+		imports, err := layer.ParseImport()
+		if err != nil {
+			return nil, err
+		}
+
+		// Determine if the layer has stacker:// imports from another
+		// layer which has not been processed
+		for _, imp := range imports {
+			url, err := NewDockerishUrl(imp.Path)
+			if err != nil {
+				return nil, err
+			}
+
+			if url.Scheme != "stacker" {
+				continue
+			}
+
+			_, ok := processed[url.Host]
+			if !ok {
+				unprocessed = append(unprocessed, imp.Path)
+			}
+		}
+
+		return unprocessed, nil
+
+	}
+
 	for i := 0; i < s.Len(); i++ {
 		for _, name := range s.FileOrder {
 			_, ok := processed[name]
@@ -325,32 +355,12 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 			// Determine if the layer uses a previously processed layer as base
 			_, baseTagProcessed := processed[layer.From.Tag]
 
-			imports, err := layer.ParseImport()
+			unprocessedImports, err := getUnprocessedStackerImports(layer)
 			if err != nil {
 				return nil, err
 			}
 
-			// Determine if the layer has stacker:// imports from another
-			// layer which has not been processed
-			allStackerImportsProcessed := true
-			for _, imp := range imports {
-				url, err := NewDockerishUrl(imp.Path)
-				if err != nil {
-					return nil, err
-				}
-
-				if url.Scheme != "stacker" {
-					continue
-				}
-
-				_, ok := processed[url.Host]
-				if !ok {
-					allStackerImportsProcessed = false
-					break
-				}
-			}
-
-			if allStackerImportsProcessed && (layer.From.Type != BuiltLayer || baseTagProcessed) {
+			if len(unprocessedImports) == 0 && (layer.From.Type != BuiltLayer || baseTagProcessed) {
 				// None of the imports using stacker:// are referencing unprocessed layers,
 				// and in case the base layer is type build we have already processed it
 				ret = append(ret, name)
@@ -361,10 +371,24 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 
 	if len(ret) != s.Len() {
 		for _, name := range s.FileOrder {
+			layer := s.internal[name]
+
 			_, ok := processed[name]
-			if !ok {
-				log.Infof("couldn't find dependencies for %s", name)
+			if ok {
+				continue
 			}
+
+			unprocessedDeps, err := getUnprocessedStackerImports(layer)
+			if err != nil {
+				return nil, err
+			}
+
+			_, baseTagProcessed := processed[layer.From.Tag]
+			if layer.From.Type == BuiltLayer && !baseTagProcessed {
+				unprocessedDeps = append(unprocessedDeps, fmt.Sprintf("base layer %s", layer.From.Tag))
+			}
+
+			log.Infof("couldn't find dependencies for %s: %s", name, strings.Join(unprocessedDeps, ", "))
 		}
 		return nil, errors.Errorf("couldn't resolve some dependencies")
 	}
