@@ -76,4 +76,8 @@ type Storage interface {
 	// TarExtractLocation returns the location that a tar-based rootfs
 	// should be extracted to
 	TarExtractLocation(name string) string
+
+	// Add overlay_dirs into overlay metadata so that later we can mount them
+	// in the lxc container, works only for storage-type 'overlay'
+	SetOverlayDirs(name string, overlayDirs OverlayDirs, layerTypes []LayerType) error
 }

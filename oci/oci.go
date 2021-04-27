@@ -58,16 +58,6 @@ func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error)
 // AddBlobNoCompression adds a blob to an OCI tag without compressing it (i.e.
 // not through umoci.mutator).
 func AddBlobNoCompression(oci casext.Engine, name string, content io.Reader) (ispec.Descriptor, error) {
-	manifest, err := LookupManifest(oci, name)
-	if err != nil {
-		return ispec.Descriptor{}, err
-	}
-
-	config, err := LookupConfig(oci, manifest.Config)
-	if err != nil {
-		return ispec.Descriptor{}, err
-	}
-
 	blobDigest, blobSize, err := oci.PutBlob(context.Background(), content)
 	if err != nil {
 		return ispec.Descriptor{}, err
@@ -79,26 +69,46 @@ func AddBlobNoCompression(oci casext.Engine, name string, content io.Reader) (is
 		Size:      blobSize,
 	}
 
-	manifest.Layers = append(manifest.Layers, desc)
-	config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, blobDigest)
+	return AddBlobByDescriptor(oci, name, desc)
+}
 
-	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), config)
+// AddBlobByDescriptor adds a layer to an OCI tag based on layer's Descriptor
+func AddBlobByDescriptor(oci casext.Engine, name string, desc ispec.Descriptor) (ispec.Descriptor, error) {
+	manifest, err := LookupManifest(oci, name)
 	if err != nil {
 		return ispec.Descriptor{}, err
 	}
 
-	manifest.Config = ispec.Descriptor{
+	config, err := LookupConfig(oci, manifest.Config)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	manifest.Layers = append(manifest.Layers, desc)
+	config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, desc.Digest)
+
+	return UpdateImageConfig(oci, name, config, manifest)
+}
+
+// UpdateImageConfig updates an oci tag with new config and new manifest
+func UpdateImageConfig(oci casext.Engine, name string, newConfig ispec.Image, newManifest ispec.Manifest) (ispec.Descriptor, error) {
+	configDigest, configSize, err := oci.PutBlobJSON(context.Background(), newConfig)
+	if err != nil {
+		return ispec.Descriptor{}, err
+	}
+
+	newManifest.Config = ispec.Descriptor{
 		MediaType: ispec.MediaTypeImageConfig,
 		Digest:    configDigest,
 		Size:      configSize,
 	}
 
-	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), manifest)
+	manifestDigest, manifestSize, err := oci.PutBlobJSON(context.Background(), newManifest)
 	if err != nil {
 		return ispec.Descriptor{}, err
 	}
 
-	desc = ispec.Descriptor{
+	desc := ispec.Descriptor{
 		MediaType: ispec.MediaTypeImageManifest,
 		Digest:    manifestDigest,
 		Size:      manifestSize,

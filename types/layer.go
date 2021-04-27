@@ -35,11 +35,18 @@ type Import struct {
 	Hash string `yaml:"hash"`
 }
 
+type OverlayDir struct {
+	Source string `yaml:"source"`
+	Dest   string `yaml:"dest"`
+}
+
+type OverlayDirs []OverlayDir
 type Imports []Import
 
 type Layer struct {
 	From               *ImageSource      `yaml:"from"`
 	Import             Imports           `yaml:"import"`
+	OverlayDirs        OverlayDirs       `yaml:"overlay_dirs"`
 	Run                interface{}       `yaml:"run"`
 	Cmd                interface{}       `yaml:"cmd"`
 	Entrypoint         interface{}       `yaml:"entrypoint"`
@@ -211,6 +218,20 @@ func (l *Layer) ParseImport() (Imports, error) {
 		absImports = append(absImports, absImport)
 	}
 	return absImports, nil
+}
+
+func (l *Layer) ParseOverlayDirs() (OverlayDirs, error) {
+	var absOverlayDirs OverlayDirs
+	var absOverlayDir OverlayDir
+	for _, rawOverlayDir := range l.OverlayDirs {
+		absOverlayDirSource, err := l.getAbsPath(rawOverlayDir.Source)
+		if err != nil {
+			return nil, err
+		}
+		absOverlayDir = OverlayDir{Source: absOverlayDirSource, Dest: rawOverlayDir.Dest}
+		absOverlayDirs = append(absOverlayDirs, absOverlayDir)
+	}
+	return absOverlayDirs, nil
 }
 
 func (l *Layer) ParseBinds() (map[string]string, error) {

@@ -21,6 +21,9 @@ type overlayMetadata struct {
 
 	// layers not yet rendered into the output image
 	BuiltLayers []string
+
+	// overlay_dir layers
+	OverlayDirLayers map[types.LayerType][]ispec.Descriptor
 }
 
 func newOverlayMetadata() overlayMetadata {
@@ -70,7 +73,6 @@ func (ovl overlayMetadata) write(config types.StackerConfig, tag string) error {
 	if err != nil {
 		return errors.Wrapf(err, "couldn't marshal overlay metadata")
 	}
-
 	metadataFile := path.Join(config.RootFSDir, tag, "overlay_metadata.json")
 	err = ioutil.WriteFile(metadataFile, content, 0644)
 	if err != nil {
@@ -93,6 +95,12 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 		manifest = m
 		break
 	}
+	// same as above
+	var descriptors []ispec.Descriptor
+	for _, ds := range ovl.OverlayDirLayers {
+		descriptors = ds
+		break
+	}
 
 	lowerdirs := []string{}
 	for _, layer := range manifest.Layers {
@@ -105,6 +113,14 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 
 	for _, layer := range ovl.BuiltLayers {
 		contents := path.Join(config.RootFSDir, layer, "overlay")
+		if _, err := os.Stat(contents); err != nil {
+			return "", errors.Wrapf(err, "%s does not exist", contents)
+		}
+		lowerdirs = append(lowerdirs, contents)
+	}
+	// mount overlay_dirs into lxc container
+	for _, od := range descriptors {
+		contents := overlayPath(config, od.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
 			return "", errors.Wrapf(err, "%s does not exist", contents)
 		}

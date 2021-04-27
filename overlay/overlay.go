@@ -243,3 +243,22 @@ func (o *overlay) GetLXCRootfsConfig(name string) (string, error) {
 func (o *overlay) TarExtractLocation(name string) string {
 	return path.Join(o.config.RootFSDir, name, "overlay")
 }
+
+// Add overlay_dirs into overlay metadata so that later we can mount them in the lxc container
+func (o *overlay) SetOverlayDirs(name string, overlayDirs types.OverlayDirs, layerTypes []types.LayerType) error {
+	if len(overlayDirs) == 0 {
+		return nil
+	}
+	// copy overlay_dirs contents into a temporary dir in roots
+	err := copyOverlayDirs(name, overlayDirs, o.config.RootFSDir)
+	if err != nil {
+		return err
+	}
+	// generate layers from above overlay_dirs
+	err = generateOverlayDirsLayers(name, layerTypes, overlayDirs, o.config)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -106,7 +106,22 @@ import:
   - /path/to/file
 ```
 
+### `overlay_dirs`
+This directive works only with OverlayFS backend storage.
 
+The `overlay_dirs` directive describes what directories (content) from the host should be
+available in the container's filesystem. It preserves all file/dirs attributes but no
+owner or group.
+
+```
+overlay_dirs:
+  - source: /path/to/directory
+    dest: /usr/local/          ## optional arg, default is '/'
+  - source: /path/to/directory2
+```
+This example will result in all the files/dirs from the host's /path/to/directory 
+to be available under container's /usr/local/ and all the files/dirs from the host's
+/path/to/directory2 to be available under container's /
 
 
 #### `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`, `user`
