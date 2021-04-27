@@ -80,10 +80,10 @@ func getImportFromInterface(v interface{}) (Import, error) {
 	m2, ok := v.(map[string]interface{})
 	if ok {
 		// check for nil hash so that we won't end up with "nil" string values
-		if m["hash"] == nil {
+		if m2["hash"] == nil {
 			hash = ""
 		} else {
-			hash = fmt.Sprintf("%v", m["hash"])
+			hash = fmt.Sprintf("%v", m2["hash"])
 		}
 		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["Path"])}, nil
 	}
