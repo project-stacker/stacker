@@ -21,7 +21,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 9
+const currentCacheVersion = 10
 
 type ImportType int
 
@@ -42,6 +42,10 @@ type ImportHash struct {
 	Hash string
 }
 
+type OverlayDirHash struct {
+	Hash string
+}
+
 type CacheEntry struct {
 	// A map of LayerType:Manifest this build corresponds to.
 	Manifests map[types.LayerType]ispec.Descriptor
@@ -49,6 +53,9 @@ type CacheEntry struct {
 	// A map of the import url to the base64 encoded result of mtree walk
 	// or sha256 sum of a file, depending on what Type is.
 	Imports map[string]ImportHash
+
+	// A map of the overlay_dir url to the base64 encoded result of mtree walk
+	OverlayDirs map[string]OverlayDirHash
 
 	// The name of this layer as it was built. Useful for the BuildOnly
 	// case to make sure it still exists, and for printing error messages.
@@ -236,27 +243,11 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		}
 
 		if st.IsDir() {
-			rawCachedImport, err := base64.StdEncoding.DecodeString(cachedImport.Hash)
+			dirChanged, err := isCachedDirChanged(diskPath, cachedImport.Hash)
 			if err != nil {
 				return nil, false, err
 			}
-
-			cachedDH, err := mtree.ParseSpec(bytes.NewBuffer(rawCachedImport))
-			if err != nil {
-				return nil, false, err
-			}
-
-			dh, err := walkImport(diskPath)
-			if err != nil {
-				return nil, false, err
-			}
-
-			diff, err := mtree.Compare(cachedDH, dh, mtreeKeywords)
-			if err != nil {
-				return nil, false, err
-			}
-
-			if len(diff) > 0 {
+			if dirChanged {
 				log.Infof("cache miss because import dir content changed: %s", imp.Path)
 				return nil, false, nil
 			}
@@ -273,7 +264,65 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		}
 	}
 
+	overlayDirs, err := l.ParseOverlayDirs()
+	if err != nil {
+		return nil, false, err
+	}
+
+	for _, overlayDir := range overlayDirs {
+		cachedOverlayDir, ok := result.OverlayDirs[overlayDir.Source]
+		if !ok {
+			log.Infof("cache miss because of new overlay_dir: %s", overlayDir.Source)
+			return nil, false, nil
+		}
+		overlayDirDiskPath := path.Join(c.config.RootFSDir, name, "overlay_dirs", path.Base(overlayDir.Source), overlayDir.Dest)
+		_, err := os.Stat(overlayDirDiskPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				log.Infof("cache miss because overlay_dir was missing: %s", overlayDir.Source)
+				return nil, false, nil
+			}
+			return nil, false, err
+		}
+		dirChanged, err := isCachedDirChanged(overlayDir.Source, cachedOverlayDir.Hash)
+		if err != nil {
+			return nil, false, err
+		}
+		if dirChanged {
+			log.Infof("cache miss because overlay_dir content changed: %s", overlayDir.Source)
+			return nil, false, nil
+		}
+	}
+
 	return &result, true, nil
+}
+
+func isCachedDirChanged(dirPath string, cachedDirHash string) (bool, error) {
+	rawCachedImport, err := base64.StdEncoding.DecodeString(cachedDirHash)
+	if err != nil {
+		return true, err
+	}
+
+	cachedDH, err := mtree.ParseSpec(bytes.NewBuffer(rawCachedImport))
+	if err != nil {
+		return true, err
+	}
+
+	dh, err := walkImport(dirPath)
+	if err != nil {
+		return true, err
+	}
+
+	diff, err := mtree.Compare(cachedDH, dh, mtreeKeywords)
+	if err != nil {
+		return true, err
+	}
+
+	if len(diff) > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func getEncodedMtree(path string) (string, error) {
@@ -363,11 +412,12 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 	}
 
 	ent := CacheEntry{
-		Manifests: manifests,
-		Imports:   map[string]ImportHash{},
-		Name:      name,
-		Layer:     l,
-		Base:      baseHash,
+		Manifests:   manifests,
+		Imports:     map[string]ImportHash{},
+		OverlayDirs: map[string]OverlayDirHash{},
+		Name:        name,
+		Layer:       l,
+		Base:        baseHash,
 	}
 
 	imports, err := l.ParseImport()
@@ -400,6 +450,20 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 		}
 
 		ent.Imports[imp.Path] = ih
+	}
+
+	overlayDirs, err := l.ParseOverlayDirs()
+	if err != nil {
+		return err
+	}
+
+	for _, overlayDir := range overlayDirs {
+		odh := OverlayDirHash{}
+		odh.Hash, err = getEncodedMtree(overlayDir.Source)
+		if err != nil {
+			return err
+		}
+		ent.OverlayDirs[overlayDir.Source] = odh
 	}
 
 	c.Cache[name] = ent

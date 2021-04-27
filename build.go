@@ -407,6 +407,16 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
+		overlayDirs, err := l.ParseOverlayDirs()
+		if err != nil {
+			return err
+		}
+
+		err = s.SetOverlayDirs(name, overlayDirs, opts.LayerTypes)
+		if err != nil {
+			return err
+		}
+
 		c, err := NewContainer(opts.Config, s, name)
 		if err != nil {
 			return err

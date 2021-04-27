@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/pkg/errors"
 )
 
 func FileCopy(dest string, source string) error {
@@ -12,14 +14,14 @@ func FileCopy(dest string, source string) error {
 
 	linkFI, err := os.Lstat(source)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Coudn't stat link %s", source)
 	}
 
 	// If it's a link, it might be broken. In any case, just copy it.
 	if linkFI.Mode()&os.ModeSymlink != 0 {
 		target, err := os.Readlink(source)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "Coudn't read link %s", source)
 		}
 
 		return os.Symlink(target, dest)
@@ -27,24 +29,24 @@ func FileCopy(dest string, source string) error {
 
 	s, err := os.Open(source)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Coudn't open file %s", source)
 	}
 	defer s.Close()
 
 	fi, err := s.Stat()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Coudn't stat file %s", source)
 	}
 
 	d, err := os.Create(dest)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Coudn't create file %s", dest)
 	}
 	defer d.Close()
 
 	err = d.Chmod(fi.Mode())
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Coudn't chmod file %s", source)
 	}
 
 	_, err = io.Copy(d, s)
