@@ -10,6 +10,7 @@ import (
 
 	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/anuvu/stacker/squashfs"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/stretchr/testify/assert"
@@ -73,6 +74,27 @@ func TestImageCompressionCopy(t *testing.T) {
 		// generally break that :)
 		assert.Equal(origBlobs[i].Name(), copiedBlobs[i].Name())
 	}
+}
+
+func TestForceManifestTypeOption(t *testing.T) {
+	assert := assert.New(t)
+	dir, err := ioutil.TempDir("", "stacker-force-manifesttype-test")
+	assert.NoError(err)
+	defer os.RemoveAll(dir)
+
+	assert.NoError(createImage(dir, "foo"))
+
+	assert.NoError(ImageCopy(ImageCopyOpts{
+		Src:               fmt.Sprintf("oci:%s/oci:foo", dir),
+		Dest:              fmt.Sprintf("oci:%s/oci2:foo", dir),
+		ForceManifestType: ispec.MediaTypeImageManifest,
+	}))
+
+	assert.Error(ImageCopy(ImageCopyOpts{
+		Src:               fmt.Sprintf("oci:%s/oci:foo", dir),
+		Dest:              fmt.Sprintf("oci:%s/oci2:foo", dir),
+		ForceManifestType: "test",
+	}))
 }
 
 func TestOldManifestReallyRemoved(t *testing.T) {

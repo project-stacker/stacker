@@ -48,16 +48,17 @@ func localRefParser(ref string) (types.ImageReference, error) {
 }
 
 type ImageCopyOpts struct {
-	Src          string
-	SrcUsername  string
-	SrcPassword  string
-	Dest         string
-	DestUsername string
-	DestPassword string
-	SrcSkipTLS   bool
-	DestSkipTLS  bool
-	Progress     io.Writer
-	Context      context.Context
+	Src               string
+	SrcUsername       string
+	SrcPassword       string
+	Dest              string
+	DestUsername      string
+	DestPassword      string
+	ForceManifestType string
+	SrcSkipTLS        bool
+	DestSkipTLS       bool
+	Progress          io.Writer
+	Context           context.Context
 }
 
 func ImageCopy(opts ImageCopyOpts) error {
@@ -113,6 +114,13 @@ func ImageCopy(opts ImageCopyOpts) error {
 			Username: opts.DestUsername,
 			Password: opts.DestPassword,
 		}
+	}
+
+	// Set ForceManifestMIMEType
+	// Supported manifest type :- https://github.com/containers/image/blob/master/manifest/manifest.go#L49
+	// ImageCopy caller should set correct manifest type at its end.
+	if opts.ForceManifestType != "" {
+		args.ForceManifestMIMEType = opts.ForceManifestType
 	}
 
 	_, err = copy.Image(opts.Context, policy, destRef, srcRef, args)
