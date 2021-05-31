@@ -22,6 +22,7 @@ require (
 	github.com/lxc/lxd v0.0.0-20210310184845-3f4b9a249e3d
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mountinfo v0.4.1 // indirect
+	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10
@@ -50,6 +51,7 @@ require (
 	gopkg.in/lxc/go-lxc.v2 v2.0.0-20210307013912-d9b9f727ce0f
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 	gopkg.in/yaml.v2 v2.4.0
+	gotest.tools/v3 v3.0.3 // indirect
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20210310195111-044dd755e25e
