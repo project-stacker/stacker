@@ -7,6 +7,7 @@ import (
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/docker/daemon"
 	"github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
@@ -29,6 +30,7 @@ func init() {
 	urlSchemes = map[string]func(string) (types.ImageReference, error){}
 	RegisterURLScheme("oci", layout.ParseReference)
 	RegisterURLScheme("docker", docker.ParseReference)
+	RegisterURLScheme("docker-daemon", daemon.ParseReference)
 }
 
 func localRefParser(ref string) (types.ImageReference, error) {
