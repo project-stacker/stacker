@@ -2,10 +2,10 @@ GO_SRC=$(shell find . -name \*.go)
 VERSION=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 
-BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp
+BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo static_build
 
 stacker: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
-	go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL)" -o stacker ./cmd
+	go build -tags "$(BUILD_TAGS)" -gcflags "-N -l" -ldflags "-X main.version=$(VERSION_FULL) -extldflags '-ggdb -static'" -o stacker ./cmd
 
 lxc-wrapper/lxc-wrapper: lxc-wrapper/lxc-wrapper.c
 	make -C lxc-wrapper lxc-wrapper
