@@ -84,20 +84,6 @@ func verifyImportFileHash(imp string, hash string) error {
 	return nil
 }
 
-// copyThing copies either a dir or file to the target.
-func copyThing(srcpath, destpath string) error {
-	srcInfo, err := os.Lstat(srcpath)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	if srcInfo.IsDir() {
-		return lib.DirCopy(destpath, srcpath)
-	} else {
-		return lib.FileCopy(destpath, srcpath)
-	}
-}
-
 func importFile(imp string, cacheDir string, hash string) (string, error) {
 	e1, err := os.Lstat(imp)
 	if err != nil {
@@ -173,7 +159,7 @@ func importFile(imp string, cacheDir string, hash string) (string, error) {
 				return "", errors.Wrapf(err, "couldn't remove to replace import %s", destpath)
 			}
 
-			err := copyThing(srcpath, destpath)
+			err := lib.CopyThing(srcpath, destpath)
 			if err != nil {
 				return "", err
 			}

@@ -14,6 +14,10 @@ var internalGoCmd = cli.Command{
 	Name:   "internal-go",
 	Hidden: true,
 	Subcommands: []cli.Command{
+		cli.Command{
+			Name:   "cp",
+			Action: doCP,
+		},
 		/*
 		 * these are not actually used by stacker, but are entrypoints
 		 * to the code for use in the test suite.
@@ -69,4 +73,15 @@ func doImageCopy(ctx *cli.Context) error {
 		Dest:     ctx.Args()[1],
 		Progress: os.Stdout,
 	})
+}
+
+func doCP(ctx *cli.Context) error {
+	if len(ctx.Args()) != 2 {
+		return errors.Errorf("wrong number of args")
+	}
+
+	return lib.CopyThing(
+		ctx.Args()[0],
+		ctx.Args()[1],
+	)
 }

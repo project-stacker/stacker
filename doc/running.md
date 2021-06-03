@@ -34,8 +34,8 @@ storage backends.
 ### What's inside the container
 
 Note that unlike other container tools, stacker generally assumes what's inside
-the container is a "sane" rootfs, i.e. it can exec things like `bash` and `cp`
-(`stacker://foo/bar.baz` imports require `cp`, for example).
+the container is a "sane" rootfs, i.e. it can exec `sh` to implement the `run:`
+section.
 
 ### The overlay backend
 
