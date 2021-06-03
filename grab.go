@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/anuvu/stacker/types"
+	"github.com/pkg/errors"
 )
 
 func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string) error {
@@ -21,5 +22,15 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 	defer os.Remove(path.Join(sc.RootFSDir, name, "rootfs", "stacker"))
 
-	return c.Execute(fmt.Sprintf("cp -a %s /stacker", source), nil)
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return errors.Wrapf(err, "couldn't find executable for bind mount")
+	}
+
+	err = c.bindMount(binary, "/static-stacker", "")
+	if err != nil {
+		return err
+	}
+
+	return c.Execute(fmt.Sprintf("/static-stacker internal-go cp %s /stacker/%s", source, path.Base(source)), nil)
 }
