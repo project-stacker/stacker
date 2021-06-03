@@ -1,6 +1,6 @@
 module github.com/anuvu/stacker
 
-go 1.12
+go 1.16
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
@@ -17,6 +17,7 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/pgzip v1.2.5
 	github.com/lxc/lxd v0.0.0-20210310184845-3f4b9a249e3d

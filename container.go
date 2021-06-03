@@ -6,13 +6,13 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path"
 	"strings"
 	"syscall"
 
 	"github.com/anuvu/stacker/container"
+	"github.com/anuvu/stacker/embed-exec"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
@@ -211,20 +211,17 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "rootfs", "stacker"))
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
 
-	// Just in case the binary has chdir'd somewhere since it started,
-	// let's readlink /proc/self/exe to figure out what to exec.
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command(
-		binary,
-		"internal",
+	cmd, cleanup, err := embed_exec.GetCommand(
+		embeddedFS,
+		"lxc-wrapper/lxc-wrapper",
 		c.c.Name(),
 		c.sc.RootFSDir,
 		f.Name(),
 	)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 
 	cmd.Stdin = stdin
 	cmd.Stdout = os.Stdout
