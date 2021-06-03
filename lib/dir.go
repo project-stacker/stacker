@@ -60,3 +60,17 @@ func DirCopy(dest string, source string) error {
 	}
 	return nil
 }
+
+// CopyThing copies either a dir or file to the target.
+func CopyThing(srcpath, destpath string) error {
+	srcInfo, err := os.Lstat(srcpath)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if srcInfo.IsDir() {
+		return DirCopy(destpath, srcpath)
+	} else {
+		return FileCopy(destpath, srcpath)
+	}
+}
