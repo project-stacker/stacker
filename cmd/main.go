@@ -72,7 +72,6 @@ func main() {
 		user, err := user.Current()
 		if err == nil {
 			homeDir = user.HomeDir
-			fmt.Fprintf(os.Stderr, "couldn't get current user: %s\n", err)
 		}
 
 		configDir = path.Join(homeDir, ".config", app.Name)
