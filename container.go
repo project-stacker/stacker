@@ -96,13 +96,14 @@ func NewContainer(sc types.StackerConfig, storage types.Storage, name string) (*
 	}
 
 	configs := map[string]string{
-		"lxc.mount.auto":  "proc:mixed",
-		"lxc.autodev":     "1",
-		"lxc.pty.max":     "1024",
-		"lxc.mount.entry": "none dev/shm tmpfs defaults,create=dir 0 0",
-		"lxc.uts.name":    name,
-		"lxc.net.0.type":  "none",
-		"lxc.environment": fmt.Sprintf("PATH=%s", ReasonableDefaultPath),
+		"lxc.mount.auto":                "proc:mixed",
+		"lxc.autodev":                   "1",
+		"lxc.pty.max":                   "1024",
+		"lxc.mount.entry":               "none dev/shm tmpfs defaults,create=dir 0 0",
+		"lxc.uts.name":                  name,
+		"lxc.net.0.type":                "none",
+		"lxc.environment":               fmt.Sprintf("PATH=%s", ReasonableDefaultPath),
+		"lxc.apparmor.allow_incomplete": "1",
 	}
 
 	if err := c.setConfigs(configs); err != nil {
