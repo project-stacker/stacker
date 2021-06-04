@@ -60,16 +60,24 @@ func stackerResult(err error) {
 }
 
 func main() {
-	user, err := user.Current()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "couldn't get current user: %s", err)
-		os.Exit(1)
-	}
 
 	app := cli.NewApp()
 	app.Name = "stacker"
 	app.Usage = "stacker builds OCI images"
 	app.Version = version
+
+	configDir := os.Getenv("XDG_CONFIG_HOME")
+	if configDir == "" {
+		homeDir := "/home/user"
+		user, err := user.Current()
+		if err == nil {
+			homeDir = user.HomeDir
+			fmt.Fprintf(os.Stderr, "couldn't get current user: %s\n", err)
+		}
+
+		configDir = path.Join(homeDir, ".config", app.Name)
+	}
+
 	app.Commands = []cli.Command{
 		buildCmd,
 		recursiveBuildCmd,
@@ -82,11 +90,6 @@ func main() {
 		unprivSetupCmd,
 		gcCmd,
 		containerSetupCmd,
-	}
-
-	configDir := os.Getenv("XDG_CONFIG_HOME")
-	if configDir == "" {
-		configDir = path.Join(user.HomeDir, ".config", app.Name)
 	}
 
 	app.Flags = []cli.Flag{
