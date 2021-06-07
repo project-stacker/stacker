@@ -22,6 +22,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.13.0 // indirect
 	github.com/klauspost/pgzip v1.2.5
+	github.com/lxc/go-lxc v0.0.0-20210607135324-10de240d43ab
 	github.com/lxc/lxd v0.0.0-20210607165116-5a9c2f17d640
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
@@ -47,7 +48,6 @@ require (
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
 	google.golang.org/genproto v0.0.0-20210607140030-00d4fb20b1ae // indirect
-	gopkg.in/lxc/go-lxc.v2 v2.0.0-20210307013912-d9b9f727ce0f
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0

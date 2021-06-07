@@ -15,8 +15,8 @@ import (
 	"github.com/anuvu/stacker/embed-exec"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
+	"github.com/lxc/go-lxc"
 	"github.com/pkg/errors"
-	"gopkg.in/lxc/go-lxc.v2"
 )
 
 const (
