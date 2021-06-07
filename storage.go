@@ -123,7 +123,6 @@ func maybeSwitchStorage(c types.StackerConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("after clean")
 
 	err = os.Remove(c.CacheFile())
 	// it's ok if it didn't exist, this is probably a new run of stacker
