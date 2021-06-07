@@ -40,7 +40,7 @@ func openStorage(c types.StackerConfig, storageType string) (types.Storage, erro
 
 		return btrfs.NewExisting(c), nil
 	default:
-		return nil, errors.Errorf("unknown storage type %s", c.StorageType)
+		return nil, errors.Errorf("unknown storage type %s", storageType)
 	}
 }
 
