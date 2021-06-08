@@ -1,6 +1,8 @@
 *.swp
 *.stacker
 stacker
+stacker-dynamic
+.build
 
 # IDEs
 .vscode

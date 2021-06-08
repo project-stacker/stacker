@@ -1,11 +1,23 @@
-GO_SRC=$(shell find . -name \*.go)
+GO_SRC=$(shell find . -path ./.build -prune -false -o -name \*.go)
 VERSION=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 
 BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo static_build
 
-stacker: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
-	go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) -extldflags '-static'" -o stacker ./cmd
+STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
+
+build_stacker = go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) $1" -o $2 ./cmd
+
+stacker: stacker-dynamic
+	./stacker-dynamic --debug $(STACKER_OPTS) build -f build.yaml --shell-fail
+
+stacker-static: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
+	$(call build_stacker,-extldflags '-static',stacker)
+
+# TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
+# Could find a better way to do this.
+stacker-dynamic: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
+	$(call build_stacker,,stacker-dynamic)
 
 lxc-wrapper/lxc-wrapper: lxc-wrapper/lxc-wrapper.c
 	make -C lxc-wrapper lxc-wrapper
@@ -39,6 +51,7 @@ vendorup:
 
 .PHONY: clean
 clean:
-	-rm -r stacker
+	./stacker-dynamic $(STACKER_OPTS) clean
+	-rm -r stacker stacker-dynamic .build
 	-rm -r ./test/centos ./test/ubuntu
 	-make -C lxc-wrapper clean
