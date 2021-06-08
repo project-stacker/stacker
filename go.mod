@@ -23,7 +23,7 @@ require (
 	github.com/klauspost/compress v1.13.0 // indirect
 	github.com/klauspost/pgzip v1.2.5
 	github.com/lxc/go-lxc v0.0.0-20210607135324-10de240d43ab
-	github.com/lxc/lxd v0.0.0-20210607165116-5a9c2f17d640
+	github.com/lxc/lxd v0.0.0-20210621171749-b17790416723
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/hashstructure v1.1.0

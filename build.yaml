@@ -1,0 +1,34 @@
+build-env:
+  build_only: true
+  from:
+    type: docker
+    url: docker://alpine:edge
+  run: |
+    # libapparmor is only in testing
+    head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
+
+    apk add git findutils go automake autoconf make gcc libtool \
+      acl-dev acl-static \
+      libseccomp-dev libseccomp-static \
+      libcap-dev libcap-static \
+      libapparmor-dev openssl-dev openssl-libs-static \
+      linux-headers
+    git clone https://github.com/lxc/lxc -b lxc-4.0.9
+    cd lxc
+    ./autogen.sh
+    ./configure --enable-static-binaries --prefix=/usr
+    make -j$(grep -c processor /proc/cpuinfo) install
+build:
+  build_only: true
+  from:
+    type: built
+    tag: build-env
+  binds:
+    - . -> /stacker-tree
+  run: |
+    # golang wants somewhere to put its garbage
+    export HOME=/root
+    export GOPATH=/stacker-tree/.build/gopath
+
+    make -C /stacker-tree/lxc-wrapper clean
+    make -C /stacker-tree stacker-static
