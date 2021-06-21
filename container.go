@@ -82,17 +82,15 @@ func NewContainer(sc types.StackerConfig, storage types.Storage, name string) (*
 			}
 		}
 
-		// If we're in a userns, we need to be sure and make sure the
-		// rootfs pivot dir is somewhere that we can actually write to.
-		// Let's use .stacker/rootfs instead of /var/lib/lxc/rootfs
-		rootfsPivot := path.Join(sc.StackerDir, "rootfsPivot")
-		if err := os.MkdirAll(rootfsPivot, 0755); err != nil {
-			return nil, err
-		}
+	}
 
-		if err := c.setConfig("lxc.rootfs.mount", rootfsPivot); err != nil {
-			return nil, err
-		}
+	rootfsPivot := path.Join(sc.StackerDir, "rootfsPivot")
+	if err := os.MkdirAll(rootfsPivot, 0755); err != nil {
+		return nil, err
+	}
+
+	if err := c.setConfig("lxc.rootfs.mount", rootfsPivot); err != nil {
+		return nil, err
 	}
 
 	configs := map[string]string{
