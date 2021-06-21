@@ -57,15 +57,17 @@ EOF
 function test_intermediate_layers {
     layer_type=$1
 
-    # as of this writing, the way the ubuntu image is generated it always has
-    # ~4 layers, although they are small. below we fail the test if there are
-    # not more than one layers, so that we can be sure the test always keeps
-    # testing things.
+    image_copy oci:$UBUNTU_OCI oci:./ubuntu:latest
+
+    touch foo
+    umoci insert --image ./ubuntu:latest foo /etc/foo
+    chmod -R 777 "./ubuntu"
+
     cat > stacker.yaml <<EOF
 test:
     from:
         type: oci
-        url: $UBUNTU_OCI
+        url: ./ubuntu:latest
 
 EOF
     stacker build --leave-unladen --layer-type=$layer_type
