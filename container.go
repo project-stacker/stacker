@@ -293,10 +293,13 @@ func (c *Container) SetupLayerConfig(l *types.Layer, name string) error {
 
 	importsDir := path.Join(c.sc.StackerDir, "imports", c.c.Name())
 	if _, err := os.Stat(importsDir); err == nil {
+		log.Debugf("bind mounting %s into container", importsDir)
 		err = c.bindMount(importsDir, "/stacker", "ro")
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Debugf("not bind mounting %s into container", importsDir)
 	}
 
 	for k, v := range env {
