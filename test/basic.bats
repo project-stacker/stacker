@@ -137,3 +137,17 @@ EOF
     [ ! -f dest/rootfs/favicon.ico ]
     [ ! -d dest/rootfs/stacker ]
 }
+
+@test "stacker.yaml without imports can run" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+        touch /foo
+EOF
+    stacker build
+    umoci unpack --image oci:centos dest
+    [ -f dest/rootfs/foo ]
+}
