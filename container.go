@@ -138,7 +138,7 @@ func (c *Container) bindMount(source string, dest string, extraOpts string) erro
 		createOpt = "create=file"
 	}
 
-	val := fmt.Sprintf("%s %s none rbind,%s,%s", source, strings.TrimPrefix(dest, "/"), createOpt, extraOpts)
+	val := fmt.Sprintf("%s %s none rbind,%s,%s 0 0", source, strings.TrimPrefix(dest, "/"), createOpt, extraOpts)
 	return c.setConfig("lxc.mount.entry", val)
 }
 
