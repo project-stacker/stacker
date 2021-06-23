@@ -297,9 +297,8 @@ func (s *Stackerfile) addPrerequisites(processed map[string]bool, sfm StackerFil
 	return nil
 }
 
-// DependencyOrder provides the list of layer names from a stackerfile
-// the current order to be built, note this method does not reorder the layers,
-// but it does validate they are specified in an order which makes sense
+// DependencyOrder provides the list of layer names from a stackerfile in the
+// order in which they should be built so all dependencies are satisfied.
 func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 	ret := []string{}
 	processed := map[string]bool{}
@@ -332,6 +331,20 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 			_, ok := processed[url.Host]
 			if !ok {
 				unprocessed = append(unprocessed, imp.Path)
+			}
+		}
+
+		if layer.From.Type == TarLayer {
+			url, err := NewDockerishUrl(layer.From.Url)
+			if err != nil {
+				return nil, err
+			}
+
+			if url.Scheme == "stacker" {
+				_, ok := processed[url.Host]
+				if !ok {
+					unprocessed = append(unprocessed, layer.From.Url)
+				}
 			}
 		}
 

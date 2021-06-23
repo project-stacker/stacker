@@ -287,6 +287,8 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		return err
 	}
 
+	log.Debugf("Dependency Order %v", order)
+
 	var oci casext.Engine
 	if _, statErr := os.Stat(opts.Config.OCIDir); statErr != nil {
 		oci, err = umoci.CreateLayout(opts.Config.OCIDir)
