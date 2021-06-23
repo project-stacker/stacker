@@ -2,7 +2,7 @@ build-env:
   build_only: true
   from:
     type: docker
-    url: docker://alpine:edge
+    url: ${{STACKER_BUILD_BASE_IMAGE}}
   run: |
     # libapparmor is only in testing
     head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
