@@ -8,8 +8,11 @@ STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/
 
 build_stacker = go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) $1" -o $2 ./cmd
 
+STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
+
 stacker: stacker-dynamic
-	./stacker-dynamic --debug $(STACKER_OPTS) build -f build.yaml --shell-fail
+	./stacker-dynamic --debug $(STACKER_OPTS) build \
+		-f build.yaml --shell-fail --substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE)
 
 stacker-static: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
 	$(call build_stacker,-extldflags '-static',stacker)
