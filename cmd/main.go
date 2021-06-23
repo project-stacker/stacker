@@ -88,7 +88,6 @@ func main() {
 		internalGoCmd,
 		unprivSetupCmd,
 		gcCmd,
-		containerSetupCmd,
 	}
 
 	app.Flags = []cli.Flag{
