@@ -55,6 +55,6 @@ vendorup:
 .PHONY: clean
 clean:
 	./stacker-dynamic $(STACKER_OPTS) clean
-	-rm -r stacker stacker-dynamic .build
+	-rm -rf stacker stacker-dynamic .build
 	-rm -r ./test/centos ./test/ubuntu
 	-make -C lxc-wrapper clean
