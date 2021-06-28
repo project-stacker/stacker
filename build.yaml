@@ -13,7 +13,7 @@ build-env:
       libcap-dev libcap-static \
       libapparmor-dev openssl-dev openssl-libs-static \
       linux-headers
-    git clone https://github.com/lxc/lxc -b lxc-4.0.9
+    git clone https://github.com/tych0/lxc -b dont-exec-execute-4.0
     cd lxc
     ./autogen.sh
     ./configure --enable-static-binaries --prefix=/usr
