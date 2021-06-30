@@ -2,11 +2,13 @@ GO_SRC=$(shell find . -path ./.build -prune -false -o -name \*.go)
 VERSION=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 
+LXC_VERSION?=$(shell pkg-config --modversion lxc)
+
 BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo static_build
 
 STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
 
-build_stacker = go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) $1" -o $2 ./cmd
+build_stacker = go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $1" -o $2 ./cmd
 
 STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
 
