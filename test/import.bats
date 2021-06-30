@@ -178,3 +178,28 @@ centos:
 EOF
     bad_stacker build
 }
+
+@test "import a full directory tree with siblings" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - dir
+    run: |
+        find /stacker
+        [ -f /stacker/dir/one/two/three/four/five/a ]
+        [ -f /stacker/dir/file ]
+EOF
+
+    mkdir -p dir/one/two/three/four/five
+    touch dir/one/a
+    touch dir/one/two/a
+    touch dir/one/two/three/a
+    touch dir/one/two/three/four/a
+    touch dir/one/two/three/four/five/a
+    touch dir/file
+
+    stacker build
+}

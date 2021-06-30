@@ -154,12 +154,41 @@ func importFile(imp string, cacheDir string, hash string) (string, error) {
 			srcpath := path.Join(imp, d.Path())
 			destpath := path.Join(cacheDir, path.Base(imp), d.Path())
 
-			err = os.RemoveAll(destpath)
-			if err != nil && !os.IsNotExist(err) {
-				return "", errors.Wrapf(err, "couldn't remove to replace import %s", destpath)
-			}
+			if d.New().IsDir() {
+				fi, err := os.Lstat(destpath)
+				if err != nil {
+					if !os.IsNotExist(err) {
+						return "", errors.WithStack(err)
+					}
+				} else if !fi.IsDir() {
+					/*
+					 * if the thing changed from a file to
+					 * a directory, we should delete it.
+					 * Note that we *only* want to do the
+					 * delete in this case, but not if it
+					 * was previously a dir, since we
+					 * iterate over diffs in an arbitrary
+					 * order, so we may have already
+					 * imported stuff below this, resulting
+					 * in an incorrect delete.
+					 */
+					err = os.Remove(destpath)
+					if err != nil {
+						return "", errors.WithStack(err)
+					}
+				}
 
-			err := lib.CopyThing(srcpath, destpath)
+				err = errors.WithStack(os.MkdirAll(destpath, 0755))
+				if err != nil {
+					return "", err
+				}
+			} else {
+				err = errors.WithStack(os.MkdirAll(path.Dir(destpath), 0755))
+				if err != nil {
+					return "", err
+				}
+				err = lib.FileCopy(destpath, srcpath)
+			}
 			if err != nil {
 				return "", err
 			}
