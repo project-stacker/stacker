@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	config  types.StackerConfig
-	version = ""
+	config      types.StackerConfig
+	version     = ""
+	lxc_version = ""
 )
 
 func shouldShowProgress(ctx *cli.Context) bool {
@@ -64,7 +65,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "stacker"
 	app.Usage = "stacker builds OCI images"
-	app.Version = version
+	app.Version = fmt.Sprintf("stacker %s liblxc %s", version, lxc_version)
 
 	configDir := os.Getenv("XDG_CONFIG_HOME")
 	if configDir == "" {

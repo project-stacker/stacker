@@ -29,6 +29,7 @@ build:
     # golang wants somewhere to put its garbage
     export HOME=/root
     export GOPATH=/stacker-tree/.build/gopath
+    export LXC_VERSION=$(git -C /lxc rev-parse HEAD)
 
     make -C /stacker-tree/lxc-wrapper clean
     make -C /stacker-tree stacker-static
