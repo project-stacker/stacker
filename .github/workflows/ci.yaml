@@ -23,8 +23,6 @@ jobs:
                   go-version: ${{ matrix.go-version }}
             - name: install dependencies
               run: |
-                  sudo add-apt-repository -y ppa:ubuntu-lxc/lxc-git-master
-                  sudo apt-get update
                   sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libbtrfs-dev libseccomp-dev libpam-dev bats parallel
                   GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
                   sudo cp ~/go/bin/umoci /usr/bin
