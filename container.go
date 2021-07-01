@@ -128,6 +128,26 @@ func NewContainer(sc types.StackerConfig, storage types.Storage, name string) (*
 		return nil, err
 	}
 
+	// liblxc inserts an apparmor profile if we don't set one by default.
+	// however, since we may be statically linked with no packaging
+	// support, the host may not have this default profile. let's check for
+	// it. of course, we can't check for it by catting the value in
+	// securityfs, because that's restricted :). so we fork and try to
+	// change to the profile in question instead.
+	//
+	// note that this is not strictly correct: lxc will try to use a
+	// non-cgns profile if cgns isn't supported by the kernel, but most
+	// kernels these days support it so we ignore this case.
+	lxcDefaultProfile := "lxc-container-default-cgns"
+	err = container.RunInternalGoSubcommand(sc, []string{"check-aa-profile", lxcDefaultProfile})
+	if err != nil {
+		log.Infof("couldn't find AppArmor profile %s", lxcDefaultProfile)
+		err = c.setConfig("lxc.apparmor.profile", "unconfined")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return c, nil
 }
 
