@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
@@ -17,6 +20,10 @@ var internalGoCmd = cli.Command{
 		cli.Command{
 			Name:   "cp",
 			Action: doCP,
+		},
+		cli.Command{
+			Name:   "check-aa-profile",
+			Action: doCheckAAProfile,
 		},
 		/*
 		 * these are not actually used by stacker, but are entrypoints
@@ -84,4 +91,27 @@ func doCP(ctx *cli.Context) error {
 		ctx.Args()[0],
 		ctx.Args()[1],
 	)
+}
+
+const aaControlFile = "/proc/self/attr/current"
+
+func doCheckAAProfile(ctx *cli.Context) error {
+	toCheck := ctx.Args()[0]
+	command := fmt.Sprintf("changeprofile %s", toCheck)
+
+	err := ioutil.WriteFile(aaControlFile, []byte(command), 0000)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	content, err := ioutil.ReadFile(aaControlFile)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if strings.TrimSpace(string(content)) != fmt.Sprintf("%s (enforce)", toCheck) {
+		return errors.Errorf("profile mismatch got %s expected %s", string(content), toCheck)
+	}
+
+	return nil
 }

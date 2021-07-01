@@ -147,6 +147,7 @@ func RunInternalGoSubcommand(config types.StackerConfig, args []string) error {
 		"--roots-dir", config.RootFSDir,
 		"--stacker-dir", config.StackerDir,
 		"--storage-type", config.StorageType,
+		"--internal-userns",
 	}
 
 	if config.Debug {
