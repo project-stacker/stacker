@@ -126,9 +126,8 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "storage-type",
-			Usage: "storage type (one of \"btrfs\" or \"overlay\")",
-			// default to btrfs for now since it's less experimental
-			Value: "btrfs",
+			Usage: "storage type (one of \"overlay\" or \"btrfs\", defaults to overlay)",
+			Value: "overlay",
 		},
 		cli.BoolFlag{
 			Name:   "internal-userns",
