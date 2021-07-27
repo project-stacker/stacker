@@ -133,6 +133,10 @@ func main() {
 			Name:  "log-file",
 			Usage: "log to a file instead of stderr",
 		},
+		cli.BoolFlag{
+			Name:  "log-timestamp",
+			Usage: "whether to log a timestamp prefix",
+		},
 		cli.StringFlag{
 			Name:  "storage-type",
 			Usage: "storage type (one of \"overlay\" or \"btrfs\", defaults to overlay)",
@@ -242,13 +246,13 @@ func main() {
 		}
 
 		var handler log.Handler
-		handler = stackerlog.NewTextHandler(os.Stderr)
+		handler = stackerlog.NewTextHandler(os.Stderr, ctx.Bool("log-timestamp"))
 		if ctx.String("log-file") != "" {
 			logFile, err = os.Create(ctx.String("log-file"))
 			if err != nil {
 				return errors.Wrapf(err, "failed to access %v", logFile)
 			}
-			handler = stackerlog.NewTextHandler(logFile)
+			handler = stackerlog.NewTextHandler(logFile, ctx.Bool("log-timestamp"))
 		}
 
 		stackerlog.FilterNonStackerLogs(handler, logLevel)
