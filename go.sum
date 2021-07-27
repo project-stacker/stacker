@@ -33,9 +33,6 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774/go.mod h1:6/0dYRLLXyJjbkIPeeGyoJ/eKOSI0eU6eTlCBYibgd0=
-github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210312213058-32f4d319f0d2/go.mod h1:VPevheIvXETHZT/ddjwarP3POR5p/cnH9Hy5yoFnQjc=
-github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 h1:LxxqfxscKXL1kv7QNh4nggNf4Ais8B0ME8zWMCAsttY=
-github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661/go.mod h1:VPevheIvXETHZT/ddjwarP3POR5p/cnH9Hy5yoFnQjc=
 github.com/Azure/azure-sdk-for-go v16.2.1+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
@@ -632,8 +629,8 @@ github.com/opencontainers/selinux v1.6.0/go.mod h1:VVGKuOLlE7v4PJyT6h7mNWvq1rzqi
 github.com/opencontainers/selinux v1.8.0/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
 github.com/opencontainers/selinux v1.8.1 h1:yvEZh7CsfnJNwKzG9ZeXwbvR05RAZsu5RS/3vA6qFTA=
 github.com/opencontainers/selinux v1.8.1/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
-github.com/opencontainers/umoci v0.4.7 h1:mbIbtMpZ3v9oMpKaLopnWoLykgmnixeLzq51EzAX5nQ=
-github.com/opencontainers/umoci v0.4.7/go.mod h1:lgJ4bnwJezsN1o/5d7t/xdRPvmf8TvBko5kKYJsYvgo=
+github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10 h1:eHipLb0mTNrnnPsHQiFQRF0t6nJRU8XfieX2E/dI4TI=
+github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10/go.mod h1:MrN+59KhghyYciyVTN9P2E+lBBGbahcogj/Fjg7y5Rs=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG6YJVEWopen4avK3VNQSnALmmjvniMmni/YFYAwc=
 github.com/pborman/uuid v1.2.1 h1:+ZZIw58t/ozdjRaXh/3awHfmWRbzYxJoAdNJxe/3pvw=
 github.com/pborman/uuid v1.2.1/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
