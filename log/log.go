@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/apex/log"
 )
@@ -46,14 +47,22 @@ func Infof(msg string, v ...interface{}) {
 }
 
 type TextHandler struct {
-	out io.StringWriter
+	out       io.StringWriter
+	timestamp bool
 }
 
-func NewTextHandler(out io.StringWriter) log.Handler {
-	return &TextHandler{out}
+func NewTextHandler(out io.StringWriter, timestamp bool) log.Handler {
+	return &TextHandler{out, timestamp}
 }
 
 func (th *TextHandler) HandleLog(e *log.Entry) error {
+	if th.timestamp {
+		_, err := th.out.WriteString(fmt.Sprintf("%s ", e.Timestamp.Format(time.RFC3339)))
+		if err != nil {
+			return err
+		}
+	}
+
 	_, err := th.out.WriteString(fmt.Sprintf(e.Message))
 	if err != nil {
 		return err
