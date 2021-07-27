@@ -3,7 +3,6 @@ module github.com/anuvu/stacker
 go 1.16
 
 require (
-	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/apex/log v1.9.0
 	github.com/cheggaaa/pb/v3 v3.0.8
@@ -30,7 +29,7 @@ require (
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
-	github.com/opencontainers/umoci v0.4.7
+	github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.28.0 // indirect
