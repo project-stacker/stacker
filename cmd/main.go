@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"syscall"
 
 	"github.com/anuvu/stacker/container"
@@ -61,6 +63,13 @@ func stackerResult(err error) {
 }
 
 func main() {
+	sigquits := make(chan os.Signal)
+	go func() {
+		for range sigquits {
+			debug.PrintStack()
+		}
+	}()
+	signal.Notify(sigquits, syscall.SIGQUIT)
 
 	app := cli.NewApp()
 	app.Name = "stacker"
