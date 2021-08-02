@@ -629,8 +629,6 @@ github.com/opencontainers/selinux v1.6.0/go.mod h1:VVGKuOLlE7v4PJyT6h7mNWvq1rzqi
 github.com/opencontainers/selinux v1.8.0/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
 github.com/opencontainers/selinux v1.8.1 h1:yvEZh7CsfnJNwKzG9ZeXwbvR05RAZsu5RS/3vA6qFTA=
 github.com/opencontainers/selinux v1.8.1/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
-github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10 h1:eHipLb0mTNrnnPsHQiFQRF0t6nJRU8XfieX2E/dI4TI=
-github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10/go.mod h1:MrN+59KhghyYciyVTN9P2E+lBBGbahcogj/Fjg7y5Rs=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG6YJVEWopen4avK3VNQSnALmmjvniMmni/YFYAwc=
 github.com/pborman/uuid v1.2.1 h1:+ZZIw58t/ozdjRaXh/3awHfmWRbzYxJoAdNJxe/3pvw=
 github.com/pborman/uuid v1.2.1/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
@@ -766,6 +764,8 @@ github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1LnyzV7yuijHlBtiq6lH5T/mljw=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
+github.com/tych0/umoci v0.4.7-0.20210802202152-95648b7dff0b h1:C27biED8T2aophewzEKpMWur3gNARB4VtCsmBpe5Rkg=
+github.com/tych0/umoci v0.4.7-0.20210802202152-95648b7dff0b/go.mod h1:MrN+59KhghyYciyVTN9P2E+lBBGbahcogj/Fjg7y5Rs=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
 github.com/udhos/equalfile v0.3.0/go.mod h1:1LOX9HjdFMke7ryP3IPby09FkswyY5KzhhsT37wLz/Y=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=

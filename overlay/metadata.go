@@ -22,6 +22,11 @@ type overlayMetadata struct {
 	// layers not yet rendered into the output image
 	BuiltLayers []string
 
+	// when this is true, that means that the layer has already been added
+	// to the manifest, so Manifests.Layers[:-1] is the layer that
+	// corresponds to what this built layer represents.
+	HasBuiltOCIOutput bool
+
 	// overlay_dir layers
 	OverlayDirLayers map[types.LayerType][]ispec.Descriptor
 }
