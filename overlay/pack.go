@@ -22,6 +22,7 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
+	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
 )
@@ -310,7 +311,7 @@ func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerType types.
 	return desc, nil
 }
 
-func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
+func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -318,6 +319,32 @@ func generateLayer(config types.StackerConfig, mutators []*mutate.Mutator, name 
 	}
 
 	if len(ents) == 0 {
+		ovl, err := readOverlayMetadata(config, name)
+		if err != nil {
+			return false, err
+		}
+		if ovl.HasBuiltOCIOutput {
+			for i, layerType := range layerTypes {
+				manifest := ovl.Manifests[layerType]
+				layer := manifest.Layers[len(manifest.Layers)-1]
+
+				config, err := stackeroci.LookupConfig(oci, manifest.Config)
+				if err != nil {
+					return false, err
+				}
+
+				diffID := config.RootFS.DiffIDs[len(config.RootFS.DiffIDs)-1]
+				history := config.History[len(config.History)-1]
+
+				mutator := mutators[i]
+				err = mutator.AddExisting(context.Background(), layer, &history, diffID)
+				if err != nil {
+					return false, err
+				}
+			}
+
+			return true, nil
+		}
 		return false, nil
 	}
 
@@ -480,7 +507,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	// generate blobs for each build layer
 	for _, buildLayer := range ovl.BuiltLayers {
 
-		didMutate, err := generateLayer(config, mutators, buildLayer, layerTypes)
+		didMutate, err := generateLayer(config, oci, mutators, buildLayer, layerTypes)
 		if err != nil {
 			return err
 		}
@@ -497,6 +524,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 					return err
 				}
 			}
+			ovl.HasBuiltOCIOutput = true
 			err = ovl.write(config, buildLayer)
 			if err != nil {
 				return err
@@ -509,7 +537,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		return err
 	}
 
-	didMutate, err := generateLayer(config, mutators, name, layerTypes)
+	didMutate, err := generateLayer(config, oci, mutators, name, layerTypes)
 	if err != nil {
 		return err
 	}
@@ -517,6 +545,11 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	// if we didn't do anything, don't do anything :)
 	if !didMutate && !mutated && len(ovl.OverlayDirLayers) == 0 {
 		return nil
+	}
+
+	// if we did generate a layer for this, let's note that
+	if didMutate {
+		ovl.HasBuiltOCIOutput = true
 	}
 
 	// now, reset the overlay metadata; we can use the newly generated

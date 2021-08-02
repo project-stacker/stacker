@@ -148,3 +148,54 @@ EOF
     stacker build --layer-type=squashfs --substitute "RUN_NUMBER=1" --substitute CENTOS_OCI=$CENTOS_OCI
     stacker build --layer-type=squashfs --substitute "RUN_NUMBER=2" --substitute CENTOS_OCI=$CENTOS_OCI
 }
+
+@test "multiple build onlys in final chain rebuild OK" {
+    require_storage overlay
+    cat > stacker.yaml <<"EOF"
+one:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+        touch /1
+two:
+    from:
+        type: built
+        tag: one
+    run: |
+        touch /2
+    build_only: true
+three:
+    from:
+        type: built
+        tag: two
+    run: |
+        touch /3
+    build_only: true
+four:
+    from:
+        type: built
+        tag: three
+    run: |
+        ls /
+        [ -f /1 ]
+        [ -f /2 ]
+        [ -f /3 ]
+        echo run number ${{RUN_NUMBER}}
+EOF
+    stacker build --substitute "RUN_NUMBER=1" --substitute CENTOS_OCI=$CENTOS_OCI
+    stacker build --substitute "RUN_NUMBER=2" --substitute CENTOS_OCI=$CENTOS_OCI
+
+    stacker inspect
+
+    # should always build five layers, assuming centos is 1 layer
+    one_manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    one_layercount=$(cat oci/blobs/sha256/$one_manifest | jq -r '.layers | length')
+    echo one_layercount "$one_layercount"
+    [ "$one_layercount" = 2 ]
+
+    four_manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
+    four_layercount=$(cat oci/blobs/sha256/$four_manifest | jq -r '.layers | length')
+    echo four_layercount "$four_layercount"
+    [ "$four_layercount" = 5 ]
+}
