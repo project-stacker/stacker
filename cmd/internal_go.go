@@ -107,6 +107,9 @@ func doCheckAAProfile(ctx *cli.Context) error {
 
 	err := ioutil.WriteFile(aaControlFile, []byte(command), 0000)
 	if err != nil {
+		if os.IsNotExist(err) {
+			os.Exit(52)
+		}
 		return errors.WithStack(err)
 	}
 
