@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/anuvu/stacker/lib"
@@ -11,6 +12,7 @@ import (
 	"github.com/anuvu/stacker/overlay"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"golang.org/x/sys/unix"
 )
 
 var internalGoCmd = cli.Command{
@@ -93,11 +95,15 @@ func doCP(ctx *cli.Context) error {
 	)
 }
 
-const aaControlFile = "/proc/self/attr/current"
-
 func doCheckAAProfile(ctx *cli.Context) error {
 	toCheck := ctx.Args()[0]
 	command := fmt.Sprintf("changeprofile %s", toCheck)
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	tid := unix.Gettid()
+	aaControlFile := fmt.Sprintf("/proc/%d/attr/current", tid)
 
 	err := ioutil.WriteFile(aaControlFile, []byte(command), 0000)
 	if err != nil {
