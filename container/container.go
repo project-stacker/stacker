@@ -66,7 +66,7 @@ func resolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
 	return idmapSet, nil
 }
 
-func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
+func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string) error {
 	if idmapSet == nil {
 		return errors.Errorf("no subuids!")
 	}
@@ -95,20 +95,12 @@ func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string, msg string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err != nil {
-		if msg != "" {
-			return errors.Wrapf(err, msg)
-		}
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return errors.WithStack(cmd.Run())
 }
 
 // A wrapper which runs things in a userns if we're an unprivileged user with
 // an idmap, or runs things on the host if we're root and don't.
-func MaybeRunInUserns(userCmd []string, msg string) error {
+func MaybeRunInUserns(userCmd []string) error {
 	// TODO: we should try to use user namespaces when we're root as well.
 	// For now we don't.
 	if os.Geteuid() == 0 {
@@ -117,7 +109,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return errors.Wrapf(cmd.Run(), msg)
+		return errors.WithStack(cmd.Run())
 	}
 
 	idmapSet, err := ResolveCurrentIdmapSet()
@@ -132,7 +124,7 @@ func MaybeRunInUserns(userCmd []string, msg string) error {
 
 	}
 
-	return RunInUserns(idmapSet, userCmd, msg)
+	return RunInUserns(idmapSet, userCmd)
 }
 
 func RunInternalGoSubcommand(config types.StackerConfig, args []string) error {
@@ -156,5 +148,5 @@ func RunInternalGoSubcommand(config types.StackerConfig, args []string) error {
 
 	cmd = append(cmd, "internal-go")
 	cmd = append(cmd, args...)
-	return MaybeRunInUserns(cmd, "image unpack failed")
+	return MaybeRunInUserns(cmd)
 }
