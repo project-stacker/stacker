@@ -65,7 +65,7 @@ func resolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
 	return idmapSet, nil
 }
 
-func RunInUserns(idmapSet *idmap.IdmapSet, userCmd []string) error {
+func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string) error {
 	if idmapSet == nil {
 		return errors.Errorf("no subuids!")
 	}
@@ -123,5 +123,5 @@ func MaybeRunInUserns(userCmd []string) error {
 
 	}
 
-	return RunInUserns(idmapSet, userCmd)
+	return runInUserns(idmapSet, userCmd)
 }
