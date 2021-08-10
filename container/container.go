@@ -18,10 +18,10 @@ func ResolveCurrentIdmapSet() (*idmap.IdmapSet, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't resolve current user")
 	}
-	return ResolveIdmapSet(currentUser)
+	return resolveIdmapSet(currentUser)
 }
 
-func ResolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
+func resolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
 	idmapSet, err := idmap.DefaultIdmapSet("", user.Username)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed parsing /etc/sub{u,g}idmap")
