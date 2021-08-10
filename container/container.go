@@ -65,9 +65,9 @@ func resolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
 	return idmapSet, nil
 }
 
-func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string) error {
+func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string) (*exec.Cmd, error) {
 	if idmapSet == nil {
-		return errors.Errorf("no subuids!")
+		return nil, errors.Errorf("no subuids!")
 	}
 
 	args := []string{}
@@ -93,13 +93,12 @@ func runInUserns(idmapSet *idmap.IdmapSet, userCmd []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	return errors.WithStack(cmd.Run())
+	return cmd, nil
 }
 
 // A wrapper which runs things in a userns if we're an unprivileged user with
 // an idmap, or runs things on the host if we're root and don't.
-func MaybeRunInUserns(userCmd []string) error {
+func MaybeRunInUserns(userCmd []string) (*exec.Cmd, error) {
 	// TODO: we should try to use user namespaces when we're root as well.
 	// For now we don't.
 	if os.Geteuid() == 0 {
@@ -108,17 +107,17 @@ func MaybeRunInUserns(userCmd []string) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		return errors.WithStack(cmd.Run())
+		return cmd, nil
 	}
 
 	idmapSet, err := ResolveCurrentIdmapSet()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if idmapSet == nil {
 		if os.Geteuid() != 0 {
-			return errors.Errorf("no idmap and not root, can't run %v", userCmd)
+			return nil, errors.Errorf("no idmap and not root, can't run %v", userCmd)
 		}
 
 	}
