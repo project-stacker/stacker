@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/lxc/lxd/shared/idmap"
 	"github.com/pkg/errors"
 )
@@ -125,28 +124,4 @@ func MaybeRunInUserns(userCmd []string) error {
 	}
 
 	return RunInUserns(idmapSet, userCmd)
-}
-
-func RunInternalGoSubcommand(config types.StackerConfig, args []string) error {
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
-	cmd := []string{
-		binary,
-		"--oci-dir", config.OCIDir,
-		"--roots-dir", config.RootFSDir,
-		"--stacker-dir", config.StackerDir,
-		"--storage-type", config.StorageType,
-		"--internal-userns",
-	}
-
-	if config.Debug {
-		cmd = append(cmd, "--debug")
-	}
-
-	cmd = append(cmd, "internal-go")
-	cmd = append(cmd, args...)
-	return MaybeRunInUserns(cmd)
 }

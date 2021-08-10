@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"strings"
@@ -22,6 +23,34 @@ import (
 const (
 	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
+
+func runInternalGoSubcommand(config types.StackerConfig, args []string) error {
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{
+		"--oci-dir", config.OCIDir,
+		"--roots-dir", config.RootFSDir,
+		"--stacker-dir", config.StackerDir,
+		"--storage-type", config.StorageType,
+		"--internal-userns",
+	}
+
+	if config.Debug {
+		cmd = append(cmd, "--debug")
+	}
+
+	cmd = append(cmd, "internal-go")
+	cmd = append(cmd, args...)
+	c := exec.Command(binary, cmd...)
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return errors.WithStack(c.Run())
+}
 
 // our representation of a container
 type Container struct {
@@ -139,7 +168,7 @@ func NewContainer(sc types.StackerConfig, storage types.Storage, name string) (*
 	// non-cgns profile if cgns isn't supported by the kernel, but most
 	// kernels these days support it so we ignore this case.
 	lxcDefaultProfile := "lxc-container-default-cgns"
-	err = container.RunInternalGoSubcommand(sc, []string{"check-aa-profile", lxcDefaultProfile})
+	err = runInternalGoSubcommand(sc, []string{"check-aa-profile", lxcDefaultProfile})
 	if err != nil {
 		log.Infof("couldn't find AppArmor profile %s", lxcDefaultProfile)
 		err = c.setConfig("lxc.apparmor.profile", "unconfined")
