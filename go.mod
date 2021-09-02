@@ -29,7 +29,7 @@ require (
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
-	github.com/opencontainers/umoci v0.4.7-0.20210306002704-130e11adfe10
+	github.com/opencontainers/umoci v0.4.8-0.20210902134818-a737519f2096
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.28.0 // indirect
@@ -53,5 +53,3 @@ require (
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20210310195111-044dd755e25e
-
-replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20210802202152-95648b7dff0b
