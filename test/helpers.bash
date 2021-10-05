@@ -27,11 +27,13 @@ function image_copy {
     [ "$status" -eq 0 ]
 }
 
-[ -f "$ROOT_DIR/test/centos/index.json" ] || image_copy docker://centos:latest "oci:$ROOT_DIR/test/centos:latest"
+(
+    flock 9
+    [ -f "$ROOT_DIR/test/centos/index.json" ] || (image_copy docker://centos:latest "oci:$ROOT_DIR/test/centos:latest" && chmod -R 777 "$ROOT_DIR/test/centos")
+    [ -f "$ROOT_DIR/test/ubuntu/index.json" ] || (image_copy docker://ubuntu:latest "oci:$ROOT_DIR/test/ubuntu:latest" && chmod -R 777 "$ROOT_DIR/test/ubuntu")
+) 9<$ROOT_DIR/test/main.py
 export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
-[ -f "$ROOT_DIR/test/ubuntu/index.json" ] || image_copy docker://ubuntu:latest "oci:$ROOT_DIR/test/ubuntu:latest"
 export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
-chmod -R 777 "$ROOT_DIR/test/centos" "$ROOT_DIR/test/ubuntu"
 
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
