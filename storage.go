@@ -162,8 +162,8 @@ func NewStorage(c types.StackerConfig) (types.Storage, error) {
 	return openStorage(c, c.StorageType)
 }
 
-func UnprivSetup(c types.StackerConfig, uid, gid int) error {
-	err := storage.UidmapSetup(uid, gid)
+func UnprivSetup(c types.StackerConfig, username string, uid, gid int) error {
+	err := storage.UidmapSetup(username, uid, gid)
 	if err != nil {
 		return err
 	}

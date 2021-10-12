@@ -26,6 +26,11 @@ var unprivSetupCmd = cli.Command{
 			Usage: "the group to do setup for (defaults to $SUDO_GID from env)",
 			Value: os.Getenv("SUDO_GID"),
 		},
+		cli.StringFlag{
+			Name:  "username",
+			Usage: "the username to do setup for (defaults to $SUDO_USER from env)",
+			Value: os.Getenv("SUDO_USER"),
+		},
 	},
 }
 
@@ -36,6 +41,10 @@ func beforeUnprivSetup(ctx *cli.Context) error {
 
 	if ctx.String("gid") == "" {
 		return errors.Errorf("please specify --gid or run unpriv-setup with sudo")
+	}
+
+	if ctx.String("username") == "" {
+		return errors.Errorf("please specify --username or run unpriv-setup with sudo")
 	}
 
 	return nil
@@ -77,7 +86,9 @@ func doUnprivSetup(ctx *cli.Context) error {
 		return err
 	}
 
-	err = stacker.UnprivSetup(config, uid, gid)
+	username := ctx.String("username")
+
+	err = stacker.UnprivSetup(config, username, uid, gid)
 	if err != nil {
 		return err
 	}
