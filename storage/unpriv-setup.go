@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"os/user"
 	"strconv"
 	"strings"
 
@@ -77,18 +76,13 @@ func addSpecificEntries(file string, name string, currentId int) error {
 	return errors.Wrapf(err, "couldn't write %s", file)
 }
 
-func addEtcEntriesIfNecessary(uid int, gid int) error {
-	currentUser, err := user.LookupId(fmt.Sprintf("%d", uid))
-	if err != nil {
-		return errors.Wrapf(err, "couldn't find user for %d", uid)
-	}
-
-	err = addSpecificEntries("/etc/subuid", currentUser.Username, uid)
+func addEtcEntriesIfNecessary(username string, uid int, gid int) error {
+	err := addSpecificEntries("/etc/subuid", username, uid)
 	if err != nil {
 		return err
 	}
 
-	err = addSpecificEntries("/etc/subgid", currentUser.Username, gid)
+	err = addSpecificEntries("/etc/subgid", username, gid)
 	if err != nil {
 		return err
 	}
@@ -96,7 +90,7 @@ func addEtcEntriesIfNecessary(uid int, gid int) error {
 	return nil
 }
 
-func UidmapSetup(uid, gid int) error {
+func UidmapSetup(username string, uid, gid int) error {
 	warnAboutNewuidmap()
-	return addEtcEntriesIfNecessary(uid, gid)
+	return addEtcEntriesIfNecessary(username, uid, gid)
 }
