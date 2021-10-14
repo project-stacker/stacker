@@ -49,7 +49,7 @@ STORAGE_TYPE?=
 # make check STORAGE_TYPE=btrfs will run only btrfs tests
 .PHONY: check
 check: stacker lint
-	sudo -E PATH="$$PATH" ./test/main.py \
+	sudo -E PATH="$$PATH" LXC_BRANCH="$(LXC_BRANCH)" ./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(shell [ -z $(STORAGE_TYPE) ] || echo --storage-type=$(STORAGE_TYPE)) \
 		$(patsubst %,test/%.bats,$(TEST))
