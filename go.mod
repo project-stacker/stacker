@@ -50,3 +50,5 @@ require (
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20210310195111-044dd755e25e
+
+replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20211014154543-67f60c13162e

@@ -60,10 +60,12 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		return errors.Wrapf(err, "mutator failed")
 	}
 
-	imageConfig, err := mutator.Config(context.Background())
+	config, err := mutator.Config(context.Background())
 	if err != nil {
 		return err
 	}
+
+	imageConfig := config.Config
 
 	if imageConfig.Labels == nil {
 		imageConfig.Labels = map[string]string{}

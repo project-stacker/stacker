@@ -18,6 +18,7 @@ import (
 
 type overlayMetadata struct {
 	Manifests map[types.LayerType]ispec.Manifest
+	Configs   map[types.LayerType]ispec.Image
 
 	// layers not yet rendered into the output image
 	BuiltLayers []string
@@ -32,7 +33,10 @@ type overlayMetadata struct {
 }
 
 func newOverlayMetadata() overlayMetadata {
-	return overlayMetadata{Manifests: map[types.LayerType]ispec.Manifest{}}
+	return overlayMetadata{
+		Manifests: map[types.LayerType]ispec.Manifest{},
+		Configs:   map[types.LayerType]ispec.Image{},
+	}
 }
 
 func newOverlayMetadataFromOCI(oci casext.Engine, tag string) (overlayMetadata, error) {
@@ -68,6 +72,10 @@ func readOverlayMetadata(config types.StackerConfig, tag string) (overlayMetadat
 
 	if ovl.Manifests == nil {
 		ovl.Manifests = map[types.LayerType]ispec.Manifest{}
+	}
+
+	if ovl.Configs == nil {
+		ovl.Configs = map[types.LayerType]ispec.Image{}
 	}
 
 	return ovl, err

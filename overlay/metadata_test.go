@@ -16,5 +16,5 @@ func TestOverlayMetadataChanged(t *testing.T) {
 	h, err := hashstructure.Hash(overlayMetadata{}, nil)
 	assert.NoError(err)
 
-	assert.Equal(uint64(0x64bca1f8d0e31be2), h)
+	assert.Equal(uint64(0x7267149f94b38b4b), h)
 }
