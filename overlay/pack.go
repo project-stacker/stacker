@@ -328,10 +328,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 				manifest := ovl.Manifests[layerType]
 				layer := manifest.Layers[len(manifest.Layers)-1]
 
-				config, err := stackeroci.LookupConfig(oci, manifest.Config)
-				if err != nil {
-					return false, err
-				}
+				config := ovl.Configs[layerType]
 
 				diffID := config.RootFS.DiffIDs[len(config.RootFS.DiffIDs)-1]
 				history := config.History[len(config.History)-1]
@@ -523,6 +520,11 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 				if err != nil {
 					return err
 				}
+
+				ovl.Configs[layerType], err = mutators[i].Config(context.Background())
+				if err != nil {
+					return err
+				}
 			}
 			ovl.HasBuiltOCIOutput = true
 			err = ovl.write(config, buildLayer)
@@ -563,6 +565,11 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		}
 
 		ovl.Manifests[layerType], err = mutator.Manifest(context.Background())
+		if err != nil {
+			return err
+		}
+
+		ovl.Configs[layerType], err = mutator.Config(context.Background())
 		if err != nil {
 			return err
 		}

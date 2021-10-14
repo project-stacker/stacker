@@ -21,7 +21,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 10
+const currentCacheVersion = 11
 
 type ImportType int
 

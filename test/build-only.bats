@@ -198,4 +198,12 @@ EOF
     four_layercount=$(cat oci/blobs/sha256/$four_manifest | jq -r '.layers | length')
     echo four_layercount "$four_layercount"
     [ "$four_layercount" = 5 ]
+
+    cat oci/blobs/sha256/$four_manifest | jq
+
+    # we should be able to extract this thing too...
+    umoci unpack --image oci:four dest
+    [ -f dest/rootfs/1 ]
+    [ -f dest/rootfs/2 ]
+    [ -f dest/rootfs/3 ]
 }
