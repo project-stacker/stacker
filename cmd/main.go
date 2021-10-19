@@ -258,7 +258,7 @@ func main() {
 		stackerlog.FilterNonStackerLogs(handler, logLevel)
 		stackerlog.Debugf("stacker version %s", version)
 
-		if !ctx.Bool("internal-userns") && len(ctx.Args()) >= 1 && ctx.Args()[0] != "unpriv-stacker" {
+		if !ctx.Bool("internal-userns") && len(ctx.Args()) >= 1 && ctx.Args()[0] != "unpriv-setup" {
 			binary, err := os.Readlink("/proc/self/exe")
 			if err != nil {
 				return err
