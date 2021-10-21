@@ -533,13 +533,14 @@ func (b *Builder) Build(s types.Storage, file string) error {
 func (b *Builder) BuildMultiple(paths []string) error {
 	opts := b.opts
 
-	s, err := NewStorage(opts.Config)
+	s, locks, err := NewStorage(opts.Config)
 	if err != nil {
 		return err
 	}
 	if !opts.LeaveUnladen {
 		defer s.Detach()
 	}
+	defer locks.Unlock()
 
 	// Read all the stacker recipes
 	stackerFiles, err := types.NewStackerFiles(paths, append(opts.Substitute, b.opts.Config.Substitutions()...))

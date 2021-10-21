@@ -25,7 +25,7 @@ func doClean(ctx *cli.Context) error {
 	fail := false
 
 	if _, err := os.Stat(config.RootFSDir); !os.IsNotExist(err) {
-		s, err := stacker.NewStorage(config)
+		s, locks, err := stacker.NewStorage(config)
 		if err != nil {
 			return err
 		}
@@ -35,6 +35,7 @@ func doClean(ctx *cli.Context) error {
 			log.Infof("problem cleaning roots %v", err)
 			fail = true
 		}
+		locks.Unlock()
 	}
 
 	if err := os.RemoveAll(config.OCIDir); err != nil {

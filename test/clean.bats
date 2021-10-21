@@ -16,6 +16,7 @@ function teardown() {
     mkdir -p parent
     mount -o loop,user_subvol_rm_allowed btrfs.loop parent
     mkdir -p parent/roots
+    chmod -R 777 parent/roots
 
     stacker --stacker-dir .otherstacker --roots-dir=parent/roots clean
 }
