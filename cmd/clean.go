@@ -28,7 +28,7 @@ func doClean(ctx *cli.Context) error {
 	// Explicitly don't check errors. We want to do what we can to just
 	// clean everything up.
 	if _, err := os.Stat(config.RootFSDir); !os.IsNotExist(err) {
-		s, err := stacker.NewStorage(config)
+		s, locks, err := stacker.NewStorage(config)
 		if err != nil {
 			return err
 		}
@@ -38,6 +38,7 @@ func doClean(ctx *cli.Context) error {
 			log.Infof("problem cleaning roots %v", err)
 		}
 		os.RemoveAll(config.RootFSDir)
+		locks.Unlock()
 	}
 
 	os.RemoveAll(config.OCIDir)

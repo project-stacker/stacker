@@ -65,11 +65,12 @@ func (p *Publisher) Publish(file string) error {
 	}
 	defer oci.Close()
 
-	s, err := NewStorage(opts.Config)
+	s, locks, err := NewStorage(opts.Config)
 	if err != nil {
 		return err
 	}
 	defer s.Detach()
+	defer locks.Unlock()
 
 	buildCache, err := OpenCache(opts.Config, oci, p.stackerfiles)
 	if err != nil {

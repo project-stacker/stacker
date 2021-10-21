@@ -26,3 +26,35 @@ test:
 EOF
     stacker build
 }
+
+@test "two stackers can't run at the same time" {
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+        echo hello world
+EOF
+    mkdir -p roots .stacker
+    touch roots/.lock .stacker/.lock
+    chmod 777 -R roots .stacker
+
+    # this only works in overlay, since the btrfs storage will mount
+    # btrfs.loop and the roots/.lock won't be on the same fs. since the kernel
+    # will give us an EBUSY for mounting the same source to the same target
+    # anyway, that can't race, so it's fine to ignore.
+    if [ "$STORAGE_TYPE" == "overlay" ]; then
+        (
+            flock 9
+            bad_stacker build
+            echo "${output}" | grep "couldn't acquire lock"
+        ) 9<roots/.lock
+    fi
+
+    (
+        flock 9
+        bad_stacker build
+        echo "${output}" | grep "couldn't acquire lock"
+    ) 9<.stacker/.lock
+}

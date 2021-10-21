@@ -319,7 +319,8 @@ func (b *btrfs) Delete(source string) error {
 
 func (b *btrfs) Detach() error {
 	if b.needsUmount {
-		err := syscall.Unmount(b.c.RootFSDir, 0)
+		// Need to use DETACH here because we still hold the rootfs .lock file.
+		err := syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
 		err2 := os.RemoveAll(b.c.RootFSDir)
 		if err != nil {
 			return err
@@ -383,7 +384,7 @@ func (b *btrfs) Clean() error {
 	var umountErr error
 	_, err := os.Stat(loopback)
 	if err == nil {
-		umountErr = syscall.Unmount(b.c.RootFSDir, 0)
+		umountErr = syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
 	}
 	if subvolErr != nil && umountErr != nil {
 		return errors.Errorf("both subvol delete and umount failed: %v, %v", subvolErr, umountErr)

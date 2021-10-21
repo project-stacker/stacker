@@ -20,11 +20,12 @@ var grabCmd = cli.Command{
 }
 
 func doGrab(ctx *cli.Context) error {
-	s, err := stacker.NewStorage(config)
+	s, locks, err := stacker.NewStorage(config)
 	if err != nil {
 		return err
 	}
 	defer s.Detach()
+	defer locks.Unlock()
 
 	parts := strings.SplitN(ctx.Args().First(), ":", 2)
 	if len(parts) < 2 {
