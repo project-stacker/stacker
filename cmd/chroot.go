@@ -36,11 +36,12 @@ you must specify a tag.`,
 }
 
 func doChroot(ctx *cli.Context) error {
-	s, err := stacker.NewStorage(config)
+	s, locks, err := stacker.NewStorage(config)
 	if err != nil {
 		return err
 	}
 	defer s.Detach()
+	defer locks.Unlock()
 
 	tag := ""
 	if len(ctx.Args()) > 0 {

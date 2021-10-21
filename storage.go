@@ -68,8 +68,9 @@ func tryToDetectStorageType(c types.StackerConfig) (string, error) {
 		return "", nil
 	}
 
-	// nothing has been built, probably a new stacker, so let's use whatever we want
-	if len(ents) == 0 {
+	// nothing has been built (1 is for the lock file), probably a new
+	// stacker, so let's use whatever we want
+	if len(ents) <= 1 {
 		log.Debugf("no previous storage type detected")
 		return "", nil
 	}
@@ -133,33 +134,48 @@ func maybeSwitchStorage(c types.StackerConfig) error {
 	return errors.Wrapf(err, "couldn't delete old cache")
 }
 
-func NewStorage(c types.StackerConfig) (types.Storage, error) {
+func NewStorage(c types.StackerConfig) (types.Storage, *StackerLocks, error) {
 	if err := os.MkdirAll(c.RootFSDir, 0755); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err := maybeSwitchStorage(c)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	log.Infof("using storage backend %s", c.StorageType)
 	err = os.MkdirAll(c.StackerDir, 0755)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't make stacker dir")
+		return nil, nil, errors.Wrapf(err, "couldn't make stacker dir")
 	}
 
 	err = os.MkdirAll(c.RootFSDir, 0755)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't make rootfs dir")
+		return nil, nil, errors.Wrapf(err, "couldn't make rootfs dir")
 	}
 
 	err = ioutil.WriteFile(path.Join(c.StackerDir, storageTypeFile), []byte(c.StorageType), 0644)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't write storage type")
+		return nil, nil, errors.Wrapf(err, "couldn't write storage type")
 	}
 
-	return openStorage(c, c.StorageType)
+	s, err := openStorage(c, c.StorageType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// needed to attach the storage first, so we get the roots lock in the
+	// right place. storage attachment mostly isn't racy (the kernel will
+	// tell us EBUSY if we try to do the same btrfs loop mount twice, and
+	// there is no attachment for overlay), so that's safe.
+	locks, err := lock(c)
+	if err != nil {
+		s.Detach()
+		return nil, nil, err
+	}
+
+	return s, locks, nil
 }
 
 func UnprivSetup(c types.StackerConfig, username string, uid, gid int) error {

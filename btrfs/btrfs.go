@@ -320,7 +320,8 @@ func (b *btrfs) Delete(source string) error {
 
 func (b *btrfs) Detach() error {
 	if b.needsUmount {
-		err := syscall.Unmount(b.c.RootFSDir, 0)
+		// Need to use DETACH here because we still hold the rootfs .lock file.
+		err := syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH)
 		err2 := os.RemoveAll(b.c.RootFSDir)
 		if err != nil {
 			return err
@@ -391,7 +392,8 @@ func (b *btrfs) Clean() error {
 			return errors.Errorf("can't fully clean btrfs from userns (try stacker clean ... as root)")
 		}
 
-		umountErr = errors.Wrapf(syscall.Unmount(b.c.RootFSDir, 0), "unable to umount rootfs")
+		// Need to use DETACH here because we still hold the rootfs .lock file.
+		umountErr = errors.Wrapf(syscall.Unmount(b.c.RootFSDir, syscall.MNT_DETACH), "unable to umount rootfs")
 		if err = os.RemoveAll(loopback); err != nil {
 			log.Infof("failed removing btrfs loopback file: %v", err)
 		}
