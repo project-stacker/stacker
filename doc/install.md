@@ -4,9 +4,9 @@
 
 Stacker requires at least go 1.11.
 
-#### Ubuntu 18.04
+#### Ubuntu 20.04
 
-On Ubuntu 18.04 you can install Go using the instructions at:
+On Ubuntu 20.04 you can install Go using the instructions at:
 https://github.com/golang/go/wiki/Ubuntu
 
 #### Fedora 31
@@ -26,12 +26,12 @@ https://golang.org/doc/install#install
 
 ### Other Dependencies
 
-#### Ubuntu 18.04
+#### Ubuntu 20.04
 
 The other build dependencies can be satisfied with the following command and
 packages:
 
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev libpam0g-dev
 
 To run `make check` you will also need:
 
