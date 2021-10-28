@@ -16,7 +16,7 @@ import (
 )
 
 // download with caching support in the specified cache dir.
-func Download(cacheDir string, url string, progress bool, remoteHash string, remoteSize string) (string, error) {
+func Download(cacheDir string, url string, progress bool, expectedHash, remoteHash, remoteSize string) (string, error) {
 	name := path.Join(cacheDir, path.Base(url))
 
 	if fi, err := os.Stat(name); err == nil {
@@ -86,6 +86,25 @@ func Download(cacheDir string, url string, progress bool, remoteHash string, rem
 	}
 
 	_, err = io.Copy(out, source)
+
+	if err != nil {
+		return "", err
+	}
+	log.Infof("Checking shasum of downloaded file")
+
+	downloadHash, err := lib.HashFile(name, false)
+	if err != nil {
+		return "", err
+	}
+
+	downloadHash = strings.TrimPrefix(downloadHash, "sha256:")
+	log.Debugf("Downloaded file hash: %s", downloadHash)
+
+	if expectedHash != "" && expectedHash != downloadHash {
+		os.RemoveAll(name)
+		return "", errors.Errorf("Downloaded file hash does not match. Expected: %s Actual: %s", expectedHash, downloadHash)
+	}
+
 	return name, err
 }
 

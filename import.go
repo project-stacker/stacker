@@ -214,20 +214,20 @@ func validateHash(hash string) error {
 	return nil
 }
 
-func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, progress bool, hash string) (string, error) {
+func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, progress bool, expectedHash string) (string, error) {
 	url, err := types.NewDockerishUrl(i)
 	if err != nil {
 		return "", err
 	}
 
 	// validate the given hash
-	if err = validateHash(hash); err != nil {
+	if err = validateHash(expectedHash); err != nil {
 		return "", err
 	}
 
 	// It's just a path, let's copy it to .stacker.
 	if url.Scheme == "" {
-		return importFile(i, cache, hash)
+		return importFile(i, cache, expectedHash)
 	} else if url.Scheme == "http" || url.Scheme == "https" {
 		// otherwise, we need to download it
 		// first verify the hashes
@@ -239,11 +239,11 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		}
 		log.Debugf("Remote file: hash: %s length: %s", remoteHash, remoteSize)
 		// verify if the given hash from stackerfile matches the remote one.
-		if len(hash) > 0 && len(remoteHash) > 0 && strings.ToLower(hash) != remoteHash {
+		if len(expectedHash) > 0 && len(remoteHash) > 0 && strings.ToLower(expectedHash) != remoteHash {
 			return "", errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
-				i, hash, remoteHash)
+				i, expectedHash, remoteHash)
 		}
-		return Download(cache, i, progress, remoteHash, remoteSize)
+		return Download(cache, i, progress, expectedHash, remoteHash, remoteSize)
 	} else if url.Scheme == "stacker" {
 		// we always Grab() things from stacker://, because we need to
 		// mount the container's rootfs to get them and don't
@@ -260,7 +260,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 			return "", err
 		}
 
-		err = verifyImportFileHash(p, hash)
+		err = verifyImportFileHash(p, expectedHash)
 		if err != nil {
 			return "", err
 		}

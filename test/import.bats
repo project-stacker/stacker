@@ -165,6 +165,41 @@ EOF
     stacker build
 }
 
+@test "correct sha hash is allowed for internet files" {
+    wget https://google.com/favicon.ico -O google_fav
+    google_sha=$(sha google_fav) || { stderr "failed sha $google_fav"; return 1; }
+    cat > stacker.yaml <<EOF
+thing:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://www.google.com/favicon.ico
+          hash: $google_sha
+    run: |
+        [ -f /stacker/favicon.ico ]
+EOF
+
+    stacker build
+}
+
+
+@test "invalid sha hash fails build for internet files" {
+    cat > stacker.yaml <<EOF
+thing:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://www.google.com/favicon.ico
+          hash: 0d4856785d1d3c3aad3e5311e654c70c19d335f927c24ebb89dfcd52b2d988cb
+EOF
+
+    bad_stacker build
+    echo $output | grep 'hash does not match'
+}
+
+
 @test "invalid import " {
     cat > stacker.yaml <<EOF
 centos:
