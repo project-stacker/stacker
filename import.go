@@ -1,11 +1,12 @@
 package stacker
 
 import (
-	"github.com/opencontainers/go-digest"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/opencontainers/go-digest"
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
