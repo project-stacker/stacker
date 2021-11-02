@@ -86,10 +86,9 @@ func tryToDetectStorageType(c types.StackerConfig) (string, error) {
 	return "btrfs", nil
 }
 
-// maybeSwitchStorage switches the storage type to the new user specified one
-// if it differs from the old storage type that was used with this stacker
-// instance before.
-func maybeSwitchStorage(c types.StackerConfig) error {
+// errorOnStorageTypeSwitch returns an error if there was a previous stacker
+// run with a different storage type.
+func errorOnStorageTypeSwitch(c types.StackerConfig) error {
 	var storageType string
 	content, err := ioutil.ReadFile(path.Join(c.StackerDir, storageTypeFile))
 	if err != nil {
@@ -103,6 +102,7 @@ func maybeSwitchStorage(c types.StackerConfig) error {
 			return err
 		}
 
+		// no previous storage is fine
 		if storageType == "" {
 			return nil
 		}
@@ -110,28 +110,12 @@ func maybeSwitchStorage(c types.StackerConfig) error {
 		storageType = string(content)
 	}
 
-	if storageType == c.StorageType {
-		return nil
+	if storageType != c.StorageType {
+		return errors.Errorf("previous storage type %s not compatible with requested storage %s", storageType, c.StorageType)
 	}
 
-	log.Infof("switching storage backend from %s to %s", storageType, c.StorageType)
-	s, err := openStorage(c, storageType)
-	if err != nil {
-		return err
-	}
+	return nil
 
-	err = s.Clean()
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(c.CacheFile())
-	// it's ok if it didn't exist, this is probably a new run of stacker
-	if os.IsNotExist(err) {
-		err = nil
-	}
-
-	return errors.Wrapf(err, "couldn't delete old cache")
 }
 
 func NewStorage(c types.StackerConfig) (types.Storage, *StackerLocks, error) {
@@ -139,7 +123,7 @@ func NewStorage(c types.StackerConfig) (types.Storage, *StackerLocks, error) {
 		return nil, nil, err
 	}
 
-	err := maybeSwitchStorage(c)
+	err := errorOnStorageTypeSwitch(c)
 	if err != nil {
 		return nil, nil, err
 	}
