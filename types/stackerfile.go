@@ -111,7 +111,7 @@ func substitute(content string, substitutions []string) (string, error) {
 // is a list of KEY=VALUE pairs of things to substitute. Note that this is
 // explicitly not a map, because the substitutions are performed one at a time
 // in the order that they are given.
-func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, error) {
+func NewStackerfile(stackerfile string, validateHash bool, substitutions []string) (*Stackerfile, error) {
 	var err error
 
 	sf := Stackerfile{}
@@ -254,6 +254,11 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 
 	for name, layer := range sf.internal {
 		// Validate field values
+		err = validateImportHash(layer.Import, validateHash)
+		if err != nil {
+			return nil, err
+		}
+
 		switch layer.From.Type {
 		case BuiltLayer:
 			if len(layer.From.Tag) == 0 {
@@ -264,8 +269,24 @@ func NewStackerfile(stackerfile string, substitutions []string) (*Stackerfile, e
 		// Set the directory with the location where the layer was defined
 		layer.referenceDirectory = sf.ReferenceDirectory
 	}
-
 	return &sf, err
+}
+
+func validateImportHash(imports Imports, validateHash bool) error {
+	if !validateHash {
+		return nil
+	}
+
+	for _, imp := range imports {
+		url, err := NewDockerishUrl(imp.Path)
+		if err != nil {
+			return err
+		}
+		if (url.Scheme == "http" || url.Scheme == "https") && imp.Hash == "" {
+			return errors.Errorf("Remote import needs a hash in yaml for path: %s", imp.Path)
+		}
+	}
+	return nil
 }
 
 func (s *Stackerfile) addPrerequisites(processed map[string]bool, sfm StackerFiles) error {

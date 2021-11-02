@@ -11,7 +11,7 @@ type StackerFiles map[string]*Stackerfile
 
 // NewStackerFiles reads multiple Stackerfiles from a list of paths and applies substitutions
 // It adds the Stackerfiles mentioned in the prerequisite paths to the results
-func NewStackerFiles(paths []string, substituteVars []string) (StackerFiles, error) {
+func NewStackerFiles(paths []string, validateHash bool, substituteVars []string) (StackerFiles, error) {
 	sfm := make(map[string]*Stackerfile, len(paths))
 
 	// Iterate over list of paths to stackerfiles
@@ -19,7 +19,7 @@ func NewStackerFiles(paths []string, substituteVars []string) (StackerFiles, err
 		log.Debugf("initializing stacker recipe: %s", path)
 
 		// Read this stackerfile
-		sf, err := NewStackerfile(path, substituteVars)
+		sf, err := NewStackerfile(path, validateHash, substituteVars)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func NewStackerFiles(paths []string, substituteVars []string) (StackerFiles, err
 		}
 
 		// Need to also add stackerfile dependencies of this stackerfile to the map of stackerfiles
-		depStackerFiles, err := NewStackerFiles(prerequisites, substituteVars)
+		depStackerFiles, err := NewStackerFiles(prerequisites, validateHash, substituteVars)
 		if err != nil {
 			return nil, err
 		}

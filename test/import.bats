@@ -199,6 +199,65 @@ EOF
     echo $output | grep 'hash does not match'
 }
 
+@test "`require hash` flag allows build when hash is provided" {
+    touch test_file
+    test_file_sha=$(sha test_file) || { stderr "failed sha $test_file"; return 1; }
+    wget https://google.com/favicon.ico -O google_fav
+    google_sha=$(sha google_fav) || { stderr "failed sha $google_fav"; return 1; }
+    cat > stacker.yaml <<EOF
+thing:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://www.google.com/favicon.ico
+          hash: $google_sha
+        - path: test_file
+          hash: $test_file_sha
+
+    run: |
+        [ -f /stacker/favicon.ico ]
+EOF
+
+    stacker build --require-hash
+}
+
+@test "`require hash` flag fails build when http import hash is not provided" {
+    touch test_file
+    test_file_sha=$(sha test_file) || { stderr "failed sha $test_file"; return 1; }
+    wget https://google.com/favicon.ico -O google_fav
+    google_sha=$(sha google_fav) || { stderr "failed sha $google_fav"; return 1; }
+    cat > stacker.yaml <<EOF
+thing:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://www.google.com/favicon.ico
+        - path: test_file
+          hash: $test_file_sha
+EOF
+
+    bad_stacker build --require-hash
+}
+
+@test "`require hash` flag allows build even when local hash is not provided" {
+    touch test_file
+    wget https://google.com/favicon.ico -O google_fav
+    google_sha=$(sha google_fav) || { stderr "failed sha $google_fav"; return 1; }
+    cat > stacker.yaml <<EOF
+thing:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://www.google.com/favicon.ico
+          hash: $google_sha
+        - path: test_file
+EOF
+
+    stacker build --require-hash
+}
 
 @test "invalid import " {
     cat > stacker.yaml <<EOF

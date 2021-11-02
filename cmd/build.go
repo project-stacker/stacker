@@ -53,6 +53,10 @@ func initCommonBuildFlags() []cli.Flag {
 			Value: &cli.StringSlice{"tar"},
 		},
 		cli.BoolFlag{
+			Name:  "require-hash",
+			Usage: "require all remote imports to have a hash provided in stackerfiles",
+		},
+		cli.BoolFlag{
 			Name:  "order-only",
 			Usage: "show the build order without running the actual build",
 		},
@@ -86,6 +90,7 @@ func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 		Substitute:   ctx.StringSlice("substitute"),
 		OnRunFailure: ctx.String("on-run-failure"),
 		OrderOnly:    ctx.Bool("order-only"),
+		HashRequired: ctx.Bool("require-hash"),
 		Progress:     shouldShowProgress(ctx),
 	}
 	var err error
