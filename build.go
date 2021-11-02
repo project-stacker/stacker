@@ -28,6 +28,7 @@ type BuildArgs struct {
 	OnRunFailure string
 	LayerTypes   []types.LayerType
 	OrderOnly    bool
+	HashRequired bool
 	SetupOnly    bool
 	Progress     bool
 }
@@ -279,7 +280,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		os.RemoveAll(opts.Config.StackerDir)
 	}
 
-	sf, err := types.NewStackerfile(file, append(opts.Substitute, b.opts.Config.Substitutions()...))
+	sf, err := types.NewStackerfile(file, opts.HashRequired, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
 	}
@@ -543,7 +544,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	defer locks.Unlock()
 
 	// Read all the stacker recipes
-	stackerFiles, err := types.NewStackerFiles(paths, append(opts.Substitute, b.opts.Config.Substitutions()...))
+	stackerFiles, err := types.NewStackerFiles(paths, opts.HashRequired, append(opts.Substitute, b.opts.Config.Substitutions()...))
 	if err != nil {
 		return err
 	}

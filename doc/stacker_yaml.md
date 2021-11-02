@@ -98,6 +98,10 @@ import:
     hash: f805b012017bc769a....
 ```
 Before copying the file it will check if the requested hash matches the actual one.
+
+`stacker build` supports the flag `--require-flag` which checks that all http(s) remote
+imports have an hash in all stacker YAMLs.
+
 This new import mode can be combined with the old one, for example:
 ```
 import:

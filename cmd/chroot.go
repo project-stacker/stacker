@@ -69,7 +69,7 @@ func doChroot(ctx *cli.Context) error {
 		defer c.Close()
 		return c.Execute(cmd, os.Stdin)
 	}
-	sf, err := types.NewStackerfile(file, ctx.StringSlice("substitute"))
+	sf, err := types.NewStackerfile(file, false, ctx.StringSlice("substitute"))
 	if err != nil {
 		return err
 	}

@@ -56,7 +56,7 @@ foo:
 		t.Fatalf("couldn't write stacker yaml %v", err)
 	}
 
-	sf, err := types.NewStackerfile(stackerYaml, nil)
+	sf, err := types.NewStackerfile(stackerYaml, false, nil)
 	if err != nil {
 		t.Fatalf("couldn't read stacker file %v", err)
 	}
