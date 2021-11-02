@@ -5,5 +5,5 @@ import (
 )
 
 func UnprivSetup(config types.StackerConfig, uid, gid int) error {
-	return CanDoOverlay(config)
+	return Check(config)
 }

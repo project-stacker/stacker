@@ -104,7 +104,7 @@ func canWriteWhiteouts(config types.StackerConfig) error {
 	return nil
 }
 
-func CanDoOverlay(config types.StackerConfig) error {
+func Check(config types.StackerConfig) error {
 	err := canMountOverlay()
 	if err != nil {
 		return err

@@ -63,7 +63,7 @@ func doTestsuiteCheckOverlay(ctx *cli.Context) error {
 		return errors.Wrapf(err, "couldn't make rootfs dir for testsuite check")
 	}
 
-	err = overlay.CanDoOverlay(config)
+	err = overlay.Check(config)
 	if err != nil {
 		log.Infof("%s", err)
 		os.Exit(50)

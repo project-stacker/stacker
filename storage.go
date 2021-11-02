@@ -20,7 +20,7 @@ var storageTypeFile = "storage.type"
 func openStorage(c types.StackerConfig, storageType string) (types.Storage, error) {
 	switch storageType {
 	case "overlay":
-		err := overlay.CanDoOverlay(c)
+		err := overlay.Check(c)
 		if err != nil {
 			return nil, err
 		}
