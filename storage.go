@@ -27,6 +27,11 @@ func openStorage(c types.StackerConfig, storageType string) (types.Storage, erro
 
 		return overlay.NewOverlay(c)
 	case "btrfs":
+		err := btrfs.Check(c)
+		if err != nil {
+			return nil, err
+		}
+
 		isBtrfs, err := btrfs.DetectBtrfs(c.RootFSDir)
 		if err != nil {
 			log.Infof("error from DetectBtrfs %v", err)

@@ -517,3 +517,45 @@ func (b *btrfs) SetOverlayDirs(name string, overlayDirs types.OverlayDirs, layer
 	}
 	return errors.Errorf("Using overlay_dirs with btrfs storage is forbidden, use overlay storage instead")
 }
+
+func Check(config types.StackerConfig) error {
+	isBtrfs, err := DetectBtrfs(config.RootFSDir)
+	if err != nil {
+		return err
+	}
+
+	// it's already a mounted btrfs, nothing to worry about
+	if isBtrfs {
+		return nil
+	}
+
+	source, err := ioutil.TempFile(config.RootFSDir, "source")
+	if err != nil {
+		return errors.Wrapf(err, "couldn't create source for btrfs test mount")
+	}
+	defer source.Close()
+	defer os.Remove(source.Name())
+
+	dest, err := ioutil.TempDir(config.RootFSDir, "dest")
+	if err != nil {
+		return errors.Wrapf(err, "couldn't create dest for btrfs test mount")
+	}
+	defer os.RemoveAll(dest)
+
+	err = syscall.Mount(source.Name(), dest, "btrfs", 0, "")
+	switch err {
+	case syscall.ENOTBLK:
+		// it complained because source was not a block device; that
+		// means it found btrfs in the kernel and btrfs rejected the
+		// source
+		return nil
+	case syscall.EPERM:
+		return errors.Errorf("not enough perms to mount btrfs")
+	case syscall.ENODEV:
+		return errors.Errorf("btrfs missing from kernel")
+	default:
+		// we always expect one of the above failures, since we didn't
+		// pass a valid filesystem or block device to mount()...
+		return errors.Errorf("incomprehensible btrfs mount err: %#v", err)
+	}
+}
