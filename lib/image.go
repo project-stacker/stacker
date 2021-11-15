@@ -116,6 +116,9 @@ func ImageCopy(opts ImageCopyOpts) error {
 		}
 	}
 
+	args.SourceCtx.OCIAcceptUncompressedLayers = true
+	args.DestinationCtx.OCIAcceptUncompressedLayers = true
+
 	// Set ForceManifestMIMEType
 	// Supported manifest type :- https://github.com/containers/image/blob/master/manifest/manifest.go#L49
 	// ImageCopy caller should set correct manifest type at its end.
