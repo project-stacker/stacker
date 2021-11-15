@@ -13,10 +13,7 @@ require (
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/containers/image/v5 v5.16.1
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
-	github.com/containers/ocicrypt v1.1.2 // indirect
-	github.com/containers/storage v1.37.0 // indirect
 	github.com/docker/docker v20.10.10+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.6.4 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/freddierice/go-losetup v0.0.0-20210416171645-f09b6c574057
@@ -30,7 +27,7 @@ require (
 	github.com/moby/sys/mountinfo v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
+	github.com/opencontainers/image-spec v1.0.2-0.20210819154149-5ad6f50d6283
 	github.com/opencontainers/umoci v0.4.8-0.20211112044327-caa97eac3326
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.32.1 // indirect
@@ -42,7 +39,6 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.5
 	github.com/vbatts/go-mtree v0.5.0
-	github.com/vbauerster/mpb/v6 v6.0.4 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20211113001501-0c823b97ae02
@@ -50,5 +46,3 @@ require (
 	google.golang.org/genproto v0.0.0-20211112145013-271947fe86fd // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20210310195111-044dd755e25e
