@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,6 +28,9 @@ var (
 	version     = ""
 	lxc_version = ""
 )
+
+//go:embed lxc-wrapper/lxc-wrapper
+var embeddedFS embed.FS
 
 func shouldShowProgress(ctx *cli.Context) bool {
 	/* if the user provided explicit recommendations, follow those */
@@ -203,6 +207,8 @@ func main() {
 				return err
 			}
 		}
+
+		config.EmbeddedFS = embeddedFS
 
 		if config.StackerDir == "" || ctx.IsSet("stacker-dir") {
 			config.StackerDir = ctx.String("stacker-dir")

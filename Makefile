@@ -21,19 +21,19 @@ stacker: stacker-dynamic
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH)
 
-stacker-static: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
+stacker-static: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,-extldflags '-static',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
-stacker-dynamic: $(GO_SRC) go.mod go.sum lxc-wrapper/lxc-wrapper
+stacker-dynamic: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,,stacker-dynamic)
 
-lxc-wrapper/lxc-wrapper: lxc-wrapper/lxc-wrapper.c
-	make -C lxc-wrapper lxc-wrapper
+cmd/lxc-wrapper/lxc-wrapper: cmd/lxc-wrapper/lxc-wrapper.c
+	make -C cmd/lxc-wrapper lxc-wrapper
 
 .PHONY: lint
-lint: lxc-wrapper/lxc-wrapper $(GO_SRC)
+lint: cmd/lxc-wrapper/lxc-wrapper $(GO_SRC)
 	go mod tidy
 	go fmt ./... && ([ -z $(CI) ] || git diff --exit-code)
 	bash test/static-analysis.sh
@@ -64,4 +64,4 @@ clean:
 	./stacker-dynamic $(STACKER_OPTS) clean
 	-rm -rf stacker stacker-dynamic .build
 	-rm -r ./test/centos ./test/ubuntu
-	-make -C lxc-wrapper clean
+	-make -C cmd/lxc-wrapper clean

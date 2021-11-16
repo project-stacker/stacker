@@ -1,6 +1,7 @@
 package types
 
 import (
+	"embed"
 	"fmt"
 	"path"
 )
@@ -13,6 +14,11 @@ type StackerConfig struct {
 	RootFSDir   string `yaml:"rootfs_dir"`
 	Debug       bool   `yaml:"-"`
 	StorageType string `yaml:"-"`
+
+	// EmbeddedFS should contain a (statically linked) lxc-wrapper binary
+	// (built from cmd/lxc-wrapper/lxc-wrapper.c) at
+	// lxc-wrapper/lxc-wrapper.
+	EmbeddedFS embed.FS `yaml:"-"`
 }
 
 // Substitutions - return an array of substitutions for StackerFiles

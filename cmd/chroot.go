@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/anuvu/stacker"
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
@@ -62,7 +63,7 @@ func doChroot(ctx *cli.Context) error {
 		}
 
 		log.Infof("couldn't find stacker file, chrooting to %s as best effort", tag)
-		c, err := stacker.NewContainer(config, s, tag)
+		c, err := container.New(config, s, tag)
 		if err != nil {
 			return err
 		}
@@ -90,7 +91,7 @@ func doChroot(ctx *cli.Context) error {
 	defer cleanup()
 
 	log.Infof("This chroot is temporary, any changes will be destroyed when it exits.")
-	c, err := stacker.NewContainer(config, s, name)
+	c, err := container.New(config, s, name)
 	if err != nil {
 		return err
 	}
