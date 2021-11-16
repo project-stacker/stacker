@@ -5,18 +5,19 @@ import (
 	"os"
 	"path"
 
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
 )
 
 func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string) error {
-	c, err := NewContainer(sc, storage, name)
+	c, err := container.New(sc, storage, name)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
 
-	err = c.bindMount(targetDir, "/stacker", "")
+	err = c.BindMount(targetDir, "/stacker", "")
 	if err != nil {
 		return err
 	}
@@ -27,7 +28,7 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 		return errors.Wrapf(err, "couldn't find executable for bind mount")
 	}
 
-	err = c.bindMount(binary, "/static-stacker", "")
+	err = c.BindMount(binary, "/static-stacker", "")
 	if err != nil {
 		return err
 	}

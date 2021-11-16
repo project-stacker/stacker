@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anuvu/stacker/container"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -90,20 +91,20 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		}
 		defer os.RemoveAll(dir)
 
-		c, err := NewContainer(opts.Config, s, writable)
+		c, err := container.New(opts.Config, s, writable)
 		if err != nil {
 			return err
 		}
 		defer c.Close()
 
-		err = c.bindMount(dir, "/oci-labels", "")
+		err = c.BindMount(dir, "/oci-labels", "")
 		if err != nil {
 			return err
 		}
 
 		rootfs := path.Join(opts.Config.RootFSDir, writable, "rootfs")
 		runPath := path.Join(dir, ".stacker-run.sh")
-		err = GenerateShellForRunning(rootfs, generateLabels, runPath)
+		err = generateShellForRunning(rootfs, generateLabels, runPath)
 		if err != nil {
 			return err
 		}
@@ -151,7 +152,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 
 	// if the user didn't specify a path, let's set a sane one
 	if !pathSet {
-		imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", ReasonableDefaultPath))
+		imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", container.ReasonableDefaultPath))
 	}
 
 	if l.Cmd != nil {
@@ -422,7 +423,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
-		c, err := NewContainer(opts.Config, s, name)
+		c, err := container.New(opts.Config, s, name)
 		if err != nil {
 			return err
 		}
@@ -434,7 +435,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		}
 
 		if opts.SetupOnly {
-			err = c.c.SaveConfigFile(path.Join(opts.Config.RootFSDir, name, "lxc.conf"))
+			err = c.SaveConfigFile(path.Join(opts.Config.RootFSDir, name, "lxc.conf"))
 			if err != nil {
 				return errors.Wrapf(err, "error saving config file for %s", name)
 			}
@@ -454,7 +455,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		if len(run) != 0 {
 			rootfs := path.Join(opts.Config.RootFSDir, name, "rootfs")
 			shellScript := path.Join(opts.Config.StackerDir, "imports", name, ".stacker-run.sh")
-			err = GenerateShellForRunning(rootfs, run, shellScript)
+			err = generateShellForRunning(rootfs, run, shellScript)
 			if err != nil {
 				return err
 			}
@@ -583,4 +584,15 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	}
 
 	return nil
+}
+
+// generateShellForRunning generates a shell script to run inside the
+// container, and writes it to the contianer. It checks that the script already
+// have a shebang? If so, it leaves it as is, otherwise it prepends a shebang.
+func generateShellForRunning(rootfs string, cmd []string, outFile string) error {
+	shebangLine := "#!/bin/sh -xe\n"
+	if strings.HasPrefix(cmd[0], "#!") {
+		shebangLine = ""
+	}
+	return ioutil.WriteFile(outFile, []byte(shebangLine+strings.Join(cmd, "\n")+"\n"), 0755)
 }
