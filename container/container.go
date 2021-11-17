@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	stackeridmap "github.com/anuvu/stacker/container/idmap"
 	"github.com/anuvu/stacker/embed-exec"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
@@ -85,7 +86,7 @@ func New(sc types.StackerConfig, storage types.Storage, name string) (*Container
 		return nil, err
 	}
 
-	idmapSet, err := ResolveCurrentIdmapSet()
+	idmapSet, err := stackeridmap.ResolveCurrentIdmapSet()
 	if err != nil {
 		return nil, err
 	}
