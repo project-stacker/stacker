@@ -33,3 +33,12 @@ jobs:
                   (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
             - run: |
                   make check STORAGE_TYPE=${{ matrix.storage-type }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+            - if: github.event_name == 'release' && github.event.action == 'published'
+              name: Publish artifacts on releases
+              uses: svenstaro/upload-release-action@v2
+              with:
+                  repo_token: ${{ secrets.GITHUB_TOKEN }}
+                  file: stacker
+                  tag: ${{ github.ref }}
+                  overwrite: true
+                  file_glob: true
