@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"runtime"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/container"
+	stackeridmap "github.com/anuvu/stacker/container/idmap"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -86,11 +88,16 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		}
 		defer os.RemoveAll(dir)
 
-		c, err := container.New(opts.Config, s, writable)
+		c, err := container.New(opts.Config, writable)
 		if err != nil {
 			return err
 		}
 		defer c.Close()
+
+		err = SetupBuildContainerConfig(opts.Config, s, c, writable)
+		if err != nil {
+			return err
+		}
 
 		err = c.BindMount(dir, "/oci-labels", "")
 		if err != nil {
@@ -388,13 +395,18 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
-		c, err := container.New(opts.Config, s, name)
+		c, err := container.New(opts.Config, name)
 		if err != nil {
 			return err
 		}
 		defer c.Close()
 
-		err = c.SetupLayerConfig(l, name)
+		err = SetupBuildContainerConfig(opts.Config, s, c, name)
+		if err != nil {
+			return err
+		}
+
+		err = SetupLayerConfig(opts.Config, c, l, name)
 		if err != nil {
 			return err
 		}
@@ -555,4 +567,163 @@ func generateShellForRunning(rootfs string, cmd []string, outFile string) error 
 		shebangLine = ""
 	}
 	return ioutil.WriteFile(outFile, []byte(shebangLine+strings.Join(cmd, "\n")+"\n"), 0755)
+}
+
+func runInternalGoSubcommand(config types.StackerConfig, args []string) error {
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{
+		"--oci-dir", config.OCIDir,
+		"--roots-dir", config.RootFSDir,
+		"--stacker-dir", config.StackerDir,
+		"--storage-type", config.StorageType,
+		"--internal-userns",
+	}
+
+	if config.Debug {
+		cmd = append(cmd, "--debug")
+	}
+
+	cmd = append(cmd, "internal-go")
+	cmd = append(cmd, args...)
+	c := exec.Command(binary, cmd...)
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return errors.WithStack(c.Run())
+}
+
+func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage, c *container.Container, name string) error {
+	idmapSet, err := stackeridmap.ResolveCurrentIdmapSet()
+	if err != nil {
+		return err
+	}
+
+	// similar to the hard coding in MaybeRunInUserns(), for now root
+	// containers run as root.
+	if os.Geteuid() == 0 {
+		idmapSet = nil
+	}
+
+	if idmapSet != nil {
+		for _, idm := range idmapSet.Idmap {
+			if err := idm.Usable(); err != nil {
+				return errors.Errorf("idmap unusable: %s", err)
+			}
+		}
+
+		for _, lxcConfig := range idmapSet.ToLxcString() {
+			err = c.SetConfig("lxc.idmap", lxcConfig)
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+
+	rootfsPivot := path.Join(config.StackerDir, "rootfsPivot")
+	if err := os.MkdirAll(rootfsPivot, 0755); err != nil {
+		return err
+	}
+
+	if err := c.SetConfig("lxc.rootfs.mount", rootfsPivot); err != nil {
+		return err
+	}
+
+	configs := map[string]string{
+		"lxc.mount.auto":                "proc:mixed",
+		"lxc.autodev":                   "1",
+		"lxc.pty.max":                   "1024",
+		"lxc.mount.entry":               "none dev/shm tmpfs defaults,create=dir 0 0",
+		"lxc.uts.name":                  name,
+		"lxc.net.0.type":                "none",
+		"lxc.environment":               fmt.Sprintf("PATH=%s", container.ReasonableDefaultPath),
+		"lxc.apparmor.allow_incomplete": "1",
+	}
+
+	if err := c.SetConfigs(configs); err != nil {
+		return err
+	}
+
+	err = c.BindMount("/sys", "/sys", "")
+	if err != nil {
+		return err
+	}
+
+	err = c.BindMount("/etc/resolv.conf", "/etc/resolv.conf", "")
+	if err != nil {
+		return err
+	}
+
+	rootfs, err := storage.GetLXCRootfsConfig(name)
+	if err != nil {
+		return err
+	}
+
+	err = c.SetConfig("lxc.rootfs.path", rootfs)
+	if err != nil {
+		return err
+	}
+
+	// liblxc inserts an apparmor profile if we don't set one by default.
+	// however, since we may be statically linked with no packaging
+	// support, the host may not have this default profile. let's check for
+	// it. of course, we can't check for it by catting the value in
+	// securityfs, because that's restricted :). so we fork and try to
+	// change to the profile in question instead.
+	//
+	// note that this is not strictly correct: lxc will try to use a
+	// non-cgns profile if cgns isn't supported by the kernel, but most
+	// kernels these days support it so we ignore this case.
+	lxcDefaultProfile := "lxc-container-default-cgns"
+	err = runInternalGoSubcommand(config, []string{"check-aa-profile", lxcDefaultProfile})
+	if err != nil {
+		log.Infof("couldn't find AppArmor profile %s", lxcDefaultProfile)
+		err = c.SetConfig("lxc.apparmor.profile", "unconfined")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func SetupLayerConfig(config types.StackerConfig, c *container.Container, l types.Layer, name string) error {
+	env, err := l.BuildEnvironment(name)
+	if err != nil {
+		return err
+	}
+
+	importsDir := path.Join(config.StackerDir, "imports", name)
+	if _, err := os.Stat(importsDir); err == nil {
+		log.Debugf("bind mounting %s into container", importsDir)
+		err = c.BindMount(importsDir, "/stacker", "ro")
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Debugf("not bind mounting %s into container", importsDir)
+	}
+
+	for k, v := range env {
+		if v != "" {
+			err = c.SetConfig("lxc.environment", fmt.Sprintf("%s=%s", k, v))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, bind := range l.Binds {
+		err = c.BindMount(bind.Source, bind.Dest, "")
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
 }

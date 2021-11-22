@@ -11,7 +11,7 @@ import (
 )
 
 func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string) error {
-	c, err := container.New(sc, storage, name)
+	c, err := container.New(sc, name)
 	if err != nil {
 		return err
 	}
@@ -29,6 +29,11 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 
 	err = c.BindMount(binary, "/static-stacker", "")
+	if err != nil {
+		return err
+	}
+
+	err = SetupBuildContainerConfig(sc, storage, c, name)
 	if err != nil {
 		return err
 	}

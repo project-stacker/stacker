@@ -63,7 +63,7 @@ func doChroot(ctx *cli.Context) error {
 		}
 
 		log.Infof("couldn't find stacker file, chrooting to %s as best effort", tag)
-		c, err := container.New(config, s, tag)
+		c, err := container.New(config, tag)
 		if err != nil {
 			return err
 		}
@@ -91,14 +91,20 @@ func doChroot(ctx *cli.Context) error {
 	defer cleanup()
 
 	log.Infof("This chroot is temporary, any changes will be destroyed when it exits.")
-	c, err := container.New(config, s, name)
+	c, err := container.New(config, name)
 	if err != nil {
 		return err
 	}
 	defer c.Close()
-	err = c.SetupLayerConfig(layer, name)
+
+	err = stacker.SetupBuildContainerConfig(config, s, c, name)
 	if err != nil {
 		return err
 	}
+	err = stacker.SetupLayerConfig(config, c, layer, name)
+	if err != nil {
+		return err
+	}
+
 	return c.Execute(cmd, os.Stdin)
 }
