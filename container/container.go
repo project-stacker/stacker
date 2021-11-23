@@ -128,7 +128,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	defer os.Remove(f.Name())
 
 	if err := c.c.SaveConfigFile(f.Name()); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	// we want to be sure to remove the /stacker from the generated
