@@ -276,35 +276,7 @@ func main() {
 			cmd = append(cmd[:2], cmd[1:]...)
 			cmd[1] = "--internal-userns"
 
-			forward := make(chan os.Signal, 3)
-			signal.Notify(forward, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-
-			c, err := container.MaybeRunInUserns(cmd)
-			if err != nil {
-				return err
-			}
-			if err = c.Start(); err != nil {
-				stackerResult(err)
-			}
-			done := make(chan bool)
-
-			go func() {
-				for {
-					select {
-					case <-done:
-						return
-					case sig := <-forward:
-						err = syscall.Kill(c.Process.Pid, sig.(syscall.Signal))
-						if err != nil {
-							log.Infof("failed to forward %v through userns wrapper: %v", sig, err)
-						}
-					}
-				}
-			}()
-
-			err = errors.WithStack(c.Wait())
-			done <- true
-			stackerResult(err)
+			stackerResult(container.MaybeRunInUserns(config, cmd))
 		}
 		return nil
 	}

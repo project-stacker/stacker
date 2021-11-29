@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/anuvu/stacker/container"
-	stackeridmap "github.com/anuvu/stacker/container/idmap"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -598,33 +597,6 @@ func runInternalGoSubcommand(config types.StackerConfig, args []string) error {
 }
 
 func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage, c *container.Container, name string) error {
-	idmapSet, err := stackeridmap.ResolveCurrentIdmapSet()
-	if err != nil {
-		return err
-	}
-
-	// similar to the hard coding in MaybeRunInUserns(), for now root
-	// containers run as root.
-	if os.Geteuid() == 0 {
-		idmapSet = nil
-	}
-
-	if idmapSet != nil {
-		for _, idm := range idmapSet.Idmap {
-			if err := idm.Usable(); err != nil {
-				return errors.Errorf("idmap unusable: %s", err)
-			}
-		}
-
-		for _, lxcConfig := range idmapSet.ToLxcString() {
-			err = c.SetConfig("lxc.idmap", lxcConfig)
-			if err != nil {
-				return err
-			}
-		}
-
-	}
-
 	rootfsPivot := path.Join(config.StackerDir, "rootfsPivot")
 	if err := os.MkdirAll(rootfsPivot, 0755); err != nil {
 		return err
@@ -649,7 +621,7 @@ func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage
 		return err
 	}
 
-	err = c.BindMount("/sys", "/sys", "")
+	err := c.BindMount("/sys", "/sys", "")
 	if err != nil {
 		return err
 	}
