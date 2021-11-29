@@ -1,9 +1,8 @@
 ## Runtime environment
 
-Stacker execs various tools in order to accomplish its goals. Some recent (>
-3.1.2) version of lxc-usernsexec is required for basic functionality.
+Stacker execs various tools in order to accomplish its goals.
 
-Additionally, in order to generate squashfs images, the `mksquashfs` binary
+For example, in order to generate squashfs images, the `mksquashfs` binary
 needs to be present in `$PATH`.
 
 stacker has two storage backends: an overlayfs based backend and an older (and

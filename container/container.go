@@ -33,6 +33,10 @@ func New(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, errors.Errorf("stacker requires liblxc >= 2.1.0")
 	}
 
+	if err := os.MkdirAll(sc.RootFSDir, 0755); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
 	if err != nil {
 		return nil, err
@@ -141,6 +145,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,
 		"lxc-wrapper/lxc-wrapper",
+		"spawn",
 		c.c.Name(),
 		c.sc.RootFSDir,
 		f.Name(),
