@@ -186,7 +186,7 @@ EOF
 
 @test "can read previous version's cache" {
     git clone https://github.com/anuvu/stacker
-    (cd stacker && make LXC_BRANCH=$LXC_BRANCH)
+    (cd stacker && make LXC_BRANCH=$LXC_BRANCH LXC_CLONE_URL=$LXC_CLONE_URL)
 
     # some additional testing that the cache can be read by older versions of
     # stacker (cache_test.go has the full test for the type, this just checks
