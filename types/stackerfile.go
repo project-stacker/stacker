@@ -382,7 +382,7 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 
 			layer := s.internal[name]
 
-			if layer.From == nil {
+			if layer.From.Type == "" {
 				return nil, errors.Errorf("invalid layer: no base (from directive)")
 			}
 

@@ -89,7 +89,7 @@ func SetupRootfs(o BaseLayerOpts) error {
 	}
 }
 
-func importContainersImage(is *types.ImageSource, config types.StackerConfig, progress bool) error {
+func importContainersImage(is types.ImageSource, config types.StackerConfig, progress bool) error {
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err

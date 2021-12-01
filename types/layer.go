@@ -44,7 +44,7 @@ type OverlayDirs []OverlayDir
 type Imports []Import
 
 type Layer struct {
-	From               *ImageSource      `yaml:"from"`
+	From               ImageSource       `yaml:"from"`
 	Import             Imports           `yaml:"import"`
 	OverlayDirs        OverlayDirs       `yaml:"overlay_dirs"`
 	Run                interface{}       `yaml:"run"`
