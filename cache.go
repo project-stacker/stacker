@@ -190,15 +190,17 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 
 	h1, err := hashstructure.Hash(result.Layer, nil)
 	if err != nil {
-		return nil, false, err
+	       return nil, false, err
 	}
 
 	h2, err := hashstructure.Hash(l, nil)
 	if err != nil {
-		return nil, false, err
+	       return nil, false, err
 	}
 
 	if h1 != h2 {
+		log.Debugf("cached: %+#v", result.Layer)
+		log.Debugf("new: %+#v", l)
 		log.Infof("cache miss because layer definition was changed")
 		return nil, false, nil
 	}
