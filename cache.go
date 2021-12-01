@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"reflect"
 
 	"github.com/anuvu/stacker/lib"
 	"github.com/anuvu/stacker/log"
@@ -188,17 +189,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		return nil, false, nil
 	}
 
-	h1, err := hashstructure.Hash(result.Layer, nil)
-	if err != nil {
-	       return nil, false, err
-	}
-
-	h2, err := hashstructure.Hash(l, nil)
-	if err != nil {
-	       return nil, false, err
-	}
-
-	if h1 != h2 {
+	if !reflect.DeepEqual(result.Layer, l) {
 		log.Debugf("cached: %+#v", result.Layer)
 		log.Debugf("new: %+#v", l)
 		log.Infof("cache miss because layer definition was changed")
