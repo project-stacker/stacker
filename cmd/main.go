@@ -67,7 +67,7 @@ func stackerResult(err error) {
 }
 
 func main() {
-	sigquits := make(chan os.Signal)
+	sigquits := make(chan os.Signal, 1)
 	go func() {
 		for range sigquits {
 			debug.PrintStack()
@@ -276,7 +276,7 @@ func main() {
 			cmd = append(cmd[:2], cmd[1:]...)
 			cmd[1] = "--internal-userns"
 
-			forward := make(chan os.Signal)
+			forward := make(chan os.Signal, 3)
 			signal.Notify(forward, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 
 			c, err := container.MaybeRunInUserns(cmd)
