@@ -280,6 +280,9 @@ func main() {
 			signal.Notify(forward, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 
 			c, err := container.MaybeRunInUserns(cmd)
+			if err != nil {
+				return err
+			}
 			if err = c.Start(); err != nil {
 				stackerResult(err)
 			}
