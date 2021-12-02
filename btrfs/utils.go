@@ -1,9 +1,9 @@
 package btrfs
 
 import (
-	"crypto/sha256"
 	"fmt"
 
+	"github.com/minio/sha256-simd"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
