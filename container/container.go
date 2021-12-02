@@ -13,7 +13,7 @@ import (
 	"syscall"
 
 	stackeridmap "github.com/anuvu/stacker/container/idmap"
-	"github.com/anuvu/stacker/embed-exec"
+	embed_exec "github.com/anuvu/stacker/embed-exec"
 	"github.com/anuvu/stacker/log"
 	"github.com/anuvu/stacker/types"
 	"github.com/lxc/go-lxc"
@@ -294,7 +294,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 
 	}
 
-	signals := make(chan os.Signal)
+	signals := make(chan os.Signal, 32)
 	signal.Notify(signals)
 	done := make(chan bool)
 
