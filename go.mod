@@ -23,6 +23,7 @@ require (
 	github.com/klauspost/pgzip v1.2.5
 	github.com/lxc/go-lxc v0.0.0-20210607135324-10de240d43ab
 	github.com/lxc/lxd v0.0.0-20211118162824-0a8d8c489961
+	github.com/minio/sha256-simd v1.0.0
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mountinfo v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
