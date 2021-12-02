@@ -31,13 +31,19 @@ https://golang.org/doc/install#install
 The other build dependencies can be satisfied with the following command and
 packages:
 
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev libpam0g-dev
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
+    libpam0g-dev libselinux-dev libssl-dev
 
 To run `make check` you will also need:
 
-    sudo add-apt-repository ppa:projectatomic/ppa
-    sudo apt update
-    sudo apt install bats jq
+    sudo apt install bats btrfs-progs jq libbtrfs-dev tree
+
+umoci - https://github.com/opencontainers/umoci
+squashtool - https://github.com/anuvu/squashfs
+
+Contrary to what the documentation in squashfs implies, squashtool and
+libsquash from squash-tools-ng need to be installed globally, as user specific
+path overrides aren't propagated into `make check`'s test envs.
 
 #### Fedora 31
 
