@@ -31,7 +31,7 @@ https://golang.org/doc/install#install
 The other build dependencies can be satisfied with the following command and
 packages:
 
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev libpam0g-dev
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev libpam0g-dev libzstd-dev
 
 To run `make check` you will also need:
 
