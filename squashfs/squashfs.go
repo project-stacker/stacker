@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 
 	stackermtree "github.com/anuvu/stacker/mtree"
 	stackeroci "github.com/anuvu/stacker/oci"
@@ -23,6 +24,9 @@ import (
 	"github.com/vbatts/go-mtree"
 	"golang.org/x/sys/unix"
 )
+
+var checkZstdSupported sync.Once
+var zstdIsSuspported bool
 
 // ExcludePaths represents a list of paths to exclude in a squashfs listing.
 // Users should do something like filepath.Walk() over the whole filesystem,
@@ -135,6 +139,9 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadClos
 	os.Remove(tmpSquashfs.Name())
 	defer os.Remove(tmpSquashfs.Name())
 	args := []string{rootfs, tmpSquashfs.Name()}
+	if mksquashfsSupportsZstd() {
+		args = append(args, "-comp", "zstd")
+	}
 	if len(toExclude) != 0 {
 		args = append(args, "-ef", excludesFile)
 	}
@@ -320,4 +327,25 @@ func whichSearch(name string, paths []string) string {
 	}
 
 	return ""
+}
+
+func mksquashfsSupportsZstd() bool {
+	checkZstdSupported.Do(func() {
+		var stdoutBuffer strings.Builder
+		var stderrBuffer strings.Builder
+
+		cmd := exec.Command("mksquashfs", "--help")
+		cmd.Stdout = &stdoutBuffer
+		cmd.Stderr = &stderrBuffer
+
+		// Ignore errs here as `mksquashfs --help` exit status code is 1
+		_ = cmd.Run()
+
+		if strings.Contains(stdoutBuffer.String(), "zstd") ||
+			strings.Contains(stderrBuffer.String(), "zstd") {
+			zstdIsSuspported = true
+		}
+	})
+
+	return zstdIsSuspported
 }
