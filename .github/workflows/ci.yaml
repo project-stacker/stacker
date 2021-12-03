@@ -23,7 +23,7 @@ jobs:
             - name: install dependencies
               run: |
                   sudo apt-get update
-                  sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel
+                  sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
                   GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
                   sudo cp ~/go/bin/umoci /usr/bin
                   curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
