@@ -245,7 +245,7 @@ func (o *overlay) TarExtractLocation(name string) string {
 }
 
 // Add overlay_dirs into overlay metadata so that later we can mount them in the lxc container
-func (o *overlay) SetOverlayDirs(name string, overlayDirs types.OverlayDirs, layerTypes []types.LayerType) error {
+func (o *overlay) SetOverlayDirs(name string, overlayDirs []types.OverlayDir, layerTypes []types.LayerType) error {
 	if len(overlayDirs) == 0 {
 		return nil
 	}

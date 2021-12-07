@@ -53,7 +53,7 @@ func NewStackerFiles(paths []string, validateHash bool, substituteVars []string)
 }
 
 // LookupLayerDefinition searches for the Layer entry within the Stackerfiles
-func (sfm StackerFiles) LookupLayerDefinition(name string) (*Layer, bool) {
+func (sfm StackerFiles) LookupLayerDefinition(name string) (Layer, bool) {
 	// Search for the layer in all of the stackerfiles
 	for _, sf := range sfm {
 		l, found := sf.Get(name)
@@ -61,5 +61,5 @@ func (sfm StackerFiles) LookupLayerDefinition(name string) (*Layer, bool) {
 			return l, true
 		}
 	}
-	return nil, false
+	return Layer{}, false
 }

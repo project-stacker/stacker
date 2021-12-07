@@ -21,7 +21,7 @@ import (
 	"github.com/vbatts/go-mtree"
 )
 
-const currentCacheVersion = 11
+const currentCacheVersion = 12
 
 type ImportType int
 
@@ -62,7 +62,7 @@ type CacheEntry struct {
 	Name string
 
 	// The layer to cache
-	Layer *types.Layer
+	Layer types.Layer
 
 	// If the layer is of type "built", this is a hash of the base layer's
 	// CacheEntry, which contains a hash of its imports. If there is a
@@ -215,12 +215,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		return nil, false, nil
 	}
 
-	imports, err := l.ParseImport()
-	if err != nil {
-		return nil, false, err
-	}
-
-	for _, imp := range imports {
+	for _, imp := range l.Imports {
 		cachedImport, ok := result.Imports[imp.Path]
 		if !ok {
 			log.Infof("cache miss because of new import: %s", imp.Path)
@@ -266,12 +261,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		}
 	}
 
-	overlayDirs, err := l.ParseOverlayDirs()
-	if err != nil {
-		return nil, false, err
-	}
-
-	for _, overlayDir := range overlayDirs {
+	for _, overlayDir := range l.OverlayDirs {
 		cachedOverlayDir, ok := result.OverlayDirs[overlayDir.Source]
 		if !ok {
 			log.Infof("cache miss because of new overlay_dir: %s", overlayDir.Source)
@@ -422,12 +412,7 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 		Base:        baseHash,
 	}
 
-	imports, err := l.ParseImport()
-	if err != nil {
-		return err
-	}
-
-	for _, imp := range imports {
+	for _, imp := range l.Imports {
 		fname := path.Base(imp.Path)
 		importsDir := path.Join(c.config.StackerDir, "imports")
 		diskPath := path.Join(importsDir, name, fname)
@@ -454,12 +439,7 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 		ent.Imports[imp.Path] = ih
 	}
 
-	overlayDirs, err := l.ParseOverlayDirs()
-	if err != nil {
-		return err
-	}
-
-	for _, overlayDir := range overlayDirs {
+	for _, overlayDir := range l.OverlayDirs {
 		odh := OverlayDirHash{}
 		odh.Hash, err = getEncodedMtree(overlayDir.Source)
 		if err != nil {
