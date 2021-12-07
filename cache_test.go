@@ -79,11 +79,23 @@ foo:
 
 	// change the layer, but look it up under the same name, to make sure
 	// the layer itself is hashed
-	layer, ok := sf.Get("foo")
-	if !ok {
-		t.Fatalf("couldn't get layer foo")
+	stackerYaml = path.Join(dir, "stacker.yaml")
+	err = ioutil.WriteFile(stackerYaml, []byte(`
+foo:
+    from:
+        type: docker
+        url: docker://centos:latest
+    run: zomg meshuggah rocks
+    build_only: true
+`), 0644)
+	if err != nil {
+		t.Fatalf("couldn't write stacker yaml %v", err)
 	}
-	layer.Run = []string{"jmh"}
+
+	sf, err = types.NewStackerfile(stackerYaml, false, nil)
+	if err != nil {
+		t.Fatalf("couldn't read stacker file %v", err)
+	}
 
 	// ok, now re-load the persisted cache
 	cache, err = OpenCache(config, casext.Engine{}, types.StackerFiles{"dummy": sf})
@@ -91,7 +103,7 @@ foo:
 		t.Fatalf("couldn't re-load cache %v", err)
 	}
 
-	_, ok, err = cache.Lookup("foo")
+	_, ok, err := cache.Lookup("foo")
 	if err != nil {
 		t.Errorf("lookup failed %v", err)
 	}
@@ -114,5 +126,5 @@ func TestCacheEntryChanged(t *testing.T) {
 	// This test works because the type information is included in the
 	// hashstructure hash above, so using a zero valued CacheEntry is
 	// enough to capture changes in types.
-	assert.Equal(uint64(0x22f75070ead4ce2e), h)
+	assert.Equal(uint64(0x99dd94c023d7ccc6), h)
 }

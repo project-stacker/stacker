@@ -79,5 +79,5 @@ type Storage interface {
 
 	// Add overlay_dirs into overlay metadata so that later we can mount them
 	// in the lxc container, works only for storage-type 'overlay'
-	SetOverlayDirs(name string, overlayDirs OverlayDirs, layerTypes []LayerType) error
+	SetOverlayDirs(name string, overlayDirs []OverlayDir, layerTypes []LayerType) error
 }

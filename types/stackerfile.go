@@ -25,7 +25,7 @@ type Stackerfile struct {
 	AfterSubstitutions string
 
 	// internal is the actual representation of the stackerfile as a map.
-	internal map[string]*Layer
+	internal map[string]Layer
 
 	// FileOrder is the order of elements as they appear in the stackerfile.
 	FileOrder []string
@@ -40,7 +40,7 @@ type Stackerfile struct {
 	ReferenceDirectory string
 }
 
-func (sf *Stackerfile) Get(name string) (*Layer, bool) {
+func (sf *Stackerfile) Get(name string) (Layer, bool) {
 	// This is dumb, but if we do a direct return here, golang doesn't
 	// resolve the "ok", and compilation fails.
 	layer, ok := sf.internal[name]
@@ -206,87 +206,12 @@ func NewStackerfile(stackerfile string, validateHash bool, substitutions []strin
 		}
 	}
 
-	// Now, let's make sure that all the things people supplied in the layers are
-	// actually things this stacker understands.
-	for _, e := range lms {
-		for _, directive := range e.Value.(yaml.MapSlice) {
-			found := false
-			for _, field := range layerFields {
-				if directive.Key.(string) == field {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return nil, errors.Errorf("stackerfile: unknown directive %s", directive.Key.(string))
-			}
-
-			if directive.Key.(string) == "from" {
-				for _, sourceDirective := range directive.Value.(yaml.MapSlice) {
-					found = false
-					for _, field := range imageSourceFields {
-						if sourceDirective.Key.(string) == field {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						return nil, errors.Errorf("stackerfile: unknown image source directive %s",
-							sourceDirective.Key.(string))
-					}
-				}
-			}
-		}
-	}
-
-	// Marshall only the layers so we can unmarshal them in the right data structure later
-	layersContent, err := yaml.Marshal(lms)
+	sf.internal, err = parseLayers(sf.ReferenceDirectory, lms, validateHash)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal to save the data in the right structure to enable further processing
-	if err := yaml.Unmarshal(layersContent, &sf.internal); err != nil {
-		return nil, err
-	}
-
-	for name, layer := range sf.internal {
-		// Validate field values
-		err = validateImportHash(layer.Import, validateHash)
-		if err != nil {
-			return nil, err
-		}
-
-		switch layer.From.Type {
-		case BuiltLayer:
-			if len(layer.From.Tag) == 0 {
-				return nil, errors.Errorf("%s: from tag cannot be empty for image type 'built'", name)
-			}
-		}
-
-		// Set the directory with the location where the layer was defined
-		layer.referenceDirectory = sf.ReferenceDirectory
-	}
 	return &sf, err
-}
-
-func validateImportHash(imports Imports, validateHash bool) error {
-	if !validateHash {
-		return nil
-	}
-
-	for _, imp := range imports {
-		url, err := NewDockerishUrl(imp.Path)
-		if err != nil {
-			return err
-		}
-		if (url.Scheme == "http" || url.Scheme == "https") && imp.Hash == "" {
-			return errors.Errorf("Remote import needs a hash in yaml for path: %s", imp.Path)
-		}
-	}
-	return nil
 }
 
 func (s *Stackerfile) addPrerequisites(processed map[string]bool, sfm StackerFiles) error {
@@ -329,17 +254,12 @@ func (s *Stackerfile) DependencyOrder(sfm StackerFiles) ([]string, error) {
 		return nil, err
 	}
 
-	getUnprocessedStackerImports := func(layer *Layer) ([]string, error) {
+	getUnprocessedStackerImports := func(layer Layer) ([]string, error) {
 		unprocessed := []string{}
-
-		imports, err := layer.ParseImport()
-		if err != nil {
-			return nil, err
-		}
 
 		// Determine if the layer has stacker:// imports from another
 		// layer which has not been processed
-		for _, imp := range imports {
+		for _, imp := range layer.Imports {
 			url, err := NewDockerishUrl(imp.Path)
 			if err != nil {
 				return nil, err

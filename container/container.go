@@ -334,7 +334,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	return c.containerError(cmdErr, "execute failed")
 }
 
-func (c *Container) SetupLayerConfig(l *types.Layer, name string) error {
+func (c *Container) SetupLayerConfig(l types.Layer, name string) error {
 	env, err := l.BuildEnvironment(name)
 	if err != nil {
 		return err
@@ -360,13 +360,8 @@ func (c *Container) SetupLayerConfig(l *types.Layer, name string) error {
 		}
 	}
 
-	binds, err := l.ParseBinds()
-	if err != nil {
-		return err
-	}
-
-	for source, target := range binds {
-		err = c.BindMount(source, target, "")
+	for _, bind := range l.Binds {
+		err = c.BindMount(bind.Source, bind.Dest, "")
 		if err != nil {
 			return err
 		}

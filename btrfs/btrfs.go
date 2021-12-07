@@ -511,7 +511,7 @@ func setupLoopback(path string, uid int, gid int, size int64) error {
 	return nil
 }
 
-func (b *btrfs) SetOverlayDirs(name string, overlayDirs types.OverlayDirs, layerTypes []types.LayerType) error {
+func (b *btrfs) SetOverlayDirs(name string, overlayDirs []types.OverlayDir, layerTypes []types.LayerType) error {
 	if len(overlayDirs) == 0 {
 		return nil
 	}

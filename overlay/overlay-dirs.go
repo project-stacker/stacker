@@ -13,7 +13,7 @@ import (
 
 // generateOverlayDirsLayers generates oci layers from all overlay_dirs of this image
 // and saves the layer descriptors in the overlay_metadata.json
-func generateOverlayDirsLayers(name string, layerTypes []types.LayerType, overlayDirs types.OverlayDirs, config types.StackerConfig) error {
+func generateOverlayDirsLayers(name string, layerTypes []types.LayerType, overlayDirs []types.OverlayDir, config types.StackerConfig) error {
 	ovl, err := readOverlayMetadata(config, name)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func generateOverlayDirLayer(name string, layerType types.LayerType, overlayDir 
 
 // copyOverlayDirs copies each overlay_dir into container 'name' rootfs
 // later they will be outputted as layers by using generateOverlayDirLayer
-func copyOverlayDirs(name string, overlayDirs types.OverlayDirs, rootfs string) error {
+func copyOverlayDirs(name string, overlayDirs []types.OverlayDir, rootfs string) error {
 	for _, overlayDir := range overlayDirs {
 		st, err := os.Stat(overlayDir.Source)
 		if os.IsNotExist(err) {

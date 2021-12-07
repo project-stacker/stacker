@@ -181,13 +181,13 @@ func lookupManifestInDir(dir, name string) (ispec.Manifest, error) {
 }
 
 func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerType, sfm types.StackerFiles) error {
-	baseTag, baseLayer, err := storage.FindFirstBaseInOutput(name, sfm)
+	baseTag, baseLayer, foundBase, err := storage.FindFirstBaseInOutput(name, sfm)
 	if err != nil {
 		return err
 	}
 
 	initialized := false
-	if baseLayer != nil {
+	if foundBase {
 		if !baseLayer.BuildOnly && baseTag != name {
 			// otherwise if it's already been built and the base
 			// types match, import it from there

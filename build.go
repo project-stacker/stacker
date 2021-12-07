@@ -48,7 +48,7 @@ func NewBuilder(opts *BuildArgs) *Builder {
 	}
 }
 
-func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storage, oci casext.Engine, layerType types.LayerType, l *types.Layer, name string) error {
+func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storage, oci casext.Engine, layerType types.LayerType, l types.Layer, name string) error {
 	opts := b.opts
 
 	layerName := layerType.LayerName(name)
@@ -73,12 +73,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		imageConfig.Labels = map[string]string{}
 	}
 
-	generateLabels, err := l.ParseGenerateLabels()
-	if err != nil {
-		return err
-	}
-
-	if len(generateLabels) > 0 {
+	if len(l.GenerateLabels) > 0 {
 		writable, cleanup, err := s.TemporaryWritableSnapshot(name)
 		if err != nil {
 			return err
@@ -104,7 +99,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 
 		rootfs := path.Join(opts.Config.RootFSDir, writable, "rootfs")
 		runPath := path.Join(dir, ".stacker-run.sh")
-		err = generateShellForRunning(rootfs, generateLabels, runPath)
+		err = generateShellForRunning(rootfs, l.GenerateLabels, runPath)
 		if err != nil {
 			return err
 		}
@@ -155,26 +150,11 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		imageConfig.Env = append(imageConfig.Env, fmt.Sprintf("PATH=%s", container.ReasonableDefaultPath))
 	}
 
-	if l.Cmd != nil {
-		imageConfig.Cmd, err = l.ParseCmd()
-		if err != nil {
-			return err
-		}
-	}
-
-	if l.Entrypoint != nil {
-		imageConfig.Entrypoint, err = l.ParseEntrypoint()
-		if err != nil {
-			return err
-		}
-	}
-
+	imageConfig.Cmd = l.Cmd
+	imageConfig.Entrypoint = l.Entrypoint
 	if l.FullCommand != nil {
 		imageConfig.Cmd = nil
-		imageConfig.Entrypoint, err = l.ParseFullCommand()
-		if err != nil {
-			return err
-		}
+		imageConfig.Entrypoint = l.FullCommand
 	}
 
 	if imageConfig.Volumes == nil {
@@ -332,17 +312,12 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		// against imports for caching layers. Since we don't do
 		// network copies if the files are present and we use rsync to
 		// copy things across, hopefully this isn't too expensive.
-		imports, err := l.ParseImport()
+		err = CleanImportsDir(opts.Config, name, l.Imports, buildCache)
 		if err != nil {
 			return err
 		}
 
-		err = CleanImportsDir(opts.Config, name, imports, buildCache)
-		if err != nil {
-			return err
-		}
-
-		if err := Import(opts.Config, s, name, imports, opts.Progress); err != nil {
+		if err := Import(opts.Config, s, name, l.Imports, opts.Progress); err != nil {
 			return err
 		}
 
@@ -350,11 +325,6 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		// it needs to be rebuilt regardless of the build cache
 		// The reason is that tracking build cache for bind mounted folders
 		// is too expensive, so we don't do it
-		binds, err := l.ParseBinds()
-		if err != nil {
-			return err
-		}
-
 		baseOpts := BaseLayerOpts{
 			Config:     opts.Config,
 			Name:       name,
@@ -374,7 +344,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 		if err != nil {
 			return err
 		}
-		if cacheHit && (len(binds) == 0) {
+		if cacheHit && (len(l.Binds) == 0) {
 			if l.BuildOnly {
 				if cacheEntry.Name != name {
 					err = s.Snapshot(cacheEntry.Name, name)
@@ -404,7 +374,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 
 				log.Infof("missing some cached layer output types, building anyway")
 			}
-		} else if cacheHit && (len(binds) > 0) {
+		} else if cacheHit && (len(l.Binds) > 0) {
 			log.Infof("rebuilding cached layer due to use of binds in stacker file")
 		}
 
@@ -413,12 +383,7 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			return err
 		}
 
-		overlayDirs, err := l.ParseOverlayDirs()
-		if err != nil {
-			return err
-		}
-
-		err = s.SetOverlayDirs(name, overlayDirs, opts.LayerTypes)
+		err = s.SetOverlayDirs(name, l.OverlayDirs, opts.LayerTypes)
 		if err != nil {
 			return err
 		}
@@ -447,15 +412,10 @@ func (b *Builder) Build(s types.Storage, file string) error {
 			continue
 		}
 
-		run, err := l.ParseRun()
-		if err != nil {
-			return err
-		}
-
-		if len(run) != 0 {
+		if len(l.Run) != 0 {
 			rootfs := path.Join(opts.Config.RootFSDir, name, "rootfs")
 			shellScript := path.Join(opts.Config.StackerDir, "imports", name, ".stacker-run.sh")
-			err = generateShellForRunning(rootfs, run, shellScript)
+			err = generateShellForRunning(rootfs, l.Run, shellScript)
 			if err != nil {
 				return err
 			}

@@ -19,7 +19,7 @@ import (
 type BaseLayerOpts struct {
 	Config     types.StackerConfig
 	Name       string
-	Layer      *types.Layer
+	Layer      types.Layer
 	Cache      *BuildCache
 	OCI        casext.Engine
 	LayerTypes []types.LayerType
