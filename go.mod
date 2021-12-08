@@ -15,7 +15,6 @@ require (
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/docker/docker v20.10.11+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fatih/color v1.13.0 // indirect
 	github.com/freddierice/go-losetup v0.0.0-20210416171645-f09b6c574057
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -27,7 +26,7 @@ require (
 	github.com/moby/sys/mountinfo v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.0.2-0.20211117181255-693428a734f5
+	github.com/opencontainers/image-spec v1.0.3-0.20211202222133-eacdcc10569b
 	github.com/opencontainers/umoci v0.4.8-0.20211112044327-caa97eac3326
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.32.1 // indirect
