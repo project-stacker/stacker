@@ -7,7 +7,6 @@ require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/apex/log v1.9.0
-	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/containerd/containerd v1.5.8 // indirect
@@ -27,6 +26,8 @@ require (
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202222133-eacdcc10569b
+	github.com/opencontainers/runc v1.0.3 // indirect
+	github.com/opencontainers/selinux v1.10.0 // indirect
 	github.com/opencontainers/umoci v0.4.8-0.20211112044327-caa97eac3326
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.32.1 // indirect
@@ -40,8 +41,8 @@ require (
 	github.com/vbatts/go-mtree v0.5.0
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871 // indirect
-	golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4 // indirect
-	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1
+	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
+	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
