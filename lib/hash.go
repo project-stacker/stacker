@@ -1,11 +1,11 @@
 package lib
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/minio/sha256-simd"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
