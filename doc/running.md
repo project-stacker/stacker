@@ -7,10 +7,8 @@ Additionally, in order to generate squashfs images, the `mksquashfs` binary
 needs to be present in `$PATH`.
 
 stacker has two storage backends: an overlayfs based backend and an older (and
-slower) btrfs backend. By default, stacker uses the btrfs backend, though,
-because the overlayfs backend requires a very new kernel and at least one out
-of tree feature that is unlikely to land in-tree soon. See below for
-discussion.
+slower) btrfs backend. By default, stacker uses the overlay backend though the
+overlayfs backend requires a very new kernel (see below for discussion).
 
 `stacker` builds things in the host's network namespace, re-exports any of
 `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` and their lowercase counterparts inside
