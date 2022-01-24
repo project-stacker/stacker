@@ -11,8 +11,8 @@ STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/
 build_stacker = go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $1" -o $2 ./cmd
 
 STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
-LXC_CLONE_URL?=https://github.com/tych0/lxc
-LXC_BRANCH?=4.0-fix-cgroup-warning
+LXC_CLONE_URL?=https://github.com/lxc/lxc
+LXC_BRANCH?=stable-4.0
 
 stacker: stacker-dynamic
 	./stacker-dynamic --debug $(STACKER_OPTS) build \
