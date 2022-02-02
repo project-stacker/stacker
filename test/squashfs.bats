@@ -30,15 +30,14 @@ EOF
     stacker build --layer-type squashfs
 }
 
-@test "squashfs yum install" {
+@test "squashfs mutate /usr/bin" {
     cat > stacker.yaml <<EOF
 centos1:
     from:
         type: oci
         url: $CENTOS_OCI
     run: |
-        yum install -y wget
-        ls /usr/bin/wget || true
+        touch /usr/bin/foo
 EOF
     stacker build --layer-type=squashfs
 
@@ -48,7 +47,7 @@ centos2:
         type: oci
         url: oci:centos1-squashfs
     run: |
-        ls /usr/bin | grep wget
+        ls /usr/bin | grep foo
 EOF
     stacker build --layer-type=squashfs
 }
