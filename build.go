@@ -260,7 +260,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 }
 
 // Build builds a single stackerfile
-func (b *Builder) Build(s types.Storage, file string) error {
+func (b *Builder) build(s types.Storage, file string) error {
 	opts := b.opts
 
 	if opts.NoCache {
@@ -548,7 +548,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	for i, p := range sortedPaths {
 		log.Debugf("building: %d %s", i, p)
 
-		err = b.Build(s, p)
+		err = b.build(s, p)
 		if err != nil {
 			return err
 		}
