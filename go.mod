@@ -51,3 +51,5 @@ require (
 	google.golang.org/grpc v1.43.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
