@@ -254,3 +254,40 @@ EOF
     # ugh, grep because all the gunk in setup() above needs to move
     [ "$(umoci ls --layout oci | grep one)" == "one" ]
 }
+
+@test "same stacker.yaml tags are unique" {
+    cat > stacker.yaml <<EOF
+same:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+same:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+EOF
+    bad_stacker build | grep "duplicate layer name"
+}
+
+@test "different stacker.yaml tags are unique" {
+    cat > a.yaml <<EOF
+same:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+EOF
+    cat > b.yaml <<EOF
+config:
+    prerequisites:
+        - ./a.yaml
+different:
+    from:
+        type: built
+        tag: same
+same:
+    from:
+        type: built
+        tag: different
+EOF
+    bad_stacker build -f b.yaml | grep "duplicate layer name"
+}

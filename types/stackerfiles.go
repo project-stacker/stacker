@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/anuvu/stacker/log"
+	"github.com/pkg/errors"
 )
 
 // Logic for working with multiple StackerFiles
@@ -46,6 +47,18 @@ func NewStackerFiles(paths []string, validateHash bool, substituteVars []string)
 		}
 		for depPath, depStackerFile := range depStackerFiles {
 			sfm[depPath] = depStackerFile
+		}
+	}
+
+	// now, make sure output layer names are unique
+	names := map[string]string{}
+	for path, sf := range sfm {
+		for _, layerName := range sf.FileOrder {
+			if otherFile, ok := names[layerName]; ok {
+				return nil, errors.Errorf("duplicate layer name: both %s and %s have %s", otherFile, path, layerName)
+			}
+
+			names[layerName] = path
 		}
 	}
 
