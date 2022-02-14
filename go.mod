@@ -14,6 +14,7 @@ require (
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/containers/image/v5 v5.16.1
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
+	github.com/docker/distribution v2.8.0+incompatible // indirect
 	github.com/docker/docker v20.10.11+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/freddierice/go-losetup v0.0.0-20210416171645-f09b6c574057
