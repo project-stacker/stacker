@@ -475,16 +475,6 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		return err
 	}
 
-	log.Debugf("Generating overlay_dirs layers")
-	for layerType, ods := range ovl.OverlayDirLayers {
-		for _, od := range ods {
-			_, err = stackeroci.AddBlobByDescriptor(oci, layerType.LayerName(name), od)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	mutators := []*mutate.Mutator{}
 
 	for _, layerType := range layerTypes {
@@ -500,7 +490,31 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		mutators = append(mutators, mutator)
 	}
 
+	log.Debugf("Generating overlay_dirs layers")
 	mutated := false
+	for i, layerType := range layerTypes {
+		ods, ok := ovl.OverlayDirLayers[layerType]
+		if !ok {
+			continue
+		}
+
+		mutator := mutators[i]
+
+		for _, od := range ods {
+			now := time.Now()
+			history := &ispec.History{
+				Created:    &now,
+				CreatedBy:  fmt.Sprintf("stacker overlay dir for %s", name),
+				EmptyLayer: false,
+			}
+
+			err = mutator.AddExisting(context.Background(), od, history, od.Digest)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	// generate blobs for each build layer
 	for _, buildLayer := range ovl.BuiltLayers {
 
