@@ -1,3 +1,9 @@
+
+<p align="center">
+    <img src="doc/logo.png" alt="stacker" height="130"/>
+</p>
+
+
 # stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=master)](https://github.com/project-stacker/stacker/actions)
 
 Stacker is a tool for building OCI images via a declarative yaml format.
