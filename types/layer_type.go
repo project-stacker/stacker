@@ -5,7 +5,7 @@ import (
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	stackeroci "github.com/project-stacker/stacker/oci"
+	"github.com/project-stacker/stacker/squashfs"
 )
 
 type LayerType string
@@ -27,9 +27,12 @@ func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	}
 
 	switch manifest.Layers[0].MediaType {
-	case stackeroci.ImpoliteMediaTypeLayerSquashfs:
+	case squashfs.BaseMediaTypeLayerSquashfs:
+		// older stackers generated media types without compression information
 		fallthrough
-	case stackeroci.MediaTypeLayerSquashfs:
+	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression):
+		fallthrough
+	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression):
 		return NewLayerType("squashfs")
 	case ispec.MediaTypeImageLayerGzip:
 		fallthrough

@@ -58,32 +58,32 @@ func (o *overlay) Unpack(tag, name string) error {
 	for _, layer := range manifest.Layers {
 		digest := layer.Digest
 		contents := overlayPath(o.config, digest, "overlay")
-		switch layer.MediaType {
-		case stackeroci.ImpoliteMediaTypeLayerSquashfs:
-			fallthrough
-		case stackeroci.MediaTypeLayerSquashfs:
+		if squashfs.IsSquashfsMediaType(layer.MediaType) {
 			// don't really need to do this in parallel, but what
 			// the hell.
 			pool.Add(func(ctx context.Context) error {
 				return unpackOne(cacheDir, contents, digest, true)
 			})
-		case ispec.MediaTypeImageLayer:
-			fallthrough
-		case ispec.MediaTypeImageLayerGzip:
-			// don't extract things that have already been
-			// extracted
-			if _, err := os.Stat(contents); err == nil {
-				continue
-			}
+		} else {
+			switch layer.MediaType {
+			case ispec.MediaTypeImageLayer:
+				fallthrough
+			case ispec.MediaTypeImageLayerGzip:
+				// don't extract things that have already been
+				// extracted
+				if _, err := os.Stat(contents); err == nil {
+					continue
+				}
 
-			// TODO: when the umoci API grows support for uid
-			// shifting, we can use the fancier features of context
-			// cancelling in the thread pool...
-			pool.Add(func(ctx context.Context) error {
-				return unpackOne(cacheDir, contents, digest, false)
-			})
-		default:
-			return errors.Errorf("unknown media type %s", layer.MediaType)
+				// TODO: when the umoci API grows support for uid
+				// shifting, we can use the fancier features of context
+				// cancelling in the thread pool...
+				pool.Add(func(ctx context.Context) error {
+					return unpackOne(cacheDir, contents, digest, false)
+				})
+			default:
+				return errors.Errorf("unknown media type %s", layer.MediaType)
+			}
 		}
 	}
 
@@ -141,13 +141,13 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 		bundlePath := overlayPath(config, theLayer.Digest)
 		overlayDir := path.Join(bundlePath, "overlay")
 		// generate blob
-		blob, err := generateBlob(layerType, overlayDir, config.OCIDir)
+		blob, mediaType, err := generateBlob(layerType, overlayDir, config.OCIDir)
 		if err != nil {
 			return err
 		}
 		defer blob.Close()
 		// add it to the oci repository
-		desc, err := ociPutBlob(blob, config, layerType)
+		desc, err := ociPutBlob(blob, config, mediaType)
 		if err != nil {
 			return err
 		}
@@ -269,23 +269,25 @@ func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.St
 }
 
 // generateBlob generates either a tar blob or a squashfs blob based on layerType
-func generateBlob(layerType types.LayerType, contents string, ociDir string) (io.ReadCloser, error) {
+func generateBlob(layerType types.LayerType, contents string, ociDir string) (io.ReadCloser, string, error) {
 	var blob io.ReadCloser
 	var err error
+	var mediaType string
 	if layerType == "tar" {
 		packOptions := layer.RepackOptions{TranslateOverlayWhiteouts: true}
 		blob = layer.GenerateInsertLayer(contents, "/", false, &packOptions)
+		mediaType = ispec.MediaTypeImageLayer
 	} else {
-		blob, err = squashfs.MakeSquashfs(ociDir, contents, nil)
+		blob, mediaType, err = squashfs.MakeSquashfs(ociDir, contents, nil)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
-	return blob, nil
+	return blob, mediaType, nil
 }
 
 // ociPutBlob takes a tar/squashfs blob and adds it into the oci repository
-func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerType types.LayerType) (ispec.Descriptor, error) {
+func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType string) (ispec.Descriptor, error) {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return ispec.Descriptor{}, err
@@ -295,11 +297,6 @@ func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerType types.
 	layerDigest, layerSize, err := oci.PutBlob(context.Background(), blob)
 	if err != nil {
 		return ispec.Descriptor{}, err
-	}
-
-	layerMediaType := stackeroci.MediaTypeLayerSquashfs
-	if layerType == "tar" {
-		layerMediaType = ispec.MediaTypeImageLayerGzip
 	}
 
 	desc := ispec.Descriptor{
@@ -357,19 +354,19 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		mutator := mutators[i]
 		var desc ispec.Descriptor
 
-		blob, err := generateBlob(layerType, dir, config.OCIDir)
+		blob, mediaType, err := generateBlob(layerType, dir, config.OCIDir)
 		if err != nil {
 			return false, err
 		}
 		defer blob.Close()
 
 		if layerType == "tar" {
-			desc, err = mutator.Add(context.Background(), ispec.MediaTypeImageLayer, blob, history, mutate.GzipCompressor)
+			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.GzipCompressor)
 			if err != nil {
 				return false, err
 			}
 		} else {
-			desc, err = mutator.Add(context.Background(), stackeroci.MediaTypeLayerSquashfs, blob, history, mutate.NoopCompressor)
+			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.NoopCompressor)
 			if err != nil {
 				return false, err
 			}
