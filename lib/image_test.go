@@ -13,7 +13,6 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
-	stackeroci "github.com/project-stacker/stacker/oci"
 	"github.com/project-stacker/stacker/squashfs"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +49,7 @@ func createImage(dir string, tag string) error {
 
 	// need *something* in the layer, why not just recursively include the
 	// OCI image for maximum confusion :)
-	layer, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil)
+	layer, mediaType, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil)
 	if err != nil {
 		return err
 	}
@@ -61,7 +60,7 @@ func createImage(dir string, tag string) error {
 		CreatedBy:  fmt.Sprintf("stacker test suite %s", tag),
 		EmptyLayer: false,
 	}
-	_, err = mutator.Add(context.Background(), stackeroci.MediaTypeLayerSquashfs, layer, history, mutate.NoopCompressor)
+	_, err = mutator.Add(context.Background(), mediaType, layer, history, mutate.NoopCompressor)
 	if err != nil {
 		return err
 	}

@@ -95,7 +95,7 @@ func (eps *ExcludePaths) String() (string, error) {
 	return buf.String(), nil
 }
 
-func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadCloser, error) {
+func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadCloser, string, error) {
 	var excludesFile string
 	var err error
 	var toExclude string
@@ -103,14 +103,14 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadClos
 	if eps != nil {
 		toExclude, err = eps.String()
 		if err != nil {
-			return nil, errors.Wrapf(err, "couldn't create exclude path list")
+			return nil, "", errors.Wrapf(err, "couldn't create exclude path list")
 		}
 	}
 
 	if len(toExclude) != 0 {
 		excludes, err := ioutil.TempFile(tempdir, "stacker-squashfs-exclude-")
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		defer os.Remove(excludes.Name())
 
@@ -118,20 +118,22 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadClos
 		_, err = excludes.WriteString(toExclude)
 		excludes.Close()
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
 
 	tmpSquashfs, err := ioutil.TempFile(tempdir, "stacker-squashfs-img-")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	tmpSquashfs.Close()
 	os.Remove(tmpSquashfs.Name())
 	defer os.Remove(tmpSquashfs.Name())
 	args := []string{rootfs, tmpSquashfs.Name()}
+	compression := GzipCompression
 	if mksquashfsSupportsZstd() {
 		args = append(args, "-comp", "zstd")
+		compression = ZstdCompression
 	}
 	if len(toExclude) != 0 {
 		args = append(args, "-ef", excludesFile)
@@ -140,10 +142,15 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadClos
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return nil, errors.Wrap(err, "couldn't build squashfs")
+		return nil, "", errors.Wrap(err, "couldn't build squashfs")
 	}
 
-	return os.Open(tmpSquashfs.Name())
+	blob, err := os.Open(tmpSquashfs.Name())
+	if err != nil {
+		return nil, "", errors.WithStack(err)
+	}
+
+	return blob, GenerateSquashfsMediaType(compression), nil
 }
 
 func ExtractSingleSquash(squashFile string, extractDir string, storageType string) error {

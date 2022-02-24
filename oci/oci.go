@@ -8,15 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	MediaTypeLayerSquashfs = "application/vnd.stacker.image.layer.squashfs"
-
-	// for a while we impolitely polluted the OCI namespace; here's the old
-	// layer type so we can match against it. We should be able to revert
-	// this "soon".
-	ImpoliteMediaTypeLayerSquashfs = "application/vnd.oci.image.layer.squashfs"
-)
-
 func LookupManifest(oci casext.Engine, tag string) (ispec.Manifest, error) {
 	descriptorPaths, err := oci.ResolveReference(context.Background(), tag)
 	if err != nil {
