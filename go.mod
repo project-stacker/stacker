@@ -1,4 +1,4 @@
-module github.com/anuvu/stacker
+module github.com/project-stacker/stacker
 
 go 1.16
 

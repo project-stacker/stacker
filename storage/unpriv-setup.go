@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/anuvu/stacker/log"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/log"
 )
 
 func warnAboutNewuidmap() {

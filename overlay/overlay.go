@@ -13,9 +13,9 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/anuvu/stacker/types"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/types"
 	"golang.org/x/sys/unix"
 )
 

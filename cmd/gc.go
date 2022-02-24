@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/anuvu/stacker"
+	"github.com/project-stacker/stacker"
 	"github.com/urfave/cli"
 )
 

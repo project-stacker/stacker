@@ -11,11 +11,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/anuvu/stacker/embed-exec"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/lxc/go-lxc"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/embed-exec"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 )
 
 const (

@@ -5,11 +5,11 @@ import (
 	"os"
 	"os/exec"
 
-	stackeridmap "github.com/anuvu/stacker/container/idmap"
-	"github.com/anuvu/stacker/embed-exec"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
+	stackeridmap "github.com/project-stacker/stacker/container/idmap"
+	"github.com/project-stacker/stacker/embed-exec"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 )
 
 // A wrapper which runs things in a userns if we're an unprivileged user with

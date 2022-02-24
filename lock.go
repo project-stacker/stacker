@@ -9,8 +9,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/types"
 )
 
 func findLock(st *syscall.Stat_t) error {

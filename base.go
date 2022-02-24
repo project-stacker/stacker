@@ -6,14 +6,14 @@ import (
 	"os"
 	"path"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 )
 
 type BaseLayerOpts struct {

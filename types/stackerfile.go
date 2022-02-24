@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/anuvu/stacker/log"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/log"
 	"gopkg.in/yaml.v2"
 )
 

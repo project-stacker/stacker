@@ -3,9 +3,9 @@ package types
 import (
 	"fmt"
 
-	stackeroci "github.com/anuvu/stacker/oci"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	stackeroci "github.com/project-stacker/stacker/oci"
 )
 
 type LayerType string

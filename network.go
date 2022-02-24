@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/log"
 	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/log"
 )
 
 // download with caching support in the specified cache dir.

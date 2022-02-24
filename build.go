@@ -12,14 +12,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anuvu/stacker/container"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/container"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 )
 
 type BuildArgs struct {

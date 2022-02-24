@@ -12,14 +12,14 @@ import (
 	"path"
 	"strings"
 
-	stackermtree "github.com/anuvu/stacker/mtree"
-	stackeroci "github.com/anuvu/stacker/oci"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/pkg/fseval"
 	"github.com/opencontainers/umoci/pkg/mtreefilter"
 	"github.com/pkg/errors"
+	stackermtree "github.com/project-stacker/stacker/mtree"
+	stackeroci "github.com/project-stacker/stacker/oci"
 	"github.com/vbatts/go-mtree"
 	"golang.org/x/sys/unix"
 )
@@ -276,7 +276,7 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 	var uCmd []string
 	if storageType == "btrfs" {
 		if which("squashtool") == "" {
-			return errors.Errorf("must have squashtool (https://github.com/anuvu/squashfs) to correctly extract squashfs using btrfs storage backend")
+			return errors.Errorf("must have squashtool (https://github.com/project-stacker/squashfs) to correctly extract squashfs using btrfs storage backend")
 		}
 
 		uCmd = []string{"squashtool", "extract", "--whiteouts", "--perms",

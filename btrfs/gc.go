@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"path"
 
-	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/opencontainers/umoci"
+	stackeroci "github.com/project-stacker/stacker/oci"
 )
 
 func gcForOCILayout(s *btrfs, layout string, thingsToKeep map[string]bool) error {

@@ -8,12 +8,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/anuvu/stacker/log"
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/log"
+	stackeroci "github.com/project-stacker/stacker/oci"
+	"github.com/project-stacker/stacker/types"
 )
 
 type overlayMetadata struct {

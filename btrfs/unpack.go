@@ -7,17 +7,17 @@ import (
 	"path"
 	"strings"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/log"
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
-	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/opencontainers/umoci/pkg/fseval"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/log"
+	stackeroci "github.com/project-stacker/stacker/oci"
+	"github.com/project-stacker/stacker/squashfs"
+	"github.com/project-stacker/stacker/types"
 )
 
 func (b *btrfs) Unpack(tag, name string) error {

@@ -11,12 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/log"
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
-	"github.com/anuvu/stacker/storage"
-	"github.com/anuvu/stacker/types"
 	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -25,6 +19,12 @@ import (
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/log"
+	stackeroci "github.com/project-stacker/stacker/oci"
+	"github.com/project-stacker/stacker/squashfs"
+	"github.com/project-stacker/stacker/storage"
+	"github.com/project-stacker/stacker/types"
 )
 
 func safeOverlayName(d digest.Digest) string {

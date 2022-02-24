@@ -98,7 +98,7 @@ or setting up the mount in systemd or fstab or something.
 #### Importing squashfs images
 
 In order to correctly import squashfs-based images using the btrfs backend,
-[squashtool](https://github.com/anuvu/squashfs) is also required in `$PATH`. This
+[squashtool](https://github.com/project-stacker/squashfs) is also required in `$PATH`. This
 is required because tools like unsquashfs don't understand OCI style whiteouts,
 and so will not extract them correctly. (One could fix this by implementing a
 subsequent extrat pass to fix up overlay style whiteouts, but it would be
