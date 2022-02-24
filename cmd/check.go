@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/anuvu/stacker/btrfs"
-	"github.com/anuvu/stacker/overlay"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/btrfs"
+	"github.com/project-stacker/stacker/overlay"
 	"github.com/urfave/cli"
 )
 

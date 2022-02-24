@@ -8,11 +8,11 @@ import (
 	"path"
 	"testing"
 
-	stackeroci "github.com/anuvu/stacker/oci"
-	"github.com/anuvu/stacker/squashfs"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
+	stackeroci "github.com/project-stacker/stacker/oci"
+	"github.com/project-stacker/stacker/squashfs"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/anuvu/stacker"
-	"github.com/anuvu/stacker/container"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker"
+	"github.com/project-stacker/stacker/container"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
 )
 

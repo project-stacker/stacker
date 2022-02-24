@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/anuvu/stacker"
-	"github.com/anuvu/stacker/log"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker"
+	"github.com/project-stacker/stacker/log"
 	"github.com/urfave/cli"
 )
 

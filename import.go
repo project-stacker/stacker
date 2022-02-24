@@ -8,10 +8,10 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 	"github.com/udhos/equalfile"
 	"github.com/vbatts/go-mtree"
 )
@@ -234,7 +234,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		remoteHash, remoteSize, err := getHttpFileInfo(i)
 		if err != nil {
 			// Needed for "working offline"
-			// See https://github.com/anuvu/stacker/issues/44
+			// See https://github.com/project-stacker/stacker/issues/44
 			log.Infof("cannot obtain file info of %s", i)
 		}
 		log.Debugf("Remote file: hash: %s length: %s", remoteHash, remoteSize)

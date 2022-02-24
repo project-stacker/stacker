@@ -4,11 +4,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/types"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/types"
 )
 
 // generateOverlayDirsLayers generates oci layers from all overlay_dirs of this image

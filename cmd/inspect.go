@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	stackeroci "github.com/anuvu/stacker/oci"
 	"github.com/dustin/go-humanize"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	stackeroci "github.com/project-stacker/stacker/oci"
 	"github.com/urfave/cli"
 )
 

@@ -39,7 +39,7 @@ To run `make check` you will also need:
     sudo apt install bats btrfs-progs jq libbtrfs-dev tree
 
 umoci - https://github.com/opencontainers/umoci
-squashtool - https://github.com/anuvu/squashfs
+squashtool - https://github.com/project-stacker/squashfs
 
 Contrary to what the documentation in squashfs implies, squashtool and
 libsquash from squash-tools-ng need to be installed globally, as user specific

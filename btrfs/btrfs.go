@@ -15,14 +15,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/mount"
-	"github.com/anuvu/stacker/types"
 	"github.com/freddierice/go-losetup"
 	"github.com/lxc/lxd/shared"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/mount"
+	"github.com/project-stacker/stacker/types"
 	"golang.org/x/sys/unix"
 )
 

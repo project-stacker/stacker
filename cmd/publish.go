@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/anuvu/stacker"
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
 )
 

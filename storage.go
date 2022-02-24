@@ -5,12 +5,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/anuvu/stacker/btrfs"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/overlay"
-	"github.com/anuvu/stacker/storage"
-	"github.com/anuvu/stacker/types"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/btrfs"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/overlay"
+	"github.com/project-stacker/stacker/storage"
+	"github.com/project-stacker/stacker/types"
 )
 
 var storageTypeFile = "storage.type"

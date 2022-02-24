@@ -11,14 +11,14 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/anuvu/stacker/lib"
-	"github.com/anuvu/stacker/log"
-	"github.com/anuvu/stacker/types"
 	"github.com/mitchellh/hashstructure"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/log"
+	"github.com/project-stacker/stacker/types"
 	"github.com/vbatts/go-mtree"
 )
 
