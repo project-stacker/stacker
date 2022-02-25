@@ -128,7 +128,6 @@ EOF
 }
 
 @test "build only + unpriv + overlay clears state" {
-    require_storage overlay
     cat > stacker.yaml <<"EOF"
 first:
     from:
@@ -150,7 +149,6 @@ EOF
 }
 
 @test "multiple build onlys in final chain rebuild OK" {
-    require_storage overlay
     cat > stacker.yaml <<"EOF"
 one:
     from:

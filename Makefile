@@ -4,7 +4,7 @@ VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION
 
 LXC_VERSION?=$(shell pkg-config --modversion lxc)
 
-BUILD_TAGS = exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo static_build
+BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo static_build
 
 STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
 
@@ -42,16 +42,13 @@ lint: cmd/lxc-wrapper/lxc-wrapper $(GO_SRC)
 
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
-STORAGE_TYPE?=
 
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
-# make check STORAGE_TYPE=btrfs will run only btrfs tests
 .PHONY: check
 check: stacker lint
 	sudo -E PATH="$$PATH" LXC_BRANCH="$(LXC_BRANCH)" LXC_CLONE_URL="$(LXC_CLONE_URL)" ./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
-		$(shell [ -z $(STORAGE_TYPE) ] || echo --storage-type=$(STORAGE_TYPE)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: vendorup

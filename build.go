@@ -251,11 +251,6 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		return err
 	}
 
-	err = s.UpdateFSMetadata(name, newPath)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -416,9 +411,6 @@ func (b *Builder) build(s types.Storage, file string) error {
 				return errors.Wrapf(err, "error saving config file for %s", name)
 			}
 
-			if err := s.Finalize(name); err != nil {
-				return err
-			}
 			log.Infof("setup for %s complete", name)
 			continue
 		}
@@ -449,10 +441,6 @@ func (b *Builder) build(s types.Storage, file string) error {
 		// imported into future images. Let's just snapshot it and add
 		// a bogus entry to our cache.
 		if l.BuildOnly {
-			if err := s.Finalize(name); err != nil {
-				return err
-			}
-
 			log.Debugf("build only layer, skipping OCI diff generation")
 
 			// A small hack: for build only layers, we keep track
@@ -491,10 +479,6 @@ func (b *Builder) build(s types.Storage, file string) error {
 			return err
 		}
 
-		if err := s.Finalize(name); err != nil {
-			return err
-		}
-
 		log.Infof("filesystem %s built successfully", name)
 
 	}
@@ -509,9 +493,6 @@ func (b *Builder) BuildMultiple(paths []string) error {
 	s, locks, err := NewStorage(opts.Config)
 	if err != nil {
 		return err
-	}
-	if !opts.LeaveUnladen {
-		defer s.Detach()
 	}
 	defer locks.Unlock()
 

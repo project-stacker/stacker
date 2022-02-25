@@ -75,33 +75,7 @@ EOF
     stacker build --layer-type=squashfs
 }
 
-# the way we generate the underlying squashfs layer is different between btrfs
-# and overlay, in that we glob the run: delta in with the base layer in btrfs,
-# but not in overlay. so these two tests look different.
-@test "squashfs layer support (btrfs)" {
-    require_storage btrfs
-    cat > stacker.yaml <<EOF
-centos:
-    from:
-        type: oci
-        url: $CENTOS_OCI
-    run: |
-        touch /1
-EOF
-
-    stacker build --layer-type=squashfs
-
-    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
-    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
-
-    mkdir layer0
-    mount -t squashfs oci/blobs/sha256/$layer0 layer0
-    [ -f layer0/bin/bash ]
-    [ -f layer0/1 ]
-}
-
 @test "squashfs layer support (overlay)" {
-    require_storage squashfs
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -127,7 +101,6 @@ EOF
 }
 
 @test "squashfs file whiteouts (overlay)" {
-    require_storage overlay
     cat > stacker.yaml <<EOF
 centos:
     from:
@@ -215,46 +188,7 @@ EOF
     [ "$(cat layer1/message)" == "foo bar" ]
 }
 
-@test "built type with squashfs build-only base works (btrfs)" {
-    require_storage btrfs
-    mkdir -p .stacker/layer-bases
-    chmod 777 .stacker/layer-bases
-    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
-    umoci unpack --image .stacker/layer-bases/oci:centos dest
-    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
-    rm -rf dest
-
-	cat > stacker.yaml <<EOF
-base:
-  from:
-    type: tar
-    url: .stacker/layer-bases/centos.tar
-  run: |
-    echo "hello world" > /message
-  build_only: true
-
-myroot:
-  from:
-    type: built
-    tag: base
-  run: |
-    echo "foo bar" > /message
-EOF
-    stacker build --layer-type=squashfs
-
-    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
-    layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
-
-    cat oci/blobs/sha256/$manifest | jq -r .layers
-
-    mkdir layer0
-    mount -t squashfs oci/blobs/sha256/$layer0 layer0
-    cat layer0/message
-    [ "$(cat layer0/message)" == "foo bar" ]
-}
-
 @test "built type with squashfs build-only base works (overlay)" {
-    require_storage overlay
     mkdir -p .stacker/layer-bases
     chmod 777 .stacker/layer-bases
     image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos

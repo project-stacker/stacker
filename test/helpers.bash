@@ -5,7 +5,6 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 function skip_if_no_unpriv_overlay {
-    [ "$STORAGE_TYPE" == "overlay" ] || return 0
     run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug internal-go testsuite-check-overlay
     echo $output
     [ "$status" -eq 50 ] && skip "need newer kernel for unpriv overlay"
@@ -14,10 +13,10 @@ function skip_if_no_unpriv_overlay {
 
 function run_stacker {
     if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
-        run "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
+        run "${ROOT_DIR}/stacker" --debug "$@"
     else
         skip_if_no_unpriv_overlay
-        run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug "$@"
+        run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
     fi
 }
 
@@ -47,7 +46,7 @@ function stacker_setup() {
         return
     fi
 
-    "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE unpriv-setup
+    "${ROOT_DIR}/stacker" unpriv-setup
     chown -R $SUDO_USER:$SUDO_USER .
 }
 
@@ -75,10 +74,6 @@ function bad_stacker {
     run_stacker "$@"
     echo "$output"
     [ "$status" -ne 0 ]
-}
-
-function require_storage {
-    [ "$STORAGE_TYPE" = "$1" ] || skip "test not valid for storage type $STORAGE_TYPE"
 }
 
 function require_privilege {

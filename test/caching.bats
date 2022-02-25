@@ -203,10 +203,10 @@ test:
 EOF
 
     if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
-        ./stacker/stacker --storage-type=$STORAGE_TYPE --debug build
+        ./stacker/stacker --debug build
     else
         skip_if_no_unpriv_overlay
-        sudo -u $SUDO_USER ./stacker/stacker --storage-type=$STORAGE_TYPE --debug build
+        sudo -u $SUDO_USER ./stacker/stacker --debug build
     fi
 
     stacker build

@@ -41,7 +41,6 @@ func doChroot(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer s.Detach()
 	defer locks.Unlock()
 
 	tag := ""

@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/btrfs"
 	"github.com/project-stacker/stacker/overlay"
 	"github.com/urfave/cli"
 )
@@ -23,8 +22,6 @@ func doCheck(ctx *cli.Context) error {
 	switch config.StorageType {
 	case "overlay":
 		return overlay.Check(config)
-	case "btrfs":
-		return btrfs.Check(config)
 	default:
 		return errors.Errorf("invalid storage type %v", config.StorageType)
 	}

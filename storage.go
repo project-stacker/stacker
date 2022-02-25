@@ -6,7 +6,6 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/btrfs"
 	"github.com/project-stacker/stacker/log"
 	"github.com/project-stacker/stacker/overlay"
 	"github.com/project-stacker/stacker/storage"
@@ -26,24 +25,6 @@ func openStorage(c types.StackerConfig, storageType string) (types.Storage, erro
 		}
 
 		return overlay.NewOverlay(c)
-	case "btrfs":
-		err := btrfs.Check(c)
-		if err != nil {
-			return nil, err
-		}
-
-		isBtrfs, err := btrfs.DetectBtrfs(c.RootFSDir)
-		if err != nil {
-			log.Infof("error from DetectBtrfs %v", err)
-			return nil, err
-		}
-
-		if !isBtrfs {
-			log.Debugf("no btrfs detected, creating a loopback device")
-			return btrfs.NewLoopback(c)
-		}
-
-		return btrfs.NewExisting(c), nil
 	default:
 		return nil, errors.Errorf("unknown storage type %s", storageType)
 	}
@@ -160,7 +141,6 @@ func NewStorage(c types.StackerConfig) (types.Storage, *StackerLocks, error) {
 	// there is no attachment for overlay), so that's safe.
 	locks, err := lock(c)
 	if err != nil {
-		s.Detach()
 		return nil, nil, err
 	}
 
@@ -176,8 +156,6 @@ func UnprivSetup(c types.StackerConfig, username string, uid, gid int) error {
 	switch c.StorageType {
 	case "overlay":
 		return overlay.UnprivSetup(c, uid, gid)
-	case "btrfs":
-		return btrfs.UnprivSetup(c, uid, gid)
 	default:
 		return errors.Errorf("unknown storage type %s", c.StorageType)
 	}

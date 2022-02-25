@@ -135,14 +135,12 @@ EOF
     echo priv > test
 
     # always run as privileged...
-    run "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE --debug build
+    run "${ROOT_DIR}/stacker" --debug build
     echo $output
     [ "$status" -ne 0 ]
 }
 
 @test "underlying layer output conversion happens in a user namespace" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 image:
     from:

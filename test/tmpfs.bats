@@ -9,8 +9,6 @@ function teardown() {
 }
 
 @test "stacker works in a tmpfs" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 test:
     from:

@@ -133,8 +133,6 @@ function teardown() {
 }
 
 @test "publish multiple layer types" {
-    require_storage overlay
-
     stacker --storage-type overlay build -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs
     stacker --storage-type overlay publish -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs --url oci:oci_publish --tag test1
 
