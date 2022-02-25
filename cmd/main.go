@@ -144,7 +144,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "storage-type",
-			Usage: "storage type (one of \"overlay\" or \"btrfs\", defaults to overlay)",
+			Usage: "storage type (must be \"overlay\", left for compatibility)",
 			Value: "overlay",
 		},
 		cli.BoolFlag{

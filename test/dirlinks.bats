@@ -9,7 +9,6 @@ function teardown() {
 }
 
 @test "copy_up on a dirlink renders a dirlink (squashfs)" {
-    require_storage overlay
     cat > stacker.yaml <<EOF
 parent:
     from:

@@ -2,7 +2,6 @@ package oci
 
 import (
 	"context"
-	"io"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci/oci/casext"
@@ -53,41 +52,6 @@ func LookupConfig(oci casext.Engine, desc ispec.Descriptor) (ispec.Image, error)
 
 	return configBlob.Data.(ispec.Image), nil
 
-}
-
-// AddBlobNoCompression adds a blob to an OCI tag without compressing it (i.e.
-// not through umoci.mutator).
-func AddBlobNoCompression(oci casext.Engine, name string, content io.Reader) (ispec.Descriptor, error) {
-	blobDigest, blobSize, err := oci.PutBlob(context.Background(), content)
-	if err != nil {
-		return ispec.Descriptor{}, err
-	}
-
-	desc := ispec.Descriptor{
-		MediaType: MediaTypeLayerSquashfs,
-		Digest:    blobDigest,
-		Size:      blobSize,
-	}
-
-	return AddBlobByDescriptor(oci, name, desc)
-}
-
-// AddBlobByDescriptor adds a layer to an OCI tag based on layer's Descriptor
-func AddBlobByDescriptor(oci casext.Engine, name string, desc ispec.Descriptor) (ispec.Descriptor, error) {
-	manifest, err := LookupManifest(oci, name)
-	if err != nil {
-		return ispec.Descriptor{}, err
-	}
-
-	config, err := LookupConfig(oci, manifest.Config)
-	if err != nil {
-		return ispec.Descriptor{}, err
-	}
-
-	manifest.Layers = append(manifest.Layers, desc)
-	config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, desc.Digest)
-
-	return UpdateImageConfig(oci, name, config, manifest)
 }
 
 // UpdateImageConfig updates an oci tag with new config and new manifest

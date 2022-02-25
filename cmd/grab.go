@@ -25,7 +25,6 @@ func doGrab(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer s.Detach()
 	defer locks.Unlock()
 
 	parts := strings.SplitN(ctx.Args().First(), ":", 2)

@@ -10,7 +10,6 @@ function teardown() {
 }
 
 @test "overlay_dirs works" {
-    require_storage overlay
     mkdir dir_to_overlay
     touch dir_to_overlay/file1
     touch dir_to_overlay/file2
@@ -32,7 +31,6 @@ EOF
 }
 
 @test "import from overlay_dir works" {
-    require_storage overlay
     mkdir dir_to_overlay
     touch dir_to_overlay/file
     cat > stacker.yaml << EOF
@@ -56,7 +54,6 @@ EOF
 }
 
 @test "overlay_dirs dest works" {
-    require_storage overlay
     mkdir dir_to_overlay
     touch dir_to_overlay/file
     cat > stacker.yaml << EOF
@@ -74,7 +71,6 @@ EOF
 }
 
 @test "overlay_dirs cache works" {
-    require_storage overlay
     mkdir dir_to_overlay
     touch dir_to_overlay/file
     cat > stacker.yaml << EOF
@@ -100,7 +96,6 @@ EOF
 }
 
 @test "overlay_dirs don't preserve ownership" {
-    require_storage overlay
     mkdir dir_to_overlay
     touch dir_to_overlay/file
     touch dir_to_overlay/file2

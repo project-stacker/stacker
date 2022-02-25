@@ -9,8 +9,6 @@ function teardown() {
 }
 
 @test "multiple layer type outputs work" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 test:
     from:
@@ -34,8 +32,6 @@ EOF
 }
 
 @test "chained multiple layer type outputs work" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 parent:
     from:
@@ -72,8 +68,6 @@ EOF
 }
 
 @test "build-only multiple layer type outputs work" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 parent:
     from:
@@ -111,8 +105,6 @@ EOF
 }
 
 @test "multiple output types cache correctly" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 parent:
     from:
@@ -128,8 +120,6 @@ EOF
 }
 
 @test "chained built type layers are OK (tar first)" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 one:
     from:
@@ -182,8 +172,6 @@ EOF
 }
 
 @test "chained built type layers are OK (squashfs first)" {
-    require_storage overlay
-
     cat > stacker.yaml <<EOF
 one:
     from:

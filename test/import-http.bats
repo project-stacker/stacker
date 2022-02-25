@@ -49,7 +49,7 @@ function teardown() {
     umoci ls --layout oci
     # Second execution reads from the cache, but cannot access the net
     ip netns add stacker-test
-    run ip netns exec stacker-test "${ROOT_DIR}/stacker" --storage-type=$STORAGE_TYPE build -f img/stacker2.yaml
+    run ip netns exec stacker-test "${ROOT_DIR}/stacker" build -f img/stacker2.yaml
     echo $output
     [ "$status" -eq 0 ]
     umoci ls --layout oci

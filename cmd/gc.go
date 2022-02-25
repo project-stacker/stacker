@@ -7,7 +7,7 @@ import (
 
 var gcCmd = cli.Command{
 	Name:   "gc",
-	Usage:  "gc unused OCI imports/outputs and btrfs snapshots",
+	Usage:  "gc unused OCI imports/outputs snapshots",
 	Action: doGC,
 }
 
@@ -16,7 +16,6 @@ func doGC(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer s.Detach()
 	defer locks.Unlock()
 	return s.GC()
 }

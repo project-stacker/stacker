@@ -45,13 +45,11 @@ EOF
     # btrfs.loop and the roots/.lock won't be on the same fs. since the kernel
     # will give us an EBUSY for mounting the same source to the same target
     # anyway, that can't race, so it's fine to ignore.
-    if [ "$STORAGE_TYPE" == "overlay" ]; then
-        (
-            flock 9
-            bad_stacker build
-            echo "${output}" | grep "couldn't acquire lock"
-        ) 9<roots/.lock
-    fi
+    (
+        flock 9
+        bad_stacker build
+        echo "${output}" | grep "couldn't acquire lock"
+    ) 9<roots/.lock
 
     (
         flock 9

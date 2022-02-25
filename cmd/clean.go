@@ -29,7 +29,6 @@ func doClean(ctx *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		s.Detach()
 		err = s.Clean()
 		if err != nil {
 			log.Infof("problem cleaning roots %v", err)

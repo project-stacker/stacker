@@ -13,7 +13,6 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	"github.com/project-stacker/stacker/types"
 	"golang.org/x/sys/unix"
@@ -178,20 +177,6 @@ func (o *overlay) Exists(thing string) bool {
 	return err == nil
 }
 
-func (o *overlay) Detach() error {
-	return nil
-}
-
-func (o *overlay) UpdateFSMetadata(name string, path casext.DescriptorPath) error {
-	// no-op; we get our layer contents by just looking at the contents of
-	// the upperdir
-	return nil
-}
-
-func (o *overlay) Finalize(thing string) error {
-	return nil
-}
-
 func (o *overlay) TemporaryWritableSnapshot(source string) (string, func(), error) {
 	// should use create maybe?
 	dir, err := ioutil.TempDir(o.config.RootFSDir, fmt.Sprintf("temp-snapshot-%s-", source))
@@ -214,10 +199,6 @@ func (o *overlay) TemporaryWritableSnapshot(source string) (string, func(), erro
 }
 
 func (o *overlay) Clean() error {
-	err := o.Detach()
-	if err != nil {
-		return errors.Wrapf(err, "problem unmounting overlays")
-	}
 	return errors.Wrapf(os.RemoveAll(o.config.RootFSDir), "couldn't clean rootfs dir")
 }
 

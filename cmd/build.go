@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/pkg/errors"
 	"github.com/project-stacker/stacker"
 	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
@@ -27,10 +26,6 @@ func initBuildFlags() []cli.Flag {
 
 func initCommonBuildFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.BoolFlag{
-			Name:  "leave-unladen",
-			Usage: "leave the built rootfs mount after image building",
-		},
 		cli.BoolFlag{
 			Name:  "no-cache",
 			Usage: "don't use the previous build cache",
@@ -64,10 +59,6 @@ func initCommonBuildFlags() []cli.Flag {
 }
 
 func beforeBuild(ctx *cli.Context) error {
-	if config.StorageType == "overlay" && ctx.Bool("leave-unladen") {
-		return errors.Errorf("cannot use --storage-type=overlay and --leave-unladen together")
-	}
-
 	// Validate build failure arguments
 	err := validateBuildFailureFlags(ctx)
 	if err != nil {
@@ -85,7 +76,6 @@ func beforeBuild(ctx *cli.Context) error {
 func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 	args := stacker.BuildArgs{
 		Config:       config,
-		LeaveUnladen: ctx.Bool("leave-unladen"),
 		NoCache:      ctx.Bool("no-cache"),
 		Substitute:   ctx.StringSlice("substitute"),
 		OnRunFailure: ctx.String("on-run-failure"),

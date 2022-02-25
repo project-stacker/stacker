@@ -105,11 +105,5 @@ EOF
 
     stacker "--config=$config_yaml" build "--stacker-file=$stacker_yaml" --substitute CENTOS_OCI=$CENTOS_OCI
 
-    # check the right place for the particular storage type
-    [ "$STORAGE_TYPE" != "overlay" ] || cmp_files "$expected" "$rdir/my-base/overlay/content.txt"
-    [ "$STORAGE_TYPE" != "btrfs" ] || {
-        mkdir -p "$rdir"
-        mount -o loop "$sdir/btrfs.loop" "$rdir"
-        cmp_files "$expected" "$rdir/my-base/rootfs/content.txt"
-    }
+    cmp_files "$expected" "$rdir/my-base/overlay/content.txt"
 }
