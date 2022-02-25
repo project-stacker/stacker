@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
+	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
 	stackeroci "github.com/project-stacker/stacker/oci"
 	"github.com/project-stacker/stacker/squashfs"
@@ -36,6 +38,16 @@ func createImage(dir string, tag string) error {
 		return err
 	}
 
+	descPaths, err := oci.ResolveReference(context.Background(), tag)
+	if err != nil {
+		return err
+	}
+
+	mutator, err := mutate.New(oci, descPaths[0])
+	if err != nil {
+		return err
+	}
+
 	// need *something* in the layer, why not just recursively include the
 	// OCI image for maximum confusion :)
 	layer, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil)
@@ -43,7 +55,18 @@ func createImage(dir string, tag string) error {
 		return err
 	}
 
-	_, err = stackeroci.AddBlobNoCompression(oci, tag, layer)
+	now := time.Now()
+	history := &ispec.History{
+		Created:    &now,
+		CreatedBy:  fmt.Sprintf("stacker test suite %s", tag),
+		EmptyLayer: false,
+	}
+	_, err = mutator.Add(context.Background(), stackeroci.MediaTypeLayerSquashfs, layer, history, mutate.NoopCompressor)
+	if err != nil {
+		return err
+	}
+
+	_, err = mutator.Commit(context.Background())
 	if err != nil {
 		return err
 	}
