@@ -6,6 +6,7 @@ require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20211102141018-f7be0cbad29c // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
+	github.com/anuvu/squashfs v0.0.0-20220228153512-67c8ca12cbf4
 	github.com/apex/log v1.9.0
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/containerd/containerd v1.6.1 // indirect
@@ -19,6 +20,7 @@ require (
 	github.com/klauspost/pgzip v1.2.5
 	github.com/lxc/go-lxc v0.0.0-20210607135324-10de240d43ab
 	github.com/lxc/lxd v0.0.0-20211118162824-0a8d8c489961
+	github.com/martinjungblut/go-cryptsetup v0.0.0-20210812184224-543ba394dcd7
 	github.com/minio/sha256-simd v1.0.0
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mountinfo v0.6.0 // indirect
@@ -44,3 +46,5 @@ require (
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
+
+replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20220301172632-87f2e175be31

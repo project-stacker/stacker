@@ -141,13 +141,13 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 		bundlePath := overlayPath(config, theLayer.Digest)
 		overlayDir := path.Join(bundlePath, "overlay")
 		// generate blob
-		blob, mediaType, err := generateBlob(layerType, overlayDir, config.OCIDir)
+		blob, mediaType, rootHash, err := generateBlob(layerType, overlayDir, config.OCIDir)
 		if err != nil {
 			return err
 		}
 		defer blob.Close()
 		// add it to the oci repository
-		desc, err := ociPutBlob(blob, config, mediaType)
+		desc, err := ociPutBlob(blob, config, mediaType, rootHash)
 		if err != nil {
 			return err
 		}
@@ -230,6 +230,7 @@ func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerT
 						return err
 					}
 				} else {
+					log.Debugf("converting between %v and %v", sourceLayerType, layerType)
 					err = ConvertAndOutput(o.config, cacheTag, name, layerType)
 					if err != nil {
 						return err
@@ -269,25 +270,26 @@ func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.St
 }
 
 // generateBlob generates either a tar blob or a squashfs blob based on layerType
-func generateBlob(layerType types.LayerType, contents string, ociDir string) (io.ReadCloser, string, error) {
+func generateBlob(layerType types.LayerType, contents string, ociDir string) (io.ReadCloser, string, string, error) {
 	var blob io.ReadCloser
 	var err error
 	var mediaType string
-	if layerType == "tar" {
+	var rootHash string
+	if layerType.Type == "tar" {
 		packOptions := layer.RepackOptions{TranslateOverlayWhiteouts: true}
 		blob = layer.GenerateInsertLayer(contents, "/", false, &packOptions)
 		mediaType = ispec.MediaTypeImageLayer
 	} else {
-		blob, mediaType, err = squashfs.MakeSquashfs(ociDir, contents, nil)
+		blob, mediaType, rootHash, err = squashfs.MakeSquashfs(ociDir, contents, nil, layerType.Verity)
 		if err != nil {
-			return nil, "", err
+			return nil, "", "", err
 		}
 	}
-	return blob, mediaType, nil
+	return blob, mediaType, rootHash, nil
 }
 
 // ociPutBlob takes a tar/squashfs blob and adds it into the oci repository
-func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType string) (ispec.Descriptor, error) {
+func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType string, rootHash string) (ispec.Descriptor, error) {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return ispec.Descriptor{}, err
@@ -299,10 +301,16 @@ func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType s
 		return ispec.Descriptor{}, err
 	}
 
+	annotations := map[string]string{}
+	if rootHash != "" {
+		annotations[squashfs.VerityRootHashAnnotation] = rootHash
+	}
+
 	desc := ispec.Descriptor{
-		MediaType: layerMediaType,
-		Digest:    layerDigest,
-		Size:      layerSize,
+		MediaType:   layerMediaType,
+		Digest:      layerDigest,
+		Size:        layerSize,
+		Annotations: annotations,
 	}
 
 	return desc, nil
@@ -354,24 +362,28 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		mutator := mutators[i]
 		var desc ispec.Descriptor
 
-		blob, mediaType, err := generateBlob(layerType, dir, config.OCIDir)
+		blob, mediaType, rootHash, err := generateBlob(layerType, dir, config.OCIDir)
 		if err != nil {
 			return false, err
 		}
 		defer blob.Close()
 
-		if layerType == "tar" {
-			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.GzipCompressor)
+		if layerType.Type == "tar" {
+			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.GzipCompressor, nil)
 			if err != nil {
 				return false, err
 			}
 		} else {
-			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.NoopCompressor)
+			annotations := map[string]string{}
+			if rootHash != "" {
+				annotations[squashfs.VerityRootHashAnnotation] = rootHash
+			}
+			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.NoopCompressor, annotations)
 			if err != nil {
 				return false, err
 			}
 		}
-		log.Debugf("generated %s layer %s from %s", layerType, desc.Digest, dir)
+		log.Debugf("generated %v layer %s from %s", layerType, desc.Digest, dir)
 
 		descs = append(descs, desc)
 	}
