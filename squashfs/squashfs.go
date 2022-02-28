@@ -148,7 +148,7 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 	var uCmd []string
 	if storageType == "btrfs" {
 		if which("squashtool") == "" {
-			return errors.Errorf("must have squashtool (https://github.com/project-stacker/squashfs) to correctly extract squashfs using btrfs storage backend")
+			return errors.Errorf("must have squashtool (https://github.com/anuvu/squashfs) to correctly extract squashfs using btrfs storage backend")
 		}
 
 		uCmd = []string{"squashtool", "extract", "--whiteouts", "--perms",
