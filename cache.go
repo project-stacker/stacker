@@ -142,7 +142,7 @@ func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerF
 			for layerType, desc := range ent.Manifests {
 				_, err = oci.FromDescriptor(context.Background(), desc)
 				if err != nil {
-					log.Infof("missing build for layer type %s", layerType)
+					log.Infof("missing build for layer type %v", layerType)
 					break
 				}
 			}

@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/project-stacker/stacker"
 	"github.com/project-stacker/stacker/lib"
+	"github.com/project-stacker/stacker/squashfs"
 	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
 )
@@ -92,7 +93,8 @@ func beforePublish(ctx *cli.Context) error {
 }
 
 func doPublish(ctx *cli.Context) error {
-	layerTypes, err := types.NewLayerTypes(ctx.StringSlice("layer-type"))
+	verity := squashfs.VerityMetadata(!ctx.Bool("no-squashfs-verity"))
+	layerTypes, err := types.NewLayerTypes(ctx.StringSlice("layer-type"), verity)
 	if err != nil {
 		return err
 	}

@@ -49,7 +49,7 @@ func createImage(dir string, tag string) error {
 
 	// need *something* in the layer, why not just recursively include the
 	// OCI image for maximum confusion :)
-	layer, mediaType, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil)
+	layer, mediaType, _, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil, squashfs.VerityMetadataMissing)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func createImage(dir string, tag string) error {
 		CreatedBy:  fmt.Sprintf("stacker test suite %s", tag),
 		EmptyLayer: false,
 	}
-	_, err = mutator.Add(context.Background(), mediaType, layer, history, mutate.NoopCompressor)
+	_, err = mutator.Add(context.Background(), mediaType, layer, history, mutate.NoopCompressor, nil)
 	if err != nil {
 		return err
 	}

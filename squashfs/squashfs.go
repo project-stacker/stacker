@@ -95,22 +95,23 @@ func (eps *ExcludePaths) String() (string, error) {
 	return buf.String(), nil
 }
 
-func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadCloser, string, error) {
+func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths, verity VerityMetadata) (io.ReadCloser, string, string, error) {
 	var excludesFile string
 	var err error
 	var toExclude string
+	var rootHash string
 
 	if eps != nil {
 		toExclude, err = eps.String()
 		if err != nil {
-			return nil, "", errors.Wrapf(err, "couldn't create exclude path list")
+			return nil, "", rootHash, errors.Wrapf(err, "couldn't create exclude path list")
 		}
 	}
 
 	if len(toExclude) != 0 {
 		excludes, err := ioutil.TempFile(tempdir, "stacker-squashfs-exclude-")
 		if err != nil {
-			return nil, "", err
+			return nil, "", rootHash, err
 		}
 		defer os.Remove(excludes.Name())
 
@@ -118,13 +119,13 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadClos
 		_, err = excludes.WriteString(toExclude)
 		excludes.Close()
 		if err != nil {
-			return nil, "", err
+			return nil, "", rootHash, err
 		}
 	}
 
 	tmpSquashfs, err := ioutil.TempFile(tempdir, "stacker-squashfs-img-")
 	if err != nil {
-		return nil, "", err
+		return nil, "", rootHash, err
 	}
 	tmpSquashfs.Close()
 	os.Remove(tmpSquashfs.Name())
@@ -142,15 +143,22 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths) (io.ReadClos
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return nil, "", errors.Wrap(err, "couldn't build squashfs")
+		return nil, "", rootHash, errors.Wrap(err, "couldn't build squashfs")
+	}
+
+	if verity {
+		rootHash, err = appendVerityData(tmpSquashfs.Name())
+		if err != nil {
+			return nil, "", rootHash, err
+		}
 	}
 
 	blob, err := os.Open(tmpSquashfs.Name())
 	if err != nil {
-		return nil, "", errors.WithStack(err)
+		return nil, "", rootHash, errors.WithStack(err)
 	}
 
-	return blob, GenerateSquashfsMediaType(compression), nil
+	return blob, GenerateSquashfsMediaType(compression, verity), rootHash, nil
 }
 
 func ExtractSingleSquash(squashFile string, extractDir string, storageType string) error {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/project-stacker/stacker"
+	"github.com/project-stacker/stacker/squashfs"
 	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
 )
@@ -48,6 +49,10 @@ func initCommonBuildFlags() []cli.Flag {
 			Value: &cli.StringSlice{"tar"},
 		},
 		cli.BoolFlag{
+			Name:  "no-squashfs-verity",
+			Usage: "do not append dm-verity data to squashfs archives",
+		},
+		cli.BoolFlag{
 			Name:  "require-hash",
 			Usage: "require all remote imports to have a hash provided in stackerfiles",
 		},
@@ -84,7 +89,8 @@ func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 		Progress:     shouldShowProgress(ctx),
 	}
 	var err error
-	args.LayerTypes, err = types.NewLayerTypes(ctx.StringSlice("layer-type"))
+	verity := squashfs.VerityMetadata(!ctx.Bool("no-squashfs-verity"))
+	args.LayerTypes, err = types.NewLayerTypes(ctx.StringSlice("layer-type"), verity)
 	return args, err
 }
 
