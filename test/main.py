@@ -32,5 +32,5 @@ for priv in priv_to_test:
     try:
         subprocess.check_call(cmd, env=env)
     except subprocess.CalledProcessError:
-        print("tests in modes:", st, priv, "failed")
+        print("tests in modes:", priv, "failed")
         sys.exit(1)
