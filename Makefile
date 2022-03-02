@@ -4,11 +4,11 @@ VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION
 
 LXC_VERSION?=$(shell pkg-config --modversion lxc)
 
-BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo static_build
+BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo
 
 STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
 
-build_stacker = go build -tags "$(BUILD_TAGS)" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $1" -o $2 ./cmd
+build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd
 
 STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
 LXC_CLONE_URL?=https://github.com/lxc/lxc
@@ -22,12 +22,12 @@ stacker: stacker-dynamic
 		--substitute LXC_BRANCH=$(LXC_BRANCH)
 
 stacker-static: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,-extldflags '-static',stacker)
+	$(call build_stacker,static_build,-extldflags '-static -lblkid -luuid ',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
 stacker-dynamic: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,,stacker-dynamic)
+	$(call build_stacker,,,stacker-dynamic)
 
 cmd/lxc-wrapper/lxc-wrapper: cmd/lxc-wrapper/lxc-wrapper.c
 	make -C cmd/lxc-wrapper lxc-wrapper
