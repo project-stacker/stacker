@@ -6,13 +6,22 @@ package squashfs
 import "C"
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
 	"unsafe"
 
 	"github.com/anuvu/squashfs"
+	"github.com/freddierice/go-losetup"
 	"github.com/martinjungblut/go-cryptsetup"
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/mount"
+	"golang.org/x/sys/unix"
 )
 
 const VerityRootHashAnnotation = "com.cisco.stacker.squashfs_verity_root_hash"
@@ -20,11 +29,11 @@ const VerityRootHashAnnotation = "com.cisco.stacker.squashfs_verity_root_hash"
 type verityDeviceType struct {
 	Flags      uint
 	DataDevice string
-	HashOffset int
+	HashOffset uint64
 }
 
 func (verity verityDeviceType) Name() string {
-	return "VERITY"
+	return C.CRYPT_VERITY
 }
 
 func (verity verityDeviceType) Unmanaged() (unsafe.Pointer, func()) {
@@ -44,7 +53,7 @@ func (verity verityDeviceType) Unmanaged() (unsafe.Pointer, func()) {
 	cParams.data_block_size = C.uint(os.Getpagesize())
 	cParams.hash_block_size = C.uint(os.Getpagesize())
 
-	cParams.data_size = C.ulong(verity.HashOffset / os.Getpagesize())
+	cParams.data_size = C.ulong(verity.HashOffset / uint64(os.Getpagesize()))
 	cParams.hash_area_offset = C.ulong(verity.HashOffset)
 	cParams.fec_area_offset = 0
 	cParams.hash_type = 1 // use format version 1 (i.e. "modern", non chrome-os)
@@ -88,7 +97,7 @@ func appendVerityData(file string) (string, error) {
 	verityType := verityDeviceType{
 		Flags:      cryptsetup.CRYPT_VERITY_CREATE_HASH,
 		DataDevice: file,
-		HashOffset: int(verityOffset),
+		HashOffset: uint64(verityOffset),
 	}
 	err = verityDevice.Format(verityType, cryptsetup.GenericParams{})
 	if err != nil {
@@ -114,7 +123,7 @@ func appendVerityData(file string) (string, error) {
 	return fmt.Sprintf("%x", rootHash), errors.WithStack(err)
 }
 
-func VerityDataLocation(file string) (uint64, error) {
+func verityDataLocation(file string) (uint64, error) {
 	sqfs, err := squashfs.OpenSquashfs(file)
 	if err != nil {
 		return 0, errors.WithStack(err)
@@ -128,4 +137,206 @@ func VerityDataLocation(file string) (uint64, error) {
 	}
 
 	return squashLen, nil
+}
+
+func verityName(p string) string {
+	return fmt.Sprintf("%s-%s", p, veritySuffix)
+}
+
+func Mount(squashfs string, mountpoint string, rootHash string) error {
+	fi, err := os.Stat(squashfs)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	verityOffset, err := verityDataLocation(squashfs)
+	if err != nil {
+		return err
+	}
+
+	if verityOffset == uint64(fi.Size()) && rootHash != "" {
+		return errors.Errorf("asked for verity but no data present")
+	}
+
+	if rootHash == "" && verityOffset != uint64(fi.Size()) {
+		return errors.Errorf("verity data present but no root hash specified")
+	}
+
+	mountSourcePath := ""
+
+	var verityDevice *cryptsetup.Device
+	name := verityName(path.Base(squashfs))
+
+	loopDevNeedsClosedOnErr := false
+	var loopDev losetup.Device
+
+	// set up the verity device if necessary
+	if rootHash != "" {
+		verityDevPath := path.Join("/dev/mapper", name)
+		mountSourcePath = verityDevPath
+		_, err = os.Stat(verityDevPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return errors.WithStack(err)
+			}
+
+			loopDev, err = losetup.Attach(squashfs, 0, true)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			loopDevNeedsClosedOnErr = true
+
+			verityDevice, err = cryptsetup.Init(loopDev.Path())
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			verityType := verityDeviceType{
+				Flags:      0,
+				DataDevice: loopDev.Path(),
+				HashOffset: verityOffset,
+			}
+
+			err = verityDevice.Load(verityType)
+			if err != nil {
+				loopDev.Detach()
+				return errors.WithStack(err)
+			}
+
+			// each string byte hex encodes four bits of info...
+			volumeKeySizeInBytes := len(rootHash) * 4 / 8
+			rootHashBytes, err := hex.DecodeString(rootHash)
+			if err != nil {
+				loopDev.Detach()
+				return errors.WithStack(err)
+			}
+
+			if len(rootHashBytes) != volumeKeySizeInBytes {
+				loopDev.Detach()
+				return errors.Errorf("unexpected key size for %s", rootHash)
+			}
+
+			err = verityDevice.ActivateByVolumeKey(name, string(rootHashBytes), volumeKeySizeInBytes, C.CRYPT_ACTIVATE_READONLY)
+			if err != nil {
+				loopDev.Detach()
+				return errors.WithStack(err)
+			}
+		}
+		// else {
+		// 	FIXME: verity device already exists, let's check to make
+		// 	sure it is reasonable (i.e. the root hash matches the one
+		// 	the user asked us about). without this things are unsafe, as
+		// 	someone could create this verity device with the right name
+		// 	and trick our atomfs implementation into using it.
+		// }
+	} else {
+		loopDev, err = losetup.Attach(squashfs, 0, true)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer loopDev.Detach()
+		mountSourcePath = loopDev.Path()
+
+	}
+
+	err = errors.WithStack(unix.Mount(mountSourcePath, mountpoint, "squashfs", unix.MS_RDONLY, ""))
+	if err != nil {
+		if verityDevice != nil {
+			verityDevice.Deactivate(name)
+			loopDev.Detach()
+		}
+		if loopDevNeedsClosedOnErr {
+			loopDev.Detach()
+		}
+		return err
+	}
+	return nil
+}
+
+func findLoopBackingVerity(device string) (int64, error) {
+	fi, err := os.Stat(device)
+	if err != nil {
+		return -1, errors.WithStack(err)
+	}
+
+	var minor uint32
+	switch stat := fi.Sys().(type) {
+	case *unix.Stat_t:
+		minor = unix.Minor(uint64(stat.Rdev))
+	case *syscall.Stat_t:
+		minor = unix.Minor(uint64(stat.Rdev))
+	default:
+		return -1, errors.Errorf("unknown stat info type %T", stat)
+	}
+
+	ents, err := os.ReadDir(fmt.Sprintf("/sys/block/dm-%d/slaves", minor))
+	if err != nil {
+		return -1, errors.WithStack(err)
+	}
+
+	if len(ents) != 1 {
+		return -1, errors.Errorf("too many slaves for %v", device)
+	}
+	loop := ents[0]
+
+	deviceNo, err := strconv.ParseInt(strings.TrimPrefix(filepath.Base(loop.Name()), "loop"), 10, 64)
+	if err != nil {
+		return -1, errors.Wrapf(err, "bad loop dev %v", loop.Name())
+	}
+
+	return deviceNo, nil
+}
+
+func Umount(mountpoint string) error {
+	mounts, err := mount.ParseMounts("/proc/self/mountinfo")
+	if err != nil {
+		return err
+	}
+
+	// first, find the verity device that backs the mount
+	theMount, found := mounts.FindMount(mountpoint)
+	if !found {
+		return errors.Errorf("%s is not a mountpoint", mountpoint)
+	}
+
+	err = unix.Unmount(mountpoint, 0)
+	if err != nil {
+		return errors.Wrapf(err, "failed unmounting %v", mountpoint)
+	}
+
+	if _, err := os.Stat(theMount.Source); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return errors.WithStack(err)
+	}
+
+	// was this a verity mount or a regular loopback mount? (if it's a
+	// regular loopback mount, we detached it above, so need to do anything
+	// special here; verity doesn't play as nicely)
+	if strings.HasSuffix(theMount.Source, veritySuffix) {
+		// find the loop device that backs the verity device
+		deviceNo, err := findLoopBackingVerity(theMount.Source)
+		if err != nil {
+			return err
+		}
+
+		loopDev := losetup.New(uint64(deviceNo), 0)
+		// here, we don't have the loopback device any more (we detached it
+		// above). the cryptsetup API allows us to pass NULL for the crypt
+		// device, but go-cryptsetup doesn't have a way to initialize a NULL
+		// crypt device short of making the struct by hand like this.
+		err = (&cryptsetup.Device{}).Deactivate(theMount.Source)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// finally, kill the loop dev
+		err = loopDev.Detach()
+		if err != nil {
+			return errors.Wrapf(err, "failed to detach loop dev for %v", theMount.Source)
+		}
+	}
+
+	return nil
 }
