@@ -66,6 +66,19 @@ func stackerResult(err error) {
 	}
 }
 
+func shouldSkipInternalUserns(ctx *cli.Context) bool {
+	args := ctx.Args()
+	if len(args) >= 1 && args[0] == "unpriv-setup" {
+		return true
+	}
+
+	if len(args) >= 2 && args[0] == "internal-go" && args[1] == "atomfs" {
+		return true
+	}
+
+	return false
+}
+
 func main() {
 	sigquits := make(chan os.Signal, 1)
 	go func() {
@@ -265,7 +278,7 @@ func main() {
 		stackerlog.FilterNonStackerLogs(handler, logLevel)
 		stackerlog.Debugf("stacker version %s", version)
 
-		if !ctx.Bool("internal-userns") && len(ctx.Args()) >= 1 && ctx.Args()[0] != "unpriv-setup" {
+		if !ctx.Bool("internal-userns") && !shouldSkipInternalUserns(ctx) {
 			binary, err := os.Readlink("/proc/self/exe")
 			if err != nil {
 				return err

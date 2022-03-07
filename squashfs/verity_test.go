@@ -37,7 +37,7 @@ func TestVerityMetadata(t *testing.T) {
 	err = ioutil.WriteFile(squashfsFile, content, 0600)
 	assert.NoError(err)
 
-	verityOffset, err := VerityDataLocation(squashfsFile)
+	verityOffset, err := verityDataLocation(squashfsFile)
 	assert.NoError(err)
 
 	// now let's try to verify it at least in userspace. exec cryptsetup

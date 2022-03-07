@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/atomfs"
 	"github.com/project-stacker/stacker/lib"
 	"github.com/project-stacker/stacker/log"
 	"github.com/project-stacker/stacker/overlay"
@@ -38,6 +40,19 @@ var internalGoCmd = cli.Command{
 		cli.Command{
 			Name:   "copy",
 			Action: doImageCopy,
+		},
+		cli.Command{
+			Name: "atomfs",
+			Subcommands: []cli.Command{
+				cli.Command{
+					Name:   "mount",
+					Action: doAtomfsMount,
+				},
+				cli.Command{
+					Name:   "umount",
+					Action: doAtomfsUmount,
+				},
+			},
 		},
 	},
 	Before: doBeforeUmociSubcommand,
@@ -123,4 +138,43 @@ func doCheckAAProfile(ctx *cli.Context) error {
 	}
 
 	return nil
+}
+
+func doAtomfsMount(ctx *cli.Context) error {
+	if len(ctx.Args()) != 2 {
+		return errors.Errorf("wrong number of args for mount")
+	}
+
+	tag := ctx.Args()[0]
+	mountpoint := ctx.Args()[1]
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	opts := atomfs.MountOCIOpts{
+		OCIDir:       config.OCIDir,
+		MetadataPath: path.Join(wd, "atomfs-metadata"),
+		Tag:          tag,
+		Target:       mountpoint,
+	}
+
+	mol, err := atomfs.BuildMoleculeFromOCI(opts)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("about to mount %v", mol)
+
+	return mol.Mount(mountpoint)
+}
+
+func doAtomfsUmount(ctx *cli.Context) error {
+	if len(ctx.Args()) != 1 {
+		return errors.Errorf("wrong number of args for umount")
+	}
+
+	mountpoint := ctx.Args()[0]
+	return atomfs.Umount(mountpoint)
 }

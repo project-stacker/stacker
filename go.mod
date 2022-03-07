@@ -15,12 +15,13 @@ require (
 	github.com/docker/distribution v2.8.0+incompatible // indirect
 	github.com/docker/docker v20.10.11+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0
+	github.com/freddierice/go-losetup v0.0.0-20210416171645-f09b6c574057
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/klauspost/pgzip v1.2.5
 	github.com/lxc/go-lxc v0.0.0-20210607135324-10de240d43ab
 	github.com/lxc/lxd v0.0.0-20211118162824-0a8d8c489961
-	github.com/martinjungblut/go-cryptsetup v0.0.0-20210812184224-543ba394dcd7
+	github.com/martinjungblut/go-cryptsetup v0.0.0-20220314071908-7b9938e4a08c
 	github.com/minio/sha256-simd v1.0.0
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/sys/mountinfo v0.6.0 // indirect
@@ -48,3 +49,5 @@ require (
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
 
 replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20220301172632-87f2e175be31
+
+replace github.com/freddierice/go-losetup => github.com/tych0/go-losetup v0.0.0-20220311175341-5cfd5c59067d

@@ -15,6 +15,22 @@ type Mount struct {
 	Opts   []string
 }
 
+func (m Mount) GetOverlayDirs() ([]string, error) {
+	if m.FSType != "overlay" {
+		return nil, errors.Errorf("%s is not an overlayfs", m.Target)
+	}
+
+	for _, opt := range m.Opts {
+		if !strings.HasPrefix(opt, "lowerdir=") {
+			continue
+		}
+
+		return strings.Split(strings.TrimPrefix(opt, "lowerdir="), ":"), nil
+	}
+
+	return nil, errors.Errorf("no lowerdirs found")
+}
+
 type Mounts []Mount
 
 func (ms Mounts) FindMount(p string) (Mount, bool) {
