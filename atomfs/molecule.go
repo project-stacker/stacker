@@ -27,29 +27,26 @@ func (m Molecule) mountUnderlyingAtoms() error {
 	for _, a := range m.Atoms {
 		target := m.config.MountedAtomsPath(a.Digest.Encoded())
 
-		mountpoint, err := mount.IsMountpoint(target)
+		rootHash := a.Annotations[squashfs.VerityRootHashAnnotation]
+
+		mounts, err := mount.ParseMounts("/proc/self/mountinfo")
 		if err != nil {
 			return err
 		}
-		if mountpoint {
-			// FIXME: this is unsafe. if someone mounted a
-			// filesystem here, we just use it, without ensuring
-			// the contents match the dm-verity stuff. in the
-			// future, we should:
-			//
-			//   1. go backwards from the mountpoint to the block dev
-			//   2. ask the kernel what its root hash of the block
-			//      dev is, and compare that to the annotation we have
-			//
-			// but for now let's just re-use to get off the ground.
+
+		mountpoint, mounted := mounts.FindMount(target)
+
+		if mounted {
+			err = squashfs.ConfirmExistingVerityDeviceHash(mountpoint.Source, rootHash)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
 		if err := os.MkdirAll(target, 0755); err != nil {
 			return err
 		}
-
-		rootHash := a.Annotations[squashfs.VerityRootHashAnnotation]
 
 		err = squashfs.Mount(m.config.AtomsPath(a.Digest.Encoded()), target, rootHash)
 		if err != nil {

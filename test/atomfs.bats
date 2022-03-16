@@ -114,3 +114,30 @@ EOF
     last_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[$last_layer].digest | cut -f2 -d:)
     [ ! -b "/dev/mapper/$last_layer_hash-verity" ]
 }
+
+@test "bad existing verity device is rejected" {
+    require_privilege priv
+    cat > stacker.yaml <<EOF
+test:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+        touch /hello
+EOF
+    stacker build --layer-type=squashfs
+
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    first_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
+    devname="$first_layer_hash-verity"
+
+    # make an evil device and fake it as an existing verity device
+    dd if=/dev/random of=mydev bs=50K count=1
+    root_hash=$(veritysetup format mydev mydev.hash | grep "Root hash:" | awk '{print $NF}')
+    echo "root hash $root_hash"
+    veritysetup open mydev "$devname" mydev.hash "$root_hash"
+
+    mkdir mountpoint
+    bad_stacker internal-go atomfs mount test-squashfs mountpoint | grep "invalid root hash"
+    veritysetup close "$devname"
+}
