@@ -1,8 +1,65 @@
 package squashfs
 
-// #cgo pkg-config: libcryptsetup libsquashfs1 --static
+// #cgo pkg-config: libcryptsetup libsquashfs1 devmapper --static
 // #include <libcryptsetup.h>
 // #include <stdlib.h>
+// #include <errno.h>
+// #include <libdevmapper.h>
+/*
+int get_verity_params(char *device, char **params)
+{
+	struct dm_task *dmt;
+	struct dm_info dmi;
+	int r;
+	uint64_t start, length;
+	char *type, *tmpParams;
+
+	dmt = dm_task_create(DM_DEVICE_TABLE);
+	if (!dmt)
+		return 1;
+
+	r = 2;
+	if (!dm_task_secure_data(dmt))
+		goto out;
+
+	r = 3;
+	if (!dm_task_set_name(dmt, device))
+		goto out;
+
+	r = 4;
+	if (!dm_task_run(dmt))
+		goto out;
+
+	r = 5;
+	if (!dm_task_get_info(dmt, &dmi))
+		goto out;
+
+	r = 6;
+	if (!dmi.exists)
+		goto out;
+
+	r = 7;
+	if (dmi.target_count <= 0)
+		goto out;
+
+	r = 8;
+	dm_get_next_target(dmt, NULL, &start, &length, &type, &tmpParams);
+	if (!type)
+		goto out;
+
+	r = 9;
+	if (strcasecmp(type, CRYPT_VERITY)) {
+		fprintf(stderr, "type: %s (%s) %d\n", type, CRYPT_VERITY, strcmp(type, CRYPT_VERITY));
+		goto out;
+	}
+	*params = strdup(tmpParams);
+
+	r = 0;
+out:
+	dm_task_destroy(dmt);
+	return r;
+}
+*/
 import "C"
 
 import (
@@ -216,19 +273,17 @@ func Mount(squashfs string, mountpoint string, rootHash string) error {
 				return errors.Errorf("unexpected key size for %s", rootHash)
 			}
 
-			err = verityDevice.ActivateByVolumeKey(name, string(rootHashBytes), volumeKeySizeInBytes, C.CRYPT_ACTIVATE_READONLY)
+			err = verityDevice.ActivateByVolumeKey(name, string(rootHashBytes), volumeKeySizeInBytes, cryptsetup.CRYPT_ACTIVATE_READONLY)
 			if err != nil {
 				loopDev.Detach()
 				return errors.WithStack(err)
 			}
+		} else {
+			err = ConfirmExistingVerityDeviceHash(verityDevPath, rootHash)
+			if err != nil {
+				return err
+			}
 		}
-		// else {
-		// 	FIXME: verity device already exists, let's check to make
-		// 	sure it is reasonable (i.e. the root hash matches the one
-		// 	the user asked us about). without this things are unsafe, as
-		// 	someone could create this verity device with the right name
-		// 	and trick our atomfs implementation into using it.
-		// }
 	} else {
 		loopDev, err = losetup.Attach(squashfs, 0, true)
 		if err != nil {
@@ -336,6 +391,34 @@ func Umount(mountpoint string) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to detach loop dev for %v", theMount.Source)
 		}
+	}
+
+	return nil
+}
+
+func ConfirmExistingVerityDeviceHash(devicePath string, rootHash string) error {
+	device := filepath.Base(devicePath)
+	cDevice := C.CString(device)
+	defer C.free(unsafe.Pointer(cDevice))
+
+	var cParams *C.char
+
+	rc := C.get_verity_params(cDevice, &cParams)
+	if rc != 0 {
+		return errors.Errorf("problem getting hash from %v: %v", device, rc)
+	}
+	defer C.free(unsafe.Pointer(cParams))
+
+	params := C.GoString(cParams)
+
+	// https://gitlab.com/cryptsetup/cryptsetup/-/wikis/DMVerity
+	fields := strings.Fields(params)
+	if len(fields) < 10 {
+		return errors.Errorf("invalid dm params for %v: %v", device, params)
+	}
+
+	if rootHash != fields[8] {
+		return errors.Errorf("invalid root hash for %v: %v (expected: %v)", device, fields[7], rootHash)
 	}
 
 	return nil
