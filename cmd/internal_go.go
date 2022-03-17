@@ -154,10 +154,11 @@ func doAtomfsMount(ctx *cli.Context) error {
 	}
 
 	opts := atomfs.MountOCIOpts{
-		OCIDir:       config.OCIDir,
-		MetadataPath: path.Join(wd, "atomfs-metadata"),
-		Tag:          tag,
-		Target:       mountpoint,
+		OCIDir:                 config.OCIDir,
+		MetadataPath:           path.Join(wd, "atomfs-metadata"),
+		Tag:                    tag,
+		Target:                 mountpoint,
+		AllowMissingVerityData: true,
 	}
 
 	mol, err := atomfs.BuildMoleculeFromOCI(opts)
