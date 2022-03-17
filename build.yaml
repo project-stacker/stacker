@@ -36,7 +36,7 @@ build-env:
     tar -xf /stacker/v2_03_15.tar.gz
     cd lvm2-*
     ./configure --enable-static_link
-    make install_device-mapper
+    make -j$(grep -c processor /proc/cpuinfo) install_device-mapper
     cd /
 
     # build static cryptsetup without all the command line tools
