@@ -9,10 +9,11 @@ import (
 )
 
 type MountOCIOpts struct {
-	OCIDir       string
-	MetadataPath string
-	Tag          string
-	Target       string
+	OCIDir                 string
+	MetadataPath           string
+	Tag                    string
+	Target                 string
+	AllowMissingVerityData bool
 }
 
 func (c MountOCIOpts) AtomsPath(parts ...string) string {

@@ -29,6 +29,10 @@ func (m Molecule) mountUnderlyingAtoms() error {
 
 		rootHash := a.Annotations[squashfs.VerityRootHashAnnotation]
 
+		if !m.config.AllowMissingVerityData && rootHash == "" {
+			return errors.Errorf("%v is missing verity data", a.Digest)
+		}
+
 		mounts, err := mount.ParseMounts("/proc/self/mountinfo")
 		if err != nil {
 			return err
