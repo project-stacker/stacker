@@ -22,7 +22,7 @@ stacker: stacker-dynamic
 		--substitute LXC_BRANCH=$(LXC_BRANCH)
 
 stacker-static: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,static_build,-extldflags '-static -lblkid -luuid -ljson-c -ldevmapper ',stacker)
+	$(call build_stacker,static_build,-extldflags '-static',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
