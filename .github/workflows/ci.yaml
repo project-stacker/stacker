@@ -5,6 +5,9 @@ on:
     pull_request:
     schedule:
         - cron: '0 0 * * 0' # weekly
+    release:
+      types:
+        - published
 
 jobs:
     build:
