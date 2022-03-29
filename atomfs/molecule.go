@@ -92,7 +92,7 @@ func (m Molecule) overlayArgs(dest string) (string, error) {
 // (for example, the stacker test suite), we want to be sure we don't both
 // create or delete devices out from the other one when they have detected the
 // device exists. so try to cooperate via this lock.
-const advisoryLockPath = "/dev/shm/atomfs-lock"
+var advisoryLockPath = path.Join(os.TempDir(), ".atomfs-lock")
 
 func (m Molecule) Mount(dest string) error {
 	lockfile, err := os.Create(advisoryLockPath)
