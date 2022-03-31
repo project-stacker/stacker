@@ -114,7 +114,6 @@ func NewStorage(c types.StackerConfig) (types.Storage, *StackerLocks, error) {
 		return nil, nil, err
 	}
 
-	log.Infof("using storage backend %s", c.StorageType)
 	err = os.MkdirAll(c.StackerDir, 0755)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "couldn't make stacker dir")
