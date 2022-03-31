@@ -493,6 +493,8 @@ github.com/frankban/quicktest v1.7.2/go.mod h1:jaStnuzAqU1AJdCO0l53JDCJrVDKcS03D
 github.com/frankban/quicktest v1.10.0/go.mod h1:ui7WezCLWMWxVWr1GETZY3smRy0G4KWq9vcPtJmFl7Y=
 github.com/frankban/quicktest v1.11.3/go.mod h1:wRf/ReqHper53s+kmmSZizM8NamnL3IM0I9ntUbOk+k=
 github.com/frankban/quicktest v1.13.1/go.mod h1:NeW+ay9A/U67EYXNFA1nPE8e/tnQv/09mUdL/ijj8og=
+github.com/freddierice/go-losetup v0.0.0-20220331141030-7ad00c49b973 h1:5JLrMrrj3FCPqoI9JsI3ypvJkbAzKbE5Kt6AsMC/BW4=
+github.com/freddierice/go-losetup v0.0.0-20220331141030-7ad00c49b973/go.mod h1:zAk7fcFx45euzK9Az14j6Hd9n8Cwhnjp/NBfhSIAmFg=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fsnotify/fsnotify v1.5.1/go.mod h1:T3375wBYaZdLLcVNkcVbzGHY7f1l/uK5T5Ai1i3InKU=
@@ -1459,8 +1461,6 @@ github.com/tommy-muehle/go-mnd/v2 v2.4.0/go.mod h1:WsUAkMJMYww6l/ufffCD3m+P7LEvr
 github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c/go.mod h1:hzIxponao9Kjc7aWznkXaL4U4TWaDSs8zcsY4Ka08nM=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94 h1:RVeQNVS7eoXqFemL1LnyzV7yuijHlBtiq6lH5T/mljw=
 github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94/go.mod h1:+E0GZE9c8UBk2GYXo9mPIHAtmmBkJlSWCdzLMcsCWV0=
-github.com/tych0/go-losetup v0.0.0-20220311175341-5cfd5c59067d h1:bGbN5QfhOPp79c3cXwwoAWGFXffDl3ZpjjNFxnXcZCA=
-github.com/tych0/go-losetup v0.0.0-20220311175341-5cfd5c59067d/go.mod h1:cdWJrB+PcHXXfp97Gizi9FJNWfNLgO6pt4CgxWpVA5Q=
 github.com/tych0/umoci v0.4.7-0.20220301172632-87f2e175be31 h1:VcR8MhZzaQ76FhqX+qJn3/u6rsd4+HzDtihwh3LdD04=
 github.com/tych0/umoci v0.4.7-0.20220301172632-87f2e175be31/go.mod h1:PcMzafr1xUbR9zxgfDrw31+KYShhTcIAMbOr4cqfPaw=
 github.com/udhos/equalfile v0.3.0 h1:KhG4xhhkittrgIV/ekHtpEPh7MLxtbjm6kLEwp5Dlbg=
