@@ -151,3 +151,10 @@ EOF
     umoci unpack --image oci:centos dest
     [ -f dest/rootfs/foo ]
 }
+
+@test "stacker without arguments prints help" {
+    # need to manually call the binary, since our wrapper functions pass
+    # --debug. also, urfave/cli is the one that actually handles this case, and
+    # they exit(0) for now :(
+    "${ROOT_DIR}/stacker" | grep "COMMANDS"
+}

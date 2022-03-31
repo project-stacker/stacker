@@ -278,7 +278,7 @@ func main() {
 		stackerlog.FilterNonStackerLogs(handler, logLevel)
 		stackerlog.Debugf("stacker version %s", version)
 
-		if !ctx.Bool("internal-userns") && !shouldSkipInternalUserns(ctx) {
+		if !ctx.Bool("internal-userns") && !shouldSkipInternalUserns(ctx) && len(os.Args) > 1 {
 			binary, err := os.Readlink("/proc/self/exe")
 			if err != nil {
 				return err
