@@ -1,44 +1,21 @@
 name: ci
 
 on:
-    push:
-    pull_request:
-    schedule:
-        - cron: '0 0 * * 0' # weekly
-    release:
-      types:
-        - published
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 0" # weekly
+  release:
+    types:
+      - published
 
 jobs:
-    build:
-        runs-on: ubuntu-20.04
-        name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
-        strategy:
-            matrix:
-                go-version: [1.17.x, 1.18.x]
-                privilege-level: [priv, unpriv]
-        steps:
-            - uses: actions/checkout@v2
-            - name: Set up golang ${{ matrix.go-version }}
-              uses: actions/setup-go@v2
-              with:
-                  go-version: ${{ matrix.go-version }}
-            - name: install dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
-                  GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
-                  sudo cp ~/go/bin/umoci /usr/bin
-                  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-                  sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin
-                  (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
-                  (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
-            - run: |
-                  make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
-            - if: github.event_name == 'release' && github.event.action == 'published'
-              name: Publish artifacts on releases
-              uses: Roang-zero1/github-upload-release-artifacts-action@master
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  args: stacker
+  build:
+    uses: ./.github/workflows/build.yaml
+    with:
+      # note >-, args needs to be strings to be used as inputs
+      # for the reusable build.yaml workflow
+      go-version: >-
+        ["1.17.x", "1.18.x"]
+      privilege-level: >-
+        ["unpriv", "priv"]
