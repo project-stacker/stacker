@@ -40,6 +40,10 @@ var publishCmd = cli.Command{
 			Name:  "password",
 			Usage: "password for the registry where the OCI images are published",
 		},
+		cli.BoolFlag{
+			Name:  "skip-tls",
+			Usage: "skip tls verify on upstream registry",
+		},
 		cli.StringSliceFlag{
 			Name:  "tag",
 			Usage: "tag to be used when publishing",
@@ -109,6 +113,7 @@ func doPublish(ctx *cli.Context) error {
 		Password:   ctx.String("password"),
 		Force:      ctx.Bool("force"),
 		Progress:   shouldShowProgress(ctx),
+		SkipTLS:    ctx.Bool("skip-tls"),
 		LayerTypes: layerTypes,
 	}
 
