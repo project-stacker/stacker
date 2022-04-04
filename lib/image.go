@@ -94,6 +94,7 @@ func ImageCopy(opts ImageCopyOpts) error {
 
 	if opts.SrcSkipTLS {
 		args.SourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+		args.SourceCtx.DockerDaemonInsecureSkipTLSVerify = true
 	}
 
 	if opts.SrcUsername != "" {
@@ -107,6 +108,7 @@ func ImageCopy(opts ImageCopyOpts) error {
 
 	if opts.DestSkipTLS {
 		args.DestinationCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+		args.DestinationCtx.DockerDaemonInsecureSkipTLSVerify = true
 	}
 
 	if opts.DestUsername != "" {

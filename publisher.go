@@ -26,6 +26,7 @@ type PublishArgs struct {
 	Password   string
 	Force      bool
 	Progress   bool
+	SkipTLS    bool
 	LayerTypes []types.LayerType
 }
 
@@ -142,6 +143,7 @@ func (p *Publisher) Publish(file string) error {
 					DestPassword: opts.Password,
 					Progress:     progressWriter,
 					SrcSkipTLS:   true,
+					DestSkipTLS:  opts.SkipTLS,
 				})
 				if err != nil {
 					return err
