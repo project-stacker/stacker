@@ -13,6 +13,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     strategy:
       matrix:
         go-version: ${{fromJson(inputs.go-version)}}
@@ -36,6 +41,8 @@ jobs:
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
       - run: |
           make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+        env:
+          REGISTRY_URL: localhost:5000
       - uses: actions/cache@v2
         id: restore-build
         with:
