@@ -150,3 +150,82 @@ function teardown() {
     mount -t squashfs oci/blobs/sha256/$layer1 layer1
     [ -f layer1/root/ls_out ]
 }
+
+@test "publish tag to unsecure registry" {
+    if [ -z "${REGISTRY_URL}" ]; then
+        skip "skipping test because no registry found in REGISTRY_URL env variable"
+    fi
+
+    stacker build -f ocibuilds/sub4/stacker.yaml
+    stacker publish --skip-tls -f ocibuilds/sub4/stacker.yaml --url docker://${REGISTRY_URL} --tag test1
+
+    # check content of published image
+    # should have /root/ls_out from sub4/stacker.yaml
+    mkdir -p ocibuilds/sub7
+    cat > ocibuilds/sub7/stacker.yaml <<EOF
+published:
+    from:
+        type: docker
+        url: docker://${REGISTRY_URL}/layer4:test1
+    run: |
+        cat /root/ls_out
+EOF
+
+}
+
+@test "publish multiple tags to unsecure registry" {
+    if [ -z "${REGISTRY_URL}" ]; then
+        skip "skipping test because no registry found in REGISTRY_URL env variable"
+    fi
+
+    stacker build -f ocibuilds/sub1/stacker.yaml
+    stacker publish --skip-tls -f ocibuilds/sub1/stacker.yaml --url docker://${REGISTRY_URL} --tag test1 --tag test2
+
+    # check content of published image
+    # should have /root/import1 from sub1/stacker.yaml
+    mkdir -p ocibuilds/sub8
+    cat > ocibuilds/sub8/stacker.yaml <<EOF
+published:
+    from:
+        type: docker
+        url: docker://${REGISTRY_URL}/layer1:test1
+    run: |
+        [ -f /root/import1 ]
+EOF
+
+    # check content of published image
+    # should have /root/import1 from sub1/stacker.yaml
+    mkdir -p ocibuilds/sub9
+    cat > ocibuilds/sub9/stacker.yaml <<EOF
+published:
+    from:
+        type: docker
+        url: docker://${REGISTRY_URL}/layer1:test2
+    run: |
+        [ -f /root/import1 ]
+EOF
+
+
+}
+
+@test "publish multiple layers recursively to unsecure registry" {
+    if [ -z "${REGISTRY_URL}" ]; then
+        skip "skipping test because no registry found in REGISTRY_URL env variable"
+    fi
+
+    stacker recursive-build -d ocibuilds
+    stacker publish --skip-tls -d ocibuilds --url docker://${REGISTRY_URL} --tag test1
+
+    # check content of published image
+    # layer6 should have /root/import1 from sub1/stacker.yaml
+    mkdir -p ocibuilds/sub10
+    cat > ocibuilds/sub10/stacker.yaml <<EOF
+published:
+    from:
+        type: docker
+        url: docker://${REGISTRY_URL}/layer6:test1
+    run: |
+        [ -f /root/import1 ]
+EOF
+
+}
