@@ -27,12 +27,12 @@ require (
 	github.com/moby/sys/mountinfo v0.6.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202222133-eacdcc10569b
-	github.com/opencontainers/umoci v0.4.8-0.20211112044327-caa97eac3326
+	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/smartystreets/goconvey v1.6.4
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.5
@@ -47,5 +47,3 @@ require (
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
-
-replace github.com/opencontainers/umoci => github.com/tych0/umoci v0.4.7-0.20220301172632-87f2e175be31
