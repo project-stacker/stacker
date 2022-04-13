@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -27,13 +28,13 @@ var chrootCmd = cli.Command{
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
 	},
-	ArgsUsage: `[tag] [cmd]
+	ArgsUsage: fmt.Sprintf(`[tag] [cmd]
 
 <tag> is the built tag in the stackerfile to chroot to, or the first tag if
 none is specified.
 
-<cmd> is the command to run, or /bin/sh if none is specified. To specify cmd,
-you must specify a tag.`,
+<cmd> is the command to run, or %s if none is specified. To specify cmd,
+you must specify a tag.`, stacker.DefaultShell),
 }
 
 func doChroot(ctx *cli.Context) error {
@@ -48,7 +49,7 @@ func doChroot(ctx *cli.Context) error {
 		tag = ctx.Args()[0]
 	}
 
-	cmd := "/bin/sh"
+	cmd := stacker.DefaultShell
 
 	if len(ctx.Args()) > 1 {
 		cmd = ctx.Args()[1]

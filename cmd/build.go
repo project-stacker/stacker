@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/project-stacker/stacker"
 	"github.com/project-stacker/stacker/squashfs"
 	"github.com/project-stacker/stacker/types"
@@ -41,7 +43,7 @@ func initCommonBuildFlags() []cli.Flag {
 		},
 		cli.BoolFlag{
 			Name:  "shell-fail",
-			Usage: "exec /bin/sh inside the container if run fails (alias for --on-run-failure=/bin/sh)",
+			Usage: fmt.Sprintf("exec %s inside the container if run fails (alias for --on-run-failure=%s)", stacker.DefaultShell, stacker.DefaultShell),
 		},
 		cli.StringSliceFlag{
 			Name:  "layer-type",

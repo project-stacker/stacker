@@ -5,16 +5,17 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker"
 	"github.com/urfave/cli"
 )
 
 func validateBuildFailureFlags(ctx *cli.Context) error {
 	if ctx.Bool("shell-fail") {
 		askedFor := ctx.String("on-run-failure")
-		if askedFor != "" && askedFor != "/bin/sh" {
+		if askedFor != "" && askedFor != stacker.DefaultShell {
 			return errors.Errorf("--shell-fail is incompatible with --on-run-failure=%s", askedFor)
 		}
-		err := ctx.Set("on-run-failure", "/bin/sh")
+		err := ctx.Set("on-run-failure", stacker.DefaultShell)
 		if err != nil {
 			return err
 		}
