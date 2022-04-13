@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/pkg/errors"
 )
 
 // gitHash generates a version string similar to git describe --always
@@ -55,29 +54,4 @@ func GitVersion(path string) (string, error) {
 	}
 
 	return vers + "-dirty", nil
-}
-
-// NewGitLayerTag version generates a commit-<id> tag to be used for uploading an image to a docker registry
-func NewGitLayerTag(path string) (string, error) {
-
-	// Check if there are local changes
-	args := []string{"-C", path, "status", "--porcelain", "--untracked-files=no"}
-	output, err := exec.Command("git", args...).CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-
-	// If there are local changes, we don't generate a git commit tag for the new layer
-	if len(output) != 0 {
-		return "", errors.Errorf("commit is dirty so don't generate a tag based on git commit: %s", output)
-	}
-
-	// Determine git hash
-	hash, err := gitHash(path, true)
-	if err != nil {
-		return "", err
-	}
-
-	// Add commit id in tag
-	return "commit-" + hash, nil
 }
