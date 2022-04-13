@@ -8,6 +8,7 @@ build-env:
     - https://gitlab.com/cryptsetup/cryptsetup/-/archive/v2.4.3/cryptsetup-v2.4.3.tar.gz
     - https://github.com/lvmteam/lvm2/archive/refs/tags/v2_03_15.tar.gz
   run: |
+    #!/bin/sh
     # libapparmor is only in testing
     head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
 
@@ -67,6 +68,7 @@ build:
   binds:
     - . -> /stacker-tree
   run: |
+    #!/bin/sh
     # golang wants somewhere to put its garbage
     export HOME=/root
     export GOPATH=/stacker-tree/.build/gopath

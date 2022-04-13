@@ -22,6 +22,8 @@ import (
 	"github.com/project-stacker/stacker/types"
 )
 
+const DefaultShell = "/usr/bin/sh"
+
 type BuildArgs struct {
 	Config       types.StackerConfig
 	LeaveUnladen bool
@@ -542,7 +544,7 @@ func (b *Builder) BuildMultiple(paths []string) error {
 // container, and writes it to the contianer. It checks that the script already
 // have a shebang? If so, it leaves it as is, otherwise it prepends a shebang.
 func generateShellForRunning(rootfs string, cmd []string, outFile string) error {
-	shebangLine := "#!/bin/sh -xe\n"
+	shebangLine := fmt.Sprintf("#!%s -xe\n", DefaultShell)
 	if strings.HasPrefix(cmd[0], "#!") {
 		shebangLine = ""
 	}
