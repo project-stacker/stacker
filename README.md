@@ -13,6 +13,10 @@ Stacker is a tool for building OCI images via a declarative yaml format.
 Stacker has various [build](doc/install.md) and [runtime](doc/running.md)
 dependencies.
 
+### Hacking
+
+See the [hacking](doc/hacking.md) guide for tips on hacking/debugging stacker.
+
 ### Usage
 
 See the [tutorial](doc/tutorial.md) for a short introduction to how to use stacker.
