@@ -50,3 +50,41 @@ etc...). A previous implementation (the one in lxd) was to use some
 work in all cases, and go-embed allows for librar-ization of stacker code if
 someone else wants to use it eventually. See 8fa336834f31 ("container: move to
 go-embed for re-exec of C code") for details on that approach.
+
+## Overlay storage layout
+
+The storage parent directory is whatever is specified to stacker via
+`--roots-dir`. Each layer is extracted into a `sha256_$hash/overlay` directory,
+which is then sewn together via overlayfs. At the top level, for a layer called
+`foo`, there are two directories: `foo/rootfs`, and `foo/overlay`. During the
+build, `foo`'s rootfs is mounted inside the container as `foo/rootfs`, with the
+overlay `upperdir=foo/overlay`. This way, whatever filesystem mutations the
+`foo` layer's `run:` section performs end up in `foo/overlay`.
+
+After the `run:` section, stacker generates whatever layers the user requested
+from this, creates `sha256_$hash/overlay` dirs with the contents (if two layer
+types were converted, then the hash of the squashfs output will just be a
+symlink to the tar layer's directory to save space), and
+`foo/overlay_metadata.json` will be updated to reflect these new outputs, for
+use when e.g. `foo` is a dependency of some other layer `bar`.
+
+Note that there is currently one wart. In a stacker file like:
+
+    foo:
+        from:
+            type: docker
+            url: docker://ubuntu:latest
+        build_only: true
+        run: |
+            dd if=/dev/random of=/bigfile bs=1M count=1000
+    bar:
+        from:
+            type: bult
+            tag: foo
+        run: |
+            rm /bigfile
+
+The final image for `bar` will actually contain a layer with `/bigfile` in it,
+because the `foo` layer's mutations are generated independently of `bar`'s.
+Some clever userspace overlay collapsing could be done here to remove this
+wart, though.
