@@ -1,4 +1,8 @@
-ROOT_DIR=$(git rev-parse --show-toplevel)
+function run_git {
+    sudo -u $SUDO_USER git "$@"
+}
+
+ROOT_DIR=$(run_git rev-parse --show-toplevel)
 if [ "$(id -u)" != "0" ]; then
     echo "you should be root to run this suite"
     exit 1

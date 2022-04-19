@@ -94,8 +94,8 @@ EOF
 
     publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."com.cisco.stacker.git_version"')
     # ci does not clone tags. There it tests the fallback-to-commit path.
-    myGitVersion=$(git describe --tags) || myGitVersion=$(git rev-parse HEAD)
-    [ -n "$(git status --porcelain --untracked-files=no)" ] &&
+    myGitVersion=$(run_git describe --tags) || myGitVersion=$(run_git rev-parse HEAD)
+    [ -n "$(run_git status --porcelain --untracked-files=no)" ] &&
         dirty="-dirty" || dirty=""
     [ "$publishedGitVersion" = "$myGitVersion$dirty" ]
 
