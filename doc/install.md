@@ -32,7 +32,7 @@ The other build dependencies can be satisfied with the following command and
 packages:
 
     sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
-    libpam0g-dev libselinux-dev libssl-dev libzstd-dev
+    libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev
 
 To run `make check` you will also need:
 
@@ -44,6 +44,8 @@ squashtool - https://github.com/project-stacker/squashfs
 Contrary to what the documentation in squashfs implies, squashtool and
 libsquash from squash-tools-ng need to be installed globally, as user specific
 path overrides aren't propagated into `make check`'s test envs.
+
+`make check` also requires the golangci-lint binary to be present in $GOPATH/bin
 
 #### Fedora 31
 
