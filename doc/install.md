@@ -36,7 +36,7 @@ packages:
 
 To run `make check` you will also need:
 
-    sudo apt install bats btrfs-progs jq libbtrfs-dev tree
+    sudo apt install bats jq tree
 
 umoci - https://github.com/opencontainers/umoci
 squashtool - https://github.com/project-stacker/squashfs
@@ -53,7 +53,6 @@ The other build dependencies can be satisfied with the following command and
 packages:
 
     sudo dnf install lxc-devel libcap-devel libacl-devel gpgme-devel
-    sudo dnf install btrfs-progs
     sudo dnf install bats jq
 
 ### Building the Stacker Binary
