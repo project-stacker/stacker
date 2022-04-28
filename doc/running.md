@@ -55,12 +55,3 @@ released in 5.11.
 Stacker has checks to ensure that it can run with all these environment
 requirements, and will fail fast if it can't do something it should be able to
 do.
-
-#### Importing squashfs images
-
-In order to correctly import squashfs-based images using the btrfs backend,
-[squashtool](https://github.com/project-stacker/squashfs) is also required in `$PATH`. This
-is required because tools like unsquashfs don't understand OCI style whiteouts,
-and so will not extract them correctly. (One could fix this by implementing a
-subsequent extrat pass to fix up overlay style whiteouts, but it would be
-better to just use the overlay backend in this case.)

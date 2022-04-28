@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"golang.org/x/sys/unix"
 )
 
 var checkZstdSupported sync.Once
@@ -168,16 +167,10 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 	}
 
 	var uCmd []string
-	if storageType == "btrfs" {
-		if which("squashtool") == "" {
-			return errors.Errorf("must have squashtool (https://github.com/anuvu/squashfs) to correctly extract squashfs using btrfs storage backend")
-		}
-
-		uCmd = []string{"squashtool", "extract", "--whiteouts", "--perms",
-			"--devs", "--sockets", "--owners"}
-		uCmd = append(uCmd, squashFile, extractDir)
-	} else {
+	if storageType == "overlay" {
 		uCmd = []string{"unsquashfs", "-f", "-d", extractDir, squashFile}
+	} else {
+		return errors.Errorf("unknown storage type %v", storageType)
 	}
 
 	cmd := exec.Command(uCmd[0], uCmd[1:]...)
@@ -185,35 +178,6 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func which(name string) string {
-	return whichSearch(name, strings.Split(os.Getenv("PATH"), ":"))
-}
-
-func whichSearch(name string, paths []string) string {
-	var search []string
-
-	if strings.ContainsRune(name, os.PathSeparator) {
-		if path.IsAbs(name) {
-			search = []string{name}
-		} else {
-			search = []string{"./" + name}
-		}
-	} else {
-		search = []string{}
-		for _, p := range paths {
-			search = append(search, path.Join(p, name))
-		}
-	}
-
-	for _, fPath := range search {
-		if err := unix.Access(fPath, unix.X_OK); err == nil {
-			return fPath
-		}
-	}
-
-	return ""
 }
 
 func mksquashfsSupportsZstd() bool {
