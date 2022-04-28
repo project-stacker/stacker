@@ -26,7 +26,7 @@ https://golang.org/doc/install#install
 
 ### Other Dependencies
 
-#### Ubuntu 20.04
+#### **Ubuntu 20.04**
 
 The other build dependencies can be satisfied with the following command and
 packages:
@@ -34,20 +34,41 @@ packages:
     sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
     libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev
 
-To run `make check` you will also need:
+#### **Ubuntu 22.04**
+
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
+    libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev cryptsetup-bin pkg-config
+
+
+**To run `make check` you will also need:**
 
     sudo apt install bats btrfs-progs jq libbtrfs-dev tree
 
-umoci - https://github.com/opencontainers/umoci
-squashtool - https://github.com/project-stacker/squashfs
+**umoci** - https://github.com/opencontainers/umoci
+
+**squashtool**, but with a slightly different config than what is mentioned in the install guide (see below) - https://github.com/anuvu/squashfs
 
 Contrary to what the documentation in squashfs implies, squashtool and
 libsquash from squash-tools-ng need to be installed globally, as user specific
 path overrides aren't propagated into `make check`'s test envs.
 
-`make check` also requires the golangci-lint binary to be present in $GOPATH/bin
+Thus, when you reach the step **install into mylocal="$HOME/lib"** from the squashfs guide, use the config below. You can put them at the end of your .bashrc file so you don't need to run them every time.
 
-#### Fedora 31
+    mylocal="/usr/local"
+    export LD_LIBRARY_PATH=$mylocal/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+    export PKG_CONFIG_PATH=$mylocal/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+
+Since the path **/usr/local** is owned by root, when you reach the step to run **make install**, you need to run it as **sudo**.
+
+`make check`  requires the **golangci-lint** binary to be present in $GOPATH/bin
+
+Since there are some tests that run with elevated privileges and use git, it will complain that the stacker folder is unsafe as it is owned by your user. To prevent that, we need to tell git to consider that folder as safe. To do this, open your git config file (**.gitconfig**) and add the following line with the path to your local stacker folder. Below is an example:
+
+    [safe]
+        directory = /home/chofnar/github/stacker
+
+
+#### **Fedora 31**
 
 The other build dependencies can be satisfied with the following command and
 packages:
