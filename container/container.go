@@ -136,10 +136,8 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	}
 
 	// we want to be sure to remove the /stacker from the generated
-	// filesystem after execution. TODO: parameterize this by storage
-	// backend? it will always be "rootfs" for btrfs and "overlay" for the
-	// overlay backend. Maybe this shouldn't even live here.
-	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "rootfs", "stacker"))
+	// filesystem after execution. we should probably parameterize this in
+	// the storage API.
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
 
 	cmd, cleanup, err := embed_exec.GetCommand(
