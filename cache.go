@@ -251,7 +251,8 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 		}
 	}
-
+	overlayDirsChanged := false
+	changedOverlayDirs := make([]string, 0, len(l.OverlayDirs))
 	for _, overlayDir := range l.OverlayDirs {
 		cachedOverlayDir, ok := result.OverlayDirs[overlayDir.Source]
 		if !ok {
@@ -272,11 +273,21 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			return nil, false, err
 		}
 		if dirChanged {
-			log.Infof("cache miss because overlay_dir content changed: %s", overlayDir.Source)
-			return nil, false, nil
+			overlayDirsChanged = true
+			changedOverlayDirs = append(changedOverlayDirs, overlayDir.Source)
 		}
 	}
-
+	if overlayDirsChanged {
+		log.Infof("cache miss because content of %d overlay dirs changed:", len(changedOverlayDirs))
+		for index, dir := range changedOverlayDirs {
+			log.Infof(dir)
+			if !c.config.Debug && index == 1 && len(changedOverlayDirs) > 2 {
+				log.Infof("and %d others. use --debug for complete output", len(changedOverlayDirs)-index-1)
+				break
+			}
+		}
+		return nil, false, nil
+	}
 	return &result, true, nil
 }
 
