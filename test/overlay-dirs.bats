@@ -28,6 +28,11 @@ first:
         [ -x /executable ]
 EOF
     stacker build
+
+    umoci unpack --image oci:first dest
+    [ -f dest/rootfs/file1 ]
+    [ -f dest/rootfs/file2 ]
+    [ -x dest/rootfs/executable ]
 }
 
 @test "import from overlay_dir works" {
@@ -51,6 +56,9 @@ second:
         [ -f /stacker/file ]
 EOF
     stacker build
+
+    umoci unpack --image oci:first dest
+    [ -f dest/rootfs/file ]
 }
 
 @test "overlay_dirs dest works" {
@@ -68,6 +76,9 @@ first:
         [ -f /usr/local/file ]
 EOF
     stacker build
+
+    umoci unpack --image oci:first dest
+    [ -f dest/rootfs/usr/local/file ]
 }
 
 @test "overlay_dirs cache works" {
@@ -114,4 +125,8 @@ first:
         [ "\$(stat --format=%U /usr/local/file )" == "root" ]
 EOF
     stacker build
+
+    umoci unpack --image oci:first dest
+    [ -f dest/rootfs/usr/local/file ]
+    [ -f dest/rootfs/usr/local/file2 ]
 }
