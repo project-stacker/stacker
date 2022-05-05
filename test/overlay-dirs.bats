@@ -112,25 +112,43 @@ EOF
 }
 
 @test "overlay_dirs cache works" {
-    mkdir dir_to_overlay
-    touch dir_to_overlay/file
+    mkdir dir_to_overlay1
+    touch dir_to_overlay1/file
+    mkdir dir_to_overlay2
+    touch dir_to_overlay2/file
+    mkdir dir_to_overlay3
+    touch dir_to_overlay3/file
     cat > stacker.yaml << EOF
 first:
     from:
         type: oci
         url: $CENTOS_OCI
     overlay_dirs:
-        - source: dir_to_overlay
-          dest: /usr/local
-    run: |
-        [ -f /usr/local/file ]
+        - source: dir_to_overlay1
+          dest: /usr/local1
+        - source: dir_to_overlay2
+          dest: /usr/local2
+        - source: dir_to_overlay3
+          dest: /usr/local3
 EOF
     stacker build
     stacker build
     echo $output | grep "found cached layer first"
-    echo "modifying file" > dir_to_overlay/file
+    echo "modifying file" > dir_to_overlay1/file
+    echo "modifying file" > dir_to_overlay2/file
+    echo "modifying file" > dir_to_overlay3/file
+    NO_DEBUG=1
     stacker build
-    echo $output | grep "cache miss because overlay_dir content changed"
+    echo $output | grep "cache miss because content of 3 overlay dirs changed:"
+    echo $output | grep "and 1 others. use --debug for complete output"
+    echo "modifying file again" > dir_to_overlay1/file
+    echo "modifying file again" > dir_to_overlay2/file
+    echo "modifying file again" > dir_to_overlay3/file
+    NO_DEBUG=0
+    stacker build
+    echo $output | grep "cache miss because content of 3 overlay dirs changed:"
+    result=$(echo $output | grep "and 1 others. use --debug for complete output" || echo "empty")
+    echo $result | grep "empty"
     rm -rf roots
     stacker build
     echo $output | grep "cache miss because overlay_dir was missing"

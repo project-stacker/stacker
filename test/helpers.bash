@@ -16,11 +16,20 @@ function skip_if_no_unpriv_overlay {
 }
 
 function run_stacker {
+    echo "Debug mode: $NO_DEBUG"
     if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
-        run "${ROOT_DIR}/stacker" --debug "$@"
+        if [[ -n "$NO_DEBUG" && "$NO_DEBUG" = 1 ]]; then
+            run "${ROOT_DIR}/stacker" "$@"
+        else
+            run "${ROOT_DIR}/stacker" --debug "$@"
+        fi
     else
         skip_if_no_unpriv_overlay
-        run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
+        if [[ -n "$NO_DEBUG" && "$NO_DEBUG" = 1 ]]; then
+            run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
+        else
+            run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
+        fi
     fi
 }
 
