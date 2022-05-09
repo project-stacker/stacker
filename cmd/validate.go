@@ -3,11 +3,22 @@ package main
 import (
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/project-stacker/stacker"
 	"github.com/urfave/cli"
 )
+
+/* check that roots-dir./ name don't contain ':', it will interfere with overlay mount options
+which is using :s as separator */
+func validateRootsDirName(rootsDir string) error {
+	if strings.Contains(rootsDir, ":") {
+		return errors.Errorf("using ':' in the name of --roots-dir (%s) is forbidden due to overlay constraints", rootsDir)
+	}
+
+	return nil
+}
 
 func validateBuildFailureFlags(ctx *cli.Context) error {
 	if ctx.Bool("shell-fail") {
@@ -45,7 +56,6 @@ func validateLayerTypeFlags(ctx *cli.Context) error {
 }
 
 func validateFileSearchFlags(ctx *cli.Context) error {
-
 	// Use the current working directory if base search directory is "."
 	if ctx.String("search-dir") == "." {
 		wd, err := os.Getwd()
