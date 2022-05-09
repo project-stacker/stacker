@@ -233,6 +233,12 @@ func main() {
 			config.RootFSDir = ctx.String("roots-dir")
 		}
 
+		// Validate roots-dir name does not contain ':'
+		err = validateRootsDirName(config.RootFSDir)
+		if err != nil {
+			return err
+		}
+
 		config.StackerDir, err = filepath.Abs(config.StackerDir)
 		if err != nil {
 			return err

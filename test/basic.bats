@@ -158,3 +158,33 @@ EOF
     # they exit(0) for now :(
     "${ROOT_DIR}/stacker" | grep "COMMANDS"
 }
+
+@test "use colons in roots-dir path name should fail" {
+    local tmpd=$(pwd)
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+        touch /foo
+EOF
+    bad_stacker --roots-dir $tmpd/with:colon build
+    [ "$status" -eq 1 ]
+    echo $output | grep "forbidden"
+} 
+
+@test "use colons in layer name should fail" {
+    local tmpd=$(pwd)
+    cat > stacker.yaml <<EOF
+centos:with:colon:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+        touch /foo
+EOF
+    bad_stacker build
+    [ "$status" -eq 1 ]
+    echo $output | grep "forbidden"
+} 

@@ -274,6 +274,14 @@ func (b *Builder) build(s types.Storage, file string) error {
 		return err
 	}
 
+	/* check that layers name don't contain ':', it will interfere with overlay mount options
+	which is using :s as separator */
+	for _, name := range order {
+		if strings.Contains(name, ":") {
+			return errors.Errorf("using ':' in the layer name (%s) is forbidden due to overlay constraints", name)
+		}
+	}
+
 	log.Debugf("Dependency Order %v", order)
 
 	var oci casext.Engine
