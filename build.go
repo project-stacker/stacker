@@ -54,7 +54,7 @@ func NewBuilder(opts *BuildArgs) *Builder {
 func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storage, oci casext.Engine, layerType types.LayerType, l types.Layer, name string) error {
 	opts := b.opts
 
-	layerName := layerType.LayerName(name)
+	//layerName := layerType.LayerName(name)
 	descPaths, err := oci.ResolveReference(context.Background(), layerName)
 	if err != nil {
 		return err
