@@ -602,7 +602,7 @@ func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage
 		"lxc.autodev":                   "1",
 		"lxc.pty.max":                   "1024",
 		"lxc.mount.entry":               "none dev/shm tmpfs defaults,create=dir 0 0",
-		"lxc.uts.name":                  name,
+		"lxc.uts.name":                  "stacker",
 		"lxc.net.0.type":                "none",
 		"lxc.environment":               fmt.Sprintf("PATH=%s", container.ReasonableDefaultPath),
 		"lxc.apparmor.allow_incomplete": "1",
