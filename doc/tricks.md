@@ -47,3 +47,23 @@ the utilities available needed to manipulate that base, and then asking stacker
 to create a layer based on this tarball, without actually running anything
 inside of the layer (which means e.g. absence of a shell or libc or whatever is
 fine).
+
+Another way to accomplish something similar is to use a [distroless](https://github.com/GoogleContainerTools/distroless) layer:
+
+    build:
+        from:
+            type: docker
+            url: docker://ubuntu:latest
+        binds:
+            - /tmp/dir_to_overlay -> /dir_to_overlay
+        run: |
+            touch /dir_to_overlay/binaryfile
+        build_only: true
+    contents:
+        from:
+            type: docker
+            url: docker://gcr.io/distroless/base
+        overlay_dirs:
+            - source: /tmp/dir_to_overlay
+              dest: /dir_to_overlay
+You can use the first layer as a build env, and copy your binary to a bind-mounted folder. Use overlay_dirs with that same folder to have the binary in the distroless layer.

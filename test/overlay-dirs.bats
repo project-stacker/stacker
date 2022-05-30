@@ -53,6 +53,36 @@ EOF
     stacker build
 }
 
+@test "build binary and import in distroless" {
+    mkdir dir_to_overlay
+    chmod -R 777 dir_to_overlay
+    cat > stacker.yaml << EOF
+build:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    binds:
+        - dir_to_overlay -> /dir_to_overlay
+    run: |
+        touch /dir_to_overlay/binaryfile
+    build_only: true
+contents:
+    from:
+        type: docker
+        url: docker://gcr.io/distroless/base
+    overlay_dirs:
+        - source: dir_to_overlay
+          dest: /dir_to_overlay
+EOF
+    stacker build
+    ls dir_to_overlay | grep "binaryfile"
+    
+    umoci unpack --image oci:contents dest
+    
+    [ -f dest/rootfs/dir_to_overlay/binaryfile ]
+}
+
+
 @test "overlay_dirs dest works" {
     mkdir dir_to_overlay
     touch dir_to_overlay/file
