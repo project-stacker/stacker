@@ -113,11 +113,11 @@ EOF
 
 @test "overlay_dirs cache works" {
     mkdir dir_to_overlay1
-    touch dir_to_overlay1/file
+    touch dir_to_overlay1/file1.txt
     mkdir dir_to_overlay2
-    touch dir_to_overlay2/file
+    touch dir_to_overlay2/file2.txt
     mkdir dir_to_overlay3
-    touch dir_to_overlay3/file
+    touch dir_to_overlay3/file3.txt
     cat > stacker.yaml << EOF
 first:
     from:
@@ -134,20 +134,27 @@ EOF
     stacker build
     stacker build
     echo $output | grep "found cached layer first"
-    echo "modifying file" > dir_to_overlay1/file
-    echo "modifying file" > dir_to_overlay2/file
-    echo "modifying file" > dir_to_overlay3/file
+    echo "modifying file" > dir_to_overlay1/file1.txt
+    echo "modifying file" > dir_to_overlay2/file2.txt
+    echo "modifying file" > dir_to_overlay3/file3.txt
     NO_DEBUG=1
     stacker build
     echo $output | grep "cache miss because content of 3 overlay dirs changed:"
-    echo $output | grep "and 1 others. use --debug for complete output"
-    echo "modifying file again" > dir_to_overlay1/file
-    echo "modifying file again" > dir_to_overlay2/file
-    echo "modifying file again" > dir_to_overlay3/file
+    echo $output | grep "Changed overlay_dir:"
+    echo $output | grep "dir_to_overlay2"
+    echo $output | grep "file2.txt"
+    echo $output | grep "and 1 other overlay_dirs. use --debug for complete output"
+    # now with debug
+    echo "modifying file again" > dir_to_overlay1/file1.txt
+    echo "modifying file again" > dir_to_overlay2/file2.txt
+    echo "modifying file again" > dir_to_overlay3/file3.txt
     NO_DEBUG=0
     stacker build
     echo $output | grep "cache miss because content of 3 overlay dirs changed:"
-    result=$(echo $output | grep "and 1 others. use --debug for complete output" || echo "empty")
+    echo $output | grep "Changed overlay_dir:"
+    echo $output | grep "dir_to_overlay3"
+    echo $output | grep "file3.txt"
+    result=$(echo $output | grep "and 1 other overlay_dirs. use --debug for complete output" || echo "empty")
     echo $result | grep "empty"
     rm -rf roots
     stacker build
