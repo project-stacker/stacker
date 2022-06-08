@@ -252,7 +252,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		}
 	}
 	overlayDirsChanged := false
-	changedOverlayDirs := make([]string, 0, len(l.OverlayDirs))
+	changedOverlayDirs := make(map[string][]string)
 	for _, overlayDir := range l.OverlayDirs {
 		cachedOverlayDir, ok := result.OverlayDirs[overlayDir.Source]
 		if !ok {
@@ -274,17 +274,25 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		}
 		if dirChanged {
 			overlayDirsChanged = true
-			changedOverlayDirs = append(changedOverlayDirs, overlayDir.Source)
+			changedOverlayDirs[overlayDir.Source], err = cachedFileDiff(overlayDir.Source, cachedOverlayDir.Hash)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 	}
 	if overlayDirsChanged {
 		log.Infof("cache miss because content of %d overlay dirs changed:", len(changedOverlayDirs))
-		for index, dir := range changedOverlayDirs {
-			log.Infof(dir)
-			if !c.config.Debug && index == 1 && len(changedOverlayDirs) > 2 {
-				log.Infof("and %d others. use --debug for complete output", len(changedOverlayDirs)-index-1)
+		counter := 0
+		for dir, changedFiles := range changedOverlayDirs {
+			log.Infof("Changed overlay_dir: %v\nContents that changed:", dir)
+			for _, file := range changedFiles {
+				log.Infof("%v", path.Join(dir, file))
+			}
+			if !c.config.Debug && counter == 1 && len(changedOverlayDirs) > 2 {
+				log.Infof("and %d other overlay_dirs. use --debug for complete output", len(changedOverlayDirs)-counter-1)
 				break
 			}
+			counter++
 		}
 		return nil, false, nil
 	}
@@ -317,6 +325,40 @@ func isCachedDirChanged(dirPath string, cachedDirHash string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func cachedFileDiff(dirPath string, cachedDirHash string) ([]string, error) {
+	rawCachedImport, err := base64.StdEncoding.DecodeString(cachedDirHash)
+	if err != nil {
+		return nil, err
+	}
+
+	cachedDH, err := mtree.ParseSpec(bytes.NewBuffer(rawCachedImport))
+	if err != nil {
+		return nil, err
+	}
+
+	dh, err := walkImport(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	diff, err := mtree.Compare(cachedDH, dh, mtreeKeywords)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(diff) == 0 {
+		return nil, nil
+	}
+
+	changedFiles := make([]string, 0)
+
+	for _, inodeDiff := range diff {
+		changedFiles = append(changedFiles, inodeDiff.Path())
+	}
+
+	return changedFiles, nil
 }
 
 func getEncodedMtree(path string) (string, error) {
