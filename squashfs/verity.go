@@ -81,7 +81,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const VerityRootHashAnnotation = "com.cisco.stacker.squashfs_verity_root_hash"
+const VerityRootHashAnnotation = "io.stackeroci.stacker.squashfs_verity_root_hash"
 
 type verityDeviceType struct {
 	Flags      uint

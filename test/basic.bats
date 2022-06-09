@@ -92,7 +92,7 @@ EOF
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
-    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."com.cisco.stacker.git_version"')
+    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.git_version"')
     # ci does not clone tags. There it tests the fallback-to-commit path.
     myGitVersion=$(run_git describe --tags) || myGitVersion=$(run_git rev-parse HEAD)
     [ -n "$(run_git status --porcelain --untracked-files=no)" ] &&
@@ -100,7 +100,7 @@ EOF
     [ "$publishedGitVersion" = "$myGitVersion$dirty" ]
 
     # need to trim the extra newline from jq
-    cat oci/blobs/sha256/$manifest | jq -r '.annotations."com.cisco.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
+    cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
 
     # now we need to do --substitute FAVICON=favicon.ico
     sed -e 's/$FAVICON/favicon.ico/g' stacker.yaml > stacker_after_subs

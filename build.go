@@ -25,16 +25,17 @@ import (
 const DefaultShell = "/usr/bin/sh"
 
 type BuildArgs struct {
-	Config       types.StackerConfig
-	LeaveUnladen bool
-	NoCache      bool
-	Substitute   []string
-	OnRunFailure string
-	LayerTypes   []types.LayerType
-	OrderOnly    bool
-	HashRequired bool
-	SetupOnly    bool
-	Progress     bool
+	Config               types.StackerConfig
+	LeaveUnladen         bool
+	NoCache              bool
+	Substitute           []string
+	OnRunFailure         string
+	LayerTypes           []types.LayerType
+	OrderOnly            bool
+	HashRequired         bool
+	SetupOnly            bool
+	Progress             bool
+	AnnotationsNamespace string
 }
 
 // Builder is responsible for building the layers based on stackerfiles
@@ -226,10 +227,10 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 
 	if gitVersion != "" {
 		log.Debugf("setting git version annotation to %s", gitVersion)
-		annotations[GitVersionAnnotation] = gitVersion
+		annotations[getGitVersionAnnotation(opts.AnnotationsNamespace)] = gitVersion
 	}
 
-	annotations[StackerContentsAnnotation] = sf.AfterSubstitutions
+	annotations[getStackerContentsAnnotation(opts.AnnotationsNamespace)] = sf.AfterSubstitutions
 
 	history := ispec.History{
 		EmptyLayer: true, // this is only the history for imageConfig edit

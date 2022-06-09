@@ -62,6 +62,11 @@ func initCommonBuildFlags() []cli.Flag {
 			Name:  "order-only",
 			Usage: "show the build order without running the actual build",
 		},
+		cli.StringFlag{
+			Name:  "annotations-namespace",
+			Usage: "set OCI annotations namespace in the OCI image manifest",
+			Value: "io.stackeroci",
+		},
 	}
 }
 
@@ -82,13 +87,14 @@ func beforeBuild(ctx *cli.Context) error {
 
 func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 	args := stacker.BuildArgs{
-		Config:       config,
-		NoCache:      ctx.Bool("no-cache"),
-		Substitute:   ctx.StringSlice("substitute"),
-		OnRunFailure: ctx.String("on-run-failure"),
-		OrderOnly:    ctx.Bool("order-only"),
-		HashRequired: ctx.Bool("require-hash"),
-		Progress:     shouldShowProgress(ctx),
+		Config:               config,
+		NoCache:              ctx.Bool("no-cache"),
+		Substitute:           ctx.StringSlice("substitute"),
+		OnRunFailure:         ctx.String("on-run-failure"),
+		OrderOnly:            ctx.Bool("order-only"),
+		HashRequired:         ctx.Bool("require-hash"),
+		Progress:             shouldShowProgress(ctx),
+		AnnotationsNamespace: ctx.String("annotations-namespace"),
 	}
 	var err error
 	verity := squashfs.VerityMetadata(!ctx.Bool("no-squashfs-verity"))
