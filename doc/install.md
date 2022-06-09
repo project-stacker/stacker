@@ -32,12 +32,12 @@ The other build dependencies can be satisfied with the following command and
 packages:
 
     sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
-    libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev
+    sudo apt install libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev
 
 #### **Ubuntu 22.04**
 
     sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
-    libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev cryptsetup-bin pkg-config
+    sudo apt install libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev cryptsetup-bin pkg-config libsquashfs1 libsquashfs-dev
 
 
 **To run `make check` you will also need:**
