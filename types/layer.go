@@ -44,9 +44,43 @@ type OverlayDir struct {
 
 type Imports []Import
 
-func getStringOrStringSlice(iface interface{}, xform func(string) ([]string, error)) ([]string, error) {
+func validateDataAsBind(i interface{}) (map[interface{}]interface{}, error) {
+	bindMap, ok := i.(map[interface{}]interface{})
+	if !ok {
+		return nil, errors.Errorf("unable to cast into map[interface{}]interface{}: %T", i)
+	}
+
+	// validations
+	bindSource, ok := bindMap["Source"]
+	if !ok {
+		return nil, errors.Errorf("bind source missing: %v", i)
+	}
+
+	_, ok = bindSource.(string)
+	if !ok {
+		return nil, errors.Errorf("unknown bind source type, expected string: %T", i)
+	}
+
+	bindDest, ok := bindMap["Dest"]
+	if !ok {
+		return nil, errors.Errorf("bind dest missing: %v", i)
+	}
+
+	_, ok = bindDest.(string)
+	if !ok {
+		return nil, errors.Errorf("unknown bind dest type, expected string: %T", i)
+	}
+
+	if bindSource == "" || bindDest == "" {
+		return nil, errors.Errorf("empty source or dest: %v", i)
+	}
+
+	return bindMap, nil
+}
+
+func getStringOrStringSlice(data interface{}, xform func(string) ([]string, error)) ([]string, error) {
 	// The user didn't supply run: at all, so let's not do anything.
-	if iface == nil {
+	if data == nil {
 		return []string{}, nil
 	}
 
@@ -54,12 +88,23 @@ func getStringOrStringSlice(iface interface{}, xform func(string) ([]string, err
 	// run:
 	//     - foo
 	//     - bar
-	ifs, ok := iface.([]interface{})
+	ifs, ok := data.([]interface{})
 	if ok {
 		strs := []string{}
 		for _, i := range ifs {
-			s, ok := i.(string)
-			if !ok {
+			s := ""
+			switch v := i.(type) {
+			case string:
+				s = v
+			case interface{}:
+				bindMap, err := validateDataAsBind(i)
+				if err != nil {
+					return nil, err
+				}
+
+				// validations passed, return as string in form: source -> dest
+				s = fmt.Sprintf("%s -> %s", bindMap["Source"], bindMap["Dest"])
+			default:
 				return nil, errors.Errorf("unknown run array type: %T", i)
 			}
 
@@ -72,7 +117,7 @@ func getStringOrStringSlice(iface interface{}, xform func(string) ([]string, err
 	// run: |
 	//     echo hello world
 	//     echo goodbye cruel world
-	line, ok := iface.(string)
+	line, ok := data.(string)
 	if ok {
 		return xform(line)
 	}
@@ -80,12 +125,12 @@ func getStringOrStringSlice(iface interface{}, xform func(string) ([]string, err
 	// This is how it is after we do our find replace and re-set it; as a
 	// convenience (so we don't have to re-wrap it in interface{}), let's
 	// handle []string
-	strs, ok := iface.([]string)
+	strs, ok := data.([]string)
 	if ok {
 		return strs, nil
 	}
 
-	return nil, errors.Errorf("unknown directive type: %T", iface)
+	return nil, errors.Errorf("unknown directive type: %T", data)
 }
 
 // StringList allows this type to be parsed from the yaml parser as either a
