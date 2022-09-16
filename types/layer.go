@@ -191,6 +191,7 @@ type Layer struct {
 	BuildOnly      bool              `yaml:"build_only"`
 	Binds          Binds             `yaml:"binds"`
 	RuntimeUser    string            `yaml:"runtime_user"`
+	Annotations    map[string]string `yaml:"annotations"`
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {

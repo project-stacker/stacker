@@ -219,6 +219,11 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		return err
 	}
 
+	// add user-defined annotations
+	for k, v := range l.Annotations {
+		annotations[k] = v
+	}
+
 	// compute the git version for the directory that the stacker file is
 	// in. we don't care if it's not a git directory, because in that case
 	// we'll fall back to putting the whole stacker file contents in the
