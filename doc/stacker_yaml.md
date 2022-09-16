@@ -218,3 +218,16 @@ In this particular case the parent folder of the current folder, let's call it
 When `stacker build -f parent/folder1/stacker.yaml` is invoked, stacker would search
 for the other two stacker.yaml files and build them first, before building
 the stacker.yaml specified in the command line.
+
+##### `annotations`
+
+`annotations` is a user-specified key value map that will be included in the final OCI image.
+
+    annotations:
+      a.b.c.key: abc_val
+      p.q.r.key: pqr_val
+
+While `config` section supports a similar `labels`, it is more pertitent to the
+image runtime. On the other hand, `annotations` is intended to be
+image-specific metadata aligned with the
+[annotations in the image spec](https://github.com/opencontainers/image-spec/blob/main/annotations.md).
