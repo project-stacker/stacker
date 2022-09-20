@@ -10,7 +10,7 @@ STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/
 
 build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd
 
-STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
+STACKER_BUILD_BASE_IMAGE?=docker://alpine:3.16
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-4.0
 
