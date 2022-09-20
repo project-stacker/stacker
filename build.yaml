@@ -18,9 +18,7 @@ build-env:
       libcap-dev libcap-static \
       libapparmor-dev \
       zlib-static lz4-static \
-      zstd-dev \
-      xz \
-      gettext-dev \
+      zstd-static \
       lvm2-dev util-linux-dev \
       squashfs-tools-ng-dev \
       linux-headers
@@ -59,14 +57,6 @@ build-env:
     cd lxc
     ./autogen.sh
     ./configure --enable-static-binaries --prefix=/usr
-    make -j$(grep -c processor /proc/cpuinfo) install
-    cd /
-
-    # build lzma
-    git clone -b v5.2.6 https://github.com/xz-mirror/xz.git
-    cd xz
-    ./autogen.sh
-    ./configure --enable-static --enable-shared --prefix=/usr
     make -j$(grep -c processor /proc/cpuinfo) install
     cd /
 
