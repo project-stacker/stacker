@@ -221,7 +221,9 @@ the stacker.yaml specified in the command line.
 
 ##### `annotations`
 
-`annotations` is a user-specified key value map that will be included in the final OCI image.
+`annotations` is a user-specified key value map that will be included in the
+final OCI image. Note that these annotations are included in the image manifest
+itself and not as part of the index.json.
 
     annotations:
       a.b.c.key: abc_val
