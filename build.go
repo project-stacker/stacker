@@ -22,7 +22,7 @@ import (
 	"github.com/project-stacker/stacker/types"
 )
 
-const DefaultShell = "/usr/bin/sh"
+const DefaultShell = "/bin/sh"
 
 type BuildArgs struct {
 	Config               types.StackerConfig
