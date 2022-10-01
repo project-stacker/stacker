@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="doc/logo.png" alt="stacker" height="130"/>
+    <img src="https://github.com/project-stacker/assets/blob/main/images/logo/stacker-logo-text.png" alt="stacker" height="130"/>
 </p>
 
 
