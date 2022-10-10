@@ -13,6 +13,7 @@ Stacker is a tool for building OCI images natively via a declarative yaml format
 * Single binary
 * Rootless builds
 * Hermetically sealed builds using LXC containers
+* Also available as a [GitHub action](https://github.com/project-stacker/stacker-build-push-action)
 
 ### Installation
 
