@@ -8,7 +8,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
 
-build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd
+build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -gcflags all='-N -l' -o $3 ./cmd
 
 STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
 LXC_CLONE_URL?=https://github.com/lxc/lxc

@@ -33,8 +33,12 @@ func IsContainersImageLayer(from string) bool {
 }
 
 type Import struct {
-	Path string `yaml:"path"`
-	Hash string `yaml:"hash"`
+	Path  string  `yaml:"path"`
+	Hash  string  `yaml:"hash"`
+	Dest  *string `yaml:"dest"`
+	Perms *uint16 `yaml:"perms"`
+	Uid   *uint   `yaml:"user"`
+	Gid   *uint   `yaml:"group"`
 }
 
 type OverlayDir struct {

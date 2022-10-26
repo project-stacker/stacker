@@ -1,0 +1,27 @@
+build:
+  build_only: true
+  from:
+    type: docker
+    url: docker://zothub.io/c3/rockylinux/go-devel-amd64:1.19.2
+  run: |
+    mkdir /src
+    cd /src
+    cat <<EOF > test.go
+    package main
+
+    import "fmt"
+
+    func main() {
+      fmt.Println("vim-go")
+    }
+
+    go build -v -o test.bin test.go
+
+test:
+  from:
+    type: docker
+    url: docker://zothub.io/c3/rockylinux/static-amd64:9
+  import:
+    - path: stacker://build/test.bin
+      dest: /test.bin
+  full_command: /test.bin

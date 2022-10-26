@@ -430,6 +430,10 @@ func (b *Builder) build(s types.Storage, file string) error {
 			continue
 		}
 
+		if err := CopyAfterImport(opts.Config, name, l.Imports, opts.Progress); err != nil {
+			return err
+		}
+
 		if len(l.Run) != 0 {
 			rootfs := path.Join(opts.Config.RootFSDir, name, "rootfs")
 			shellScript := path.Join(opts.Config.StackerDir, "imports", name, ".stacker-run.sh")

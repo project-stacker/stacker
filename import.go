@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -328,6 +329,40 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 	// Now, delete all the old imports.
 	for _, ext := range existing {
 		err = os.RemoveAll(path.Join(dir, ext.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CopyAfterImport copies imported files into the layer rootfs.
+func CopyAfterImport(c types.StackerConfig, name string, imports types.Imports, progress bool) error {
+	for _, i := range imports {
+		if i.Dest == nil || *i.Dest == "" {
+			continue
+		}
+
+		src := path.Join("/stacker", "test.bin") // FIXME: additional checks and url parsing
+		_, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+
+		srcfh, err := os.Open(src)
+		if err != nil {
+			return err
+		}
+		defer srcfh.Close()
+
+		dstfh, err := os.Create(*i.Dest)
+		if err != nil {
+			return err
+		}
+		defer dstfh.Close()
+
+		_, err = io.Copy(dstfh, srcfh)
 		if err != nil {
 			return err
 		}
