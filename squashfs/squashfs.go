@@ -13,6 +13,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/project-stacker/stacker/log"
+	"golang.org/x/sys/unix"
 )
 
 var checkZstdSupported sync.Once
@@ -160,24 +162,72 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths, verity Verit
 	return blob, GenerateSquashfsMediaType(compression, verity), rootHash, nil
 }
 
+func which(name string) string {
+	return whichSearch(name, strings.Split(os.Getenv("PATH"), ":"))
+}
+
+func whichSearch(name string, paths []string) string {
+	var search []string
+
+	if strings.ContainsRune(name, os.PathSeparator) {
+		if path.IsAbs(name) {
+			search = []string{name}
+		} else {
+			search = []string{"./" + name}
+		}
+	} else {
+		search = []string{}
+		for _, p := range paths {
+			search = append(search, path.Join(p, name))
+		}
+	}
+
+	for _, fPath := range search {
+		if err := unix.Access(fPath, unix.X_OK); err == nil {
+			return fPath
+		}
+	}
+
+	return ""
+}
+
 func ExtractSingleSquash(squashFile string, extractDir string, storageType string) error {
 	err := os.MkdirAll(extractDir, 0755)
 	if err != nil {
 		return err
 	}
-
 	var uCmd []string
-	if storageType == "overlay" {
+	ruid := os.Getenv("STACKER_REAL_UID")
+	log.Debugf("euid = %d uid = %d STACKER_REAL_UID=%s\n", os.Geteuid(), os.Getuid(), ruid)
+	if ruid == "" || ruid == "0" {
+		uCmd = []string{"mount", "-oloop,ro", "-tsquashfs", squashFile, extractDir}
+		// if err = unix.Mount(squashFile, extractDir, "squashfs", 0, ""); err != nil {
+		//	return err
+		//}
+	} else if p := which("squashfuse"); p != "" {
+		// uCmd = []string{"sh", "-xc", "exec >>/tmp/fuse.log 2>&1; [ -f /etc/fuse.conf ] && cat /etc/fuse.conf; exec squashfuse -f -o allow_other,debug,ro,nodev,suid \"$0\" \"$1\" &", squashFile, extractDir}
+		uCmd = []string{"sh", "-xc", "exec >>/tmp/fuse.log 2>&1; [ -f /etc/fuse.conf ] && cat /etc/fuse.conf; exec squashfuse -f -o allow_other,debug \"$0\" \"$1\" &", squashFile, extractDir}
+	} else if p := which("unsquashfs"); p != "" {
 		uCmd = []string{"unsquashfs", "-f", "-d", extractDir, squashFile}
 	} else {
-		return errors.Errorf("unknown storage type %v", storageType)
+		return errors.Errorf("Unable to extract squash archive %s", squashFile)
 	}
 
+	log.Debugf("Extracting %s -> %s with %s\n", squashFile, extractDir, strings.Join(uCmd, " "))
 	cmd := exec.Command(uCmd[0], uCmd[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	r := cmd.Run()
+	cmd = exec.Command("ls", []string{"-l", squashFile, extractDir}...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = nil
+	cmd.Run()
+
+	return r
+
 }
 
 func mksquashfsSupportsZstd() bool {

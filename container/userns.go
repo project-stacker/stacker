@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	stackeridmap "github.com/project-stacker/stacker/container/idmap"
-	"github.com/project-stacker/stacker/embed-exec"
+	embed_exec "github.com/project-stacker/stacker/embed-exec"
 	"github.com/project-stacker/stacker/log"
 	"github.com/project-stacker/stacker/types"
 )
@@ -17,12 +17,14 @@ import (
 func MaybeRunInUserns(config types.StackerConfig, userCmd []string) error {
 	// TODO: we should try to use user namespaces when we're root as well.
 	// For now we don't.
+	env := append(os.Environ(), fmt.Sprintf("REAL_UID=%d", os.Geteuid()))
 	if os.Geteuid() == 0 {
 		log.Debugf("No uid mappings, running as root")
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Env = env
 		return errors.WithStack(cmd.Run())
 	}
 
@@ -87,5 +89,6 @@ func MaybeRunInUserns(config types.StackerConfig, userCmd []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = env
 	return errors.WithStack(cmd.Run())
 }

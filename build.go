@@ -420,6 +420,8 @@ func (b *Builder) build(s types.Storage, file string) error {
 			return err
 		}
 
+		log.Debugf("Finished with the setup")
+
 		if opts.SetupOnly {
 			err = c.SaveConfigFile(path.Join(opts.Config.RootFSDir, name, "lxc.conf"))
 			if err != nil {
@@ -671,7 +673,7 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 		log.Debugf("bind mounting %s into container", importsDir)
 		err = c.BindMount(importsDir, "/stacker", "ro")
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "bind mount failed %s", importsDir)
 		}
 	} else {
 		log.Debugf("not bind mounting %s into container", importsDir)

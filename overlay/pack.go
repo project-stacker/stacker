@@ -58,9 +58,12 @@ func (o *overlay) Unpack(tag, name string) error {
 
 	pool := NewThreadPool(runtime.NumCPU())
 
+	log.Debugf("Unpacking tag '%s' name '%s' to %s", tag, name, cacheDir)
+
 	for _, layer := range manifest.Layers {
 		digest := layer.Digest
 		contents := overlayPath(o.config, digest, "overlay")
+		log.Debugf("contents=%s mediatype=%s digest=%s", contents, layer.MediaType, contents)
 		if squashfs.IsSquashfsMediaType(layer.MediaType) {
 			// don't really need to do this in parallel, but what
 			// the hell.
@@ -652,10 +655,11 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 }
 
 func unpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashfs bool) error {
+	log.Debugf("unpackOne ociDir=%s bundlePath=%s digest=%s squash=%t", ociDir, bundlePath, digest, isSquashfs)
 	if isSquashfs {
 		return squashfs.ExtractSingleSquash(
 			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
-			path.Join(bundlePath, "rootfs"), "overlay")
+			bundlePath, "overlay")
 	}
 
 	oci, err := umoci.OpenLayout(ociDir)
