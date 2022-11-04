@@ -17,9 +17,10 @@ import (
 func MaybeRunInUserns(config types.StackerConfig, userCmd []string) error {
 	// TODO: we should try to use user namespaces when we're root as well.
 	// For now we don't.
-	env := append(os.Environ(), fmt.Sprintf("REAL_UID=%d", os.Geteuid()))
-	if os.Geteuid() == 0 {
-		log.Debugf("No uid mappings, running as root")
+	const envName = "STACKER_REAL_UID"
+	env := os.Environ()
+	realuid := os.Getenv(envName)
+	if realuid != "" {
 		cmd := exec.Command(userCmd[0], userCmd[1:]...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -27,6 +28,8 @@ func MaybeRunInUserns(config types.StackerConfig, userCmd []string) error {
 		cmd.Env = env
 		return errors.WithStack(cmd.Run())
 	}
+
+	env = append(env, fmt.Sprintf("%s=%d", envName, os.Geteuid()))
 
 	idmapSet, err := stackeridmap.ResolveCurrentIdmapSet()
 	if err != nil {

@@ -6,11 +6,20 @@
 #include <signal.h>
 #include <sched.h>
 #include <errno.h>
+#include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 
 #include <lxc/lxccontainer.h>
+
+#define STACK_SIZE (1024 * 1024)
+
+struct child_args {
+	char **argv;        /* Command to be executed by child, with args */
+	int    sk_pair[2];  /* Pipe used to synchronize parent and child */
+	int command_start;
+};
 
 static int spawn_container(char *name, char *lxcpath, char *config)
 {
@@ -71,11 +80,49 @@ static int map_id(char *args[])
 	return 0;
 }
 
+static int childFunc (void *arg) {
+	struct child_args *args = arg;
+	char c = 'x';
+	int ret = 0;
+
+	close(args->sk_pair[0]);
+
+	ret = mount("proc", "/proc", "proc", 0, NULL);
+	if (ret != 0) {
+		fprintf(stderr, "mounting proc failed: %m\n");
+		close(args->sk_pair[1]);
+		exit(1);
+	}
+
+	// tell the parent we unshared
+	if (write(args->sk_pair[1], &c, 1) != 1) {
+		fprintf(stderr, "write: %m\n");
+		close(args->sk_pair[1]);
+		exit(1);
+	}
+
+	// wait for the parent to map our ids
+	if (read(args->sk_pair[1], &c, 1) != 1) {
+		fprintf(stderr, "child read(): %m\n");
+		close(args->sk_pair[1]);
+		exit(1);
+	}
+	close(args->sk_pair[1]);
+
+	// let's party
+	execvp(args->argv[args->command_start], args->argv + args->command_start);
+	fprintf(stderr, "usernsexec failed\n");
+	exit(1);
+}
+
+
 static int do_usernsexec(int argc, char *argv[], int *status)
 {
 	pid_t pid;
-	int sk_pair[2], ret, cur, group_start = -1, command_start = -1;
+	int ret, cur, group_start = -1, command_start = -1;
 	char c = 'x', thepid[20];
+	static char child_stack[STACK_SIZE];
+	struct child_args args;
 
 	for (cur = 1; argv[cur] != NULL; cur++) {
 		if (!strcmp(argv[cur], "g")) {
@@ -93,54 +140,36 @@ static int do_usernsexec(int argc, char *argv[], int *status)
 	}
 
 
-	if (socketpair(PF_LOCAL, SOCK_SEQPACKET, 0, sk_pair) < 0) {
+	if (socketpair(PF_LOCAL, SOCK_SEQPACKET, 0, args.sk_pair) < 0) {
 		fprintf(stderr, "socketpair(): %m\n");
 		return -1;
 	}
 
-	pid = fork();
+    printf("main, command_start=%d\n", command_start);
+	args.argv = &argv[optind];
+	args.command_start = command_start;
+
+	int flags = 0;
+
+	flags |= CLONE_NEWUSER;
+	flags |= CLONE_NEWNS;
+	flags |= CLONE_NEWPID;
+
+	pid = clone(childFunc, child_stack + STACK_SIZE, flags | SIGCHLD, &args);
 	if (pid < 0) {
-		close(sk_pair[0]);
-		close(sk_pair[1]);
+		close(args.sk_pair[0]);
+		close(args.sk_pair[1]);
 		fprintf(stderr, "fork(): %m\n");
 		return -1;
 	}
 
-	if (!pid) {
-		close(sk_pair[0]);
+	fprintf(stderr, "child pid is %d\n", pid);
 
-		if (unshare(CLONE_NEWUSER | CLONE_NEWNS)) {
-			fprintf(stderr, "unshare: %m\n");
-			close(sk_pair[1]);
-			exit(1);
-		}
-
-		// tell the parent we unshared
-		if (write(sk_pair[1], &c, 1) != 1) {
-			fprintf(stderr, "write: %m\n");
-			close(sk_pair[1]);
-			exit(1);
-		}
-
-		// wait for the parent to map our ids
-		if (read(sk_pair[1], &c, 1) != 1) {
-			fprintf(stderr, "child read(): %m\n");
-			close(sk_pair[1]);
-			exit(1);
-		}
-		close(sk_pair[1]);
-
-		// let's party
-		execvp(argv[command_start+1], argv + command_start + 1);
-		fprintf(stderr, "usernsexec failed\n");
-		exit(1);
-	}
-
-	close(sk_pair[1]);
+	close(args.sk_pair[1]);
 	ret = -1;
 
 	// wait for child to unshare
-	if (read(sk_pair[0], &c, 1) != 1) {
+	if (read(args.sk_pair[0], &c, 1) != 1) {
 		fprintf(stderr, "parent read(): %m\n");
 		goto out;
 	}
@@ -166,7 +195,7 @@ static int do_usernsexec(int argc, char *argv[], int *status)
 	}
 
 	// tell child it's ok to exec
-	if (write(sk_pair[0], &c, 1) != 1) {
+	if (write(args.sk_pair[0], &c, 1) != 1) {
 		fprintf(stderr, "write(): %m\n");
 		goto out;
 	}
@@ -179,7 +208,7 @@ static int do_usernsexec(int argc, char *argv[], int *status)
 	ret = 0;
 
 out:
-	close(sk_pair[0]);
+	close(args.sk_pair[0]);
 	return ret;
 }
 
@@ -192,8 +221,6 @@ int main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "spawn")) {
 		int ret, status;
-		char buf[4096];
-		ssize_t size;
 		char *name, *lxcpath, *config_path;
 
 		if (argc != 5) {
@@ -242,7 +269,7 @@ int main(int argc, char *argv[])
 		}
 		exit(WEXITSTATUS(status));
 	} else {
-		fprintf(stderr, "unknown subcommand %s", argv[1]);
+		fprintf(stderr, "unknown subcommand %s\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
 }
