@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
-	"runtime"
 	"strings"
 	"time"
 
@@ -210,8 +209,8 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 	author := fmt.Sprintf("%s@%s", username, host)
 
 	meta.Created = time.Now()
-	meta.Architecture = runtime.GOARCH
-	meta.OS = runtime.GOOS
+	meta.Architecture = *l.Arch
+	meta.OS = *l.OS
 	meta.Author = author
 
 	annotations, err := mutator.Annotations(context.Background())

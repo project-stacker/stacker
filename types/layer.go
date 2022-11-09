@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/anmitsu/go-shlex"
@@ -192,6 +193,8 @@ type Layer struct {
 	Binds          Binds             `yaml:"binds"`
 	RuntimeUser    string            `yaml:"runtime_user"`
 	Annotations    map[string]string `yaml:"annotations"`
+	OS             *string           `yaml:"os"`
+	Arch           *string           `yaml:"arch"`
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {
@@ -227,6 +230,12 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 					}
 				}
 			}
+
+			if directive.Key.(string) == "os" || directive.Key.(string) == "arch" {
+				if directive.Value == nil {
+					return nil, errors.Errorf("stackerfile: %q value cannot be empty", directive.Key.(string))
+				}
+			}
 		}
 	}
 
@@ -255,6 +264,18 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 			if len(layer.From.Tag) == 0 {
 				return nil, errors.Errorf("%s: from tag cannot be empty for image type 'built'", name)
 			}
+		}
+
+		if layer.OS == nil {
+			// if not specified, default to runtime
+			os := runtime.GOOS
+			layer.OS = &os
+		}
+
+		if layer.Arch == nil {
+			// if not specified, default to runtime
+			arch := runtime.GOARCH
+			layer.Arch = &arch
 		}
 
 		ret[name], err = layer.absolutify(referenceDirectory)
@@ -467,6 +488,8 @@ func init() {
 	layerType := reflect.TypeOf(Layer{})
 	for i := 0; i < layerType.NumField(); i++ {
 		tag := layerType.Field(i).Tag.Get("yaml")
+		// some fields are ",omitempty"
+		tag = strings.Split(tag, ",")[0]
 		layerFields = append(layerFields, tag)
 	}
 }

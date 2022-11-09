@@ -233,3 +233,14 @@ While `config` section supports a similar `labels`, it is more pertitent to the
 image runtime. On the other hand, `annotations` is intended to be
 image-specific metadata aligned with the
 [annotations in the image spec](https://github.com/opencontainers/image-spec/blob/main/annotations.md).
+
+##### `os`
+
+`os` is a user-specified string value indicating which _operating system_ this image is being
+built for, for example, `linux`, `darwin`, etc. It is an optional field and it
+defaults to the host operating system if not specified.
+
+##### `arch`
+`arch` is a user-specified string value indicating which machine _architecture_ this image is being
+built for, for example, `amd64`, `arm64`, etc. It is an optional field and it
+defaults to the host machine architecture if not specified.
