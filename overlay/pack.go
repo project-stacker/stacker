@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
+	"github.com/pkg/xattr"
 	"github.com/project-stacker/stacker/lib"
 	"github.com/project-stacker/stacker/log"
 	stackeroci "github.com/project-stacker/stacker/oci"
@@ -316,6 +319,44 @@ func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType s
 	return desc, nil
 }
 
+func stripOverlayAttrs(path string) error {
+	attrs, err := xattr.LList(path)
+	if err != nil {
+		return err
+	}
+	const match = ".overlay."
+	const opaque = match + "opaque"
+
+	dropped := []string{}
+	for _, attr := range attrs {
+		if !strings.Contains(attr, match) {
+			continue
+		}
+		if strings.HasSuffix(attr, opaque) {
+			continue
+		}
+		if err := xattr.LRemove(path, attr); err != nil {
+			return errors.Errorf("%s: failed to remove attr %s: %v", path, attr, err)
+		}
+		dropped = append(dropped, attr)
+	}
+
+	if len(dropped) != 0 {
+		log.Debugf("%s: dropped overlay attrs: %s", path, strings.Join(dropped, ","))
+	}
+	return nil
+}
+
+func stripOverlayAttrsUnder(dirPath string) error {
+	return fs.WalkDir(os.DirFS(dirPath), ".",
+		func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			return stripOverlayAttrs(filepath.Join(dirPath, path))
+		})
+}
+
 func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := ioutil.ReadDir(dir)
@@ -355,6 +396,10 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		Created:    &now,
 		CreatedBy:  fmt.Sprintf("stacker build of %s", name),
 		EmptyLayer: false,
+	}
+
+	if err := stripOverlayAttrsUnder(dir); err != nil {
+		return false, err
 	}
 
 	descs := []ispec.Descriptor{}
