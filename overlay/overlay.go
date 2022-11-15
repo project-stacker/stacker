@@ -218,7 +218,7 @@ func (o *overlay) GetLXCRootfsConfig(name string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("overlay:%s", lxcRootfsString), nil
+	return fmt.Sprintf("overlay:%s,userxattr", lxcRootfsString), nil
 }
 
 func (o *overlay) TarExtractLocation(name string) string {
