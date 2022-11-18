@@ -36,7 +36,7 @@ available for reference:
         run: echo "Your layer is ${STACKER_LAYER_NAME}"
       ```
 
-#### `from`
+### `from`
 
 The `from` directive describes the base image that stacker will start from. It
 takes the form:
@@ -61,7 +61,7 @@ Hub.
 `built`: `tag` is required, everything else is ignored. `built` bases this
 layer on a previously specified layer in the stacker file.
 
-#### `import`
+### `import`
 
 The `import` directive describes what files should be made available in
 `/stacker` during the `run` phase. There are three forms of importing supported
@@ -128,7 +128,7 @@ to be available under container's /usr/local/ and all the files/dirs from the ho
 /path/to/directory2 to be available under container's /
 
 
-#### `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`, `user`
+### `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`, `user`
 
 These all correspond exactly to the similarly named bits in the [OCI image
 config
@@ -136,7 +136,7 @@ spec](https://github.com/opencontainers/image-spec/blob/master/config.md#propert
 and are available for users to pass things through to the runtime environment
 of the image.
 
-#### `generate_labels`
+### `generate_labels`
 
 The `generate_labels` entry is similar to `run` in that it contains a list of
 commands to run inside the generated rootfs. It runs after the `run` section is
@@ -145,7 +145,7 @@ done, and its mutations to the filesystem are not recorded, except in one case
 file, and the name of the file will be the OCI label name, and the content will
 be the label content.
 
-#### `build_env` and `build_env_passthrough`
+### `build_env` and `build_env_passthrough`
 
 By default, environment variables do not pass through (pollute) the
 build environment.
@@ -164,21 +164,21 @@ https_proxy, ftp_proxy`.
 
 Values in the `build_env` override values passed through via
 
-#### `full_command`
+### `full_command`
 
 Because of the odd behavior of `cmd` and `entrypoint` (and the inherited nature
 of these from previous stacker layers), `full_command` provides a way to set
 the full command that will be executed in the image, clearing out any previous
 `cmd` and `entrypoint` values that were set in the image.
 
-#### `build_only`
+### `build_only`
 
 `build_only`: indicates whether or not to include this layer in the final OCI
 image. This can be useful in conjunction with an import from this layer in
 another image, if you want to isolate the build environment for a binary but
 not include all of its build dependencies.
 
-#### `binds`
+### `binds`
 
 `binds`: specifies bind mounts from the host to the container. There are two formats:
 
@@ -193,7 +193,7 @@ Right now there is no awareness of change for any of these bind mounts, so
 --no-cache should be used to re-build if the content of the bind mount has
 changed.
 
-#### `config`
+### `config`
 
 `config` key is a special type of entry in the root in the `stacker.yaml` file.
 It cannot contain a layer definition, it is used to provide configuration
@@ -204,7 +204,7 @@ applicable for building all the layers defined in this file. For example,
             - ../folder2/stacker.yaml
             - ../folder3/stacker.yaml
 
-##### `prerequisites`
+#### `prerequisites`
 
 If the `prerequisites` list is present under the `config` key, stacker will
 make sure to build all the layers in the stacker.yaml files found at the paths
@@ -219,7 +219,7 @@ When `stacker build -f parent/folder1/stacker.yaml` is invoked, stacker would se
 for the other two stacker.yaml files and build them first, before building
 the stacker.yaml specified in the command line.
 
-##### `annotations`
+### `annotations`
 
 `annotations` is a user-specified key value map that will be included in the
 final OCI image. Note that these annotations are included in the image manifest
@@ -234,13 +234,13 @@ image runtime. On the other hand, `annotations` is intended to be
 image-specific metadata aligned with the
 [annotations in the image spec](https://github.com/opencontainers/image-spec/blob/main/annotations.md).
 
-##### `os`
+### `os`
 
 `os` is a user-specified string value indicating which _operating system_ this image is being
 built for, for example, `linux`, `darwin`, etc. It is an optional field and it
 defaults to the host operating system if not specified.
 
-##### `arch`
+### `arch`
 `arch` is a user-specified string value indicating which machine _architecture_ this image is being
 built for, for example, `amd64`, `arm64`, etc. It is an optional field and it
 defaults to the host machine architecture if not specified.
