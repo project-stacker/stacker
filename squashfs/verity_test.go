@@ -2,7 +2,7 @@ package squashfs
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -14,15 +14,15 @@ import (
 func TestVerityMetadata(t *testing.T) {
 	assert := assert.New(t)
 
-	rootfs, err := ioutil.TempDir("", "stacker_verity_test_rootfs")
+	rootfs, err := os.MkdirTemp("", "stacker_verity_test_rootfs")
 	assert.NoError(err)
 	defer os.RemoveAll(rootfs)
 
-	tempdir, err := ioutil.TempDir("", "stacker_verity_test_tempdir")
+	tempdir, err := os.MkdirTemp("", "stacker_verity_test_tempdir")
 	assert.NoError(err)
 	defer os.RemoveAll(tempdir)
 
-	err = ioutil.WriteFile(path.Join(rootfs, "foo"), []byte("bar"), 0644)
+	err = os.WriteFile(path.Join(rootfs, "foo"), []byte("bar"), 0644)
 	assert.NoError(err)
 
 	reader, _, rootHash, err := MakeSquashfs(tempdir, rootfs, nil, VerityMetadataPresent)
@@ -31,10 +31,10 @@ func TestVerityMetadata(t *testing.T) {
 	}
 	assert.NoError(err)
 
-	content, err := ioutil.ReadAll(reader)
+	content, err := io.ReadAll(reader)
 	assert.NoError(err)
 	squashfsFile := path.Join(tempdir, "foo.squashfs")
-	err = ioutil.WriteFile(squashfsFile, content, 0600)
+	err = os.WriteFile(squashfsFile, content, 0600)
 	assert.NoError(err)
 
 	verityOffset, err := verityDataLocation(squashfsFile)

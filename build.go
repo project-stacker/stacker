@@ -3,7 +3,6 @@ package stacker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -83,7 +82,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 		}
 		defer cleanup()
 
-		dir, err := ioutil.TempDir(opts.Config.StackerDir, fmt.Sprintf("oci-labels-%s-", name))
+		dir, err := os.MkdirTemp(opts.Config.StackerDir, fmt.Sprintf("oci-labels-%s-", name))
 		if err != nil {
 			return errors.Wrapf(err, "failed to create oci-labels tempdir")
 		}
@@ -117,7 +116,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 			return err
 		}
 
-		ents, err := ioutil.ReadDir(dir)
+		ents, err := os.ReadDir(dir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to read %s", dir)
 		}
@@ -127,7 +126,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 				continue
 			}
 
-			content, err := ioutil.ReadFile(path.Join(dir, ent.Name()))
+			content, err := os.ReadFile(path.Join(dir, ent.Name()))
 			if err != nil {
 				return errors.Wrapf(err, "couldn't read label %s", ent.Name())
 			}
@@ -561,7 +560,7 @@ func generateShellForRunning(rootfs string, cmd []string, outFile string) error 
 	if strings.HasPrefix(cmd[0], "#!") {
 		shebangLine = ""
 	}
-	return ioutil.WriteFile(outFile, []byte(shebangLine+strings.Join(cmd, "\n")+"\n"), 0755)
+	return os.WriteFile(outFile, []byte(shebangLine+strings.Join(cmd, "\n")+"\n"), 0755)
 }
 
 func runInternalGoSubcommand(config types.StackerConfig, args []string) error {

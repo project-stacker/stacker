@@ -12,7 +12,7 @@ jobs:
       # note >-, args needs to be strings to be used as inputs
       # for the reusable build.yaml workflow
       go-version: >-
-        ["1.17.x"]
+        ["1.19.x"]
       privilege-level: >-
         ["priv"]
   release:

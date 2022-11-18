@@ -5,7 +5,6 @@ package squashfs
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -108,7 +107,7 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths, verity Verit
 	}
 
 	if len(toExclude) != 0 {
-		excludes, err := ioutil.TempFile(tempdir, "stacker-squashfs-exclude-")
+		excludes, err := os.CreateTemp(tempdir, "stacker-squashfs-exclude-")
 		if err != nil {
 			return nil, "", rootHash, err
 		}
@@ -122,7 +121,7 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths, verity Verit
 		}
 	}
 
-	tmpSquashfs, err := ioutil.TempFile(tempdir, "stacker-squashfs-img-")
+	tmpSquashfs, err := os.CreateTemp(tempdir, "stacker-squashfs-img-")
 	if err != nil {
 		return nil, "", rootHash, err
 	}

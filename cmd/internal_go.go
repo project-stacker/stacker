@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
@@ -120,7 +119,7 @@ func doCheckAAProfile(ctx *cli.Context) error {
 	tid := unix.Gettid()
 	aaControlFile := fmt.Sprintf("/proc/%d/attr/current", tid)
 
-	err := ioutil.WriteFile(aaControlFile, []byte(command), 0000)
+	err := os.WriteFile(aaControlFile, []byte(command), 0000)
 	if err != nil {
 		if os.IsNotExist(err) {
 			os.Exit(52)
@@ -128,7 +127,7 @@ func doCheckAAProfile(ctx *cli.Context) error {
 		return errors.WithStack(err)
 	}
 
-	content, err := ioutil.ReadFile(aaControlFile)
+	content, err := os.ReadFile(aaControlFile)
 	if err != nil {
 		return errors.WithStack(err)
 	}

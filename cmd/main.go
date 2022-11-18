@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -213,7 +212,7 @@ func main() {
 		}
 
 		var err error
-		content, err := ioutil.ReadFile(ctx.String("config"))
+		content, err := os.ReadFile(ctx.String("config"))
 		if err == nil {
 			err = yaml.Unmarshal(content, &config)
 			if err != nil {

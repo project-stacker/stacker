@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -25,7 +24,7 @@ func warnAboutNewuidmap() {
 }
 
 func addSpecificEntries(file string, name string, currentId int) error {
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil && !os.IsNotExist(err) {
 		return errors.Wrapf(err, "couldn't read %s", file)
 	}
@@ -72,7 +71,7 @@ func addSpecificEntries(file string, name string, currentId int) error {
 	}
 
 	withNewEntry := append(content, []byte(fmt.Sprintf("%s:%d:65536\n", name, maxAlloc))...)
-	err = ioutil.WriteFile(file, withNewEntry, 0644)
+	err = os.WriteFile(file, withNewEntry, 0644)
 	return errors.Wrapf(err, "couldn't write %s", file)
 }
 

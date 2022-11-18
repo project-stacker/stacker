@@ -1,14 +1,13 @@
 package types
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 )
 
 func parse(t *testing.T, content string) *Stackerfile {
-	tf, err := ioutil.TempFile("", "stacker_test_")
+	tf, err := os.CreateTemp("", "stacker_test_")
 	if err != nil {
 		t.Fatalf("couldn't create tempfile: %s", err)
 	}

@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestLayerHashing(t *testing.T) {
-	dir, err := ioutil.TempDir("", "stacker_cache_test")
+	dir, err := os.MkdirTemp("", "stacker_cache_test")
 	if err != nil {
 		t.Fatalf("couldn't create temp dir %v", err)
 	}
@@ -44,7 +43,7 @@ func TestLayerHashing(t *testing.T) {
 	}
 
 	stackerYaml := path.Join(dir, "stacker.yaml")
-	err = ioutil.WriteFile(stackerYaml, []byte(`
+	err = os.WriteFile(stackerYaml, []byte(`
 foo:
     from:
         type: docker
@@ -80,7 +79,7 @@ foo:
 	// change the layer, but look it up under the same name, to make sure
 	// the layer itself is hashed
 	stackerYaml = path.Join(dir, "stacker.yaml")
-	err = ioutil.WriteFile(stackerYaml, []byte(`
+	err = os.WriteFile(stackerYaml, []byte(`
 foo:
     from:
         type: docker

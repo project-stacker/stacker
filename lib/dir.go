@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -12,7 +11,7 @@ import (
 func DirCopy(dest string, source string) error {
 
 	var err error
-	var fds []os.FileInfo
+	var fds []os.DirEntry
 	var srcinfo os.FileInfo
 
 	if srcinfo, err = os.Stat(source); err != nil {
@@ -40,7 +39,7 @@ func DirCopy(dest string, source string) error {
 		return errors.Wrapf(err, "Coudn't mkdir %s", dest)
 	}
 
-	if fds, err = ioutil.ReadDir(source); err != nil {
+	if fds, err = os.ReadDir(source); err != nil {
 		return errors.Wrapf(err, "Coudn't read dir %s", source)
 	}
 

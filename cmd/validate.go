@@ -10,8 +10,11 @@ import (
 	"github.com/urfave/cli"
 )
 
-/* check that roots-dir./ name don't contain ':', it will interfere with overlay mount options
-which is using :s as separator */
+/*
+	check that roots-dir./ name don't contain ':', it will interfere with overlay mount options
+
+which is using :s as separator
+*/
 func validateRootsDirName(rootsDir string) error {
 	if strings.Contains(rootsDir, ":") {
 		return errors.Errorf("using ':' in the name of --roots-dir (%s) is forbidden due to overlay constraints", rootsDir)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -359,7 +358,7 @@ func stripOverlayAttrsUnder(dirPath string) error {
 
 func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")
-	ents, err := ioutil.ReadDir(dir)
+	ents, err := os.ReadDir(dir)
 	if err != nil {
 		return false, errors.Wrapf(err, "coudln't read overlay path %s", dir)
 	}
