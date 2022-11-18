@@ -2,7 +2,6 @@ package stacker
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 )
 
 func findLock(st *syscall.Stat_t) error {
-	content, err := ioutil.ReadFile("/proc/locks")
+	content, err := os.ReadFile("/proc/locks")
 	if err != nil {
 		return errors.Wrapf(err, "failed to read locks file")
 	}
@@ -51,7 +50,7 @@ func findLock(st *syscall.Stat_t) error {
 		}
 
 		pid := fields[4]
-		content, err := ioutil.ReadFile(path.Join("/proc", pid, "cmdline"))
+		content, err := os.ReadFile(path.Join("/proc", pid, "cmdline"))
 		if err != nil {
 			return errors.Errorf("lock owned by pid %s", pid)
 		}

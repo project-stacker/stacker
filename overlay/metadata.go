@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -59,7 +58,7 @@ func newOverlayMetadataFromOCI(oci casext.Engine, tag string) (overlayMetadata, 
 
 func readOverlayMetadata(config types.StackerConfig, tag string) (overlayMetadata, error) {
 	metadataFile := path.Join(config.RootFSDir, tag, "overlay_metadata.json")
-	content, err := ioutil.ReadFile(metadataFile)
+	content, err := os.ReadFile(metadataFile)
 	if err != nil {
 		return overlayMetadata{}, errors.Wrapf(err, "couldn't read overlay metadata %s", metadataFile)
 	}
@@ -87,7 +86,7 @@ func (ovl overlayMetadata) write(config types.StackerConfig, tag string) error {
 		return errors.Wrapf(err, "couldn't marshal overlay metadata")
 	}
 	metadataFile := path.Join(config.RootFSDir, tag, "overlay_metadata.json")
-	err = ioutil.WriteFile(metadataFile, content, 0644)
+	err = os.WriteFile(metadataFile, content, 0644)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't write overlay metadata %s", metadataFile)
 	}

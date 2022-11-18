@@ -12,7 +12,7 @@ build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VE
 
 STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
 LXC_CLONE_URL?=https://github.com/lxc/lxc
-LXC_BRANCH?=stable-4.0
+LXC_BRANCH?=stable-5.0
 
 stacker: stacker-dynamic
 	./stacker-dynamic --debug $(STACKER_OPTS) build \

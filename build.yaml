@@ -55,11 +55,13 @@ build-env:
     cd /
 
     # build lxc
+    apk add meson ninja docbook2x docbook2x-doc curl
     git clone --depth 1 ${{LXC_CLONE_URL}} -b ${{LXC_BRANCH}}
+    mkdir /etc/default
     cd lxc
-    ./autogen.sh
-    ./configure --enable-static-binaries --prefix=/usr
-    make -j$(grep -c processor /proc/cpuinfo) install
+    meson setup -Dprefix=/usr -Dman=false -Dsd-bus=disabled -Dinit-script=sysvinit build
+    meson compile -C build
+    meson install -C build
     cd /
 
     # build lzma

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path"
@@ -13,7 +12,7 @@ import (
 
 	"github.com/lxc/go-lxc"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/embed-exec"
+	embed_exec "github.com/project-stacker/stacker/embed-exec"
 	"github.com/project-stacker/stacker/log"
 	"github.com/project-stacker/stacker/types"
 )
@@ -124,7 +123,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 		return err
 	}
 
-	f, err := ioutil.TempFile("", fmt.Sprintf("stacker_%s_run", c.c.Name()))
+	f, err := os.CreateTemp("", fmt.Sprintf("stacker_%s_run", c.c.Name()))
 	if err != nil {
 		return err
 	}

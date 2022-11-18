@@ -1,14 +1,12 @@
 // A basic overlay storage backend.
 //
-//
 // Things still TODO:
-// 1. implement GC (nobody really uses this, it seems people just clean and
-//    rebuild, so...)
+//  1. implement GC (nobody really uses this, it seems people just clean and
+//     rebuild, so...)
 package overlay
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"syscall"
@@ -24,7 +22,7 @@ var _ types.Storage = &overlay{}
 // successfully (some kernels (ubuntu) support unprivileged overlay mounts, and
 // some do not).
 func canMountOverlay() error {
-	dir, err := ioutil.TempDir("", "stacker-overlay-mount-")
+	dir, err := os.MkdirTemp("", "stacker-overlay-mount-")
 	if err != nil {
 		return errors.Wrapf(err, "couldn't create overlay tmpdir")
 	}
@@ -85,7 +83,7 @@ func canWriteWhiteouts(config types.StackerConfig) error {
 		return errors.Errorf("can't create overlay whiteout on underlying overlayfs in %s", config.RootFSDir)
 	}
 
-	dir, err := ioutil.TempDir(config.RootFSDir, "stacker-overlay-whiteout-")
+	dir, err := os.MkdirTemp(config.RootFSDir, "stacker-overlay-whiteout-")
 	if err != nil {
 		return errors.Wrapf(err, "couldn't create overlay tmpdir")
 	}
@@ -179,7 +177,7 @@ func (o *overlay) Exists(thing string) bool {
 
 func (o *overlay) TemporaryWritableSnapshot(source string) (string, func(), error) {
 	// should use create maybe?
-	dir, err := ioutil.TempDir(o.config.RootFSDir, fmt.Sprintf("temp-snapshot-%s-", source))
+	dir, err := os.MkdirTemp(o.config.RootFSDir, fmt.Sprintf("temp-snapshot-%s-", source))
 	if err != nil {
 		return "", nil, errors.Wrapf(err, "failed to create snapshot")
 	}

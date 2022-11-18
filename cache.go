@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 	"reflect"
@@ -108,7 +108,7 @@ func OpenCache(config types.StackerConfig, oci casext.Engine, sfm types.StackerF
 		return nil, err
 	}
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
@@ -502,5 +502,5 @@ func (c *BuildCache) persist() error {
 		return err
 	}
 
-	return ioutil.WriteFile(c.config.CacheFile(), content, 0600)
+	return os.WriteFile(c.config.CacheFile(), content, 0600)
 }

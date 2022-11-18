@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -44,7 +43,7 @@ func tryToDetectStorageType(c types.StackerConfig) (string, error) {
 		return "btrfs", nil
 	}
 
-	ents, err := ioutil.ReadDir(c.RootFSDir)
+	ents, err := os.ReadDir(c.RootFSDir)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return "", errors.Wrapf(err, "couldn't read roots dir")
@@ -76,7 +75,7 @@ func tryToDetectStorageType(c types.StackerConfig) (string, error) {
 // run with a different storage type.
 func errorOnStorageTypeSwitch(c types.StackerConfig) error {
 	var storageType string
-	content, err := ioutil.ReadFile(path.Join(c.StackerDir, storageTypeFile))
+	content, err := os.ReadFile(path.Join(c.StackerDir, storageTypeFile))
 	if err != nil {
 		// older versions of stacker didn't write this file
 		if !os.IsNotExist(err) {
@@ -124,7 +123,7 @@ func NewStorage(c types.StackerConfig) (types.Storage, *StackerLocks, error) {
 		return nil, nil, errors.Wrapf(err, "couldn't make rootfs dir")
 	}
 
-	err = ioutil.WriteFile(path.Join(c.StackerDir, storageTypeFile), []byte(c.StorageType), 0644)
+	err = os.WriteFile(path.Join(c.StackerDir, storageTypeFile), []byte(c.StorageType), 0644)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "couldn't write storage type")
 	}

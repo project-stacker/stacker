@@ -3,7 +3,6 @@ package lib
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -75,7 +74,7 @@ func createImage(dir string, tag string) error {
 
 func TestImageCompressionCopy(t *testing.T) {
 	assert := assert.New(t)
-	dir, err := ioutil.TempDir("", "stacker-compression-copy-test")
+	dir, err := os.MkdirTemp("", "stacker-compression-copy-test")
 	assert.NoError(err)
 	defer os.RemoveAll(dir)
 
@@ -86,9 +85,9 @@ func TestImageCompressionCopy(t *testing.T) {
 		Dest: fmt.Sprintf("oci:%s/oci2:foo", dir),
 	}))
 
-	origBlobs, err := ioutil.ReadDir(fmt.Sprintf("%s/oci/blobs/sha256/", dir))
+	origBlobs, err := os.ReadDir(fmt.Sprintf("%s/oci/blobs/sha256/", dir))
 	assert.NoError(err)
-	copiedBlobs, err := ioutil.ReadDir(fmt.Sprintf("%s/oci2/blobs/sha256/", dir))
+	copiedBlobs, err := os.ReadDir(fmt.Sprintf("%s/oci2/blobs/sha256/", dir))
 	assert.NoError(err)
 
 	for i := range origBlobs {
@@ -100,7 +99,7 @@ func TestImageCompressionCopy(t *testing.T) {
 
 func TestForceManifestTypeOption(t *testing.T) {
 	assert := assert.New(t)
-	dir, err := ioutil.TempDir("", "stacker-force-manifesttype-test")
+	dir, err := os.MkdirTemp("", "stacker-force-manifesttype-test")
 	assert.NoError(err)
 	defer os.RemoveAll(dir)
 
@@ -121,7 +120,7 @@ func TestForceManifestTypeOption(t *testing.T) {
 
 func TestOldManifestReallyRemoved(t *testing.T) {
 	assert := assert.New(t)
-	dir, err := ioutil.TempDir("", "stacker-compression-copy-test")
+	dir, err := os.MkdirTemp("", "stacker-compression-copy-test")
 	assert.NoError(err)
 	defer os.RemoveAll(dir)
 

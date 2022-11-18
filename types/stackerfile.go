@@ -3,7 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -131,7 +131,7 @@ func NewStackerfile(stackerfile string, validateHash bool, substitutions []strin
 
 	var raw []byte
 	if url.Scheme == "" {
-		raw, err = ioutil.ReadFile(stackerfile)
+		raw, err = os.ReadFile(stackerfile)
 		if err != nil {
 			return nil, errors.Wrapf(err, "couldn't read stacker file")
 		}
@@ -156,7 +156,7 @@ func NewStackerfile(stackerfile string, validateHash bool, substitutions []strin
 			return nil, errors.Errorf("stackerfile: couldn't download %s: %s", stackerfile, resp.Status)
 		}
 
-		raw, err = ioutil.ReadAll(resp.Body)
+		raw, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}

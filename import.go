@@ -1,7 +1,6 @@
 package stacker
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -306,7 +305,7 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 		return err
 	}
 
-	existing, err := ioutil.ReadDir(dir)
+	existing, err := os.ReadDir(dir)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't read existing directory")
 	}

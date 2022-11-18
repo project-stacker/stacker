@@ -12,7 +12,7 @@ on:
         description: 'Stringified JSON object listing stacker privilege-level'
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     services:
       registry:
         image: registry:2
