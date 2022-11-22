@@ -36,7 +36,7 @@ jobs:
           GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
           sudo cp ~/go/bin/umoci /usr/bin
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-          sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin
+          sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin squashfuse
           (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
       - run: |
