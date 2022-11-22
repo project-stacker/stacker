@@ -29,14 +29,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Check-some-things
-        run: |
-          echo "I am $(id)"
-          for f in /etc/subuid /etc/subgid; do
-              echo ""==== $f =====""
-              [ -f "$f" ] || { echo "<no-file>"; continue; }
-              cat "$f"
-          done
       - name: install dependencies
         run: |
           sudo apt-get update
@@ -47,6 +39,15 @@ jobs:
           sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin
           (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
+      - name: Check-some-things
+        run: |
+          echo "I am: $(id)"
+          echo "sudo is: $(sudo id)"
+          for f in /etc/subuid /etc/subgid; do
+              echo ""==== $f =====""
+              [ -f "$f" ] || { echo "<no-file>"; continue; }
+              cat "$f"
+          done
       - run: |
           make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
