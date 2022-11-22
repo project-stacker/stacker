@@ -29,6 +29,14 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Check-some-things
+        run: |
+          echo "I am $(id)"
+          for f in /etc/subuid /etc/subgid; do
+              echo ""==== $f =====""
+              [ -f "$f" ] || { echo "<no-file>"; continue; }
+              cat "$f"
+          done
       - name: install dependencies
         run: |
           sudo apt-get update
