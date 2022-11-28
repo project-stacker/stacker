@@ -352,7 +352,12 @@ func stripOverlayAttrsUnder(dirPath string) error {
 			if err != nil {
 				return err
 			}
-			return stripOverlayAttrs(filepath.Join(dirPath, path))
+			p := filepath.Join(dirPath, path)
+			if lib.IsSymlink(p) {
+				// user.* xattrs "can not" exist on symlinks
+				return nil
+			}
+			return stripOverlayAttrs(p)
 		})
 }
 
