@@ -12,9 +12,9 @@ import (
 
 	"github.com/lxc/go-lxc"
 	"github.com/pkg/errors"
-	embed_exec "github.com/project-stacker/stacker/embed-exec"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/types"
+	embed_exec "stackerbuild.io/stacker/embed-exec"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/types"
 )
 
 const (

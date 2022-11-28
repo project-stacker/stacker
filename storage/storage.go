@@ -3,7 +3,7 @@ package storage
 
 import (
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/types"
 )
 
 // FindFirstBaseInOutput finds the highest base in the dependency tree that is

@@ -6,8 +6,8 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/container"
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/container"
+	"stackerbuild.io/stacker/types"
 )
 
 func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string) error {

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/project-stacker/stacker"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker"
 )
 
 var gcCmd = cli.Command{

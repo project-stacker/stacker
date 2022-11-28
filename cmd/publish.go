@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker"
-	"github.com/project-stacker/stacker/lib"
-	"github.com/project-stacker/stacker/squashfs"
-	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker"
+	"stackerbuild.io/stacker/lib"
+	"stackerbuild.io/stacker/squashfs"
+	"stackerbuild.io/stacker/types"
 )
 
 var publishCmd = cli.Command{

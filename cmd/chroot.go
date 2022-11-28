@@ -5,11 +5,11 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker"
-	"github.com/project-stacker/stacker/container"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker"
+	"stackerbuild.io/stacker/container"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/types"
 )
 
 var chrootCmd = cli.Command{

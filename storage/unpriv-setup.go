@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/log"
+	"stackerbuild.io/stacker/log"
 )
 
 func warnAboutNewuidmap() {

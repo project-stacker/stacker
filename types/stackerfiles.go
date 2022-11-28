@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/log"
+	"stackerbuild.io/stacker/log"
 )
 
 // Logic for working with multiple StackerFiles

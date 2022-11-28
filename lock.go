@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/types"
 )
 
 func findLock(st *syscall.Stat_t) error {

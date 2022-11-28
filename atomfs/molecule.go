@@ -8,9 +8,9 @@ import (
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/mount"
-	"github.com/project-stacker/stacker/squashfs"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/mount"
+	"stackerbuild.io/stacker/squashfs"
 )
 
 type Molecule struct {

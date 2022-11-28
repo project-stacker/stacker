@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/atomfs"
-	"github.com/project-stacker/stacker/lib"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/overlay"
 	"github.com/urfave/cli"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/atomfs"
+	"stackerbuild.io/stacker/lib"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/overlay"
 )
 
 var internalGoCmd = cli.Command{

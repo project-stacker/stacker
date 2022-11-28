@@ -11,9 +11,9 @@ import (
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/lib"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/lib"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/types"
 )
 
 type BaseLayerOpts struct {

@@ -6,7 +6,7 @@ package containers_storage
 
 import (
 	"github.com/containers/image/v5/storage"
-	"github.com/project-stacker/stacker/lib"
+	"stackerbuild.io/stacker/lib"
 )
 
 func init() {
