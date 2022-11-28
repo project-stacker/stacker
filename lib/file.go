@@ -2,6 +2,7 @@ package lib
 
 import (
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -9,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func FileCopy(dest string, source string) error {
+func FileCopy(dest string, source string, mode *fs.FileMode, uid, gid int) error {
 	os.RemoveAll(dest)
 
 	linkFI, err := os.Lstat(source)
@@ -24,7 +25,15 @@ func FileCopy(dest string, source string) error {
 			return errors.Wrapf(err, "Coudn't read link %s", source)
 		}
 
-		return os.Symlink(target, dest)
+		if err = os.Symlink(target, dest); err != nil {
+			return errors.Wrapf(err, "Couldn't symlink %s->%s", source, target)
+		}
+
+		if err = os.Lchown(dest, uid, gid); err != nil {
+			return errors.Wrapf(err, "Couldn't set symlink ownership %s", dest)
+		}
+
+		return nil
 	}
 
 	s, err := os.Open(source)
@@ -44,9 +53,18 @@ func FileCopy(dest string, source string) error {
 	}
 	defer d.Close()
 
-	err = d.Chmod(fi.Mode())
+	if mode != nil {
+		err = d.Chmod(*mode)
+	} else {
+		err = d.Chmod(fi.Mode())
+	}
 	if err != nil {
 		return errors.Wrapf(err, "Coudn't chmod file %s", source)
+	}
+
+	err = d.Chown(uid, gid)
+	if err != nil {
+		return errors.Wrapf(err, "Coudn't chown file %s", source)
 	}
 
 	_, err = io.Copy(d, s)

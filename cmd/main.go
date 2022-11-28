@@ -72,7 +72,7 @@ func shouldSkipInternalUserns(ctx *cli.Context) bool {
 	}
 
 	if len(args) >= 2 && args[0] == "internal-go" {
-		if args[1] == "atomfs" || args[1] == "cp" {
+		if args[1] == "atomfs" || args[1] == "cp" || args[1] == "chown" || args[1] == "chmod" {
 			return true
 		}
 	}

@@ -2,6 +2,7 @@ package stacker
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 
@@ -10,7 +11,9 @@ import (
 	"stackerbuild.io/stacker/types"
 )
 
-func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string) error {
+func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string,
+	mode *fs.FileMode, uid, gid int,
+) error {
 	c, err := container.New(sc, name)
 	if err != nil {
 		return err
@@ -38,5 +41,29 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 		return err
 	}
 
-	return c.Execute(fmt.Sprintf("/static-stacker internal-go cp %s /stacker/%s", source, path.Base(source)), nil)
+	err = c.Execute(fmt.Sprintf("/static-stacker internal-go cp %s /stacker/%s", source, path.Base(source)), nil)
+	if err != nil {
+		return err
+	}
+
+	if mode != nil {
+		err = c.Execute(fmt.Sprintf("/static-stacker internal-go chmod %s /stacker/%s", fmt.Sprintf("%o", *mode), path.Base(source)), nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	if uid > 0 {
+		owns := fmt.Sprintf("%d", uid)
+		if gid > 0 {
+			owns += fmt.Sprintf(":%d", gid)
+		}
+
+		err = c.Execute(fmt.Sprintf("/static-stacker internal-go chown %s /stacker/%s", owns, path.Base(source)), nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

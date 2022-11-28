@@ -352,9 +352,11 @@ func (b *Builder) build(s types.Storage, file string) error {
 			return err
 		}
 
-		if err := Import(opts.Config, s, name, l.Imports, opts.Progress); err != nil {
+		if err := Import(opts.Config, s, name, l.Imports, &l.OverlayDirs, opts.Progress); err != nil {
 			return err
 		}
+
+		log.Debugf("overlay-dirs, possibly modified after import: %v", l.OverlayDirs)
 
 		// Need to check if the image has bind mounts, if the image has bind mounts,
 		// it needs to be rebuilt regardless of the build cache

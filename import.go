@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -84,7 +85,7 @@ func verifyImportFileHash(imp string, hash string) error {
 	return nil
 }
 
-func importFile(imp string, cacheDir string, hash string) (string, error) {
+func importFile(imp string, cacheDir string, hash string, mode *fs.FileMode, uid, gid int) (string, error) {
 	e1, err := os.Lstat(imp)
 	if err != nil {
 		return "", errors.Wrapf(err, "couldn't stat import %s", imp)
@@ -110,7 +111,7 @@ func importFile(imp string, cacheDir string, hash string) (string, error) {
 
 		if needsCopy {
 			log.Infof("copying %s", imp)
-			if err := lib.FileCopy(dest, imp); err != nil {
+			if err := lib.FileCopy(dest, imp, mode, uid, gid); err != nil {
 				return "", errors.Wrapf(err, "couldn't copy import %s", imp)
 			}
 		} else {
@@ -187,7 +188,7 @@ func importFile(imp string, cacheDir string, hash string) (string, error) {
 				if err != nil {
 					return "", err
 				}
-				err = lib.FileCopy(destpath, srcpath)
+				err = lib.FileCopy(destpath, srcpath, mode, uid, gid)
 			}
 			if err != nil {
 				return "", err
@@ -213,7 +214,9 @@ func validateHash(hash string) error {
 	return nil
 }
 
-func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, progress bool, expectedHash string) (string, error) {
+func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, progress bool, expectedHash string,
+	mode *fs.FileMode, uid, gid int,
+) (string, error) {
 	url, err := types.NewDockerishUrl(i)
 	if err != nil {
 		return "", err
@@ -226,7 +229,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 
 	// It's just a path, let's copy it to .stacker.
 	if url.Scheme == "" {
-		return importFile(i, cache, expectedHash)
+		return importFile(i, cache, expectedHash, mode, uid, gid)
 	} else if url.Scheme == "http" || url.Scheme == "https" {
 		// otherwise, we need to download it
 		// first verify the hashes
@@ -242,7 +245,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 			return "", errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
 				i, expectedHash, remoteHash)
 		}
-		return Download(cache, i, progress, expectedHash, remoteHash, remoteSize)
+		return Download(cache, i, progress, expectedHash, remoteHash, remoteSize, mode, uid, gid)
 	} else if url.Scheme == "stacker" {
 		// we always Grab() things from stacker://, because we need to
 		// mount the container's rootfs to get them and don't
@@ -254,7 +257,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 			return "", err
 		}
 		defer cleanup()
-		err = Grab(c, storage, snap, url.Path, cache)
+		err = Grab(c, storage, snap, url.Path, cache, mode, uid, gid)
 		if err != nil {
 			return "", err
 		}
@@ -271,7 +274,11 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 }
 
 func CleanImportsDir(c types.StackerConfig, name string, imports types.Imports, cache *BuildCache) error {
-	dir := path.Join(c.StackerDir, "imports", name)
+	// remove all copied imports
+	dir := path.Join(c.StackerDir, "imports-copy", name)
+	_ = os.RemoveAll(dir)
+
+	dir = path.Join(c.StackerDir, "imports", name)
 
 	cacheEntry, cacheHit := cache.Cache[name]
 	if !cacheHit {
@@ -298,10 +305,17 @@ func CleanImportsDir(c types.StackerConfig, name string, imports types.Imports, 
 	return nil
 }
 
-func Import(c types.StackerConfig, storage types.Storage, name string, imports types.Imports, progress bool) error {
+// Import files from different sources to an ephemeral or permanent destination.
+func Import(c types.StackerConfig, storage types.Storage, name string, imports types.Imports, overlayDirs *types.OverlayDirs, progress bool) error {
 	dir := path.Join(c.StackerDir, "imports", name)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	cpdir := path.Join(c.StackerDir, "imports-copy", name)
+
+	if err := os.MkdirAll(cpdir, 0755); err != nil {
 		return err
 	}
 
@@ -311,7 +325,20 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 	}
 
 	for _, i := range imports {
-		name, err := acquireUrl(c, storage, i.Path, dir, progress, i.Hash)
+		cache := dir
+		if i.Dest != "" {
+			tmpdir, err := os.MkdirTemp(cpdir, "")
+			if err != nil {
+				return errors.Wrapf(err, "couldn't create temp import copy directory")
+			}
+
+			ovl := types.OverlayDir{Source: tmpdir, Dest: "/"}
+			*overlayDirs = append(*overlayDirs, ovl)
+
+			cache = tmpdir
+		}
+
+		name, err := acquireUrl(c, storage, i.Path, cache, progress, i.Hash, i.Mode, i.Uid, i.Gid)
 		if err != nil {
 			return err
 		}
