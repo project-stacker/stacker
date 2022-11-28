@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/pkg/xattr"
-	"github.com/project-stacker/stacker/overlay"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker/overlay"
 )
 
 var checkCmd = cli.Command{

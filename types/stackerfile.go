@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/log"
 	"gopkg.in/yaml.v2"
+	"stackerbuild.io/stacker/log"
 )
 
 type BuildConfig struct {

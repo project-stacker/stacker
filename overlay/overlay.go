@@ -12,8 +12,8 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/types"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/types"
 )
 
 var _ types.Storage = &overlay{}

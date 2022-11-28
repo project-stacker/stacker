@@ -16,10 +16,10 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/lib"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/types"
 	"github.com/vbatts/go-mtree"
+	"stackerbuild.io/stacker/lib"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/types"
 )
 
 const currentCacheVersion = 12

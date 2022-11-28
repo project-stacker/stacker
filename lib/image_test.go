@@ -12,8 +12,8 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
-	"github.com/project-stacker/stacker/squashfs"
 	"github.com/stretchr/testify/assert"
+	"stackerbuild.io/stacker/squashfs"
 )
 
 func createImage(dir string, tag string) error {

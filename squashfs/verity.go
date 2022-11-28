@@ -77,8 +77,8 @@ import (
 	"github.com/freddierice/go-losetup"
 	"github.com/martinjungblut/go-cryptsetup"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/mount"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/mount"
 )
 
 const VerityRootHashAnnotation = "io.stackeroci.stacker.squashfs_verity_root_hash"

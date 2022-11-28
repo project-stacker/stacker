@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker"
 )
 
 var unprivSetupCmd = cli.Command{

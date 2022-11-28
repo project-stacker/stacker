@@ -15,9 +15,9 @@ import (
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/container"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/container"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/types"
 )
 
 const DefaultShell = "/bin/sh"

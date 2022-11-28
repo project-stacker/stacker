@@ -9,8 +9,8 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
-	"github.com/project-stacker/stacker/types"
 	"github.com/stretchr/testify/assert"
+	"stackerbuild.io/stacker/types"
 )
 
 func TestLayerHashing(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/project-stacker/stacker
+module stackerbuild.io/stacker
 
 go 1.19
 

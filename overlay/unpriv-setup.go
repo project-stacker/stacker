@@ -1,7 +1,7 @@
 package overlay
 
 import (
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/types"
 )
 
 func UnprivSetup(config types.StackerConfig, uid, gid int) error {

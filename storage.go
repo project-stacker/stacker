@@ -5,10 +5,10 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/overlay"
-	"github.com/project-stacker/stacker/storage"
-	"github.com/project-stacker/stacker/types"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/overlay"
+	"stackerbuild.io/stacker/storage"
+	"stackerbuild.io/stacker/types"
 )
 
 var storageTypeFile = "storage.type"

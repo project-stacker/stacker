@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/project-stacker/stacker"
-	"github.com/project-stacker/stacker/squashfs"
-	"github.com/project-stacker/stacker/types"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker"
+	"stackerbuild.io/stacker/squashfs"
+	"stackerbuild.io/stacker/types"
 )
 
 var buildCmd = cli.Command{

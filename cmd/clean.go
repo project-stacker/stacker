@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker"
-	"github.com/project-stacker/stacker/log"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker"
+	"stackerbuild.io/stacker/log"
 )
 
 var cleanCmd = cli.Command{

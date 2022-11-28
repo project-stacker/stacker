@@ -6,10 +6,10 @@ import (
 	"os/exec"
 
 	"github.com/pkg/errors"
-	stackeridmap "github.com/project-stacker/stacker/container/idmap"
-	"github.com/project-stacker/stacker/embed-exec"
-	"github.com/project-stacker/stacker/log"
-	"github.com/project-stacker/stacker/types"
+	stackeridmap "stackerbuild.io/stacker/container/idmap"
+	"stackerbuild.io/stacker/embed-exec"
+	"stackerbuild.io/stacker/log"
+	"stackerbuild.io/stacker/types"
 )
 
 // A wrapper which runs things in a userns if we're an unprivileged user with

@@ -7,7 +7,7 @@ import (
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/project-stacker/stacker/squashfs"
+	"stackerbuild.io/stacker/squashfs"
 )
 
 type LayerType struct {
