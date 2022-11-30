@@ -24,9 +24,9 @@ jobs:
         privilege-level: ${{fromJson(inputs.privilege-level)}}
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up golang ${{ matrix.go-version }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: install dependencies
@@ -43,7 +43,7 @@ jobs:
           make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker

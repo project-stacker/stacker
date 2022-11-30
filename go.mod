@@ -6,7 +6,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/anuvu/squashfs v0.0.0-20220228153512-67c8ca12cbf4
 	github.com/apex/log v1.9.0
-	github.com/cheggaaa/pb/v3 v3.0.8
+	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/freddierice/go-losetup v0.0.0-20220331141030-7ad00c49b973
@@ -22,14 +22,14 @@ require (
 	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
-	github.com/smartystreets/goconvey v1.6.4
-	github.com/stretchr/testify v1.7.1
+	github.com/smartystreets/goconvey v1.7.2
+	github.com/stretchr/testify v1.8.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
-	github.com/urfave/cli v1.22.5
-	github.com/vbatts/go-mtree v0.5.0
-	golang.org/x/sys v0.0.0-20220408201424-a24fb2fb8a0f
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	github.com/urfave/cli v1.22.10
+	github.com/vbatts/go-mtree v0.5.2
+	golang.org/x/sys v0.2.0
+	golang.org/x/term v0.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -48,7 +48,7 @@ require (
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/containers/ocicrypt v1.1.2 // indirect
 	github.com/containers/storage v1.37.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.0+incompatible // indirect
@@ -75,7 +75,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.4 // indirect
-	github.com/mattn/go-colorable v0.1.11 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -98,8 +98,8 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rootless-containers/proto/go-proto v0.0.0-20210921234734-69430b6543fb // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/smartystreets/assertions v1.0.1 // indirect
+	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/tchap/go-patricia v2.3.0+incompatible // indirect
@@ -109,16 +109,16 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/crypto v0.3.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc // indirect
 	google.golang.org/grpc v1.44.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
