@@ -71,8 +71,10 @@ func shouldSkipInternalUserns(ctx *cli.Context) bool {
 		return true
 	}
 
-	if len(args) >= 2 && args[0] == "internal-go" && args[1] == "atomfs" {
-		return true
+	if len(args) >= 2 && args[0] == "internal-go" {
+		if args[1] == "atomfs" || args[1] == "cp" {
+			return true
+		}
 	}
 
 	return false
@@ -294,7 +296,7 @@ func main() {
 			cmd = append(cmd[:2], cmd[1:]...)
 			cmd[1] = "--internal-userns"
 
-			stackerResult(container.MaybeRunInUserns(config, cmd))
+			stackerResult(container.MaybeRunInNamespace(config, cmd))
 		}
 		return nil
 	}
