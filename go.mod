@@ -22,7 +22,7 @@ require (
 	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
-	github.com/smartystreets/goconvey v1.6.4
+	github.com/smartystreets/goconvey v1.7.2
 	github.com/stretchr/testify v1.7.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
@@ -99,7 +99,7 @@ require (
 	github.com/rootless-containers/proto/go-proto v0.0.0-20210921234734-69430b6543fb // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/smartystreets/assertions v1.0.1 // indirect
+	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/tchap/go-patricia v2.3.0+incompatible // indirect
