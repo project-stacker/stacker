@@ -24,7 +24,7 @@ jobs:
         privilege-level: ${{fromJson(inputs.privilege-level)}}
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up golang ${{ matrix.go-version }}
         uses: actions/setup-go@v2
         with:
