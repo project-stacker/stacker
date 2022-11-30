@@ -23,7 +23,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
 	github.com/smartystreets/goconvey v1.6.4
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.8.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.5
@@ -118,7 +118,7 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
