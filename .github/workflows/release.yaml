@@ -21,7 +21,7 @@ jobs:
     # needs ci for the cached stacker binary
     needs: ci
     steps:
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker
