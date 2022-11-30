@@ -659,7 +659,7 @@ func unpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashf
 	if isSquashfs {
 		return squashfs.ExtractSingleSquash(
 			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
-			path.Join(bundlePath, "rootfs"), "overlay")
+			bundlePath, "overlay")
 	}
 
 	oci, err := umoci.OpenLayout(ociDir)

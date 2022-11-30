@@ -4,6 +4,7 @@ package squashfs
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -12,6 +13,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/log"
 )
 
 var checkZstdSupported sync.Once
@@ -165,18 +168,36 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 		return err
 	}
 
-	var uCmd []string
-	if storageType == "overlay" {
-		uCmd = []string{"unsquashfs", "-f", "-d", extractDir, squashFile}
-	} else {
-		return errors.Errorf("unknown storage type %v", storageType)
-	}
+	if p := which("squashfuse"); p != "" {
+		// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
+		extractDir := strings.TrimSuffix(extractDir, "/")
 
-	cmd := exec.Command(uCmd[0], uCmd[1:]...)
-	cmd.Stdin = nil
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+		var cmdOut io.Writer
+		logf := path.Join(path.Dir(extractDir), "."+path.Base(extractDir)+"-squashfuse.log")
+		if cmdOut, err = os.OpenFile(logf, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644); err != nil {
+			log.Infof("Failed to open %s for write: %v", p, err)
+			return err
+		}
+
+		// It would be nice to only enable debug (or maybe to only log to file at all)
+		// if 'stacker --debug', but we do not have access to that info here.
+		// to debug squashfuse, use "allow_other,debug"
+		cmd := exec.Command("squashfuse", "-f", "-o", "allow_other,debug", squashFile, extractDir)
+		cmd.Stdin = nil
+		cmd.Stdout = cmdOut
+		cmd.Stderr = cmdOut
+		cmdOut.Write([]byte(fmt.Sprintf("# %s\n", strings.Join(cmd.Args, " "))))
+		log.Debugf("Extracting %s -> %s with squashfuse [%s]", squashFile, extractDir, logf)
+		return cmd.Start()
+	} else if p := which("unsquashfs"); p != "" {
+		log.Debugf("Extracting %s -> %s with unsquashfs -f -d %s %s", extractDir, squashFile, extractDir, squashFile)
+		cmd := exec.Command("unsquashfs", "-f", "-d", extractDir, squashFile)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = nil
+		return cmd.Run()
+	}
+	return errors.Errorf("Unable to extract squash archive %s", squashFile)
 }
 
 func mksquashfsSupportsZstd() bool {
@@ -198,4 +219,36 @@ func mksquashfsSupportsZstd() bool {
 	})
 
 	return zstdIsSuspported
+}
+
+// which - like the unix utility, return empty string for not-found.
+// this might fit well in lib/, but currently lib's test imports
+// squashfs creating a import loop.
+func which(name string) string {
+	return whichSearch(name, strings.Split(os.Getenv("PATH"), ":"))
+}
+
+func whichSearch(name string, paths []string) string {
+	var search []string
+
+	if strings.ContainsRune(name, os.PathSeparator) {
+		if path.IsAbs(name) {
+			search = []string{name}
+		} else {
+			search = []string{"./" + name}
+		}
+	} else {
+		search = []string{}
+		for _, p := range paths {
+			search = append(search, path.Join(p, name))
+		}
+	}
+
+	for _, fPath := range search {
+		if err := unix.Access(fPath, unix.X_OK); err == nil {
+			return fPath
+		}
+	}
+
+	return ""
 }
