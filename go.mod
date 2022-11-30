@@ -6,7 +6,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/anuvu/squashfs v0.0.0-20220228153512-67c8ca12cbf4
 	github.com/apex/log v1.9.0
-	github.com/cheggaaa/pb/v3 v3.0.8
+	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/freddierice/go-losetup v0.0.0-20220331141030-7ad00c49b973
@@ -28,7 +28,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.5
 	github.com/vbatts/go-mtree v0.5.0
-	golang.org/x/sys v0.0.0-20220408201424-a24fb2fb8a0f
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/yaml.v2 v2.4.0
 )
