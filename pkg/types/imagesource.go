@@ -43,10 +43,10 @@ func NewDockerishUrl(thing string) (dockerishUrl, error) {
 }
 
 type ImageSource struct {
-	Type     string `yaml:"type"`
-	Url      string `yaml:"url"`
-	Tag      string `yaml:"tag"`
-	Insecure bool   `yaml:"insecure"`
+	Type     string `yaml:"type" json:"type"`
+	Url      string `yaml:"url" json:"url,omitempty"`
+	Tag      string `yaml:"tag" json:"tag,omitempty"`
+	Insecure bool   `yaml:"insecure" json:"insecure,omitempty"`
 }
 
 func NewImageSource(containersImageString string) (*ImageSource, error) {
