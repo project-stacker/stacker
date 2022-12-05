@@ -8,7 +8,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
 
-build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd/stacker
+build_stacker = go build $1 -tags "$(BUILD_TAGS) $2" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $3" -o $4 ./cmd/stacker
 
 STACKER_DOCKER_BASE?=docker://
 STACKER_BUILD_BASE_IMAGE?=$(STACKER_DOCKER_BASE)alpine:edge
@@ -23,15 +23,30 @@ stacker: stacker-dynamic
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
-		--substitute VERSION_FULL=$(VERSION_FULL)
+		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute WITH_COV=no
+
+stacker-cov: stacker-dynamic
+	./stacker-dynamic --debug $(STACKER_OPTS) build \
+		-f build.yaml --shell-fail \
+		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
+		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
+		--substitute LXC_BRANCH=$(LXC_BRANCH) \
+		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute WITH_COV=yes
 
 stacker-static: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,static_build,-extldflags '-static',stacker)
+	$(call build_stacker,,static_build,-extldflags '-static',stacker)
+
+# can't use a comma in func call args, so do this instead
+, := ,
+stacker-static-cov: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
+	$(call build_stacker,-cover -coverpkg="./pkg/...$(,)./cmd/...",static_build,-extldflags '-static',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
 stacker-dynamic: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,,,stacker-dynamic)
+	$(call build_stacker,,,,stacker-dynamic)
 
 cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
 	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) -lpthread -ldl" lxc-wrapper
@@ -58,6 +73,11 @@ check: stacker lint
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
 		./test/main.py \
+		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
+		$(patsubst %,test/%.bats,$(TEST))
+
+check-cov: stacker-cov lint
+	sudo -E PATH="$$PATH" LXC_BRANCH="$(LXC_BRANCH)" LXC_CLONE_URL="$(LXC_CLONE_URL)" ./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 

@@ -89,4 +89,8 @@ build:
     export VERSION_FULL=${{VERSION_FULL}}
 
     make -C /stacker-tree/cmd/stacker/lxc-wrapper clean
-    make -C /stacker-tree stacker-static
+    if [ x${{WITH_COV}} = x"yes" ]; then
+      make -C /stacker-tree stacker-static-cov
+    else
+      make -C /stacker-tree stacker-static
+    fi

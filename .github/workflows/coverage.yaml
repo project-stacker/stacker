@@ -1,4 +1,4 @@
-name: Reusable stacker build
+name: Reusable stacker build for coverage
 on:
   workflow_call:
     inputs:
@@ -44,18 +44,13 @@ jobs:
       - if: github.event_name != 'release' || github.event.action != 'published'
         name: Build and test
         run: |
-          make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+          export GOCOVERDIR=.
+          make check-cov PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+          go tool covdata textfmt -i $GOCOVERDIR -o coverage-${{ matrix.privilege-level }}.txt
+          go tool covdata percent -i $GOCOVERDIR
         env:
           REGISTRY_URL: localhost:5000
-      - if: github.event_name == 'release' && github.event.action == 'published'
-        name: Build and test released version
-        run: |
-          make check VERSION_FULL=${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
-        env:
-          REGISTRY_URL: localhost:5000
-      - if: github.event_name == 'release' && github.event.action == 'published'
-        uses: actions/cache@v3
-        id: restore-build
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v3
         with:
-          path: stacker
-          key: ${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}
+          files: coverage-${{ matrix.privilege-level}}.txt
