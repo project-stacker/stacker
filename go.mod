@@ -28,7 +28,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.10
 	github.com/vbatts/go-mtree v0.5.2
-	golang.org/x/sys v0.2.0
+	golang.org/x/sys v0.3.0
 	golang.org/x/term v0.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
