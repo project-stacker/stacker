@@ -8,7 +8,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/stacker --storage-type=overlay
 
-build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd
+build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd/stacker
 
 STACKER_DOCKER_BASE?=docker://
 STACKER_BUILD_BASE_IMAGE?=$(STACKER_DOCKER_BASE)alpine:edge
@@ -24,19 +24,19 @@ stacker: stacker-dynamic
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH)
 
-stacker-static: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
+stacker-static: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,static_build,-extldflags '-static',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
-stacker-dynamic: $(GO_SRC) go.mod go.sum cmd/lxc-wrapper/lxc-wrapper
+stacker-dynamic: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,,,stacker-dynamic)
 
-cmd/lxc-wrapper/lxc-wrapper: cmd/lxc-wrapper/lxc-wrapper.c
-	make -C cmd/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) -lpthread -ldl" lxc-wrapper
+cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
+	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) -lpthread -ldl" lxc-wrapper
 
 .PHONY: lint
-lint: cmd/lxc-wrapper/lxc-wrapper $(GO_SRC)
+lint: cmd/stacker/lxc-wrapper/lxc-wrapper $(GO_SRC)
 	go mod tidy
 	go fmt ./... && ([ -z $(CI) ] || git diff --exit-code)
 	bash test/static-analysis.sh
@@ -69,4 +69,4 @@ vendorup:
 clean:
 	-unshare -Urm rm -rf stacker stacker-dynamic .build
 	-rm -r ./test/centos ./test/ubuntu
-	-make -C cmd/lxc-wrapper clean
+	-make -C cmd/stacker/lxc-wrapper clean
