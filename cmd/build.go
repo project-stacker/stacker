@@ -38,6 +38,10 @@ func initCommonBuildFlags() []cli.Flag {
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
 		cli.StringFlag{
+			Name:  "substitute-file",
+			Usage: "file containing variable substitution in stackerfiles, 'FOO: bar' yaml format",
+		},
+		cli.StringFlag{
 			Name:  "on-run-failure",
 			Usage: "command to run inside container if run fails (useful for inspection)",
 		},
@@ -90,6 +94,7 @@ func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 		Config:               config,
 		NoCache:              ctx.Bool("no-cache"),
 		Substitute:           ctx.StringSlice("substitute"),
+		SubstituteFile:       ctx.String("substitute-file"),
 		OnRunFailure:         ctx.String("on-run-failure"),
 		OrderOnly:            ctx.Bool("order-only"),
 		HashRequired:         ctx.Bool("require-hash"),

@@ -46,6 +46,14 @@ func Infof(msg string, v ...interface{}) {
 	addStackerLogSentinel(log.NewEntry(log.Log.(*log.Logger))).Infof(msg, v...)
 }
 
+func Errorf(msg string, v ...interface{}) {
+	addStackerLogSentinel(log.NewEntry(log.Log.(*log.Logger))).Errorf(msg, v...)
+}
+
+func Fatalf(msg string, v ...interface{}) {
+	addStackerLogSentinel(log.NewEntry(log.Log.(*log.Logger))).Fatalf(msg, v...)
+}
+
 type TextHandler struct {
 	out       io.StringWriter
 	timestamp bool

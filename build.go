@@ -15,6 +15,7 @@ import (
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/container"
 	"stackerbuild.io/stacker/log"
 	"stackerbuild.io/stacker/types"
@@ -27,6 +28,7 @@ type BuildArgs struct {
 	LeaveUnladen         bool
 	NoCache              bool
 	Substitute           []string
+	SubstituteFile       string
 	OnRunFailure         string
 	LayerTypes           []types.LayerType
 	OrderOnly            bool
@@ -44,6 +46,24 @@ type Builder struct {
 
 // NewBuilder initializes a new Builder struct
 func NewBuilder(opts *BuildArgs) *Builder {
+	if opts.SubstituteFile != "" {
+		bytes, err := os.ReadFile(opts.SubstituteFile)
+		if err != nil {
+			log.Fatalf("unable to read substitute-file:%s, err:%e", opts.SubstituteFile, err)
+			return nil
+		}
+
+		var yamlMap map[string]string
+		if err := yaml.Unmarshal(bytes, &yamlMap); err != nil {
+			log.Fatalf("unable to unmarshal substitute-file:%s, err:%s", opts.SubstituteFile, err)
+			return nil
+		}
+
+		for k, v := range yamlMap {
+			opts.Substitute = append(opts.Substitute, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+
 	return &Builder{
 		builtStackerfiles: make(map[string]*types.Stackerfile, 1),
 		opts:              opts,
