@@ -25,6 +25,8 @@ build-env:
       squashfs-tools-ng-dev \
       linux-headers
 
+    numcpu=$(grep -c processor /proc/cpuinfo)
+
     # json-c doesn't have static binaries in alpine
     apk add cmake
     tar -xf /stacker/json-c-*
@@ -32,14 +34,14 @@ build-env:
     mkdir build
     cd build
     cmake ..
-    make -j$(grep -c processor /proc/cpuinfo) install
+    make -j${numcpu} install
     cd /
 
     # build libdevmapper.a
     tar -xf /stacker/v2_03_15.tar.gz
     cd lvm2-*
     ./configure --enable-static_link
-    make install_device-mapper
+    make -j${numcpu} install_device-mapper
     cd /
 
     # build static cryptsetup without all the command line tools
@@ -51,7 +53,7 @@ build-env:
     ./configure --enable-static \
       --disable-cryptsetup --disable-veritysetup --disable-integritysetup \
       --disable-nls --disable-ssh-token
-    make -j$(grep -c processor /proc/cpuinfo) install
+    make -j${numcpu} install
     cd /
 
     # build lxc
@@ -69,7 +71,7 @@ build-env:
     cd xz
     ./autogen.sh
     ./configure --enable-static --enable-shared --prefix=/usr
-    make -j$(grep -c processor /proc/cpuinfo) install
+    make -j${numcpu} install
     cd /
 
 build:
