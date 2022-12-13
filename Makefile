@@ -10,7 +10,10 @@ STACKER_OPTS=--oci-dir=.build/oci --roots-dir=.build/roots --stacker-dir=.build/
 
 build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd
 
-STACKER_BUILD_BASE_IMAGE?=docker://alpine:edge
+STACKER_DOCKER_BASE?=docker://
+STACKER_BUILD_BASE_IMAGE?=$(STACKER_DOCKER_BASE)alpine:edge
+STACKER_BUILD_CENTOS_IMAGE?=$(STACKER_DOCKER_BASE)centos:latest
+STACKER_BUILD_UBUNTU_IMAGE?=$(STACKER_DOCKER_BASE)ubuntu:latest
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-5.0
 
@@ -47,7 +50,13 @@ PRIVILEGE_LEVEL?=
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
 check: stacker lint
-	sudo -E PATH="$$PATH" LXC_BRANCH="$(LXC_BRANCH)" LXC_CLONE_URL="$(LXC_CLONE_URL)" ./test/main.py \
+	sudo -E PATH="$$PATH" \
+		LXC_BRANCH=$(LXC_BRANCH) \
+		LXC_CLONE_URL=$(LXC_CLONE_URL) \
+		STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
+		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
+		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
