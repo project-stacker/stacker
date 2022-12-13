@@ -168,21 +168,28 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 		return err
 	}
 
-	if p := which("squashfuse"); p != "" {
+	findSqfusePath := func() string {
+		if p := which("squashfuse_ll"); p != "" {
+			return p
+		}
+		return which("squashfuse")
+	}
+
+	if sqfuse := findSqfusePath(); sqfuse != "" {
 		// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
 		extractDir := strings.TrimSuffix(extractDir, "/")
 
 		var cmdOut io.Writer
 		logf := path.Join(path.Dir(extractDir), "."+path.Base(extractDir)+"-squashfuse.log")
 		if cmdOut, err = os.OpenFile(logf, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644); err != nil {
-			log.Infof("Failed to open %s for write: %v", p, err)
+			log.Infof("Failed to open %s for write: %v", logf, err)
 			return err
 		}
 
 		// It would be nice to only enable debug (or maybe to only log to file at all)
 		// if 'stacker --debug', but we do not have access to that info here.
 		// to debug squashfuse, use "allow_other,debug"
-		cmd := exec.Command("squashfuse", "-f", "-o", "allow_other,debug", squashFile, extractDir)
+		cmd := exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
 		cmd.Stdin = nil
 		cmd.Stdout = cmdOut
 		cmd.Stderr = cmdOut
