@@ -61,6 +61,8 @@ Hub.
 `built`: `tag` is required, everything else is ignored. `built` bases this
 layer on a previously specified layer in the stacker file.
 
+`scratch`: which is an empty rootfs and can be used to host statically built binaries.
+
 ### `import`
 
 The `import` directive describes what files should be made available in
