@@ -31,6 +31,8 @@ type BaseLayerOpts struct {
 func GetBase(o BaseLayerOpts) error {
 	switch o.Layer.From.Type {
 	case types.BuiltLayer:
+		fallthrough
+	case types.ScratchLayer:
 		return nil
 	case types.TarLayer:
 		cacheDir := path.Join(o.Config.StackerDir, "layer-bases")
@@ -38,7 +40,7 @@ func GetBase(o BaseLayerOpts) error {
 			return err
 		}
 
-		_, err := acquireUrl(o.Config, o.Storage, o.Layer.From.Url, cacheDir, o.Progress, "")
+		_, err := acquireUrl(o.Config, o.Storage, o.Layer.From.Url, cacheDir, o.Progress, "", nil, -1, -1)
 		return err
 	/* now we can do all the containers/image types */
 	case types.OCILayer:
@@ -74,6 +76,8 @@ func SetupRootfs(o BaseLayerOpts) error {
 	}
 
 	switch o.Layer.From.Type {
+	case types.ScratchLayer:
+		return o.Storage.SetupEmptyRootfs(o.Name)
 	case types.TarLayer:
 		err := o.Storage.SetupEmptyRootfs(o.Name)
 		if err != nil {

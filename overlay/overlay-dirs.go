@@ -61,7 +61,7 @@ func generateOverlayDirLayer(name string, layerType types.LayerType, overlayDir 
 	}
 
 	err = os.Symlink(contents, overlayPath(config, desc.Digest, "overlay"))
-	if err != nil {
+	if err != nil && !errors.Is(err, os.ErrExist) {
 		return ispec.Descriptor{}, errors.Wrapf(err, "failed to create symlink")
 	}
 

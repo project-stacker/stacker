@@ -297,3 +297,55 @@ EOF
 
     stacker build
 }
+
+@test "different import types with perms" {
+    touch test_file
+    test_file_sha=$(sha test_file) || { stderr "failed sha $test_file"; return 1; }
+    touch test_file2
+    cat > stacker.yaml <<EOF
+first:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: test_file
+          hash: $test_file_sha
+        - test_file2
+        - https://bing.com/favicon.ico
+    run: |
+        [ -f /stacker/test_file ]
+        [ -f /stacker/test_file2 ]
+        cp /stacker/test_file /test_file
+    build_only: true
+second:
+    from:
+        type: built
+        tag: first
+    import:
+        path: stacker://first/test_file
+        perms: 0777
+        hash: $test_file_sha
+    run: |
+        [ -f /stacker/test_file ]
+third:
+    from:
+        type: scratch
+    import:
+        path: stacker://first/test_file
+        mode: 0777
+        hash: $test_file_sha
+        dest: /
+fourth:
+    from:
+        type: scratch
+    import:
+        path: test_file
+        hash: $test_file_sha
+        mode: 0777
+        uid: 1000
+        gid: 1000
+        dest: /
+EOF
+
+    stacker build
+}

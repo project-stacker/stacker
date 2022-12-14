@@ -25,6 +25,14 @@ var internalGoCmd = cli.Command{
 			Action: doCP,
 		},
 		cli.Command{
+			Name:   "chmod",
+			Action: doChmod,
+		},
+		cli.Command{
+			Name:   "chown",
+			Action: doChown,
+		},
+		cli.Command{
 			Name:   "check-aa-profile",
 			Action: doCheckAAProfile,
 		},
@@ -104,6 +112,28 @@ func doCP(ctx *cli.Context) error {
 	}
 
 	return lib.CopyThing(
+		ctx.Args()[0],
+		ctx.Args()[1],
+	)
+}
+
+func doChmod(ctx *cli.Context) error {
+	if len(ctx.Args()) != 2 {
+		return errors.Errorf("wrong number of args")
+	}
+
+	return lib.Chmod(
+		ctx.Args()[0],
+		ctx.Args()[1],
+	)
+}
+
+func doChown(ctx *cli.Context) error {
+	if len(ctx.Args()) != 2 {
+		return errors.Errorf("wrong number of args")
+	}
+
+	return lib.Chown(
 		ctx.Args()[0],
 		ctx.Args()[1],
 	)

@@ -110,6 +110,17 @@ import:
   - /path/to/file
 ```
 
+#### `import dest`
+
+The `import` directive also supports specifying the destination path (specified
+by `dest`) in the resulting container image, where the source file (specified
+by `path`) will be copyied to, for example:
+```
+import:
+  - path: config.json
+    dest: /
+```
+
 ### `overlay_dirs`
 This directive works only with OverlayFS backend storage.
 

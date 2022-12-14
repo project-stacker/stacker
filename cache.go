@@ -207,6 +207,11 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	}
 
 	for _, imp := range l.Imports {
+		if imp.Dest != "" {
+			// ignore imports which are copied
+			continue
+		}
+
 		cachedImport, ok := result.Imports[imp.Path]
 		if !ok {
 			log.Infof("cache miss because of new import: %s", imp.Path)
@@ -401,6 +406,9 @@ func (c *BuildCache) getBaseHash(name string) (string, error) {
 		}
 
 		return fmt.Sprintf("%d", baseHash), nil
+	case types.ScratchLayer:
+		// no base hash to use
+		return "", nil
 	case types.TarLayer:
 		// use the hash of the input tarball
 		cacheDir := path.Join(c.config.StackerDir, "layer-bases")
@@ -457,6 +465,11 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 	}
 
 	for _, imp := range l.Imports {
+		if imp.Dest != "" {
+			// ignore imports which are copied
+			continue
+		}
+
 		fname := path.Base(imp.Path)
 		importsDir := path.Join(c.config.StackerDir, "imports")
 		diskPath := path.Join(importsDir, name, fname)
