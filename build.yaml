@@ -86,5 +86,5 @@ build:
     export GOPATH=/stacker-tree/.build/gopath
     export LXC_VERSION=$(git -C /lxc rev-parse HEAD)
 
-    make -C /stacker-tree/cmd/lxc-wrapper clean
+    make -C /stacker-tree/cmd/stacker/lxc-wrapper clean
     make -C /stacker-tree stacker-static

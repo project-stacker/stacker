@@ -1,7 +1,7 @@
 *.swp
 *.stacker
-stacker
-stacker-dynamic
+/stacker
+/stacker-dynamic
 .build
 
 # IDEs
