@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
@@ -19,6 +20,9 @@ import (
 
 var checkZstdSupported sync.Once
 var zstdIsSuspported bool
+
+var tryKernelMountSquash bool = true
+var kernelSquashMountFailed error = errors.New("kernel squash mount failed")
 
 // ExcludePaths represents a list of paths to exclude in a squashfs listing.
 // Users should do something like filepath.Walk() over the whole filesystem,
@@ -162,9 +166,63 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths, verity Verit
 	return blob, GenerateSquashfsMediaType(compression, verity), rootHash, nil
 }
 
+// maybeKernelSquashMount - try to mount squashfile with kernel mount
+//
+//	if global tryKernelMountSquash is false, do not try
+//	if environment variable STACKER_ALLOW_SQUASHFS_KERNEL_MOUNTS is "false", do not try.
+//	try.  If it fails, log message and set tryKernelMountSquash=false.
+func maybeKernelSquashMount(squashFile, extractDir string) (bool, error) {
+	if !tryKernelMountSquash {
+		return false, nil
+	}
+
+	const strTrue, strFalse = "true", "false"
+	const envName = "STACKER_ALLOW_SQUASHFS_KERNEL_MOUNTS"
+	envVal := os.Getenv(envName)
+	if envVal == strFalse {
+		log.Debugf("Not trying kernel mounts per %s=%s", envName, envVal)
+		tryKernelMountSquash = false
+		return false, nil
+	} else if envVal != strTrue && envVal != "" {
+		return false, errors.Errorf("%s must be '%s' or '%s', found '%s'", envName, strTrue, strFalse, envVal)
+	}
+
+	ecmd := []string{"mount", "-tsquashfs", "-oloop,ro", squashFile, extractDir}
+	var output bytes.Buffer
+	cmd := exec.Command(ecmd[0], ecmd[1:]...)
+	cmd.Stdin = nil
+	cmd.Stdout = &output
+	cmd.Stderr = cmd.Stdout
+	err := cmd.Run()
+	if err == nil {
+		return true, nil
+	}
+	exitError, ok := err.(*exec.ExitError)
+	if !ok {
+		tryKernelMountSquash = false
+		return false, errors.Errorf("Unexpected error (no-rc), in exec (%v): %v", ecmd, err)
+	}
+
+	status, ok := exitError.Sys().(syscall.WaitStatus)
+	if !ok {
+		tryKernelMountSquash = false
+		return false, errors.Errorf("Unexpected error (no-status) in exec (%v): %v", ecmd, err)
+	}
+
+	// we can't really tell why the mount failed. mount(8) does not give a lot specific rc exits.
+	log.Debugf("maybeKernelSquashMount(%s) exited %d: %s\n", squashFile, status.ExitStatus(), output.String())
+	return false, kernelSquashMountFailed
+}
+
 func ExtractSingleSquash(squashFile string, extractDir string, storageType string) error {
 	err := os.MkdirAll(extractDir, 0755)
 	if err != nil {
+		return err
+	}
+
+	if mounted, err := maybeKernelSquashMount(squashFile, extractDir); err == nil && mounted {
+		return nil
+	} else if err != kernelSquashMountFailed {
 		return err
 	}
 
