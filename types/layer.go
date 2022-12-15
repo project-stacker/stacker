@@ -52,38 +52,23 @@ type OverlayDir struct {
 
 type OverlayDirs []OverlayDir
 
-func validateDataAsBind(i interface{}) (map[interface{}]interface{}, error) {
-	bindMap, ok := i.(map[interface{}]interface{})
-	if !ok {
-		return nil, errors.Errorf("unable to cast into map[interface{}]interface{}: %T", i)
-	}
-
+func validateDataAsBind(dataMap map[string]string) (map[string]string, error) {
 	// validations
-	bindSource, ok := bindMap["Source"]
+	bindSource, ok := dataMap["Source"]
 	if !ok {
-		return nil, errors.Errorf("bind source missing: %v", i)
+		return nil, errors.Errorf("bind source missing: %v", dataMap)
 	}
 
-	_, ok = bindSource.(string)
+	bindDest, ok := dataMap["Dest"]
 	if !ok {
-		return nil, errors.Errorf("unknown bind source type, expected string: %T", i)
-	}
-
-	bindDest, ok := bindMap["Dest"]
-	if !ok {
-		return nil, errors.Errorf("bind dest missing: %v", i)
-	}
-
-	_, ok = bindDest.(string)
-	if !ok {
-		return nil, errors.Errorf("unknown bind dest type, expected string: %T", i)
+		return nil, errors.Errorf("bind dest missing: %v", dataMap)
 	}
 
 	if bindSource == "" || bindDest == "" {
-		return nil, errors.Errorf("empty source or dest: %v", i)
+		return nil, errors.Errorf("empty source or dest: %v", dataMap)
 	}
 
-	return bindMap, nil
+	return dataMap, nil
 }
 
 func getStringOrStringSlice(data interface{}, xform func(string) ([]string, error)) ([]string, error) {
@@ -104,8 +89,8 @@ func getStringOrStringSlice(data interface{}, xform func(string) ([]string, erro
 			switch v := i.(type) {
 			case string:
 				s = v
-			case interface{}:
-				bindMap, err := validateDataAsBind(i)
+			case map[string]string:
+				bindMap, err := validateDataAsBind(v)
 				if err != nil {
 					return nil, err
 				}
