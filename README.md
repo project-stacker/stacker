@@ -4,7 +4,7 @@
 </p>
 
 
-# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=master)](https://github.com/project-stacker/stacker/actions)
+# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=master)](https://github.com/project-stacker/stacker/actions) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker)
 
 Stacker is a tool for building OCI images natively via a declarative yaml format.
 
