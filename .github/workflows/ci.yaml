@@ -2,12 +2,11 @@ name: ci
 
 on:
   push:
+    branches:
+      - main
   pull_request:
-  schedule:
-    - cron: "0 0 * * 0" # weekly
-  release:
-    types:
-      - published
+    branches:
+      - main
 
 jobs:
   build:

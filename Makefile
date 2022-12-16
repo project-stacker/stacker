@@ -1,5 +1,5 @@
 GO_SRC=$(shell find . -path ./.build -prune -false -o -name \*.go)
-VERSION=$(shell git describe --tags || git rev-parse HEAD)
+VERSION?=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 
 LXC_VERSION?=$(shell pkg-config --modversion lxc)

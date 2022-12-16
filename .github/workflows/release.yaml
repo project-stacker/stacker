@@ -1,9 +1,9 @@
 name: "tagged-release"
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types:
+      - published
 
 jobs:
   ci:
@@ -26,9 +26,12 @@ jobs:
         with:
           path: stacker
           key: ${{ github.sha }}
-      - uses: marvinpinto/action-automatic-releases@latest
+      - if: github.event_name == 'release' && github.event.action == 'published'
+        name: Publish artifacts on releases
+        uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: stacker
-
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: stacker
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
