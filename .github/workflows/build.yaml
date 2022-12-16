@@ -39,8 +39,16 @@ jobs:
           sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin squashfuse
           (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
-      - run: |
+      - if: github.event_name != 'release' || github.event.action != 'published'
+        name: Build and test
+        run: |
           make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+        env:
+          REGISTRY_URL: localhost:5000
+      - if: github.event_name == 'release' && github.event.action == 'published'
+        name: Build and test released version
+        run: |
+          make check VERSION=${{ github.event.release.tag_name }}-${{ github.sha }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
       - uses: actions/cache@v3
