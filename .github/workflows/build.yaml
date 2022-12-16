@@ -25,6 +25,8 @@ jobs:
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v3
+      - uses: benjlevesque/short-sha@v2.1
+        id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
         uses: actions/setup-go@v3
         with:
@@ -48,7 +50,7 @@ jobs:
       - if: github.event_name == 'release' && github.event.action == 'published'
         name: Build and test released version
         run: |
-          make check VERSION=${{ github.event.release.tag_name }}-${{ github.sha }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+          make check VERSION_FULL=${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
       - uses: actions/cache@v3
