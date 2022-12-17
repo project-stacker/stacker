@@ -22,7 +22,8 @@ stacker: stacker-dynamic
 		-f build.yaml --shell-fail \
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
-		--substitute LXC_BRANCH=$(LXC_BRANCH)
+		--substitute LXC_BRANCH=$(LXC_BRANCH) \
+		--substitute VERSION_FULL=$(VERSION_FULL)
 
 stacker-static: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,static_build,-extldflags '-static',stacker)
