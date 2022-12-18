@@ -21,11 +21,13 @@ jobs:
     # needs ci for the cached stacker binary
     needs: ci
     steps:
+      - uses: benjlevesque/short-sha@v2.1
+        id: short-sha
       - uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker
-          key: ${{ github.sha }}
+          key: ${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}
       - if: github.event_name == 'release' && github.event.action == 'published'
         name: Publish artifacts on releases
         uses: svenstaro/upload-release-action@v2

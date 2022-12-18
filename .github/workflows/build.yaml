@@ -53,8 +53,9 @@ jobs:
           make check VERSION_FULL=${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
-      - uses: actions/cache@v3
+      - if: github.event_name == 'release' && github.event.action == 'published'
+        uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker
-          key: ${{ github.sha }}
+          key: ${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}
