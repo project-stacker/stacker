@@ -1,7 +1,6 @@
 package atomfs
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -109,7 +108,7 @@ func makeLock(mountpoint string) (*os.File, error) {
 		return lockfile, nil
 	}
 
-	err = fmt.Errorf("Failed locking %s: %v\nFailed locking %s: %v", advisoryLockPath, err, lockPath, err2)
+	err = errors.Errorf("Failed locking %s: %v\nFailed locking %s: %v", advisoryLockPath, err, lockPath, err2)
 	return lockfile, err
 }
 

@@ -71,6 +71,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/anuvu/squashfs"
@@ -78,6 +79,7 @@ import (
 	"github.com/martinjungblut/go-cryptsetup"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/mount"
 )
 
@@ -200,7 +202,110 @@ func verityName(p string) string {
 	return fmt.Sprintf("%s-%s", p, veritySuffix)
 }
 
-func Mount(squashfs string, mountpoint string, rootHash string) error {
+func fileChanged(a os.FileInfo, path string) bool {
+	b, err := os.Lstat(path)
+	if err != nil {
+		return true
+	}
+	return !os.SameFile(a, b)
+}
+
+// Mount a filesystem as container root, without host root
+// privileges.  We do this using squashfuse.
+func GuestMount(squashFile string, mountpoint string) error {
+	if isMountpoint(mountpoint) {
+		return errors.Errorf("%s is already mounted", mountpoint)
+	}
+
+	abs, err := filepath.Abs(squashFile)
+	if err != nil {
+		return errors.Errorf("Failed to get absolute path for %s: %v", squashFile, err)
+	}
+	squashFile = abs
+
+	abs, err = filepath.Abs(mountpoint)
+	if err != nil {
+		return errors.Errorf("Failed to get absolute path for %s: %v", mountpoint, err)
+	}
+	mountpoint = abs
+
+	fiPre, err := os.Lstat(mountpoint)
+	if err != nil {
+		return errors.Wrapf(err, "Failed stat'ing %q", mountpoint)
+	}
+	if fiPre.Mode()&os.ModeSymlink != 0 {
+		return errors.Errorf("Refusing to mount onto a symbolic linkd")
+	}
+
+	cmd, err := squashFuse(squashFile, mountpoint)
+	if err != nil {
+		return err
+	}
+	err = cmd.Process.Release()
+	if err != nil {
+		return errors.Wrapf(err, "Failed releasing squashfuse process")
+	}
+
+	for count := 0; !fileChanged(fiPre, mountpoint); count++ {
+		if count%10 == 0 {
+			log.Debugf("%s is not yet mounted...\n", mountpoint)
+		}
+		time.Sleep(time.Duration(100 * time.Millisecond))
+	}
+
+	return nil
+}
+
+func isMountpoint(dest string) bool {
+	mounted, err := mount.IsMountpoint(dest)
+	return err == nil && mounted
+}
+
+// Takes /proc/self/uid_map contents as one string
+// Returns true if this is a uidmap representing the whole host
+// uid range.
+func uidmapIsHost(oneline string) bool {
+	oneline = strings.TrimSuffix(oneline, "\n")
+	if len(oneline) == 0 {
+		return false
+	}
+	lines := strings.Split(oneline, "\n")
+	if len(lines) != 1 {
+		return false
+	}
+	words := strings.Fields(lines[0])
+	if len(words) != 3 || words[0] != "0" || words[1] != "0" || words[2] != "4294967295" {
+		return false
+	}
+
+	return true
+}
+
+func amHostRoot() bool {
+	// if not uid 0, not host root
+	if os.Geteuid() != 0 {
+		return false
+	}
+	// if uid_map doesn't map 0 to 0, not host root
+	bytes, err := os.ReadFile("/proc/self/uid_map")
+	if err != nil {
+		return false
+	}
+	return uidmapIsHost(string(bytes))
+}
+
+func Mount(squashfs, mountpoint, rootHash string) error {
+	if !amHostRoot() {
+		return GuestMount(squashfs, mountpoint)
+	}
+	err := HostMount(squashfs, mountpoint, rootHash)
+	if err == nil || rootHash != "" {
+		return err
+	}
+	return GuestMount(squashfs, mountpoint)
+}
+
+func HostMount(squashfs string, mountpoint string, rootHash string) error {
 	fi, err := os.Stat(squashfs)
 	if err != nil {
 		return errors.WithStack(err)
