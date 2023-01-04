@@ -149,8 +149,9 @@ EOF
     # The layer should be built
     stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI
     out=$(stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI)
+    echo "OUT=*${out}*"
     [[ "${out}" =~ ^(.*rebuilding cached layer due to use of binds in stacker file.*)$ ]]
-    [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
+    [[ "${out}" =~ ^(.*filesyste bind-test built successfully)$ ]]
 
     # TODO: FIXME: need to change the import. If stacker re-builds exactly the
     # same layer (possible if things go fast enough that the mtimes are within

@@ -177,6 +177,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	l, ok := c.sfm.LookupLayerDefinition(name)
 
 	if !ok {
+		log.Infof("Lookup1")
 		return nil, false, nil
 	}
 
@@ -186,23 +187,30 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		// don't log a message here because it's probably not found
 		// because it's either 1. the first time this thing has been
 		// run or 2. a new layer from the previous run.
+		log.Infof("Lookup2: name:%v cache:%v", name, c.Cache)
 		return nil, false, nil
 	}
+
+	log.Debugf("cached: %+#v", result.Layer)
+	log.Debugf("new: %+#v", l)
 
 	if !reflect.DeepEqual(result.Layer, l) {
 		log.Debugf("cached: %+#v", result.Layer)
 		log.Debugf("new: %+#v", l)
 		log.Infof("cache miss because layer definition was changed")
+		log.Infof("Lookup3")
 		return nil, false, nil
 	}
 
 	baseHash, err := c.getBaseHash(name)
 	if err != nil {
+		log.Infof("Lookup4")
 		return nil, false, err
 	}
 
 	if baseHash != result.Base {
 		log.Infof("cache miss because base layer was changed")
+		log.Infof("Lookup5")
 		return nil, false, nil
 	}
 
@@ -215,6 +223,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		cachedImport, ok := result.Imports[imp.Path]
 		if !ok {
 			log.Infof("cache miss because of new import: %s", imp.Path)
+			log.Infof("Lookup6")
 			return nil, false, nil
 		}
 
@@ -225,33 +234,40 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Infof("cache miss because import was missing: %s", imp.Path)
+				log.Infof("Lookup7")
 				return nil, false, nil
 			}
+			log.Infof("Lookup8")
 			return nil, false, err
 		}
 
 		if cachedImport.Type.IsDir() != st.IsDir() {
 			log.Infof("cache miss because import type changed: %s", imp.Path)
+			log.Infof("Lookup9")
 			return nil, false, err
 		}
 
 		if st.IsDir() {
 			dirChanged, err := isCachedDirChanged(diskPath, cachedImport.Hash)
 			if err != nil {
+				log.Infof("Lookup10")
 				return nil, false, err
 			}
 			if dirChanged {
 				log.Infof("cache miss because import dir content changed: %s", imp.Path)
+				log.Infof("Lookup11")
 				return nil, false, nil
 			}
 		} else {
 			h, err := lib.HashFile(diskPath, true)
 			if err != nil {
+				log.Infof("Lookup12")
 				return nil, false, err
 			}
 
 			if h != cachedImport.Hash {
 				log.Infof("cache miss because import content changed: %s", imp.Path)
+				log.Infof("Lookup13")
 				return nil, false, nil
 			}
 		}
@@ -262,6 +278,7 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		cachedOverlayDir, ok := result.OverlayDirs[overlayDir.Source]
 		if !ok {
 			log.Infof("cache miss because of new overlay_dir: %s", overlayDir.Source)
+			log.Infof("Lookup14")
 			return nil, false, nil
 		}
 		overlayDirDiskPath := path.Join(c.config.RootFSDir, name, "overlay_dirs", path.Base(overlayDir.Source), overlayDir.Dest)
@@ -269,18 +286,21 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Infof("cache miss because overlay_dir was missing: %s", overlayDir.Source)
+				log.Infof("Lookup15")
 				return nil, false, nil
 			}
 			return nil, false, err
 		}
 		dirChanged, err := isCachedDirChanged(overlayDir.Source, cachedOverlayDir.Hash)
 		if err != nil {
+			log.Infof("Lookup16")
 			return nil, false, err
 		}
 		if dirChanged {
 			overlayDirsChanged = true
 			changedOverlayDirs[overlayDir.Source], err = cachedFileDiff(overlayDir.Source, cachedOverlayDir.Hash)
 			if err != nil {
+				log.Infof("Lookup17")
 				return nil, false, err
 			}
 		}
@@ -299,8 +319,10 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 			counter++
 		}
+		log.Infof("Lookup18")
 		return nil, false, nil
 	}
+	log.Infof("Lookup19")
 	return &result, true, nil
 }
 

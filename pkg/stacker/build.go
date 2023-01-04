@@ -381,6 +381,9 @@ func (b *Builder) build(s types.Storage, file string) error {
 		if err != nil {
 			return err
 		}
+
+		log.Debugf("TEST (binds): %v %v hit: %v", len(l.Binds), l.Binds, cacheHit)
+
 		if cacheHit && (len(l.Binds) == 0) {
 			if l.BuildOnly {
 				if cacheEntry.Name != name {
