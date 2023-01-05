@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -71,7 +72,7 @@ func (eps *ExcludePaths) AddInclude(orig string, isDir bool) {
 		}
 
 		delete(eps.exclude, p)
-		p = path.Dir(p)
+		p = filepath.Dir(p)
 	}
 
 	// now add it to the list of includes, so we don't accidentally re-add
@@ -214,6 +215,51 @@ func maybeKernelSquashMount(squashFile, extractDir string) (bool, error) {
 	return false, kernelSquashMountFailed
 }
 
+func findSquashfusePath() string {
+	if p := which("squashfuse_ll"); p != "" {
+		return p
+	}
+	return which("squashfuse")
+}
+
+var squashNotFound = errors.Errorf("squashfuse program not found")
+
+func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
+	sqfuse := findSquashfusePath()
+	if sqfuse == "" {
+		return nil, squashNotFound
+	}
+
+	// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
+	extractDir = strings.TrimSuffix(extractDir, "/")
+
+	var cmdOut io.Writer
+	var err error
+	var nilCmd *exec.Cmd
+
+	logf := filepath.Join(path.Dir(extractDir), "."+filepath.Base(extractDir)+"-squashfuse.log")
+	if cmdOut, err = os.OpenFile(logf, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644); err != nil {
+		log.Infof("Failed to open %s for write: %v", logf, err)
+		return nilCmd, err
+	}
+
+	// It would be nice to only enable debug (or maybe to only log to file at all)
+	// if 'stacker --debug', but we do not have access to that info here.
+	// to debug squashfuse, use "allow_other,debug"
+	cmd := exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
+	cmd.Stdin = nil
+	cmd.Stdout = cmdOut
+	cmd.Stderr = cmdOut
+	cmdOut.Write([]byte(fmt.Sprintf("# %s\n", strings.Join(cmd.Args, " "))))
+	log.Debugf("Extracting %s -> %s with squashfuse [%s]", squashFile, extractDir, logf)
+	err = cmd.Start()
+	if err != nil {
+		return nilCmd, err
+	}
+
+	return cmd, nil
+}
+
 func ExtractSingleSquash(squashFile string, extractDir string, storageType string) error {
 	err := os.MkdirAll(extractDir, 0755)
 	if err != nil {
@@ -226,35 +272,11 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 		return err
 	}
 
-	findSqfusePath := func() string {
-		if p := which("squashfuse_ll"); p != "" {
-			return p
-		}
-		return which("squashfuse")
+	_, err = squashFuse(squashFile, extractDir)
+	if err == nil || err != squashNotFound {
+		return err
 	}
-
-	if sqfuse := findSqfusePath(); sqfuse != "" {
-		// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
-		extractDir := strings.TrimSuffix(extractDir, "/")
-
-		var cmdOut io.Writer
-		logf := path.Join(path.Dir(extractDir), "."+path.Base(extractDir)+"-squashfuse.log")
-		if cmdOut, err = os.OpenFile(logf, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644); err != nil {
-			log.Infof("Failed to open %s for write: %v", logf, err)
-			return err
-		}
-
-		// It would be nice to only enable debug (or maybe to only log to file at all)
-		// if 'stacker --debug', but we do not have access to that info here.
-		// to debug squashfuse, use "allow_other,debug"
-		cmd := exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
-		cmd.Stdin = nil
-		cmd.Stdout = cmdOut
-		cmd.Stderr = cmdOut
-		cmdOut.Write([]byte(fmt.Sprintf("# %s\n", strings.Join(cmd.Args, " "))))
-		log.Debugf("Extracting %s -> %s with squashfuse [%s]", squashFile, extractDir, logf)
-		return cmd.Start()
-	} else if p := which("unsquashfs"); p != "" {
+	if p := which("unsquashfs"); p != "" {
 		log.Debugf("Extracting %s -> %s with unsquashfs -f -d %s %s", extractDir, squashFile, extractDir, squashFile)
 		cmd := exec.Command("unsquashfs", "-f", "-d", extractDir, squashFile)
 		cmd.Stdout = os.Stdout
@@ -297,7 +319,7 @@ func whichSearch(name string, paths []string) string {
 	var search []string
 
 	if strings.ContainsRune(name, os.PathSeparator) {
-		if path.IsAbs(name) {
+		if filepath.IsAbs(name) {
 			search = []string{name}
 		} else {
 			search = []string{"./" + name}
@@ -305,7 +327,7 @@ func whichSearch(name string, paths []string) string {
 	} else {
 		search = []string{}
 		for _, p := range paths {
-			search = append(search, path.Join(p, name))
+			search = append(search, filepath.Join(p, name))
 		}
 	}
 

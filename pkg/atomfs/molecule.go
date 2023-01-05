@@ -94,8 +94,26 @@ func (m Molecule) overlayArgs(dest string) (string, error) {
 // device exists. so try to cooperate via this lock.
 var advisoryLockPath = path.Join(os.TempDir(), ".atomfs-lock")
 
-func (m Molecule) Mount(dest string) error {
+func makeLock(mountpoint string) (*os.File, error) {
 	lockfile, err := os.Create(advisoryLockPath)
+	if err == nil {
+		return lockfile, nil
+	}
+	// backup plan: lock the destination as ${path}.atomfs-lock
+	mountpoint = strings.TrimSuffix(mountpoint, "/")
+	lockPath := filepath.Join(mountpoint, ".atomfs-lock")
+	var err2 error
+	lockfile, err2 = os.Create(lockPath)
+	if err2 == nil {
+		return lockfile, nil
+	}
+
+	err = errors.Errorf("Failed locking %s: %v\nFailed locking %s: %v", advisoryLockPath, err, lockPath, err2)
+	return lockfile, err
+}
+
+func (m Molecule) Mount(dest string) error {
+	lockfile, err := makeLock(dest)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -134,7 +152,7 @@ func Umount(dest string) error {
 		return errors.Wrapf(err, "couldn't create abs path for %v", dest)
 	}
 
-	lockfile, err := os.Create(advisoryLockPath)
+	lockfile, err := makeLock(dest)
 	if err != nil {
 		return errors.WithStack(err)
 	}
