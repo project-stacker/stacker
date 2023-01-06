@@ -332,7 +332,7 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 				return errors.Wrapf(err, "couldn't create temp import copy directory")
 			}
 
-			ovl := types.OverlayDir{Source: tmpdir, Dest: "/"}
+			ovl := types.OverlayDir{Source: tmpdir, Dest: i.Dest}
 			*overlayDirs = append(*overlayDirs, ovl)
 
 			cache = tmpdir
