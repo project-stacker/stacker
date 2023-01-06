@@ -344,7 +344,7 @@ fourth:
         mode: 0777
         uid: 1000
         gid: 1000
-        dest: /
+        dest: /usr/bin
 EOF
 
     stacker build
