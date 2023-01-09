@@ -25,6 +25,10 @@ var publishCmd = cli.Command{
 			Value: stackerFilePathRegex,
 		},
 		cli.StringFlag{
+			Name:  "substitute-file",
+			Usage: "file containing variable substitution in stackerfiles, 'FOO: bar' yaml format",
+		},
+		cli.StringFlag{
 			Name:  "search-dir, d",
 			Usage: "directory under which to search for stackerfiles to publish",
 		},
@@ -104,17 +108,18 @@ func doPublish(ctx *cli.Context) error {
 	}
 
 	args := stacker.PublishArgs{
-		Config:     config,
-		ShowOnly:   ctx.Bool("show-only"),
-		Substitute: ctx.StringSlice("substitute"),
-		Tags:       ctx.StringSlice("tag"),
-		Url:        ctx.String("url"),
-		Username:   ctx.String("username"),
-		Password:   ctx.String("password"),
-		Force:      ctx.Bool("force"),
-		Progress:   shouldShowProgress(ctx),
-		SkipTLS:    ctx.Bool("skip-tls"),
-		LayerTypes: layerTypes,
+		Config:         config,
+		ShowOnly:       ctx.Bool("show-only"),
+		Substitute:     ctx.StringSlice("substitute"),
+		SubstituteFile: ctx.String("substitute-file"),
+		Tags:           ctx.StringSlice("tag"),
+		Url:            ctx.String("url"),
+		Username:       ctx.String("username"),
+		Password:       ctx.String("password"),
+		Force:          ctx.Bool("force"),
+		Progress:       shouldShowProgress(ctx),
+		SkipTLS:        ctx.Bool("skip-tls"),
+		LayerTypes:     layerTypes,
 	}
 
 	var stackerFiles []string
