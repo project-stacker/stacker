@@ -472,7 +472,7 @@ func getImportFromInterface(v interface{}) (Import, error) {
 				return Import{}, errors.Errorf("Dest path cannot be relative for: %#v", v)
 			}
 
-			dest = fmt.Sprintf("%q", m["dest"])
+			dest = fmt.Sprintf("%s", m["dest"])
 		} else {
 			dest = ""
 		}
@@ -513,7 +513,7 @@ func getImportFromInterface(v interface{}) (Import, error) {
 				return Import{}, errors.Errorf("Dest path cannot be relative for: %#v", v)
 			}
 
-			dest = fmt.Sprintf("%q", m["dest"])
+			dest = fmt.Sprintf("%s", m["dest"])
 		} else {
 			dest = ""
 		}

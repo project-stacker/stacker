@@ -345,6 +345,23 @@ fourth:
         uid: 1000
         gid: 1000
         dest: /usr/bin
+fifth:
+  from:
+    type: scratch
+  import:
+    - path: test_file
+      dest: /files/
+    - path: test_file2
+      dest: /files
+sixth:
+  from:
+    type: docker
+    url: docker://ubuntu:latest
+  import:
+    - stacker://fifth/files/test_file
+    - stacker://fifth/files/test_file2
+  run: |
+    ls -l /stacker
 EOF
 
     stacker build
