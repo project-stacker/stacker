@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -35,12 +36,12 @@ func IsContainersImageLayer(from string) bool {
 }
 
 type Import struct {
-	Path string       `yaml:"path"`
-	Hash string       `yaml:"hash"`
-	Dest string       `yaml:"dest"`
-	Mode *fs.FileMode `yaml:"mode"`
-	Uid  int          `yaml:"uid"`
-	Gid  int          `yaml:"gid"`
+	Path string       `yaml:"path" json:"path"`
+	Hash string       `yaml:"hash" json:"hash,omitempty"`
+	Dest string       `yaml:"dest" json:"dest,omitempty"`
+	Mode *fs.FileMode `yaml:"mode" json:"mode,omitempty"`
+	Uid  int          `yaml:"uid" json:"uid,omitempty"`
+	Gid  int          `yaml:"gid" json:"gid,omitempty"`
 }
 
 type Imports []Import
@@ -185,11 +186,51 @@ func (c *Command) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Bind struct {
-	Source string
-	Dest   string
+	Source string `yaml:"source" json:"source"`
+	Dest   string `yaml:"dest" json:"dest"`
 }
 
 type Binds []Bind
+
+func (bs *Bind) MarshalJSON() ([]byte, error) {
+	var sb strings.Builder
+	if bs.Dest == "" {
+		sb.WriteString(fmt.Sprintf("%q", bs.Source))
+	} else {
+		var sbt strings.Builder
+		sbt.WriteString(fmt.Sprintf("%s -> %s", bs.Source, bs.Dest))
+		sb.WriteString(fmt.Sprintf("%q", sbt.String()))
+	}
+
+	return []byte(sb.String()), nil
+}
+
+func (bs *Binds) UnmarshalJSON(data []byte) error {
+	var rawBinds []string
+
+	if err := json.Unmarshal(data, &rawBinds); err != nil {
+		return err
+	}
+
+	*bs = Binds{}
+	for _, bind := range rawBinds {
+		parts := strings.Split(bind, "->")
+		if len(parts) != 1 && len(parts) != 2 {
+			return errors.Errorf("invalid bind mount %s", bind)
+		}
+
+		source := strings.TrimSpace(parts[0])
+		target := source
+
+		if len(parts) == 2 {
+			target = strings.TrimSpace(parts[1])
+		}
+
+		*bs = append(*bs, Bind{Source: source, Dest: target})
+	}
+
+	return nil
+}
 
 func (bs *Binds) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var data interface{}
@@ -228,26 +269,26 @@ func (bs *Binds) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Layer struct {
-	From           ImageSource       `yaml:"from"`
-	Imports        Imports           `yaml:"import"`
-	OverlayDirs    OverlayDirs       `yaml:"overlay_dirs"`
-	Run            StringList        `yaml:"run"`
-	Cmd            Command           `yaml:"cmd"`
-	Entrypoint     Command           `yaml:"entrypoint"`
-	FullCommand    Command           `yaml:"full_command"`
-	BuildEnvPt     []string          `yaml:"build_env_passthrough"`
-	BuildEnv       map[string]string `yaml:"build_env"`
-	Environment    map[string]string `yaml:"environment"`
-	Volumes        []string          `yaml:"volumes"`
-	Labels         map[string]string `yaml:"labels"`
-	GenerateLabels StringList        `yaml:"generate_labels"`
-	WorkingDir     string            `yaml:"working_dir"`
-	BuildOnly      bool              `yaml:"build_only"`
-	Binds          Binds             `yaml:"binds"`
-	RuntimeUser    string            `yaml:"runtime_user"`
-	Annotations    map[string]string `yaml:"annotations"`
-	OS             *string           `yaml:"os"`
-	Arch           *string           `yaml:"arch"`
+	From           ImageSource       `yaml:"from" json:"from"`
+	Imports        Imports           `yaml:"import" json:"import,omitempty"`
+	OverlayDirs    OverlayDirs       `yaml:"overlay_dirs" json:"overlay_dirs,omitempty"`
+	Run            StringList        `yaml:"run" json:"run,omitempty"`
+	Cmd            Command           `yaml:"cmd" json:"cmd,omitempty"`
+	Entrypoint     Command           `yaml:"entrypoint" json:"entrypoint,omitempty"`
+	FullCommand    Command           `yaml:"full_command" json:"full_command,omitempty"`
+	BuildEnvPt     []string          `yaml:"build_env_passthrough" json:"build_env_passthrough,omitempty"`
+	BuildEnv       map[string]string `yaml:"build_env" json:"build_env,omitempty"`
+	Environment    map[string]string `yaml:"environment" json:"environment,omitempty"`
+	Volumes        []string          `yaml:"volumes" json:"volumes,omitempty"`
+	Labels         map[string]string `yaml:"labels" json:"labels,omitempty"`
+	GenerateLabels StringList        `yaml:"generate_labels" json:"generate_labels,omitempty"`
+	WorkingDir     string            `yaml:"working_dir" json:"working_dir,omitempty"`
+	BuildOnly      bool              `yaml:"build_only" json:"build_only,omitempty"`
+	Binds          Binds             `yaml:"binds" json:"binds,omitempty"`
+	RuntimeUser    string            `yaml:"runtime_user" json:"runtime_user,omitempty"`
+	Annotations    map[string]string `yaml:"annotations" json:"annotations,omitempty"`
+	OS             *string           `yaml:"os" json:"os,omitempty"`
+	Arch           *string           `yaml:"arch" json:"arch,omitempty"`
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {
@@ -502,7 +543,7 @@ func getImportFromInterface(v interface{}) (Import, error) {
 	// if it's not a map then it's a string
 	s, ok := v.(string)
 	if ok {
-		return Import{Hash: "", Path: fmt.Sprintf("%v", s)}, nil
+		return Import{Hash: "", Path: fmt.Sprintf("%v", s), Dest: "", Uid: uid, Gid: gid}, nil
 	}
 	return Import{}, errors.Errorf("Didn't find a matching type for: %#v", v)
 }

@@ -108,6 +108,7 @@ func main() {
 	app.Commands = []cli.Command{
 		buildCmd,
 		recursiveBuildCmd,
+		convertCmd,
 		publishCmd,
 		chrootCmd,
 		cleanCmd,

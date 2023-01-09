@@ -11,23 +11,25 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
 type PublishArgs struct {
-	Config     types.StackerConfig
-	ShowOnly   bool
-	Substitute []string
-	Tags       []string
-	Url        string
-	Username   string
-	Password   string
-	Force      bool
-	Progress   bool
-	SkipTLS    bool
-	LayerTypes []types.LayerType
+	Config         types.StackerConfig
+	ShowOnly       bool
+	Substitute     []string
+	SubstituteFile string
+	Tags           []string
+	Url            string
+	Username       string
+	Password       string
+	Force          bool
+	Progress       bool
+	SkipTLS        bool
+	LayerTypes     []types.LayerType
 }
 
 // Publisher is responsible for publishing the layers based on stackerfiles
@@ -38,6 +40,24 @@ type Publisher struct {
 
 // NewPublisher initializes a new Publisher struct
 func NewPublisher(opts *PublishArgs) *Publisher {
+	if opts.SubstituteFile != "" {
+		bytes, err := os.ReadFile(opts.SubstituteFile)
+		if err != nil {
+			log.Fatalf("unable to read substitute-file:%s, err:%e", opts.SubstituteFile, err)
+			return nil
+		}
+
+		var yamlMap map[string]string
+		if err := yaml.Unmarshal(bytes, &yamlMap); err != nil {
+			log.Fatalf("unable to unmarshal substitute-file:%s, err:%s", opts.SubstituteFile, err)
+			return nil
+		}
+
+		for k, v := range yamlMap {
+			opts.Substitute = append(opts.Substitute, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+
 	return &Publisher{
 		stackerfiles: make(map[string]*types.Stackerfile, 1),
 		opts:         opts,
