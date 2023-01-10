@@ -6,6 +6,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/anuvu/squashfs v0.0.0-20220404153901-d496132b2781
 	github.com/apex/log v1.9.0
+	github.com/apparentlymart/go-shquot v0.0.1
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
 	github.com/dustin/go-humanize v1.0.1
