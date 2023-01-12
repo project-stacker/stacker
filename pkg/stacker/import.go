@@ -85,7 +85,7 @@ func verifyImportFileHash(imp string, hash string) error {
 	return nil
 }
 
-func importFile(imp string, cacheDir string, hash string, mode *fs.FileMode, uid, gid int) (string, error) {
+func importFile(imp string, cacheDir string, hash string, idest string, mode *fs.FileMode, uid, gid int) (string, error) {
 	e1, err := os.Lstat(imp)
 	if err != nil {
 		return "", errors.Wrapf(err, "couldn't stat import %s", imp)
@@ -98,6 +98,9 @@ func importFile(imp string, cacheDir string, hash string, mode *fs.FileMode, uid
 		}
 		needsCopy := false
 		dest := path.Join(cacheDir, path.Base(imp))
+		if idest != "" && idest[len(idest)-1:] != "/" {
+			dest = path.Join(cacheDir, path.Base(idest))
+		}
 		e2, err := os.Stat(dest)
 		if err != nil {
 			needsCopy = true
@@ -214,8 +217,8 @@ func validateHash(hash string) error {
 	return nil
 }
 
-func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, progress bool, expectedHash string,
-	mode *fs.FileMode, uid, gid int,
+func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, expectedHash string,
+	idest string, mode *fs.FileMode, uid, gid int, progress bool,
 ) (string, error) {
 	url, err := types.NewDockerishUrl(i)
 	if err != nil {
@@ -229,7 +232,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 
 	// It's just a path, let's copy it to .stacker.
 	if url.Scheme == "" {
-		return importFile(i, cache, expectedHash, mode, uid, gid)
+		return importFile(i, cache, expectedHash, idest, mode, uid, gid)
 	} else if url.Scheme == "http" || url.Scheme == "https" {
 		// otherwise, we need to download it
 		// first verify the hashes
@@ -326,19 +329,27 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 
 	for _, i := range imports {
 		cache := dir
+
+		// if "import" directives has a "dest", then convert them into overlay_dir entries
 		if i.Dest != "" {
 			tmpdir, err := os.MkdirTemp(cpdir, "")
 			if err != nil {
 				return errors.Wrapf(err, "couldn't create temp import copy directory")
 			}
 
-			ovl := types.OverlayDir{Source: tmpdir, Dest: i.Dest}
+			dest := i.Dest
+
+			if i.Dest[len(i.Dest)-1:] != "/" {
+				dest = path.Dir(i.Dest)
+			}
+
+			ovl := types.OverlayDir{Source: tmpdir, Dest: dest}
 			*overlayDirs = append(*overlayDirs, ovl)
 
 			cache = tmpdir
 		}
 
-		name, err := acquireUrl(c, storage, i.Path, cache, progress, i.Hash, i.Mode, i.Uid, i.Gid)
+		name, err := acquireUrl(c, storage, i.Path, cache, i.Hash, i.Dest, i.Mode, i.Uid, i.Gid, progress)
 		if err != nil {
 			return err
 		}
