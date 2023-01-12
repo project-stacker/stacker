@@ -352,16 +352,43 @@ fifth:
     - path: test_file
       dest: /files/
     - path: test_file2
-      dest: /files
+      dest: /file2
 sixth:
   from:
     type: docker
     url: docker://ubuntu:latest
   import:
     - stacker://fifth/files/test_file
-    - stacker://fifth/files/test_file2
+    - stacker://fifth/file2
   run: |
     ls -l /stacker
+seventh:
+  from:
+    type: scratch
+  import:
+    - path: test_file
+      dest: /files/
+    - path: test_file2
+      dest: /file2
+    - path: test_file
+      dest: /files/file3
+eigth:
+  from:
+    type: docker
+    url: docker://ubuntu:latest
+  import:
+    - path: test_file
+      dest: /dir/files/
+    - path: test_file2
+      dest: /dir/file2
+    - path: test_file
+      dest: /dir/files/file3
+  run: |
+    ls -alR /dir
+    [ -d /dir/files ]
+    [ -f /dir/files/test_file ]
+    [ -f /dir/file2 ]
+    [ -f /dir/files/file3 ]
 EOF
 
     stacker build
