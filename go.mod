@@ -27,7 +27,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
-	github.com/urfave/cli v1.22.10
+	github.com/urfave/cli v1.22.11
 	github.com/vbatts/go-mtree v0.5.2
 	golang.org/x/sys v0.4.0
 	golang.org/x/term v0.4.0
