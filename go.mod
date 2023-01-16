@@ -8,7 +8,7 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
-	github.com/dustin/go-humanize v1.0.0
+	github.com/dustin/go-humanize v1.0.1
 	github.com/freddierice/go-losetup v0.0.0-20220331141030-7ad00c49b973
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/klauspost/pgzip v1.2.5
