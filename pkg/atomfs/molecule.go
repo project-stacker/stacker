@@ -41,9 +41,13 @@ func (m Molecule) mountUnderlyingAtoms() error {
 		mountpoint, mounted := mounts.FindMount(target)
 
 		if mounted {
-			err = squashfs.ConfirmExistingVerityDeviceHash(mountpoint.Source, rootHash)
-			if err != nil {
-				return err
+			if rootHash != "" {
+				err = squashfs.ConfirmExistingVerityDeviceHash(mountpoint.Source,
+					rootHash,
+					m.config.AllowMissingVerityData)
+				if err != nil {
+					return err
+				}
 			}
 			continue
 		}

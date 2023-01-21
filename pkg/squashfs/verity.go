@@ -384,7 +384,7 @@ func HostMount(squashfs string, mountpoint string, rootHash string) error {
 				return errors.WithStack(err)
 			}
 		} else {
-			err = ConfirmExistingVerityDeviceHash(verityDevPath, rootHash)
+			err = ConfirmExistingVerityDeviceHash(verityDevPath, rootHash, rejectVerityFailure)
 			if err != nil {
 				return err
 			}
@@ -501,7 +501,16 @@ func Umount(mountpoint string) error {
 	return nil
 }
 
-func ConfirmExistingVerityDeviceHash(devicePath string, rootHash string) error {
+// If we are using squashfuse, then we will be unable to get verity has from
+// the mount device.  This is not a safe thing, we we only allow it when the
+// device was mounted originally with AllowMissingVerityData.
+
+const (
+	rejectVerityFailure = false
+	allowVerityFailure  = false
+)
+
+func ConfirmExistingVerityDeviceHash(devicePath string, rootHash string, allowVerityFailure bool) error {
 	device := filepath.Base(devicePath)
 	cDevice := C.CString(device)
 	defer C.free(unsafe.Pointer(cDevice))
@@ -510,6 +519,9 @@ func ConfirmExistingVerityDeviceHash(devicePath string, rootHash string) error {
 
 	rc := C.get_verity_params(cDevice, &cParams)
 	if rc != 0 {
+		if allowVerityFailure {
+			return nil
+		}
 		return errors.Errorf("problem getting hash from %v: %v", device, rc)
 	}
 	defer C.free(unsafe.Pointer(cParams))
