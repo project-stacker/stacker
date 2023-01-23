@@ -17,7 +17,7 @@ require (
 	github.com/martinjungblut/go-cryptsetup v0.0.0-20220314071908-7b9938e4a08c
 	github.com/minio/sha256-simd v1.0.0
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/moby/buildkit v0.11.0
+	github.com/moby/buildkit v0.11.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20220303224323-02efb9a75ee1
 	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
