@@ -56,8 +56,8 @@ func newOverlayMetadataFromOCI(oci casext.Engine, tag string) (overlayMetadata, 
 	return ovl, nil
 }
 
-func readOverlayMetadata(config types.StackerConfig, tag string) (overlayMetadata, error) {
-	metadataFile := path.Join(config.RootFSDir, tag, "overlay_metadata.json")
+func readOverlayMetadata(rootfs, tag string) (overlayMetadata, error) {
+	metadataFile := path.Join(rootfs, tag, "overlay_metadata.json")
 	content, err := os.ReadFile(metadataFile)
 	if err != nil {
 		return overlayMetadata{}, errors.Wrapf(err, "couldn't read overlay metadata %s", metadataFile)
@@ -116,7 +116,7 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 
 	lowerdirs := []string{}
 	for _, layer := range manifest.Layers {
-		contents := overlayPath(config, layer.Digest, "overlay")
+		contents := overlayPath(config.RootFSDir, layer.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
 			return "", errors.Wrapf(err, "%s does not exist", contents)
 		}
@@ -132,7 +132,7 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 	}
 	// mount overlay_dirs into lxc container
 	for _, od := range descriptors {
-		contents := overlayPath(config, od.Digest, "overlay")
+		contents := overlayPath(config.RootFSDir, od.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
 			return "", errors.Wrapf(err, "%s does not exist", contents)
 		}
