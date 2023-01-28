@@ -86,7 +86,7 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			c.subs["IMAGE"] = "app"
 		} else if len(cmd.Value) == 3 && strings.EqualFold(cmd.Value[1], "as") {
 			c.currLayer = cmd.Value[2]
-			layer.BuildOnly = true
+			// layer.BuildOnly = true	// FIXME: should be enabled
 		} else {
 			return errors.Errorf("unsupported FROM directive")
 		}
