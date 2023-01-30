@@ -126,4 +126,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
+replace (
+	github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
+	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20230130205906-2f7d2b39ff9f
+)
