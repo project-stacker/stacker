@@ -3,18 +3,21 @@ package overlay
 import (
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/pkg/errors"
 	"stackerbuild.io/stacker/pkg/lib"
+	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
 // generateOverlayDirsLayers generates oci layers from all overlay_dirs of this image
 // and saves the layer descriptors in the overlay_metadata.json
 func generateOverlayDirsLayers(name string, layerTypes []types.LayerType, overlayDirs []types.OverlayDir, config types.StackerConfig) error {
-	ovl, err := readOverlayMetadata(config, name)
+	ovl, err := readOverlayMetadata(config.RootFSDir, name)
 	if err != nil {
 		return err
 	}
@@ -56,11 +59,11 @@ func generateOverlayDirLayer(name string, layerType types.LayerType, overlayDir 
 		return ispec.Descriptor{}, err
 	}
 
-	if err = os.MkdirAll(overlayPath(config, desc.Digest), 0755); err != nil {
+	if err = os.MkdirAll(overlayPath(config.RootFSDir, desc.Digest), 0755); err != nil {
 		return ispec.Descriptor{}, err
 	}
 
-	err = os.Symlink(contents, overlayPath(config, desc.Digest, "overlay"))
+	err = os.Symlink(contents, overlayPath(config.RootFSDir, desc.Digest, "overlay"))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		return ispec.Descriptor{}, errors.Wrapf(err, "failed to create symlink")
 	}
@@ -90,4 +93,54 @@ func copyOverlayDirs(name string, overlayDirs []types.OverlayDir, rootfs string)
 		}
 	}
 	return nil
+}
+
+// validate/fix each overlay_dir so that there are no collisions
+func validateOverlayDirs(name string, overlayDirs []types.OverlayDir, rootfs string) error {
+	ovl, err := readOverlayMetadata(rootfs, name)
+	if err != nil {
+		return err
+	}
+
+	var manifest ispec.Manifest
+	for _, m := range ovl.Manifests {
+		manifest = m
+		break
+	}
+
+	for ovlindex, ovldir := range overlayDirs {
+		if ovldir.Dest == "" {
+			continue
+		}
+
+		for i := len(manifest.Layers); i > 0; i-- {
+			layer := manifest.Layers[len(manifest.Layers)-1]
+			contents := overlayPath(rootfs, layer.Digest, "overlay")
+			if _, err := os.Stat(contents); err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+
+				return errors.Wrapf(err, "unable to stat %s", contents)
+			}
+
+			dest := path.Join(contents, ovldir.Dest)
+			realdest, err := filepath.EvalSymlinks(dest)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+
+				return errors.Wrapf(err, "unable to eval symlink %s", dest)
+			}
+
+			overlayDirs[ovlindex].Dest = strings.TrimPrefix(realdest, contents)
+			if ovldir.Dest != overlayDirs[ovlindex].Dest {
+				log.Infof("overlay dest %s is a symlink, patching to %s", ovldir.Dest, overlayDirs[ovlindex].Dest)
+				break
+			}
+		}
+	}
+
+	return err
 }

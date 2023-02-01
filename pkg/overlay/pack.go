@@ -35,9 +35,9 @@ func safeOverlayName(d digest.Digest) string {
 	return strings.ReplaceAll(d.String(), ":", "_")
 }
 
-func overlayPath(config types.StackerConfig, d digest.Digest, subdirs ...string) string {
+func overlayPath(rootfs string, d digest.Digest, subdirs ...string) string {
 	safeName := safeOverlayName(d)
-	dirs := []string{config.RootFSDir, safeName}
+	dirs := []string{rootfs, safeName}
 	dirs = append(dirs, subdirs...)
 	return path.Join(dirs...)
 }
@@ -59,7 +59,7 @@ func (o *overlay) Unpack(tag, name string) error {
 
 	for _, layer := range manifest.Layers {
 		digest := layer.Digest
-		contents := overlayPath(o.config, digest, "overlay")
+		contents := overlayPath(o.config.RootFSDir, digest, "overlay")
 		if squashfs.IsSquashfsMediaType(layer.MediaType) {
 			// don't really need to do this in parallel, but what
 			// the hell.
@@ -140,7 +140,7 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 	newConfig.RootFS.DiffIDs = []digest.Digest{}
 
 	for _, theLayer := range manifest.Layers {
-		bundlePath := overlayPath(config, theLayer.Digest)
+		bundlePath := overlayPath(config.RootFSDir, theLayer.Digest)
 		overlayDir := path.Join(bundlePath, "overlay")
 		// generate blob
 		blob, mediaType, rootHash, err := generateBlob(layerType, overlayDir, config.OCIDir)
@@ -156,7 +156,7 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 
 		// slight hack, but this is much faster than a cp, and the
 		// layers are the same, just in different formats
-		err = os.Symlink(overlayPath(config, theLayer.Digest), overlayPath(config, desc.Digest))
+		err = os.Symlink(overlayPath(config.RootFSDir, theLayer.Digest), overlayPath(config.RootFSDir, desc.Digest))
 		if err != nil {
 			return errors.Wrapf(err, "failed to create squashfs symlink")
 		}
@@ -369,7 +369,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 	}
 
 	if len(ents) == 0 {
-		ovl, err := readOverlayMetadata(config, name)
+		ovl, err := readOverlayMetadata(config.RootFSDir, name)
 		if err != nil {
 			return false, err
 		}
@@ -441,7 +441,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 	// layers, so we need to "extract" them. but there's no need to
 	// actually extract them, we can just rename the contents we already
 	// have for the generated hash, since that's where it came from.
-	target := overlayPath(config, descs[0].Digest)
+	target := overlayPath(config.RootFSDir, descs[0].Digest)
 	err = os.MkdirAll(target, 0755)
 	if err != nil {
 		return false, errors.Wrapf(err, "couldn't make new layer overlay dir")
@@ -475,7 +475,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 	// now, as we do in convertAndOutput, we make a symlink for the hash
 	// for each additional layer type so that they see the same data
 	for _, desc := range descs[1:] {
-		linkPath := overlayPath(config, desc.Digest)
+		linkPath := overlayPath(config.RootFSDir, desc.Digest)
 
 		err = os.Symlink(target, linkPath)
 		if err != nil {
@@ -528,7 +528,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	}
 	defer oci.Close()
 
-	ovl, err := readOverlayMetadata(config, name)
+	ovl, err := readOverlayMetadata(config.RootFSDir, name)
 	if err != nil {
 		return err
 	}
@@ -582,7 +582,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		}
 		if didMutate {
 			mutated = true
-			ovl, err := readOverlayMetadata(config, buildLayer)
+			ovl, err := readOverlayMetadata(config.RootFSDir, buildLayer)
 			if err != nil {
 				return err
 			}

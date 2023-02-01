@@ -6,6 +6,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/anuvu/squashfs v0.0.0-20220404153901-d496132b2781
 	github.com/apex/log v1.9.0
+	github.com/apparentlymart/go-shquot v0.0.1
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
 	github.com/dustin/go-humanize v1.0.1
@@ -125,4 +126,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
+replace (
+	github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
+	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20230130205906-2f7d2b39ff9f
+)

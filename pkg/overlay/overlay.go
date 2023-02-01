@@ -148,7 +148,7 @@ func (o *overlay) snapshot(source string, target string) error {
 	}
 
 	// now we need to replicate the overlay mount if it exists
-	ovl, err := readOverlayMetadata(o.config, source)
+	ovl, err := readOverlayMetadata(o.config.RootFSDir, source)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (o *overlay) GC() error {
 }
 
 func (o *overlay) GetLXCRootfsConfig(name string) (string, error) {
-	ovl, err := readOverlayMetadata(o.config, name)
+	ovl, err := readOverlayMetadata(o.config.RootFSDir, name)
 	if err != nil {
 		return "", err
 	}
@@ -228,8 +228,15 @@ func (o *overlay) SetOverlayDirs(name string, overlayDirs []types.OverlayDir, la
 	if len(overlayDirs) == 0 {
 		return nil
 	}
+
+	// validate and fix so that there are no path issues
+	err := validateOverlayDirs(name, overlayDirs, o.config.RootFSDir)
+	if err != nil {
+		return err
+	}
+
 	// copy overlay_dirs contents into a temporary dir in roots
-	err := copyOverlayDirs(name, overlayDirs, o.config.RootFSDir)
+	err = copyOverlayDirs(name, overlayDirs, o.config.RootFSDir)
 	if err != nil {
 		return err
 	}

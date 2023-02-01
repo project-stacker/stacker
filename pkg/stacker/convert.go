@@ -3,8 +3,11 @@ package stacker
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/apparentlymart/go-shquot/shquot"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
@@ -29,6 +32,10 @@ type Converter struct {
 	currLayer string
 	subs      map[string]string
 	args      []string
+	// per-layer state
+	currDir string
+	currUid string
+	currGid string
 }
 
 // NewConverter initializes a new Converter struct
@@ -36,7 +43,7 @@ func NewConverter(opts *ConvertArgs) *Converter {
 	return &Converter{
 		opts:   opts,
 		output: Stackerfile{},
-		subs:   make(map[string]string),
+		subs:   map[string]string{},
 		args:   []string{},
 	}
 }
@@ -67,18 +74,22 @@ func (c *Converter) convertCommand(cmd *Command) error {
 		layer = c.output[c.currLayer]
 	}
 
-	log.Debugf("cmd: %v", cmd)
+	log.Debugf("cmd: %+v", cmd)
 	switch strings.ToLower(cmd.Cmd) {
 	case "from":
+		layer := types.Layer{BuildEnv: map[string]string{"arch": "x86_64"}}
+		c.currDir = ""
+		c.currUid = ""
+		c.currGid = ""
 		if len(cmd.Value) == 1 {
 			c.currLayer = "${{IMAGE}}"
 			c.subs["IMAGE"] = "app"
 		} else if len(cmd.Value) == 3 && strings.EqualFold(cmd.Value[1], "as") {
 			c.currLayer = cmd.Value[2]
+			// layer.BuildOnly = true	// FIXME: should be enabled
 		} else {
 			return errors.Errorf("unsupported FROM directive")
 		}
-		layer := types.Layer{}
 		if !strings.EqualFold(cmd.Value[0], "scratch") {
 			layer.From.Type = "docker"
 			layer.From.Url = fmt.Sprintf("docker://%s", cmd.Value[0])
@@ -101,15 +112,35 @@ func (c *Converter) convertCommand(cmd *Command) error {
 					cmd.Value[i] = repl
 					break
 				}
+
+				repl = strings.ReplaceAll(val, fmt.Sprintf("$(%s)", arg), fmt.Sprintf("${{%s}}", arg))
+				if repl != val {
+					cmd.Value[i] = repl
+					break
+				}
 			}
 		}
-		layer.Run = append(layer.Run, cmd.Value...)
+
+		for _, line := range cmd.Value {
+			// patch some cmds
+			line = strings.ReplaceAll(line, "mkdir", "mkdir -p ")
+
+			if c.currUid == "" {
+				// picking 'bash' here
+				layer.Run = append(layer.Run, fmt.Sprintf("sh -e -c %s", shquot.POSIXShell([]string{line})))
+			} else {
+				layer.Run = append(layer.Run, fmt.Sprintf("su -p %s -c %s", c.currUid, shquot.POSIXShell([]string{line})))
+			}
+		}
 	case "cmd":
 		layer.Cmd = cmd.Value
 	case "label":
-		for _, label := range cmd.Value {
-			parts := strings.Split(label, "=")
-			layer.Labels[parts[0]] = parts[1]
+		if layer.Labels == nil {
+			layer.Labels = map[string]string{}
+		}
+
+		for i := 0; i < len(cmd.Value); i += 2 {
+			layer.Labels[cmd.Value[i]] = cmd.Value[i+1]
 		}
 	case "maintainer": // ignored, deprecated
 		if layer.Annotations == nil {
@@ -123,32 +154,43 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			layer.Annotations[key] += "," + cmd.Value[0]
 		}
 	case "expose": // ignored, runtime config
+		log.Infof("EXPOSE directive found - ports:%v", cmd.Value)
 		return nil
 	case "env":
+		if len(cmd.Value) != 2 {
+			log.Errorf("unable to parse ENV directive - %v", cmd.Original)
+			return errors.Errorf("invalid arg - %v", cmd.Value)
+		}
+
+		val := cmd.Value[1]
+		for _, arg := range c.args {
+			repl := strings.ReplaceAll(val, fmt.Sprintf("$%s", arg), fmt.Sprintf("${{%s}}", arg))
+			if repl != val {
+				val = repl
+				break
+			}
+
+			repl = strings.ReplaceAll(val, fmt.Sprintf("${%s}", arg), fmt.Sprintf("${{%s}}", arg))
+			if repl != val {
+				val = repl
+				break
+			}
+
+			repl = strings.ReplaceAll(val, fmt.Sprintf("$(%s)", arg), fmt.Sprintf("${{%s}}", arg))
+			if repl != val {
+				val = repl
+				break
+			}
+		}
+
 		if layer.Environment == nil {
 			layer.Environment = map[string]string{}
 		}
 
-		if len(cmd.Value) == 2 {
-			val := cmd.Value[1]
-			for _, arg := range c.args {
-				repl := strings.ReplaceAll(val, fmt.Sprintf("$%s", arg), fmt.Sprintf("${{%s}}", arg))
-				if repl != val {
-					val = repl
-					break
-				}
-
-				repl = strings.ReplaceAll(val, fmt.Sprintf("${%s}", arg), fmt.Sprintf("${{%s}}", arg))
-				if repl != val {
-					val = repl
-					break
-				}
-			}
-
-			layer.Environment[cmd.Value[0]] = val
-		}
+		layer.Environment[cmd.Value[0]] = val
 	case "workdir":
-		layer.Run = append(layer.Run, "cd", cmd.Value[0])
+		layer.Run = append(layer.Run, fmt.Sprintf("cd %s", cmd.Value[0]))
+		c.currDir = cmd.Value[0]
 	case "arg":
 		if len(cmd.Value) != 1 {
 			return errors.Errorf("invalid arg - %v", cmd.Value)
@@ -164,7 +206,44 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			return errors.Errorf("invalid arg - %v", cmd.Value)
 		}
 	case "copy":
-		imp := types.Import{Path: cmd.Value[0], Dest: cmd.Value[1]}
+		// if --from is specified, then import, else just "cp"
+		imp := types.Import{Path: cmd.Value[0]}
+		dest := ""
+		if len(cmd.Value) == 2 {
+			dest = cmd.Value[1]
+			if !filepath.IsAbs(dest) {
+				dest = filepath.Join(c.currDir, dest)
+			}
+		}
+		imp.Dest = dest
+
+		if len(cmd.Flags) > 0 {
+			for _, flag := range cmd.Flags {
+				if strings.HasPrefix(flag, "--from=") {
+					layer := strings.TrimPrefix(flag, "--from=")
+					imp.Path = fmt.Sprintf("stacker://%s", filepath.Join(layer, cmd.Value[0]))
+				} else if strings.HasPrefix(flag, "--chown=") {
+					mode := strings.TrimPrefix(flag, "--chown=")
+					parts := strings.Split(mode, ":")
+					uid, err := strconv.ParseInt(parts[0], 0, 32)
+					if err != nil {
+						log.Errorf("unable to parse COPY directive: %s", cmd.Original)
+						return err
+					}
+
+					imp.Uid = int(uid)
+					if len(parts) == 2 {
+						gid, err := strconv.ParseInt(parts[1], 0, 32)
+						if err != nil {
+							log.Errorf("unable to parse COPY directive: %s", cmd.Original)
+							return err
+						}
+						imp.Gid = int(gid)
+					}
+				}
+			}
+		}
+
 		layer.Imports = append(layer.Imports, imp)
 	case "volume":
 		bind := types.Bind{Source: cmd.Value[0], Dest: cmd.Value[0]}
@@ -172,7 +251,15 @@ func (c *Converter) convertCommand(cmd *Command) error {
 		log.Infof("Bind-mounted volume %q found - make sure volume is present on host", cmd.Value[0])
 	case "entrypoint":
 		layer.Entrypoint = cmd.Value
+	case "user":
+		// su uid:gid
+		parts := strings.Split(cmd.Value[0], ":")
+		c.currUid = parts[0]
+		if len(parts) == 2 {
+			c.currGid = parts[1]
+		}
 	default:
+		log.Errorf("unknown Dockerfile cmd: %s", cmd.Cmd)
 		return errors.Errorf("unknown Dockerfile cmd: %s", cmd.Cmd)
 	}
 
@@ -192,8 +279,6 @@ func (c *Converter) parseFile() error {
 		log.Errorf("unable to parse file %s", c.opts.InputFile)
 		return err
 	}
-
-	log.Infof("res: %v", res)
 
 	for _, child := range res.AST.Children {
 		cmd := Command{
