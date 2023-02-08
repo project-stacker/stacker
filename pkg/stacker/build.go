@@ -357,6 +357,7 @@ func (b *Builder) build(s types.Storage, file string) error {
 		}
 
 		log.Debugf("overlay-dirs, possibly modified after import: %v", l.OverlayDirs)
+		log.Debugf("overlay-dirs, possibly modified after import: %v", l.OverlayDirs)
 
 		// Need to check if the image has bind mounts, if the image has bind mounts,
 		// it needs to be rebuilt regardless of the build cache
