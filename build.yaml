@@ -44,13 +44,14 @@ build-env:
 
     # build static cryptsetup without all the command line tools
     apk add gettext gettext-dev zlib-static lz4-static openssl-dev \
-      openssl-libs-static popt-dev
+      openssl-libs-static popt-dev bash
     tar -xf /stacker/cryptsetup*
     cd cryptsetup*
     ./autogen.sh
     ./configure --enable-static \
       --disable-cryptsetup --disable-veritysetup --disable-integritysetup \
-      --disable-nls --disable-ssh-token
+      --disable-nls --disable-ssh-token \
+      --disable-asciidoc
     make -j$(grep -c processor /proc/cpuinfo) install
     cd /
 
