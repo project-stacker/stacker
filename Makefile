@@ -72,13 +72,19 @@ check: stacker lint
 		STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
-		GOCOVERDIR=. \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
 check-cov: stacker-cov lint
-	sudo -E PATH="$$PATH" LXC_BRANCH="$(LXC_BRANCH)" LXC_CLONE_URL="$(LXC_CLONE_URL)" ./test/main.py \
+	sudo -E PATH="$$PATH" \
+		LXC_BRANCH=$(LXC_BRANCH) \
+		LXC_CLONE_URL=$(LXC_CLONE_URL) \
+		STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
+		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
+		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		GOCOVERDIR=. \
+		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
