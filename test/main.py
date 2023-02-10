@@ -27,6 +27,7 @@ for priv in priv_to_test:
 
     env = os.environ.copy()
     env["PRIVILEGE_LEVEL"] = priv
+    env["GOCOVERDIR"] = "."
 
     print("running tests in modes:", priv)
     try:
