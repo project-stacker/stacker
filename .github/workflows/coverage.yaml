@@ -46,8 +46,10 @@ jobs:
         run: |
           export GOCOVERDIR=.
           make check-cov PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+          ls -altr
           go tool covdata textfmt -i $GOCOVERDIR -o coverage-${{ matrix.privilege-level }}.txt
           go tool covdata percent -i $GOCOVERDIR
+          ls -altr
         env:
           REGISTRY_URL: localhost:5000
       - name: Upload code coverage
