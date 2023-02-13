@@ -609,6 +609,9 @@ func runInternalGoSubcommand(config types.StackerConfig, args []string) error {
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
+	// FIXME: add coverage flag
+	env := []string{"GOCOVERDIR=."}
+	c.Env = env
 
 	return errors.WithStack(c.Run())
 }
