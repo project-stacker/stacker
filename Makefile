@@ -41,7 +41,7 @@ lint: cmd/stacker/lxc-wrapper/lxc-wrapper $(GO_SRC)
 	go mod tidy
 	go fmt ./... && ([ -z $(CI) ] || git diff --exit-code)
 	bash test/static-analysis.sh
-	go test -tags "$(BUILD_TAGS)" ./...
+	go test -v -trimpath -cover -coverpkg ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(BUILD_TAGS)" ./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
