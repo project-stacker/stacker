@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -32,6 +33,7 @@ type Converter struct {
 	currLayer string
 	subs      map[string]string
 	args      []string
+	env       map[string]string
 	// per-layer state
 	currDir string
 	currUid string
@@ -98,6 +100,11 @@ func (c *Converter) convertCommand(cmd *Command) error {
 		}
 		c.output[c.currLayer] = &layer
 	case "run":
+		// setup the environment
+		for k, v := range c.env {
+			layer.Run = append(layer.Run, fmt.Sprintf("export %s=%s", k, v))
+		}
+
 		// replace any ARGs first
 		for i, val := range cmd.Value {
 			for _, arg := range c.args {
@@ -123,7 +130,8 @@ func (c *Converter) convertCommand(cmd *Command) error {
 
 		for _, line := range cmd.Value {
 			// patch some cmds
-			line = strings.ReplaceAll(line, "mkdir", "mkdir -p ")
+			re := regexp.MustCompile(`\bmkdir\b`)
+			line = re.ReplaceAllString(line, "mkdir -p")
 
 			if c.currUid == "" {
 				// picking 'bash' here
@@ -183,11 +191,11 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			}
 		}
 
-		if layer.Environment == nil {
-			layer.Environment = map[string]string{}
+		if c.env == nil {
+			c.env = map[string]string{}
 		}
 
-		layer.Environment[cmd.Value[0]] = val
+		c.env[cmd.Value[0]] = val
 	case "workdir":
 		layer.Run = append(layer.Run, fmt.Sprintf("cd %s", cmd.Value[0]))
 		c.currDir = cmd.Value[0]
