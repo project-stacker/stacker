@@ -26,7 +26,7 @@ func MaybeRunInNamespace(config types.StackerConfig, userCmd []string) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Env = env
+		cmd.Env = append(env, "GOCOVERDIR=.")
 		return errors.WithStack(cmd.Run())
 	}
 
