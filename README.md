@@ -4,7 +4,7 @@
 </p>
 
 
-# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=main)](https://github.com/project-stacker/stacker/actions) [![CodeQL](https://github.com/project-stacker/stacker/workflows/CodeQL/badge.svg)](https://github.com/project-stacker/stacker/actions?query=workflow%3ACodeQL) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker)
+# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=main)](https://github.com/project-stacker/stacker/actions) [![codecov.io](http://codecov.io/github/project-stacker/stacker/coverage.svg?branch=main)](http://codecov.io/github/project-stacker/stacker?branch=main) [![CodeQL](https://github.com/project-stacker/stacker/workflows/CodeQL/badge.svg)](https://github.com/project-stacker/stacker/actions?query=workflow%3ACodeQL) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker)
 
 Stacker is a tool for building OCI images natively via a declarative yaml format.
 
