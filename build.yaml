@@ -4,9 +4,9 @@ build-env:
     type: docker
     url: ${{STACKER_BUILD_BASE_IMAGE}}
   import:
-    - https://github.com/json-c/json-c/archive/refs/tags/json-c-0.15-20200726.tar.gz
-    - https://gitlab.com/cryptsetup/cryptsetup/-/archive/v2.4.3/cryptsetup-v2.4.3.tar.gz
-    - https://github.com/lvmteam/lvm2/archive/refs/tags/v2_03_15.tar.gz
+    - https://github.com/json-c/json-c/archive/refs/tags/json-c-0.16-20220414.tar.gz
+    - https://gitlab.com/cryptsetup/cryptsetup/-/archive/v2.6.0/cryptsetup-v2.6.0.tar.gz
+    - https://github.com/lvmteam/lvm2/archive/refs/tags/v2_03_18.tar.gz
   run: |
     #!/bin/sh
     # libapparmor is only in testing
@@ -36,7 +36,7 @@ build-env:
     cd /
 
     # build libdevmapper.a
-    tar -xf /stacker/v2_03_15.tar.gz
+    tar -xf /stacker/v2_03_18.tar.gz
     cd lvm2-*
     ./configure --enable-static_link
     make install_device-mapper
