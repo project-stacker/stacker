@@ -43,7 +43,6 @@ require (
 	github.com/Microsoft/hcsshim v0.9.6 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.1 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
@@ -125,4 +124,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20230130205906-2f7d2b39ff9f
+replace (
+	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20230130205906-2f7d2b39ff9f
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.14.0
+)
