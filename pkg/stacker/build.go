@@ -36,6 +36,7 @@ type BuildArgs struct {
 	SetupOnly            bool
 	Progress             bool
 	AnnotationsNamespace string
+	Shell                string
 }
 
 // Builder is responsible for building the layers based on stackerfiles
@@ -126,7 +127,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 
 		rootfs := path.Join(opts.Config.RootFSDir, writable, "rootfs")
 		runPath := path.Join(dir, ".stacker-run.sh")
-		err = generateShellForRunning(rootfs, l.GenerateLabels, runPath)
+		err = generateShellForRunning(rootfs, l.GenerateLabels, runPath, opts.Shell)
 		if err != nil {
 			return err
 		}
@@ -454,7 +455,7 @@ func (b *Builder) build(s types.Storage, file string) error {
 		if len(l.Run) != 0 {
 			rootfs := path.Join(opts.Config.RootFSDir, name, "rootfs")
 			shellScript := path.Join(opts.Config.StackerDir, "imports", name, ".stacker-run.sh")
-			err = generateShellForRunning(rootfs, l.Run, shellScript)
+			err = generateShellForRunning(rootfs, l.Run, shellScript, opts.Shell)
 			if err != nil {
 				return err
 			}
@@ -577,8 +578,8 @@ func (b *Builder) BuildMultiple(paths []string) error {
 // generateShellForRunning generates a shell script to run inside the
 // container, and writes it to the contianer. It checks that the script already
 // have a shebang? If so, it leaves it as is, otherwise it prepends a shebang.
-func generateShellForRunning(rootfs string, cmd []string, outFile string) error {
-	shebangLine := fmt.Sprintf("#!%s -xe\n", DefaultShell)
+func generateShellForRunning(rootfs string, cmd []string, outFile string, shell string) error {
+	shebangLine := fmt.Sprintf("#!%s -xe\n", shell)
 	if strings.HasPrefix(cmd[0], "#!") {
 		shebangLine = ""
 	}

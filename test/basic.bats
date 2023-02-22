@@ -303,3 +303,15 @@ EOF
     [ ! -f dest/rootfs/favicon.ico ]
     [ ! -d dest/rootfs/stacker ]
 }
+
+@test "build with a non-default shell" {
+    cat > stacker.yaml <<EOF
+centos:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    run: |
+      ps axf
+EOF
+    stacker build --shell /usr/bin/bash
+}

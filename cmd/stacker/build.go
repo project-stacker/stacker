@@ -71,6 +71,11 @@ func initCommonBuildFlags() []cli.Flag {
 			Usage: "set OCI annotations namespace in the OCI image manifest",
 			Value: "io.stackeroci",
 		},
+		cli.StringFlag{
+			Name:  "shell",
+			Usage: "path to shell to use when invoking the `run:` directive",
+			Value: stacker.DefaultShell,
+		},
 	}
 }
 
