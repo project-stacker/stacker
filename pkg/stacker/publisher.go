@@ -30,6 +30,7 @@ type PublishArgs struct {
 	Progress       bool
 	SkipTLS        bool
 	LayerTypes     []types.LayerType
+	Layers         []string
 }
 
 // Publisher is responsible for publishing the layers based on stackerfiles
@@ -116,6 +117,19 @@ func (p *Publisher) Publish(file string) error {
 		if l.BuildOnly {
 			log.Infof("will not publish: %s build_only %s", file, name)
 			continue
+		}
+		if len(p.opts.Layers) > 0 {
+			found := false
+			for _, lname := range p.opts.Layers {
+				if lname == name {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				continue
+			}
 		}
 
 		// Verify layer is in build cache

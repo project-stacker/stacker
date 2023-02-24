@@ -69,6 +69,10 @@ var publishCmd = cli.Command{
 			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
 			Value: &cli.StringSlice{"tar"},
 		},
+		cli.StringSliceFlag{
+			Name:  "layer",
+			Usage: "layer to be published; can be specified multiple times",
+		},
 	},
 	Before: beforePublish,
 }
@@ -120,6 +124,7 @@ func doPublish(ctx *cli.Context) error {
 		Progress:       shouldShowProgress(ctx),
 		SkipTLS:        ctx.Bool("skip-tls"),
 		LayerTypes:     layerTypes,
+		Layers:         ctx.StringSlice("layer"),
 	}
 
 	var stackerFiles []string
