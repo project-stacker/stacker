@@ -116,6 +116,20 @@ function teardown() {
     [ -f dest/layer2_test1/rootfs/root/import1 ]
 }
 
+@test "publish selected multiple layers" {
+    stacker recursive-build -d ocibuilds
+    stacker publish -d ocibuilds --url oci:oci_publish --tag test1 --layer layer1 --layer layer6
+
+     # Unpack published image and check content
+    umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
+    [ -f dest/layer1_test1/rootfs/root/import1 ]
+    umoci unpack --image oci_publish:layer6_test1 dest/layer6_test1
+    [ -f dest/layer6_test1/rootfs/root/ls_out ]
+    # since we did not publish this layer, shouldn't be found
+    run umoci unpack --image oci_publish:layer2_test1 dest/layer2_test1
+    [ "$status" -ne 0 ]
+}
+
 @test "publish single layer with docker url" {
     stacker build -f ocibuilds/sub1/stacker.yaml
     stacker publish -f ocibuilds/sub1/stacker.yaml --url docker://docker-reg.fake.com/ --username user --password pass --tag test1 --show-only
