@@ -94,6 +94,10 @@ func SetupRootfs(o BaseLayerOpts) error {
 }
 
 func importContainersImage(is types.ImageSource, config types.StackerConfig, progress bool) error {
+	// FIXME: first verify
+	if !is.Insecure {
+	}
+
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err

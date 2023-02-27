@@ -50,7 +50,7 @@ type ImageSource struct {
 }
 
 func NewImageSource(containersImageString string) (*ImageSource, error) {
-	ret := &ImageSource{}
+	ret := &ImageSource{Insecure: false}
 	if strings.HasPrefix(containersImageString, "oci:") {
 		ret.Type = OCILayer
 		ret.Url = containersImageString[len("oci:"):]
