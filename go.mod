@@ -7,7 +7,7 @@ require (
 	github.com/anuvu/squashfs v0.0.0-20220404153901-d496132b2781
 	github.com/apex/log v1.9.0
 	github.com/apparentlymart/go-shquot v0.0.1
-	github.com/cheggaaa/pb/v3 v3.1.0
+	github.com/cheggaaa/pb/v3 v3.1.2
 	github.com/containers/image/v5 v5.23.1-0.20221019201342-d92bac8cb807
 	github.com/dustin/go-humanize v1.0.1
 	github.com/freddierice/go-losetup v0.0.0-20220711213114-2a14873012db
