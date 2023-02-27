@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 
 	"github.com/justincormack/go-memfd"
@@ -33,4 +34,25 @@ func GetCommand(fs embed.FS, filename string, args ...string) (*exec.Cmd, func()
 
 	cmd := exec.Command(fmt.Sprintf("/proc/self/fd/%d", mfd.Fd()), args...)
 	return cmd, mfd.Close, nil
+}
+
+func ExtractCommand(fs embed.FS, filename, dest string) error {
+	f, err := fs.Open(filename)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer f.Close()
+
+	dfd, err := os.Create(dest)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer dfd.Close()
+
+	_, err = io.Copy(dfd, f)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker-bom/pkg/bom"
+	"stackerbuild.io/stacker-bom/pkg/fs"
 	"stackerbuild.io/stacker/pkg/atomfs"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
@@ -60,6 +62,14 @@ var internalGoCmd = cli.Command{
 					Action: doAtomfsUmount,
 				},
 			},
+		},
+		&cli.Command{
+			Name:   "bom-build",
+			Action: doBomBuild,
+		},
+		&cli.Command{
+			Name:   "bom-verify",
+			Action: doBomVerify,
 		},
 	},
 	Before: doBeforeUmociSubcommand,
@@ -207,4 +217,52 @@ func doAtomfsUmount(ctx *cli.Context) error {
 
 	mountpoint := ctx.Args().Get(0)
 	return atomfs.Umount(mountpoint)
+}
+
+// pkgname, license, paths...
+func doBomBuild(ctx *cli.Context) error {
+	if ctx.Args().Len() < 7 {
+		return errors.Errorf("wrong number of args")
+	}
+
+	dest := ctx.Args().Get(0)
+	author := ctx.Args().Get(1)
+	org := ctx.Args().Get(2)
+	license := ctx.Args().Get(3)
+	pkgname := ctx.Args().Get(4)
+	pkgversion := ctx.Args().Get(5)
+	paths := []string{}
+	for i := 6; i < ctx.Args().Len(); i++ {
+		paths = append(paths, ctx.Args().Get(i))
+	}
+	out := path.Join(dest, fmt.Sprintf("doc-%s.spdx.json", pkgname))
+	name := fmt.Sprintf("doc-%s", pkgname)
+
+	return fs.BuildPackage(name, author, org, license, pkgname, pkgversion, paths, out)
+}
+
+func doBomVerify(ctx *cli.Context) error {
+	if ctx.Args().Len() != 4 {
+		return errors.Errorf("wrong number of args")
+	}
+
+	// merge
+	dest := ctx.Args().Get(0)
+	name := ctx.Args().Get(1)
+	author := ctx.Args().Get(2)
+	org := ctx.Args().Get(3)
+
+	if err := bom.MergeDocuments("/stacker-artifacts", name, author, org, dest); err != nil {
+		return err
+	}
+
+	// check against inventory
+	if err := fs.GenerateInventory("/",
+		[]string{"/proc", "/sys", "/dev", "/etc/resolv.conf",
+			"/stacker", "/stacker-artifacts", "/stacker-bom", "/static-stacker"},
+		"/stacker-artifacts/inventory.json"); err != nil {
+		return err
+	}
+
+	return fs.Verify(dest, "/stacker-artifacts/inventory.json", "")
 }

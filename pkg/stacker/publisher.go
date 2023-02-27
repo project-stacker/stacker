@@ -182,6 +182,8 @@ func (p *Publisher) Publish(file string) error {
 				if err != nil {
 					return err
 				}
+
+				// FIXME: also publish artifacts
 			}
 		}
 	}

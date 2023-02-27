@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/container"
+	embed_exec "stackerbuild.io/stacker/pkg/embed-exec"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -533,6 +534,22 @@ func (b *Builder) build(s types.Storage, file string) error {
 
 		log.Infof("filesystem %s built successfully", name)
 
+		// build artifacts such as BOMs, etc
+		if l.Bom != nil && l.Bom.Generate {
+			log.Debugf("generating layer artifacts for %s", name)
+
+			for _, pkg := range l.Bom.Packages {
+				if err := BuildLayerArtifacts(opts.Config, s, l, name, pkg); err != nil {
+					log.Errorf("failed to generate layer artifacts for %s - %v", name, err)
+					return err
+				}
+			}
+
+			if err := VerifyLayerArtifacts(opts.Config, s, l, name); err != nil {
+				log.Errorf("failed to validate layer artifacts for %s - %v", name, err)
+				return err
+			}
+		}
 	}
 
 	return oci.GC(context.Background())
@@ -712,6 +729,47 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 		}
 	} else {
 		log.Debugf("not bind mounting %s into container", importsDir)
+	}
+
+	// make the artifacts path available so that boms can be built from the run directive
+	if l.Bom != nil {
+		artifactsDir := path.Join(config.StackerDir, "artifacts", name)
+		if _, err := os.Stat(artifactsDir); err == nil {
+			log.Debugf("bind mounting %s into container", artifactsDir)
+			err = c.BindMount(artifactsDir, "/stacker-artifacts", "rw")
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Debugf("not bind mounting %s into container", artifactsDir)
+		}
+	}
+
+	bomDir, err := os.MkdirTemp(path.Join(config.StackerDir, "imports", name), "bom-tools-*")
+	if err != nil {
+		return err
+	}
+
+	// copy and bind-mount the embedded bom tool so it can be invoked from the "run" section
+	bomFile, err := os.CreateTemp(bomDir, "stacker-bom-*")
+	if err != nil {
+		return err
+	}
+
+	if err := bomFile.Close(); err != nil {
+		return err
+	}
+
+	if err := embed_exec.ExtractCommand(config.EmbeddedFS, "stacker-bom", bomFile.Name()); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(bomFile.Name(), 0o555); err != nil {
+		return err
+	}
+
+	if err := c.BindMount(bomFile.Name(), "/stacker-bom", ""); err != nil {
+		return err
 	}
 
 	for k, v := range env {

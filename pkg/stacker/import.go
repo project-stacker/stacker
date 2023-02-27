@@ -281,6 +281,10 @@ func CleanImportsDir(c types.StackerConfig, name string, imports types.Imports, 
 	dir := path.Join(c.StackerDir, "imports-copy", name)
 	_ = os.RemoveAll(dir)
 
+	// remove all artifacts
+	dir = path.Join(c.StackerDir, "artifacts", name)
+	_ = os.RemoveAll(dir)
+
 	dir = path.Join(c.StackerDir, "imports", name)
 
 	cacheEntry, cacheHit := cache.Cache[name]
@@ -310,7 +314,13 @@ func CleanImportsDir(c types.StackerConfig, name string, imports types.Imports, 
 
 // Import files from different sources to an ephemeral or permanent destination.
 func Import(c types.StackerConfig, storage types.Storage, name string, imports types.Imports, overlayDirs *types.OverlayDirs, progress bool) error {
-	dir := path.Join(c.StackerDir, "imports", name)
+	dir := path.Join(c.StackerDir, "artifacts", name)
+
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	dir = path.Join(c.StackerDir, "imports", name)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err

@@ -138,6 +138,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	// filesystem after execution. we should probably parameterize this in
 	// the storage API.
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
+	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker-artifacts"))
 
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,

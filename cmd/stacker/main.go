@@ -29,6 +29,7 @@ var (
 )
 
 //go:embed lxc-wrapper/lxc-wrapper
+//go:embed stacker-bom
 var embeddedFS embed.FS
 
 func shouldShowProgress(ctx *cli.Context) bool {

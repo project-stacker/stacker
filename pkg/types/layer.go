@@ -24,6 +24,12 @@ const (
 	ScratchLayer = "scratch"
 )
 
+const (
+	AuthorAnnotation  = "org.opencontainers.image.authors"
+	OrgAnnotation     = "org.opencontainers.image.vendor"
+	LicenseAnnotation = "org.opencontainers.image.licenses"
+)
+
 func IsContainersImageLayer(from string) bool {
 	switch from {
 	case DockerLayer:
@@ -52,6 +58,18 @@ type OverlayDir struct {
 }
 
 type OverlayDirs []OverlayDir
+
+type Package struct {
+	Name    string
+	Version string
+	License string
+	Paths   []string
+}
+
+type Bom struct {
+	Generate bool      `yaml:"generate" json:"generate"`
+	Packages []Package `yaml:"packages" json:"packages,omitempty"`
+}
 
 func validateDataAsBind(i interface{}) (map[interface{}]interface{}, error) {
 	bindMap, ok := i.(map[interface{}]interface{})
@@ -289,6 +307,7 @@ type Layer struct {
 	Annotations    map[string]string `yaml:"annotations" json:"annotations,omitempty"`
 	OS             *string           `yaml:"os" json:"os,omitempty"`
 	Arch           *string           `yaml:"arch" json:"arch,omitempty"`
+	Bom            *Bom              `yaml:"bom" json:"bom,omitempty"`
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {
@@ -357,6 +376,21 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 		case BuiltLayer:
 			if len(layer.From.Tag) == 0 {
 				return nil, errors.Errorf("%s: from tag cannot be empty for image type 'built'", name)
+			}
+		}
+
+		if layer.Bom != nil && layer.Bom.Generate {
+			if layer.Annotations == nil {
+				return nil, errors.Errorf("for bom generation %s, %s and %s annotations must be set",
+					AuthorAnnotation, OrgAnnotation, LicenseAnnotation)
+			}
+
+			_, aok := layer.Annotations[AuthorAnnotation]
+			_, ook := layer.Annotations[OrgAnnotation]
+			_, lok := layer.Annotations[LicenseAnnotation]
+			if !aok || !ook || !lok {
+				return nil, errors.Errorf("for bom generation %s, %s and %s annotations must be set",
+					AuthorAnnotation, OrgAnnotation, LicenseAnnotation)
 			}
 		}
 
