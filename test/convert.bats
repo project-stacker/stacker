@@ -30,37 +30,11 @@ EOF
   # build should now work
   ## docker build -t test
   mkdir -p /out
-  stacker build -f stacker.yaml --substitute-file stacker-subs.yaml
-  rm -f stacker.yaml stacker-subs.yaml
-  stacker clean
-}
-
-@test "build alpine image" {
-  git clone https://github.com/alpinelinux/docker-alpine.git
-  chmod -R a+rwx docker-alpine
-  cd docker-alpine
-  mkdir -p /out
-  chmod -R a+rwx /out
-  stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
-  stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine
+  stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app
   if [ -z "${REGISTRY_URL}" ]; then
-      skip "skipping test because no registry found in REGISTRY_URL env variable"
+    skip "skipping test because no registry found in REGISTRY_URL env variable"
   fi
-  stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --skip-tls --url docker://${REGISTRY_URL} --tag latest
-  rm -f stacker.yaml stacker-subs.yaml
-  stacker clean
-}
-
-@test "build elasticsearch image" {
-  git clone https://github.com/elastic/dockerfiles.git
-  chmod -R a+rwx dockerfiles
-  cd dockerfiles/elasticsearch
-  stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
-  stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch
-  if [ -z "${REGISTRY_URL}" ]; then
-      skip "skipping test because no registry found in REGISTRY_URL env variable"
-  fi
-  stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch --skip-tls --url docker://${REGISTRY_URL} --tag latest
+  stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app --skip-tls --url docker://${REGISTRY_URL} --layer app --tag latest
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
 }

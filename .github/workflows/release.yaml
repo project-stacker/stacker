@@ -27,7 +27,7 @@ jobs:
         id: restore-build
         with:
           path: stacker
-          key: ${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}
+          key: ${{ steps.short-sha.outputs.sha }}
       - if: github.event_name == 'release' && github.event.action == 'published'
         name: Publish artifacts on releases
         uses: svenstaro/upload-release-action@v2

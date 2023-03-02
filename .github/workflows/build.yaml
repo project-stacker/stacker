@@ -55,9 +55,8 @@ jobs:
           REGISTRY_URL: localhost:5000
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
-      - if: github.event_name == 'release' && github.event.action == 'published'
-        uses: actions/cache@v3
+      - uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker
-          key: ${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}
+          key: ${{ steps.short-sha.outputs.sha }}
