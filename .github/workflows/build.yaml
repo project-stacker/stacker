@@ -42,7 +42,13 @@ jobs:
           (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
       - if: github.event_name != 'release' || github.event.action != 'published'
-        name: Build and test
+        name: Build
+        run: |
+          make stacker
+        env:
+          REGISTRY_URL: localhost:5000
+      - if: github.event_name != 'release' || github.event.action != 'published'
+        name: Test
         run: |
           make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
