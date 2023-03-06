@@ -37,7 +37,7 @@ jobs:
           ZOT_PORT: 5000
         run: |
           # start a zot instance (minimal)
-          podman run -p ${ZOT_PORT}:${ZOT_PORT} ghcr.io/project-zot/zot-minimal-linux-amd64:latest
+          podman run -d -p ${ZOT_PORT}:${ZOT_PORT} ghcr.io/project-zot/zot-minimal-linux-amd64:latest
           # check if reachable
           while true; do x=0; curl -f http://${REGISTRY_URL}/v2/ || x=1; if [ $x -eq 0 ]; then break; fi; sleep 1; done
       - name: alpine
