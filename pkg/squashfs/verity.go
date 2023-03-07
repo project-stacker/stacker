@@ -71,7 +71,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 	"unsafe"
 
 	"github.com/anuvu/squashfs"
@@ -79,7 +78,6 @@ import (
 	"github.com/martinjungblut/go-cryptsetup"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
-	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/mount"
 )
 
@@ -229,30 +227,13 @@ func GuestMount(squashFile string, mountpoint string) error {
 	}
 	mountpoint = abs
 
-	fiPre, err := os.Lstat(mountpoint)
-	if err != nil {
-		return errors.Wrapf(err, "Failed stat'ing %q", mountpoint)
-	}
-	if fiPre.Mode()&os.ModeSymlink != 0 {
-		return errors.Errorf("Refusing to mount onto a symbolic linkd")
-	}
-
 	cmd, err := squashFuse(squashFile, mountpoint)
 	if err != nil {
 		return err
 	}
-	err = cmd.Process.Release()
-	if err != nil {
-		return errors.Wrapf(err, "Failed releasing squashfuse process")
+	if err := cmd.Process.Release(); err != nil {
+		return errors.Errorf("Failed to release process after guestmount %s: %v", squashFile, err)
 	}
-
-	for count := 0; !fileChanged(fiPre, mountpoint); count++ {
-		if count%10 == 0 {
-			log.Debugf("%s is not yet mounted...\n", mountpoint)
-		}
-		time.Sleep(time.Duration(100 * time.Millisecond))
-	}
-
 	return nil
 }
 

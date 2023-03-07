@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
@@ -211,7 +212,7 @@ func maybeKernelSquashMount(squashFile, extractDir string) (bool, error) {
 	}
 
 	// we can't really tell why the mount failed. mount(8) does not give a lot specific rc exits.
-	log.Debugf("maybeKernelSquashMount(%s) exited %d: %s\n", squashFile, status.ExitStatus(), output.String())
+	log.Debugf("maybeKernelSquashMount(%s) exited %d: %s", squashFile, status.ExitStatus(), strings.TrimRight(output.String(), "\n"))
 	return false, kernelSquashMountFailed
 }
 
@@ -224,10 +225,14 @@ func findSquashfusePath() string {
 
 var squashNotFound = errors.Errorf("squashfuse program not found")
 
+// squashFuse - mount squashFile to extractDir
+// return a pointer to the squashfuse cmd.
+// The caller of the this is responsible for the process created.
 func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	sqfuse := findSquashfusePath()
+	var cmd *exec.Cmd
 	if sqfuse == "" {
-		return nil, squashNotFound
+		return cmd, squashNotFound
 	}
 
 	// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
@@ -235,26 +240,61 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 
 	var cmdOut io.Writer
 	var err error
-	var nilCmd *exec.Cmd
 
 	logf := filepath.Join(path.Dir(extractDir), "."+filepath.Base(extractDir)+"-squashfuse.log")
 	if cmdOut, err = os.OpenFile(logf, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0644); err != nil {
 		log.Infof("Failed to open %s for write: %v", logf, err)
-		return nilCmd, err
+		return cmd, err
+	}
+
+	fiPre, err := os.Lstat(extractDir)
+	if err != nil {
+		return cmd, errors.Wrapf(err, "Failed stat'ing %q", extractDir)
+	}
+	if fiPre.Mode()&os.ModeSymlink != 0 {
+		return cmd, errors.Errorf("Refusing to mount onto a symbolic linkd")
 	}
 
 	// It would be nice to only enable debug (or maybe to only log to file at all)
 	// if 'stacker --debug', but we do not have access to that info here.
 	// to debug squashfuse, use "allow_other,debug"
-	cmd := exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
+	cmd = exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
 	cmd.Stdin = nil
 	cmd.Stdout = cmdOut
 	cmd.Stderr = cmdOut
 	cmdOut.Write([]byte(fmt.Sprintf("# %s\n", strings.Join(cmd.Args, " "))))
-	log.Debugf("Extracting %s -> %s with squashfuse [%s]", squashFile, extractDir, logf)
+	log.Debugf("Extracting %s -> %s with %s [%s]", squashFile, extractDir, sqfuse, logf)
 	err = cmd.Start()
 	if err != nil {
-		return nilCmd, err
+		return cmd, err
+	}
+
+	// now poll/wait for one of 3 things to happen
+	// a. child process exits - if it did, then some error has occurred.
+	// b. the directory Entry is different than it was before the call
+	//    to sqfuse.  We have to do this because we do not have another
+	//    way to know when the mount has been populated.
+	//    https://github.com/vasi/squashfuse/issues/49
+	// c. a timeout (timeLimit) was hit
+	startTime := time.Now()
+	timeLimit := 30 * time.Second
+	go func() {
+		cmd.Wait()
+	}()
+	for count := 0; !fileChanged(fiPre, extractDir); count++ {
+		if cmd.ProcessState != nil {
+			// process exited, the Wait() call in the goroutine above
+			// caused ProcessState to be populated.
+			return cmd, errors.Errorf("squashFuse mount of %s with %s exited unexpectedly with %d", squashFile, sqfuse, cmd.ProcessState.ExitCode())
+		}
+		if time.Since(startTime) > timeLimit {
+			cmd.Process.Kill()
+			return cmd, errors.Wrapf(err, "Gave up on squashFuse mount of %s with %s after %s", squashFile, sqfuse, timeLimit)
+		}
+		if count%10 == 1 {
+			log.Debugf("%s is not yet mounted...(%s)", extractDir, time.Since(startTime))
+		}
+		time.Sleep(time.Duration(50 * time.Millisecond))
 	}
 
 	return cmd, nil
@@ -272,8 +312,13 @@ func ExtractSingleSquash(squashFile string, extractDir string, storageType strin
 		return err
 	}
 
-	_, err = squashFuse(squashFile, extractDir)
-	if err == nil || err != squashNotFound {
+	cmd, err := squashFuse(squashFile, extractDir)
+	if err == nil {
+		if err := cmd.Process.Release(); err != nil {
+			return errors.Errorf("Failed to release process %s: %v", cmd, err)
+		}
+		return nil
+	} else if err != squashNotFound {
 		return err
 	}
 	if p := which("unsquashfs"); p != "" {
