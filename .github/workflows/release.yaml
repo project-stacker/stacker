@@ -6,8 +6,19 @@ on:
       - published
 
 jobs:
+  build-id:
+    runs-on: ubuntu-latest
+    outputs:
+      build-id: ${{steps.build-id.outputs.build-id}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: benjlevesque/short-sha@v2.1
+        id: short-sha
+      - id: build-id
+        run: echo "build-id=${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
   ci:
     uses: ./.github/workflows/build.yaml
+    needs: build-id
     with:
       # note >-, args needs to be strings to be used as inputs
       # for the reusable build.yaml workflow
@@ -15,19 +26,19 @@ jobs:
         ["1.20.x"]
       privilege-level: >-
         ["priv"]
+      build-id: >-
+        ["${{needs.build-id.outputs.build-id}}"]
   release:
     name: "Tagged Release"
     runs-on: ubuntu-20.04
     # needs ci for the cached stacker binary
-    needs: ci
+    needs: [build-id, ci]
     steps:
-      - uses: benjlevesque/short-sha@v2.1
-        id: short-sha
       - uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker
-          key: ${{ steps.short-sha.outputs.sha }}
+          key: ${{needs.build-id.outputs.build-id}}
       - if: github.event_name == 'release' && github.event.action == 'published'
         name: Publish artifacts on releases
         uses: svenstaro/upload-release-action@v2

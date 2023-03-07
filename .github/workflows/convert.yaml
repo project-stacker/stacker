@@ -9,28 +9,17 @@ env:
   REGISTRY_URL: localhost:5000
 
 jobs:
-  ci:
-    uses: ./.github/workflows/build.yaml
-    with:
-      # note >-, args needs to be strings to be used as inputs
-      # for the reusable build.yaml workflow
-      go-version: >-
-        ["1.20.x"]
-      privilege-level: >-
-        ["priv"]
   convert:
     name: "convert"
     runs-on: ubuntu-20.04
     # needs ci for the cached stacker binary
     needs: ci
     steps:
-      - uses: benjlevesque/short-sha@v2.1
-        id: short-sha
       - uses: actions/cache@v3
         id: restore-build
         with:
           path: stacker
-          key: ${{ steps.short-sha.outputs.sha }}
+          key: ${{ github.sha }}
       - name: zot registry
         env:
           ZOT_HOST: localhost
