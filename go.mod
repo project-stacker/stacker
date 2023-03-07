@@ -18,7 +18,7 @@ require (
 	github.com/martinjungblut/go-cryptsetup v0.0.0-20220520180014-fd0874fd07a6
 	github.com/minio/sha256-simd v1.0.0
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/moby/buildkit v0.11.3
+	github.com/moby/buildkit v0.11.4
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
@@ -30,8 +30,8 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli v1.22.12
 	github.com/vbatts/go-mtree v0.5.2
-	golang.org/x/sys v0.5.0
-	golang.org/x/term v0.5.0
+	golang.org/x/sys v0.6.0
+	golang.org/x/term v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.3.0
 )
