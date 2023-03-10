@@ -122,6 +122,10 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
+			Name:  "work-dir",
+			Usage: "set the working directory for stacker's cache, OCI output and rootfs output",
+		},
+		cli.StringFlag{
 			Name:  "stacker-dir",
 			Usage: "set the directory for stacker's cache",
 			Value: ".stacker",
@@ -225,14 +229,29 @@ func main() {
 
 		config.EmbeddedFS = embeddedFS
 
+		if config.WorkDir == "" || ctx.IsSet("work-dir") {
+			config.WorkDir = ctx.String("work-dir")
+		}
 		if config.StackerDir == "" || ctx.IsSet("stacker-dir") {
-			config.StackerDir = ctx.String("stacker-dir")
+			if config.WorkDir != "" && !ctx.IsSet("stacker-dir") {
+				config.StackerDir = path.Join(config.WorkDir, ctx.String("stacker-dir"))
+			} else {
+				config.StackerDir = ctx.String("stacker-dir")
+			}
 		}
 		if config.OCIDir == "" || ctx.IsSet("oci-dir") {
-			config.OCIDir = ctx.String("oci-dir")
+			if config.WorkDir != "" && !ctx.IsSet("oci-dir") {
+				config.OCIDir = path.Join(config.WorkDir, ctx.String("oci-dir"))
+			} else {
+				config.OCIDir = ctx.String("oci-dir")
+			}
 		}
 		if config.RootFSDir == "" || ctx.IsSet("roots-dir") {
-			config.RootFSDir = ctx.String("roots-dir")
+			if config.WorkDir != "" && !ctx.IsSet("roots-dir") {
+				config.RootFSDir = path.Join(config.WorkDir, ctx.String("roots-dir"))
+			} else {
+				config.RootFSDir = ctx.String("roots-dir")
+			}
 		}
 
 		// Validate roots-dir name does not contain ':'
