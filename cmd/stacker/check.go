@@ -8,7 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/pkg/xattr"
 	"github.com/urfave/cli"
+	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/overlay"
+	"stackerbuild.io/stacker/pkg/stacker"
 )
 
 var checkCmd = cli.Command{
@@ -18,9 +20,24 @@ var checkCmd = cli.Command{
 }
 
 func doCheck(ctx *cli.Context) error {
+
+	kernel, err := stacker.KernelInfo()
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get kernel info")
+	}
+
+	log.Infof(kernel)
+
 	if err := os.MkdirAll(config.RootFSDir, 0700); err != nil {
 		return errors.Wrapf(err, "couldn't create rootfs dir for testing")
 	}
+
+	fstype, err := stacker.MountInfo(config.RootFSDir)
+	if err != nil {
+		return errors.Wrapf(err, "%s: couldn't get fs type", config.RootFSDir)
+	}
+
+	log.Infof("%s %s", config.RootFSDir, fstype)
 
 	if e := verifyNewUIDMap(ctx); e != nil {
 		return e
