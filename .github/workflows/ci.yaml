@@ -18,3 +18,5 @@ jobs:
         ["1.20.x"]
       privilege-level: >-
         ["unpriv", "priv"]
+      build-id: >-
+        ["${{ github.sha }}"]

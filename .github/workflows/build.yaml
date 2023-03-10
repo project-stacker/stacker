@@ -10,6 +10,10 @@ on:
         required: true
         type: string
         description: 'Stringified JSON object listing stacker privilege-level'
+      build-id:
+        required: true
+        type: string
+        description: 'Stringified JSON object listing stacker build-id'
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -22,6 +26,7 @@ jobs:
       matrix:
         go-version: ${{fromJson(inputs.go-version)}}
         privilege-level: ${{fromJson(inputs.privilege-level)}}
+        build-id: ${{fromJson(inputs.build-id)}}
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v3
@@ -43,22 +48,14 @@ jobs:
           (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
           echo "running kernel is: $(uname -a)"
-      - if: github.event_name != 'release' || github.event.action != 'published'
-        name: Build
+      - name: Build
         run: |
-          make stacker
+          make stacker VERSION_FULL=${{ matrix.build-id }}
         env:
           REGISTRY_URL: localhost:5000
-      - if: github.event_name != 'release' || github.event.action != 'published'
-        name: Test
+      - name: Test
         run: |
-          make check PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
-        env:
-          REGISTRY_URL: localhost:5000
-      - if: github.event_name == 'release' && github.event.action == 'published'
-        name: Build and test released version
-        run: |
-          make check VERSION_FULL=${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+          make check VERSION_FULL=${{ matrix.build-id }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
       - name: Upload code coverage
@@ -67,4 +64,4 @@ jobs:
         id: restore-build
         with:
           path: stacker
-          key: ${{ steps.short-sha.outputs.sha }}
+          key: ${{ matrix.build-id }}
