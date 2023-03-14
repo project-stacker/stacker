@@ -32,6 +32,7 @@ type Converter struct {
 	output    Stackerfile
 	currLayer string
 	subs      map[string]string
+	vols      int
 	args      []string
 	env       map[string]string
 	// per-layer state
@@ -254,9 +255,12 @@ func (c *Converter) convertCommand(cmd *Command) error {
 
 		layer.Imports = append(layer.Imports, imp)
 	case "volume":
-		bind := types.Bind{Source: cmd.Value[0], Dest: cmd.Value[0]}
+		c.vols++
+		vol := fmt.Sprintf("STACKER_VOL%d", c.vols)
+		c.subs[vol] = cmd.Value[0]
+		bind := types.Bind{Source: fmt.Sprintf("${{%s}}", vol), Dest: cmd.Value[0]}
 		layer.Binds = append(layer.Binds, bind)
-		log.Infof("Bind-mounted volume %q found - make sure volume is present on host", cmd.Value[0])
+		log.Infof("Bind-mounted volume %q found (substituted via %s) - make sure volume is present on host", cmd.Value[0], vol)
 	case "entrypoint":
 		layer.Entrypoint = cmd.Value
 	case "user":

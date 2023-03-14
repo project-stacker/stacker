@@ -35,10 +35,9 @@ jobs:
           git clone https://github.com/alpinelinux/docker-alpine.git
           chmod -R a+rwx docker-alpine
           cd docker-alpine
-          mkdir -p /out
-          chmod -R a+rwx /out
+          TEMPDIR=$(mktemp -d)
           stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
-          stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine
+          stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --substitute STACKER_VOL1="$TEMPDIR"
           stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --skip-tls --url docker://${REGISTRY_URL} --layer alpine --tag latest
           rm -f stacker.yaml stacker-subs.yaml
           stacker clean
