@@ -44,6 +44,16 @@ type Builder struct {
 	opts              *BuildArgs         // Build options
 }
 
+func substitutionExists(key string, subs []string) (string, bool) {
+	for _, sub := range subs {
+		if strings.HasPrefix(sub, fmt.Sprintf("%s=", key)) {
+			return sub, true
+		}
+	}
+
+	return "", false
+}
+
 // NewBuilder initializes a new Builder struct
 func NewBuilder(opts *BuildArgs) *Builder {
 	if opts.SubstituteFile != "" {
@@ -60,6 +70,12 @@ func NewBuilder(opts *BuildArgs) *Builder {
 		}
 
 		for k, v := range yamlMap {
+			// for predictability, give precedence to "--substitute" args
+			if sub, ok := substitutionExists(k, opts.Substitute); ok {
+				log.Debugf("ignoring substitution %s=%s, since %s already exists", k, v, sub)
+				continue
+			}
+
 			opts.Substitute = append(opts.Substitute, fmt.Sprintf("%s=%s", k, v))
 		}
 	}
