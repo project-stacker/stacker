@@ -36,18 +36,33 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Setup Environment
+        run: |
+          gopath=$PWD/.build/gopath
+          echo "GOPATH=$gopath" >> $GITHUB_ENV
+          echo "GOCACHE=$gopath/gocache" >> $GITHUB_ENV
+          echo "PATH=$gopath/bin:$PATH" >> $GITHUB_ENV
+
+          echo "PWD=$PWD"
+          cat "$GITHUB_ENV"
       - name: install dependencies
         run: |
           sudo add-apt-repository -y ppa:project-machine/squashfuse
           sudo apt-get update
           sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
           GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
-          sudo cp ~/go/bin/umoci /usr/bin
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
           sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin squashfuse
           (cd /tmp && git clone https://github.com/AgentD/squashfs-tools-ng && cd squashfs-tools-ng && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make -j2 install && sudo ldconfig -v)
           (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
           echo "running kernel is: $(uname -a)"
+      - name: Go-download
+        run: |
+          make go-download
+      - name: Build-level1
+        run: |
+          make show-info
+          make stacker-dynamic VERSION_FULL=${{ matrix.build-id }}
       - name: Build
         run: |
           make stacker VERSION_FULL=${{ matrix.build-id }}
