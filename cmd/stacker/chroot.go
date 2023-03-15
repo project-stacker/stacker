@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/stacker"
@@ -18,12 +18,13 @@ var chrootCmd = cli.Command{
 	Aliases: []string{"exec"},
 	Action:  doChroot,
 	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "stacker-file, f",
-			Usage: "the input stackerfile",
-			Value: "stacker.yaml",
+		&cli.StringFlag{
+			Name:    "stacker-file",
+			Aliases: []string{"f"},
+			Usage:   "the input stackerfile",
+			Value:   "stacker.yaml",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "substitute",
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
@@ -45,14 +46,14 @@ func doChroot(ctx *cli.Context) error {
 	defer locks.Unlock()
 
 	tag := ""
-	if len(ctx.Args()) > 0 {
-		tag = ctx.Args()[0]
+	if ctx.Args().Len() > 0 {
+		tag = ctx.Args().Get(0)
 	}
 
 	cmd := stacker.DefaultShell
 
-	if len(ctx.Args()) > 1 {
-		cmd = ctx.Args()[1]
+	if ctx.Args().Len() > 1 {
+		cmd = ctx.Args().Get(1)
 	}
 
 	file := ctx.String("f")

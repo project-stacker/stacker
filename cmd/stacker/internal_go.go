@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
 	"stackerbuild.io/stacker/pkg/atomfs"
 	"stackerbuild.io/stacker/pkg/lib"
@@ -19,20 +19,20 @@ import (
 var internalGoCmd = cli.Command{
 	Name:   "internal-go",
 	Hidden: true,
-	Subcommands: []cli.Command{
-		cli.Command{
+	Subcommands: []*cli.Command{
+		&cli.Command{
 			Name:   "cp",
 			Action: doCP,
 		},
-		cli.Command{
+		&cli.Command{
 			Name:   "chmod",
 			Action: doChmod,
 		},
-		cli.Command{
+		&cli.Command{
 			Name:   "chown",
 			Action: doChown,
 		},
-		cli.Command{
+		&cli.Command{
 			Name:   "check-aa-profile",
 			Action: doCheckAAProfile,
 		},
@@ -40,22 +40,22 @@ var internalGoCmd = cli.Command{
 		 * these are not actually used by stacker, but are entrypoints
 		 * to the code for use in the test suite.
 		 */
-		cli.Command{
+		&cli.Command{
 			Name:   "testsuite-check-overlay",
 			Action: doTestsuiteCheckOverlay,
 		},
-		cli.Command{
+		&cli.Command{
 			Name:   "copy",
 			Action: doImageCopy,
 		},
-		cli.Command{
+		&cli.Command{
 			Name: "atomfs",
-			Subcommands: []cli.Command{
-				cli.Command{
+			Subcommands: []*cli.Command{
+				&cli.Command{
 					Name:   "mount",
 					Action: doAtomfsMount,
 				},
-				cli.Command{
+				&cli.Command{
 					Name:   "umount",
 					Action: doAtomfsUmount,
 				},
@@ -95,52 +95,52 @@ func doTestsuiteCheckOverlay(ctx *cli.Context) error {
 }
 
 func doImageCopy(ctx *cli.Context) error {
-	if len(ctx.Args()) != 2 {
+	if ctx.Args().Len() != 2 {
 		return errors.Errorf("wrong number of args")
 	}
 
 	return lib.ImageCopy(lib.ImageCopyOpts{
-		Src:      ctx.Args()[0],
-		Dest:     ctx.Args()[1],
+		Src:      ctx.Args().Get(0),
+		Dest:     ctx.Args().Get(1),
 		Progress: os.Stdout,
 	})
 }
 
 func doCP(ctx *cli.Context) error {
-	if len(ctx.Args()) != 2 {
+	if ctx.Args().Len() != 2 {
 		return errors.Errorf("wrong number of args")
 	}
 
 	return lib.CopyThing(
-		ctx.Args()[0],
-		ctx.Args()[1],
+		ctx.Args().Get(0),
+		ctx.Args().Get(1),
 	)
 }
 
 func doChmod(ctx *cli.Context) error {
-	if len(ctx.Args()) != 2 {
+	if ctx.Args().Len() != 2 {
 		return errors.Errorf("wrong number of args")
 	}
 
 	return lib.Chmod(
-		ctx.Args()[0],
-		ctx.Args()[1],
+		ctx.Args().Get(0),
+		ctx.Args().Get(1),
 	)
 }
 
 func doChown(ctx *cli.Context) error {
-	if len(ctx.Args()) != 2 {
+	if ctx.Args().Len() != 2 {
 		return errors.Errorf("wrong number of args")
 	}
 
 	return lib.Chown(
-		ctx.Args()[0],
-		ctx.Args()[1],
+		ctx.Args().Get(0),
+		ctx.Args().Get(1),
 	)
 }
 
 func doCheckAAProfile(ctx *cli.Context) error {
-	toCheck := ctx.Args()[0]
+	toCheck := ctx.Args().Get(0)
 	command := fmt.Sprintf("changeprofile %s", toCheck)
 
 	runtime.LockOSThread()
@@ -170,12 +170,12 @@ func doCheckAAProfile(ctx *cli.Context) error {
 }
 
 func doAtomfsMount(ctx *cli.Context) error {
-	if len(ctx.Args()) != 2 {
+	if ctx.Args().Len() != 2 {
 		return errors.Errorf("wrong number of args for mount")
 	}
 
-	tag := ctx.Args()[0]
-	mountpoint := ctx.Args()[1]
+	tag := ctx.Args().Get(0)
+	mountpoint := ctx.Args().Get(1)
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -201,10 +201,10 @@ func doAtomfsMount(ctx *cli.Context) error {
 }
 
 func doAtomfsUmount(ctx *cli.Context) error {
-	if len(ctx.Args()) != 1 {
+	if ctx.Args().Len() != 1 {
 		return errors.Errorf("wrong number of args for umount")
 	}
 
-	mountpoint := ctx.Args()[0]
+	mountpoint := ctx.Args().Get(0)
 	return atomfs.Umount(mountpoint)
 }

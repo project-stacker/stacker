@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/stacker"
 )
@@ -14,7 +14,7 @@ var cleanCmd = cli.Command{
 	Usage:  "cleans up after a `stacker build`",
 	Action: doClean,
 	Flags: []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "all",
 			Usage: "no-op; this used to do soemthing, and is left in for compatibility",
 		},

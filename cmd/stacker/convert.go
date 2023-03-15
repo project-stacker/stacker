@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/stacker"
 )
 
@@ -18,20 +18,23 @@ var convertCmd = cli.Command{
 func initConvertFlags() []cli.Flag {
 	return append(
 		initCommonConvertFlags(),
-		cli.StringFlag{
-			Name:  "docker-file, i",
-			Usage: "the input Dockerfile",
-			Value: "Dockerfile",
+		&cli.StringFlag{
+			Name:    "docker-file",
+			Aliases: []string{"i"},
+			Usage:   "the input Dockerfile",
+			Value:   "Dockerfile",
 		},
-		cli.StringFlag{
-			Name:  "output-file, o",
-			Usage: "the output stacker file",
-			Value: "stacker.yaml",
+		&cli.StringFlag{
+			Name:    "output-file",
+			Aliases: []string{"o"},
+			Usage:   "the output stacker file",
+			Value:   "stacker.yaml",
 		},
-		cli.StringFlag{
-			Name:  "substitute-file, s",
-			Usage: "the output file containing detected substitutions",
-			Value: "stacker-subs.yaml",
+		&cli.StringFlag{
+			Name:    "substitute-file",
+			Aliases: []string{"s"},
+			Usage:   "the output file containing detected substitutions",
+			Value:   "stacker-subs.yaml",
 		},
 	)
 }

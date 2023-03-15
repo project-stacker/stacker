@@ -27,8 +27,8 @@ type BuildArgs struct {
 	Config               types.StackerConfig
 	LeaveUnladen         bool
 	NoCache              bool
-	Substitute           []string
 	SubstituteFile       string
+	Substitute           []string
 	OnRunFailure         string
 	LayerTypes           []types.LayerType
 	OrderOnly            bool

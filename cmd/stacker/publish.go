@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/stacker"
@@ -14,62 +14,65 @@ var publishCmd = cli.Command{
 	Usage:  "publishes OCI images previously built from one or more stacker yaml files",
 	Action: doPublish,
 	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "stacker-file, f",
-			Usage: "the input stackerfile",
-			Value: "stacker.yaml",
+		&cli.StringFlag{
+			Name:    "stacker-file",
+			Aliases: []string{"f"},
+			Usage:   "the input stackerfile",
+			Value:   "stacker.yaml",
 		},
-		cli.StringFlag{
-			Name:  "stacker-file-pattern, p",
-			Usage: "regex pattern to use when searching for stackerfile paths",
-			Value: stackerFilePathRegex,
+		&cli.StringFlag{
+			Name:    "stacker-file-pattern",
+			Aliases: []string{"p"},
+			Usage:   "regex pattern to use when searching for stackerfile paths",
+			Value:   stackerFilePathRegex,
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "substitute-file",
 			Usage: "file containing variable substitution in stackerfiles, 'FOO: bar' yaml format",
 		},
-		cli.StringFlag{
-			Name:  "search-dir, d",
-			Usage: "directory under which to search for stackerfiles to publish",
+		&cli.StringFlag{
+			Name:    "search-dir",
+			Aliases: []string{"d"},
+			Usage:   "directory under which to search for stackerfiles to publish",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "url",
 			Usage: "url where to publish the OCI images",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "username",
 			Usage: "username for the registry where the OCI images are published",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "password",
 			Usage: "password for the registry where the OCI images are published",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "skip-tls",
 			Usage: "skip tls verify on upstream registry",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "tag",
 			Usage: "tag to be used when publishing",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "substitute",
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "show-only",
 			Usage: "show the images to be published without actually publishing them",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "force",
 			Usage: "force publishing the images present in the OCI layout even if they should be rebuilt",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "layer-type",
 			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
-			Value: &cli.StringSlice{"tar"},
+			Value: cli.NewStringSlice("tar"),
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "layer",
 			Usage: "layer to be published; can be specified multiple times",
 		},
