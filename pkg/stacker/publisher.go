@@ -20,8 +20,8 @@ import (
 type PublishArgs struct {
 	Config         types.StackerConfig
 	ShowOnly       bool
-	Substitute     []string
 	SubstituteFile string
+	Substitute     []string
 	Tags           []string
 	Url            string
 	Username       string

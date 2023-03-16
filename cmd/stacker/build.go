@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/stacker"
 	"stackerbuild.io/stacker/pkg/types"
@@ -20,53 +20,54 @@ var buildCmd = cli.Command{
 func initBuildFlags() []cli.Flag {
 	return append(
 		initCommonBuildFlags(),
-		cli.StringFlag{
-			Name:  "stacker-file, f",
-			Usage: "the input stackerfile",
-			Value: "stacker.yaml",
+		&cli.StringFlag{
+			Name:    "stacker-file",
+			Aliases: []string{"f"},
+			Usage:   "the input stackerfile",
+			Value:   "stacker.yaml",
 		})
 }
 
 func initCommonBuildFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "no-cache",
 			Usage: "don't use the previous build cache",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "substitute",
 			Usage: "variable substitution in stackerfiles, FOO=bar format",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "substitute-file",
 			Usage: "file containing variable substitution in stackerfiles, 'FOO: bar' yaml format",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "on-run-failure",
 			Usage: "command to run inside container if run fails (useful for inspection)",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "shell-fail",
 			Usage: fmt.Sprintf("exec %s inside the container if run fails (alias for --on-run-failure=%s)", stacker.DefaultShell, stacker.DefaultShell),
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "layer-type",
 			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
-			Value: &cli.StringSlice{"tar"},
+			Value: cli.NewStringSlice("tar"),
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "no-squashfs-verity",
 			Usage: "do not append dm-verity data to squashfs archives",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "require-hash",
 			Usage: "require all remote imports to have a hash provided in stackerfiles",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "order-only",
 			Usage: "show the build order without running the actual build",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "annotations-namespace",
 			Usage: "set OCI annotations namespace in the OCI image manifest",
 			Value: "io.stackeroci",

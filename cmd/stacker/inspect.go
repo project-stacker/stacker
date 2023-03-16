@@ -10,7 +10,7 @@ import (
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	stackeroci "stackerbuild.io/stacker/pkg/oci"
 )
 

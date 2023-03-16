@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/stacker"
 )
@@ -19,15 +19,17 @@ var recursiveBuildCmd = cli.Command{
 func initRecursiveBuildFlags() []cli.Flag {
 	return append(
 		initCommonBuildFlags(),
-		cli.StringFlag{
-			Name:  "stacker-file-pattern, p",
-			Usage: "regex pattern to use when searching for stackerfile paths",
-			Value: stackerFilePathRegex,
+		&cli.StringFlag{
+			Name:    "stacker-file-pattern",
+			Aliases: []string{"p"},
+			Usage:   "regex pattern to use when searching for stackerfile paths",
+			Value:   stackerFilePathRegex,
 		},
-		cli.StringFlag{
-			Name:  "search-dir, d",
-			Usage: "directory under which to search for stackerfiles to build",
-			Value: ".",
+		&cli.StringFlag{
+			Name:    "search-dir",
+			Aliases: []string{"d"},
+			Usage:   "directory under which to search for stackerfiles to build",
+			Value:   ".",
 		})
 }
 

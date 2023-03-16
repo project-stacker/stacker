@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/stacker"
 )
 
@@ -16,17 +16,17 @@ var unprivSetupCmd = cli.Command{
 	Action: doUnprivSetup,
 	Before: beforeUnprivSetup,
 	Flags: []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "uid",
 			Usage: "the user to do setup for (defaults to $SUDO_UID from env)",
 			Value: os.Getenv("SUDO_UID"),
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "gid",
 			Usage: "the group to do setup for (defaults to $SUDO_GID from env)",
 			Value: os.Getenv("SUDO_GID"),
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "username",
 			Usage: "the username to do setup for (defaults to $SUDO_USER from env)",
 			Value: os.Getenv("SUDO_USER"),

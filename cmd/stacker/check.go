@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/pkg/xattr"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/overlay"
 	"stackerbuild.io/stacker/pkg/stacker"

@@ -14,7 +14,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"golang.org/x/term"
 	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/container"
@@ -33,10 +33,10 @@ var embeddedFS embed.FS
 
 func shouldShowProgress(ctx *cli.Context) bool {
 	/* if the user provided explicit recommendations, follow those */
-	if ctx.GlobalBool("no-progress") {
+	if ctx.Bool("no-progress") {
 		return false
 	}
-	if ctx.GlobalBool("progress") {
+	if ctx.Bool("progress") {
 		return true
 	}
 
@@ -67,12 +67,12 @@ func stackerResult(err error) {
 
 func shouldSkipInternalUserns(ctx *cli.Context) bool {
 	args := ctx.Args()
-	if len(args) >= 1 && args[0] == "unpriv-setup" {
+	if args.Len() >= 1 && args.Get(0) == "unpriv-setup" {
 		return true
 	}
 
-	if len(args) >= 2 && args[0] == "internal-go" {
-		if args[1] == "atomfs" || args[1] == "cp" || args[1] == "chown" || args[1] == "chmod" {
+	if args.Len() >= 2 && args.Get(0) == "internal-go" {
+		if args.Get(1) == "atomfs" || args.Get(1) == "cp" || args.Get(1) == "chown" || args.Get(1) == "chmod" {
 			return true
 		}
 	}
@@ -105,68 +105,69 @@ func main() {
 		configDir = path.Join(homeDir, ".config", app.Name)
 	}
 
-	app.Commands = []cli.Command{
-		buildCmd,
-		recursiveBuildCmd,
-		convertCmd,
-		publishCmd,
-		chrootCmd,
-		cleanCmd,
-		inspectCmd,
-		grabCmd,
-		internalGoCmd,
-		unprivSetupCmd,
-		gcCmd,
-		checkCmd,
+	app.Commands = []*cli.Command{
+		&buildCmd,
+		&recursiveBuildCmd,
+		&convertCmd,
+		&publishCmd,
+		&chrootCmd,
+		&cleanCmd,
+		&inspectCmd,
+		&grabCmd,
+		&internalGoCmd,
+		&unprivSetupCmd,
+		&gcCmd,
+		&checkCmd,
 	}
 
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "work-dir",
 			Usage: "set the working directory for stacker's cache, OCI output and rootfs output",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "stacker-dir",
 			Usage: "set the directory for stacker's cache",
 			Value: ".stacker",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "oci-dir",
 			Usage: "set the directory for OCI output",
 			Value: "oci",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "roots-dir",
 			Usage: "set the directory for the rootfs output",
 			Value: "roots",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "config",
 			Usage: "stacker config file with defaults",
 			Value: path.Join(configDir, "conf.yaml"),
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "debug",
 			Usage: "enable stacker debug mode",
 		},
-		cli.BoolFlag{
-			Name:  "q, quiet",
-			Usage: "silence all logs",
+		&cli.BoolFlag{
+			Name:    "quiet",
+			Aliases: []string{"q"},
+			Usage:   "silence all logs",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "log-file",
 			Usage: "log to a file instead of stderr",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "log-timestamp",
 			Usage: "whether to log a timestamp prefix",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "storage-type",
 			Usage: "storage type (must be \"overlay\", left for compatibility)",
 			Value: "overlay",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:   "internal-userns",
 			Usage:  "used to reexec stacker in a user namespace",
 			Hidden: true,
@@ -188,12 +189,12 @@ func main() {
 	 */
 	isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
 	if isTerminal {
-		app.Flags = append(app.Flags, cli.BoolFlag{
+		app.Flags = append(app.Flags, &cli.BoolFlag{
 			Name:  "no-progress",
 			Usage: "disable progress when downloading container images or files",
 		})
 	} else {
-		app.Flags = append(app.Flags, cli.BoolFlag{
+		app.Flags = append(app.Flags, &cli.BoolFlag{
 			Name:  "progress",
 			Usage: "enable progress when downloading container images or files",
 		})
