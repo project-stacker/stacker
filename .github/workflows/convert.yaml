@@ -49,7 +49,7 @@ jobs:
           cd dockerfiles/elasticsearch
           stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
           stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch
-          stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch --skip-tls --url docker://${REGISTRY_URL} --layer elasticsearch
+          stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch --skip-tls --url docker://${REGISTRY_URL} --layer elasticsearch --tag latest
           rm -f stacker.yaml stacker-subs.yaml
           stacker clean
           cd $GITHUB_WORKSPACE
