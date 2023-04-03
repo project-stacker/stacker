@@ -389,6 +389,9 @@ func (l Layer) absolutify(referenceDirectory string) (Layer, error) {
 		if err != nil {
 			return ret, err
 		}
+		if rawImport.Path[len(rawImport.Path)-1:] == "/" {
+			absImportPath += "/"
+		}
 		absImport := Import{Hash: rawImport.Hash, Path: absImportPath, Dest: rawImport.Dest, Mode: rawImport.Mode, Uid: rawImport.Uid, Gid: rawImport.Gid}
 		ret.Imports = append(ret.Imports, absImport)
 	}
