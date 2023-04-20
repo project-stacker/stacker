@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -191,82 +190,6 @@ type Bind struct {
 }
 
 type Binds []Bind
-
-func (bs *Bind) MarshalJSON() ([]byte, error) {
-	var sb strings.Builder
-	if bs.Dest == "" {
-		sb.WriteString(fmt.Sprintf("%q", bs.Source))
-	} else {
-		var sbt strings.Builder
-		sbt.WriteString(fmt.Sprintf("%s -> %s", bs.Source, bs.Dest))
-		sb.WriteString(fmt.Sprintf("%q", sbt.String()))
-	}
-
-	return []byte(sb.String()), nil
-}
-
-func (bs *Binds) UnmarshalJSON(data []byte) error {
-	var rawBinds []string
-
-	if err := json.Unmarshal(data, &rawBinds); err != nil {
-		return err
-	}
-
-	*bs = Binds{}
-	for _, bind := range rawBinds {
-		parts := strings.Split(bind, "->")
-		if len(parts) != 1 && len(parts) != 2 {
-			return errors.Errorf("invalid bind mount %s", bind)
-		}
-
-		source := strings.TrimSpace(parts[0])
-		target := source
-
-		if len(parts) == 2 {
-			target = strings.TrimSpace(parts[1])
-		}
-
-		*bs = append(*bs, Bind{Source: source, Dest: target})
-	}
-
-	return nil
-}
-
-func (bs *Binds) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var data interface{}
-	err := unmarshal(&data)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	xform := func(s string) ([]string, error) {
-		return []string{s}, nil
-	}
-
-	rawBinds, err := getStringOrStringSlice(data, xform)
-	if err != nil {
-		return err
-	}
-
-	*bs = Binds{}
-	for _, bind := range rawBinds {
-		parts := strings.Split(bind, "->")
-		if len(parts) != 1 && len(parts) != 2 {
-			return errors.Errorf("invalid bind mount %s", bind)
-		}
-
-		source := strings.TrimSpace(parts[0])
-		target := source
-
-		if len(parts) == 2 {
-			target = strings.TrimSpace(parts[1])
-		}
-
-		*bs = append(*bs, Bind{Source: source, Dest: target})
-	}
-
-	return nil
-}
 
 type Layer struct {
 	From           ImageSource       `yaml:"from" json:"from"`
