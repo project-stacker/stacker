@@ -18,7 +18,7 @@ build-env:
       libcap-dev libcap-static \
       libapparmor-dev \
       zlib-static lz4-static \
-      zstd-dev \
+      zstd-dev zstd-static \
       xz \
       gettext-dev \
       lvm2-dev util-linux-dev \
