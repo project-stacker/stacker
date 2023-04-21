@@ -21,6 +21,8 @@ STACKER_BUILD_CENTOS_IMAGE?=$(STACKER_DOCKER_BASE)centos:latest
 STACKER_BUILD_UBUNTU_IMAGE?=$(STACKER_DOCKER_BASE)ubuntu:latest
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-5.0
+# https://github.com/project-stacker/stacker-bom
+STACKER_BOM_VERSION=v0.0.2
 
 STAGE1_STACKER ?= ./stacker-dynamic
 
@@ -34,17 +36,20 @@ stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
 		--substitute VERSION_FULL=$(VERSION_FULL)
 
-stacker-static: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-static: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper cmd/stacker/stacker-bom
 	$(call build_stacker,static_build,-extldflags '-static',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
-stacker-dynamic: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-dynamic: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper cmd/stacker/stacker-bom
 	$(call build_stacker,,,stacker-dynamic)
 
 cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
 	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) -lpthread -ldl" lxc-wrapper
 
+cmd/stacker/stacker-bom:
+	curl -Lo cmd/stacker/stacker-bom https://github.com/project-stacker/stacker-bom/releases/download/$(STACKER_BOM_VERSION)/stacker-bom-linux-amd64
+	chmod +x cmd/stacker/stacker-bom
 
 .PHONY: go-download
 go-download:
@@ -90,3 +95,4 @@ clean:
 	-unshare -Urm rm -rf stacker stacker-dynamic .build
 	-rm -r ./test/centos ./test/ubuntu
 	-make -C cmd/stacker/lxc-wrapper clean
+	-rm cmd/stacker/stacker-bom
