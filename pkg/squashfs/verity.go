@@ -1,6 +1,6 @@
 package squashfs
 
-// #cgo pkg-config: libcryptsetup libsquashfs1 devmapper --static
+// #cgo pkg-config: libcryptsetup devmapper --static
 // #include <libcryptsetup.h>
 // #include <stdlib.h>
 // #include <errno.h>
@@ -73,7 +73,6 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/anuvu/squashfs"
 	"github.com/freddierice/go-losetup"
 	"github.com/martinjungblut/go-cryptsetup"
 	"github.com/pkg/errors"
@@ -180,13 +179,8 @@ func appendVerityData(file string) (string, error) {
 	return fmt.Sprintf("%x", rootHash), errors.WithStack(err)
 }
 
-func verityDataLocation(file string) (uint64, error) {
-	sqfs, err := squashfs.OpenSquashfs(file)
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	defer sqfs.Close()
-	squashLen := sqfs.BytesUsed()
+func verityDataLocation(sblock *superblock) (uint64, error) {
+	squashLen := sblock.size
 
 	// squashfs is padded out to the nearest 4k
 	if squashLen%4096 != 0 {
@@ -292,7 +286,12 @@ func HostMount(squashfs string, mountpoint string, rootHash string) error {
 		return errors.WithStack(err)
 	}
 
-	verityOffset, err := verityDataLocation(squashfs)
+	sblock, err := readSuperblock(squashfs)
+	if err != nil {
+		return err
+	}
+
+	verityOffset, err := verityDataLocation(sblock)
 	if err != nil {
 		return err
 	}
