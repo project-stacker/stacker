@@ -185,6 +185,7 @@ EOF
 }
 
 @test "can read previous version's cache" {
+    skip "old stacker will not build because libsquashfs1-dev is not installed"
     git clone https://github.com/project-stacker/stacker
     (cd stacker && make LXC_BRANCH=$(grep ^LXC_BRANCH Makefile | cut -d'=' -f 2) LXC_CLONE_URL=$LXC_CLONE_URL)
 
