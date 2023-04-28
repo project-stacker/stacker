@@ -57,3 +57,7 @@ mostly disjoint; I need to be more creative with naming.)
 `stacker` is released under the [Apache License, Version 2.0](LICENSE), and is:
 
 Copyright (C) 2017-2022 Cisco Systems, Inc. and contributors
+
+### Test
+
+This is serge testing whether a signed tag shows up as verified.
