@@ -78,7 +78,10 @@ func TestVerityMetadata(t *testing.T) {
 	err = os.WriteFile(squashfsFile, content, 0600)
 	assert.NoError(err)
 
-	verityOffset, err := verityDataLocation(squashfsFile)
+	sblock, err := readSuperblock(squashfsFile)
+	assert.NoError(err)
+
+	verityOffset, err := verityDataLocation(sblock)
 	assert.NoError(err)
 
 	// now let's try to verify it at least in userspace. exec cryptsetup
