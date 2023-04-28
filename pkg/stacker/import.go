@@ -271,6 +271,32 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		}
 
 		return p, nil
+	} else if url.Scheme == "docker" {
+		if idest != "" && idest[len(idest)-1:] != "/" {
+			return "", errors.Errorf("The destination path must be directory: %s", idest)
+		}
+
+		is := types.ImageSource{Type: "docker", Url: i}
+		if err := importContainersImage(is, c, false); err != nil {
+			return "", err
+		}
+
+		dname, err := os.MkdirTemp(c.RootFSDir, "import-rootfs-*")
+		if err != nil {
+			return "", err
+		}
+
+		bsopt := BaseLayerOpts{
+			Config:  types.StackerConfig{RootFSDir: c.RootFSDir},
+			Name:    path.Base(dname),
+			Layer:   types.Layer{From: is},
+			Storage: storage,
+		}
+		if err := setupContainersImageRootfs(bsopt); err != nil {
+			return "", err
+		}
+
+		return dname, nil
 	}
 
 	return "", errors.Errorf("unsupported url scheme %s", i)

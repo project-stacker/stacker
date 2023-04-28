@@ -393,3 +393,16 @@ EOF
 
     stacker build
 }
+
+@test "importing container images" {
+    cat > stacker.yaml <<EOF
+cimg-import:
+    from:
+      type: oci
+      url: $CENTOS_OCI
+    import:
+    - path: docker://alpine:edge
+      dest: /
+EOF
+    stacker build
+}
