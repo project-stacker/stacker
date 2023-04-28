@@ -22,7 +22,7 @@ if options.privilege_level is not None:
     priv_to_test = [options.privilege_level]
 
 for priv in priv_to_test:
-    cmd = ["bats", "--jobs", str(options.jobs), "-t"]
+    cmd = ["bats", "--jobs", str(options.jobs), "--tap", "--timing"]
     cmd.extend(options.tests)
 
     env = os.environ.copy()
