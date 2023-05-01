@@ -248,7 +248,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 			return "", errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
 				i, expectedHash, remoteHash)
 		}
-		return Download(cache, i, progress, expectedHash, remoteHash, remoteSize, mode, uid, gid)
+		return Download(cache, i, progress, expectedHash, remoteHash, remoteSize, idest, mode, uid, gid)
 	} else if url.Scheme == "stacker" {
 		// we always Grab() things from stacker://, because we need to
 		// mount the container's rootfs to get them and don't

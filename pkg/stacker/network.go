@@ -18,9 +18,14 @@ import (
 
 // download with caching support in the specified cache dir.
 func Download(cacheDir string, url string, progress bool, expectedHash, remoteHash, remoteSize string,
-	mode *fs.FileMode, uid, gid int,
+	idest string, mode *fs.FileMode, uid, gid int,
 ) (string, error) {
-	name := path.Join(cacheDir, path.Base(url))
+	var name string
+	if idest != "" && idest[len(idest)-1:] != "/" {
+		name = path.Join(cacheDir, path.Base(idest))
+	} else {
+		name = path.Join(cacheDir, path.Base(url))
+	}
 
 	if fi, err := os.Stat(name); err == nil {
 		// Couldn't get remoteHash then use cached copy of import

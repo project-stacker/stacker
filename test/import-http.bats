@@ -73,4 +73,23 @@ function teardown() {
     [ "$(sha reference/nm_orig)" == "$(sha dest/img/rootfs/root/nm)" ]
 }
 
+@test "importing to a dest" {
+    cat > img/stacker1.yaml <<EOF
+centos_base:
+    from:
+        type: oci
+        url: $CENTOS_OCI
+    import:
+        - path: https://www.cisco.com/favicon.ico
+          dest: /dest/icon
+    run: |
+        [ -f /dest/icon ]
+        [ ! -f /dest/favicon.ico ]
+        [ ! -f /stacker/favicon.ico ]
+EOF
+    # Build base image
+    stacker build -f img/stacker1.yaml
+    umoci ls --layout oci
+}
+
 # Ideally there would tests to hit/miss cache for servers which provide a hash
