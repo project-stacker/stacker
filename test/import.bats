@@ -403,6 +403,8 @@ cimg-import:
     import:
     - path: docker://alpine:edge
       dest: /
+    run: |
+      [ -d /var/lib/apk ]
 EOF
     stacker build
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/vbatts/go-mtree"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
+	"stackerbuild.io/stacker/pkg/oci"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
@@ -281,22 +282,28 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 			return "", err
 		}
 
-		dname, err := os.MkdirTemp(c.RootFSDir, "import-rootfs-*")
+		tag, err := is.ParseTag()
 		if err != nil {
 			return "", err
 		}
 
-		bsopt := BaseLayerOpts{
-			Config:  types.StackerConfig{RootFSDir: c.RootFSDir},
-			Name:    path.Base(dname),
-			Layer:   types.Layer{From: is},
-			Storage: storage,
+		pathfunc := func(digest digest.Digest) string {
+			_ = os.Remove(cache)
+			return cache
 		}
-		if err := setupContainersImageRootfs(bsopt); err != nil {
+
+		ociDir := path.Join(c.StackerDir, "layer-bases", "oci")
+
+		n, err := oci.Unpack(ociDir, tag, pathfunc)
+		if err != nil {
 			return "", err
 		}
 
-		return dname, nil
+		if n > 1 {
+			return "", errors.Errorf("Currently supporting single-layer container image imports")
+		}
+
+		return cache, nil
 	}
 
 	return "", errors.Errorf("unsupported url scheme %s", i)

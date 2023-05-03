@@ -8,11 +8,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
-	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
@@ -44,57 +42,21 @@ func overlayPath(rootfs string, d digest.Digest, subdirs ...string) string {
 
 func (o *overlay) Unpack(tag, name string) error {
 	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+
+	pathfunc := func(digest digest.Digest) string {
+		return overlayPath(o.config.RootFSDir, digest, "overlay")
+	}
+
+	_, err := stackeroci.Unpack(cacheDir, tag, pathfunc)
+	if err != nil {
+		return err
+	}
+
 	oci, err := umoci.OpenLayout(cacheDir)
 	if err != nil {
 		return err
 	}
 	defer oci.Close()
-
-	manifest, err := stackeroci.LookupManifest(oci, tag)
-	if err != nil {
-		return err
-	}
-
-	pool := NewThreadPool(runtime.NumCPU())
-
-	for _, layer := range manifest.Layers {
-		digest := layer.Digest
-		contents := overlayPath(o.config.RootFSDir, digest, "overlay")
-		if squashfs.IsSquashfsMediaType(layer.MediaType) {
-			// don't really need to do this in parallel, but what
-			// the hell.
-			pool.Add(func(ctx context.Context) error {
-				return unpackOne(cacheDir, contents, digest, true)
-			})
-		} else {
-			switch layer.MediaType {
-			case ispec.MediaTypeImageLayer:
-				fallthrough
-			case ispec.MediaTypeImageLayerGzip:
-				// don't extract things that have already been
-				// extracted
-				if _, err := os.Stat(contents); err == nil {
-					continue
-				}
-
-				// TODO: when the umoci API grows support for uid
-				// shifting, we can use the fancier features of context
-				// cancelling in the thread pool...
-				pool.Add(func(ctx context.Context) error {
-					return unpackOne(cacheDir, contents, digest, false)
-				})
-			default:
-				return errors.Errorf("unknown media type %s", layer.MediaType)
-			}
-		}
-	}
-
-	pool.DoneAddingJobs()
-
-	err = pool.Run()
-	if err != nil {
-		return err
-	}
 
 	err = o.Create(name)
 	if err != nil {
@@ -653,31 +615,4 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	}
 
 	return ovl.write(config, name)
-}
-
-func unpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashfs bool) error {
-	if isSquashfs {
-		return squashfs.ExtractSingleSquash(
-			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
-			bundlePath, "overlay")
-	}
-
-	oci, err := umoci.OpenLayout(ociDir)
-	if err != nil {
-		return err
-	}
-	defer oci.Close()
-
-	compressed, err := oci.GetBlob(context.Background(), digest)
-	if err != nil {
-		return err
-	}
-	defer compressed.Close()
-
-	uncompressed, err := pgzip.NewReader(compressed)
-	if err != nil {
-		return err
-	}
-
-	return layer.UnpackLayer(bundlePath, uncompressed, nil)
 }
