@@ -85,7 +85,7 @@ func UpdateImageConfig(oci casext.Engine, name string, newConfig ispec.Image, ne
 	return desc, nil
 }
 
-func unpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashfs bool) error {
+func UnpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashfs bool) error {
 	if isSquashfs {
 		return squashfs.ExtractSingleSquash(
 			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
@@ -134,7 +134,7 @@ func Unpack(ociLayout, tag string, pathfunc func(digest.Digest) string) (int, er
 			// don't really need to do this in parallel, but what
 			// the hell.
 			pool.Add(func(ctx context.Context) error {
-				return unpackOne(ociLayout, contents, digest, true)
+				return UnpackOne(ociLayout, contents, digest, true)
 			})
 		} else {
 			switch layer.MediaType {
@@ -151,7 +151,7 @@ func Unpack(ociLayout, tag string, pathfunc func(digest.Digest) string) (int, er
 				// shifting, we can use the fancier features of context
 				// cancelling in the thread pool...
 				pool.Add(func(ctx context.Context) error {
-					return unpackOne(ociLayout, contents, digest, false)
+					return UnpackOne(ociLayout, contents, digest, false)
 				})
 			default:
 				return -1, errors.Errorf("unknown media type %s", layer.MediaType)

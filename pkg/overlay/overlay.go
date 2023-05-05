@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	"stackerbuild.io/stacker/pkg/mount"
+	"stackerbuild.io/stacker/pkg/oci"
 	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -184,7 +185,7 @@ func (o *overlay) snapshot(source string, target string) error {
 			// We have done an unsquashfs of this atom
 			continue
 		}
-		if err := unpackOne(cacheDir, contents, digest, true); err != nil {
+		if err := oci.UnpackOne(cacheDir, contents, digest, true); err != nil {
 			return errors.Wrapf(err, "Failed mounting %#v", layer)
 		}
 	}
