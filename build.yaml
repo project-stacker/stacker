@@ -22,7 +22,8 @@ build-env:
       xz \
       gettext-dev \
       lvm2-dev util-linux-dev \
-      linux-headers
+      linux-headers \
+      util-linux-static
 
     # json-c doesn't have static binaries in alpine
     apk add cmake
