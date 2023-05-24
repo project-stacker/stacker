@@ -139,6 +139,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	// the storage API.
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
 	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker-artifacts"))
+	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker-bom"))
 
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,

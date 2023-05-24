@@ -101,11 +101,16 @@ bom-test:
       org.opencontainers.image.licenses: MIT
 EOF
     stacker build
-    [ -f .stacker/artifacts/centos/installed-packages.json ]
+    [ -f .stacker/artifacts/bom-test/installed-packages.json ]
     # sbom for this image
-    [ -f .stacker/artifacts/centos/centos.json ]
+    [ -f .stacker/artifacts/bom-test/bom-test.json ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/centos/inventory.json ]
+    [ -f .stacker/artifacts/bom-test/inventory.json ]
+    if [ -nz "${REGISTRY_URL}" ]; then
+      stacker publish --skip-tls --url docker://localhost:8080/ --tag latest
+      refs=$(regctl artifact tree localhost:8080/bom-test:latest --format "{{json .}}" | jq '.referrer | length')
+      [ $refs eq 2 ]
+    fi
     stacker clean
 }
 

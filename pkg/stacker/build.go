@@ -743,33 +743,35 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 		} else {
 			log.Debugf("not bind mounting %s into container", artifactsDir)
 		}
-	}
 
-	bomDir, err := os.MkdirTemp(path.Join(config.StackerDir, "imports", name), "bom-tools-*")
-	if err != nil {
-		return err
-	}
+		bomDir, err := os.MkdirTemp(path.Join(config.StackerDir, "imports", name), "bom-tools-*")
+		if err != nil {
+			return err
+		}
 
-	// copy and bind-mount the embedded bom tool so it can be invoked from the "run" section
-	bomFile, err := os.CreateTemp(bomDir, "stacker-bom-*")
-	if err != nil {
-		return err
-	}
+		// copy and bind-mount the embedded bom tool so it can be invoked from the "run" section
+		bomFile, err := os.CreateTemp(bomDir, "stacker-bom-*")
+		if err != nil {
+			return err
+		}
 
-	if err := bomFile.Close(); err != nil {
-		return err
-	}
+		if err := bomFile.Close(); err != nil {
+			return err
+		}
 
-	if err := embed_exec.ExtractCommand(config.EmbeddedFS, "stacker-bom", bomFile.Name()); err != nil {
-		return err
-	}
+		if err := embed_exec.ExtractCommand(config.EmbeddedFS, "stacker-bom", bomFile.Name()); err != nil {
+			return err
+		}
 
-	if err := os.Chmod(bomFile.Name(), 0o555); err != nil {
-		return err
-	}
+		if err := os.Chmod(bomFile.Name(), 0o555); err != nil {
+			return err
+		}
 
-	if err := c.BindMount(bomFile.Name(), "/stacker-bom", ""); err != nil {
-		return err
+		if err := c.BindMount(bomFile.Name(), "/stacker-bom", ""); err != nil {
+			return err
+		}
+
+		log.Debugf("bind mounting %s into container", bomFile.Name())
 	}
 
 	for k, v := range env {

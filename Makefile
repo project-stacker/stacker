@@ -22,7 +22,7 @@ STACKER_BUILD_UBUNTU_IMAGE?=$(STACKER_DOCKER_BASE)ubuntu:latest
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-5.0
 # https://github.com/project-stacker/stacker-bom
-STACKER_BOM_VERSION=v0.0.4
+STACKER_BOM_VERSION=v0.0.5
 
 STAGE1_STACKER ?= ./stacker-dynamic
 
