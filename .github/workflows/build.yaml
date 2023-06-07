@@ -78,3 +78,68 @@ jobs:
         with:
           path: stacker
           key: ${{ matrix.build-id }}
+  build-arch:
+    runs-on: ubuntu-22.04
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    strategy:
+      matrix:
+        go-version: ${{fromJson(inputs.go-version)}}
+        privilege-level: ${{fromJson(inputs.privilege-level)}}
+        build-id: ${{fromJson(inputs.build-id)}}
+    name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: benjlevesque/short-sha@v2.1
+        id: short-sha
+      - name: Setup qemu-arm
+        run: |
+          sudo apt-get update
+          sudo apt-get install cloud-image-utils qemu-system-arm qemu-efi wget
+          cat >user-data <<EOF
+          #cloud-config
+          password: asdfqwer
+          chpasswd: { expire: False }
+          ssh_pwauth: True
+          runcmd:
+            - systemctl start ssh
+            - systemctl status ssh
+          EOF
+          ls -al
+          cat user-data
+          cloud-localds user-data.img user-data
+          wget -N http://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-arm64.img
+          sudo qemu-system-aarch64 -m 1024 -cpu cortex-a57 -M virt -display none -daemonize \
+            -drive file=/usr/share/AAVMF/AAVMF_CODE.fd,format=raw,if=pflash \
+            -drive if=none,file=mantic-server-cloudimg-arm64.img,id=hd0 \
+            -drive file=user-data.img,format=raw \
+            -device virtio-blk-device,drive=hd0 \
+            -nic user,id=eth0,hostfwd=::10022-:22
+          # wait for a while
+          sleep 1800
+          # check port
+          netstat -plant | grep :10022
+      - name: ls -a via ssh
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd /tmp
+            ls -a
+          host: localhost
+          port: 10022
+          user: ubuntu
+          pass: asdfqwer
+          args: -tt -o StrictHostKeyChecking=no
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: localhost
+          username: ubuntu
+          password: asdfqwer
+          port: 10022
+          script: |
+            whoami
+          proxy_port:
