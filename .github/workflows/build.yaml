@@ -127,7 +127,7 @@ jobs:
         id: runcmd
         with:
           arch: aarch64
-          distro: ubuntu18.04
+          distro: ubuntu22.04
 
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
@@ -137,6 +137,8 @@ jobs:
           run: |
             uname -a
             echo ::set-output name=uname::$(uname -a)
+            apt-get update
+            apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
 
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
