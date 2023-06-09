@@ -3,9 +3,6 @@ BUILD_D = $(TOP_LEVEL)/.build
 export GOPATH = $(BUILD_D)/gopath
 export GOCACHE = $(GOPATH)/gocache
 
-OS ?= linux
-ARCH ?= amd64
-
 GO_SRC=$(shell find pkg cmd -name \*.go)
 VERSION?=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL?=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
@@ -16,7 +13,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=$(BUILD_D)/oci --roots-dir=$(BUILD_D)/roots --stacker-dir=$(BUILD_D)/stacker --storage-type=overlay
 
-build_stacker = GOOS=$(OS) GOARCH=$(ARCH) go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd/stacker
+build_stacker = go build -buildvcs=false -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd/stacker
 
 STACKER_DOCKER_BASE?=docker://
 STACKER_BUILD_BASE_IMAGE?=$(STACKER_DOCKER_BASE)alpine:edge
