@@ -117,29 +117,49 @@ jobs:
         go-version: ${{fromJson(inputs.go-version)}}
         privilege-level: ${{fromJson(inputs.privilege-level)}}
         build-id: ${{fromJson(inputs.build-id)}}
+        arch: ["aarch64"]
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v3
       - uses: benjlevesque/short-sha@v2.1
         id: short-sha
       - uses: uraimo/run-on-arch-action@v2
-        name: Run commands
+        name: Build for ${{ matrix.arch }}
         id: runcmd
         with:
-          arch: aarch64
+          arch: ${{ matrix.arch }}
           distro: ubuntu22.04
 
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
           githubToken: ${{ github.token }}
 
+          dockerRunArgs: -v $GITHUB_WORKSPACE:/src --cgroupns=host
+
           # Set an output parameter `uname` for use in subsequent steps
           run: |
             uname -a
             echo ::set-output name=uname::$(uname -a)
+            # setup golang
+            apt-get update
+            apt-get install -yy wget curl tar software-properties-common git pkgconf build-essential
+            cd /tmp
+            wget -N https://go.dev/dl/go1.20.5.linux-arm64.tar.gz
+            rm -rf /usr/local/go && tar -C /usr/local -xzf go1.20.5.linux-arm64.tar.gz
+            export PATH=$PATH:/usr/local/go/bin
+            # install dependencies
+            export GOPATH=/src
+            add-apt-repository -y ppa:project-machine/squashfuse
             apt-get update
             apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
-
+            GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+            apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin squashfuse
+            cd /src
+            make go-download
+            make show-info
+            make stacker-dynamic VERSION_FULL=${{ matrix.build-id }}
+            make stacker VERSION_FULL=${{ matrix.build-id }} STACKER_BUILD_BASE_IMAGE=docker://arm64v8/alpine:edge
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
         run: |
