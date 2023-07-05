@@ -13,7 +13,7 @@ build-env:
     head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
 
     apk add git findutils go automake autoconf make gcc libtool \
-      acl-dev acl-static \
+      acl-dev acl-static build-base \
       libseccomp-dev libseccomp-static \
       libcap-dev libcap-static \
       libapparmor-dev \
