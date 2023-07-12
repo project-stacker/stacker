@@ -48,6 +48,7 @@ build-env:
     tar -xf /stacker/cryptsetup*
     cd cryptsetup*
     ./autogen.sh
+    CFLAGS="-D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" \
     ./configure --enable-static \
       --disable-cryptsetup --disable-veritysetup --disable-integritysetup \
       --disable-nls --disable-ssh-token \
