@@ -99,12 +99,20 @@ import:
   - path: stacker://$name/path/to/file
     hash: f805b012017bc769a....
 ```
-Before copying the file it will check if the requested hash matches the actual one.
 
-`stacker build` supports the flag `--require-flag` which checks that all http(s) remote
-imports have an hash in all stacker YAMLs.
+Before copying or downloading the file, it will check if the file's hash matches
+the given value. For file imports, the source file is hashed at build time. For
+HTTP imports, the value returned by the server in the `X-Checksum-Sha256` HTTP
+header is checked first. If that matches, the file is downloaded and then hashed
+and compared again.
 
-This new import mode can be combined with the old one, for example:
+`stacker build` supports the flag `--require-hash`, which will cause a build
+error if any http(s) remote imports do not have a hash specified, in all
+transitively included stacker YAMLs.
+
+If `--require-hash` is not passed, this import mode can be combined with unchecked imports,
+and only files which have the hash specified will be checked.
+
 ```
 import:
   - path: "config.json
