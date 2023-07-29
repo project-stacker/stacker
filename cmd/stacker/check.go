@@ -39,6 +39,10 @@ func doCheck(ctx *cli.Context) error {
 
 	log.Infof("%s %s", config.RootFSDir, fstype)
 
+	if fstype == "NFS(6969)" {
+		return errors.Errorf("roots dir (--roots-dir) path %s is not supported on NFS.", config.RootFSDir)
+	}
+
 	if e := verifyNewUIDMap(ctx); e != nil {
 		return e
 	}
