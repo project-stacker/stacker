@@ -538,6 +538,11 @@ func (b *Builder) build(s types.Storage, file string) error {
 		if l.Bom != nil && l.Bom.Generate {
 			log.Debugf("generating layer artifacts for %s", name)
 
+			if err := ImportArtifacts(opts.Config, l.From, name); err != nil {
+				log.Errorf("unable to import previously built artifacts, err:%v", err)
+				return err
+			}
+
 			for _, pkg := range l.Bom.Packages {
 				if err := BuildLayerArtifacts(opts.Config, s, l, name, pkg); err != nil {
 					log.Errorf("failed to generate layer artifacts for %s - %v", name, err)
