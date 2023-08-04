@@ -32,7 +32,7 @@ EOF
   mkdir -p /out
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app
   if [ -z "${REGISTRY_URL}" ]; then
-    skip "skipping test because no registry found in REGISTRY_URL env variable"
+    skip "test because no registry found in REGISTRY_URL env variable"
   fi
   stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app --skip-tls --url docker://${REGISTRY_URL} --layer app --tag latest
   rm -f stacker.yaml stacker-subs.yaml
@@ -41,7 +41,7 @@ EOF
 
 @test "alpine" {
   if [ -z "${SLOW_TEST}" ]; then
-    skip "skipping test since slow tests are not enabled"
+    skip "test since slow tests are not enabled"
   fi
   git clone https://github.com/alpinelinux/docker-alpine.git
   chmod -R a+rwx docker-alpine
@@ -58,7 +58,7 @@ EOF
 
 @test "elasticsearch" {
   if [ -z "${SLOW_TEST}" ]; then
-    skip "skipping test since slow tests are not enabled"
+    skip "test since slow tests are not enabled"
   fi
   git clone https://github.com/elastic/dockerfiles.git
   chmod -R a+rwx dockerfiles
@@ -74,7 +74,7 @@ EOF
 
 @test "python" {
   if [ -z "${SLOW_TEST}" ]; then
-    skip "skipping test since slow tests are not enabled"
+    skip "test since slow tests are not enabled"
   fi
   git clone https://github.com/docker-library/python.git
   cd python/3.11/alpine3.17
