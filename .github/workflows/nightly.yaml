@@ -1,4 +1,4 @@
-name: "convert dockerfiles"
+name: "Nightly"
 
 on:
   workflow_dispatch:
@@ -9,8 +9,8 @@ env:
   REGISTRY_URL: localhost:5000
 
 jobs:
-  convert:
-    name: "convert"
+  slow-tests:
+    name: "slow tests"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/cache@v3
@@ -27,6 +27,11 @@ jobs:
           podman run -d -p ${ZOT_PORT}:${ZOT_PORT} ghcr.io/project-zot/zot-minimal-linux-amd64:latest
           # check if reachable
           while true; do x=0; curl -f http://${REGISTRY_URL}/v2/ || x=1; if [ $x -eq 0 ]; then break; fi; sleep 1; done
+      - name: test
+        env:
+          SLOW_TEST: true
+        run: |
+          make check
       - name: alpine
         run: |
           export PATH=$PATH:$GITHUB_WORKSPACE
