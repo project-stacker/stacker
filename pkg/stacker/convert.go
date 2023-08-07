@@ -166,37 +166,48 @@ func (c *Converter) convertCommand(cmd *Command) error {
 		log.Infof("EXPOSE directive found - ports:%v", cmd.Value)
 		return nil
 	case "env":
-		if len(cmd.Value) != 2 {
-			log.Errorf("unable to parse ENV directive - %v", cmd.Original)
-			return errors.Errorf("invalid arg - %v", cmd.Value)
-		}
-
-		val := cmd.Value[1]
-		for _, arg := range c.args {
-			repl := strings.ReplaceAll(val, fmt.Sprintf("$%s", arg), fmt.Sprintf("${{%s}}", arg))
-			if repl != val {
-				val = repl
-				break
-			}
-
-			repl = strings.ReplaceAll(val, fmt.Sprintf("${%s}", arg), fmt.Sprintf("${{%s}}", arg))
-			if repl != val {
-				val = repl
-				break
-			}
-
-			repl = strings.ReplaceAll(val, fmt.Sprintf("$(%s)", arg), fmt.Sprintf("${{%s}}", arg))
-			if repl != val {
-				val = repl
-				break
-			}
-		}
+		key := ""
+		val := ""
 
 		if c.env == nil {
 			c.env = map[string]string{}
 		}
 
-		c.env[cmd.Value[0]] = val
+		if len(cmd.Value) < 2 {
+			log.Errorf("unable to parse ENV directive - %v", cmd.Original)
+			return errors.Errorf("invalid arg - %v", cmd.Value)
+		}
+
+		for i := 0; i < len(cmd.Value); i += 2 {
+			key = cmd.Value[i]
+			val = cmd.Value[i+1]
+
+			for _, arg := range c.args {
+				repl := strings.ReplaceAll(val, fmt.Sprintf("$%s", arg), fmt.Sprintf("${{%s}}", arg))
+				if repl != val {
+					val = repl
+					break
+				}
+
+				repl = strings.ReplaceAll(val, fmt.Sprintf("${%s}", arg), fmt.Sprintf("${{%s}}", arg))
+				if repl != val {
+					val = repl
+					break
+				}
+
+				repl = strings.ReplaceAll(val, fmt.Sprintf("$(%s)", arg), fmt.Sprintf("${{%s}}", arg))
+				if repl != val {
+					val = repl
+					break
+				}
+			}
+
+			if c.env == nil {
+				c.env = map[string]string{}
+			}
+
+			c.env[key] = val
+		}
 	case "workdir":
 		layer.Run = append(layer.Run, fmt.Sprintf("cd %s", cmd.Value[0]))
 		c.currDir = cmd.Value[0]
