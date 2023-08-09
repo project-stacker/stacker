@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/container"
-	embed_exec "stackerbuild.io/stacker/pkg/embed-exec"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -136,7 +135,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 			return err
 		}
 
-		err = c.BindMount(dir, "/oci-labels", "")
+		err = c.BindMount(dir, "/stacker/oci-labels", "")
 		if err != nil {
 			return err
 		}
@@ -148,7 +147,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 			return err
 		}
 
-		err = c.Execute("/oci-labels/.stacker-run.sh", nil)
+		err = c.Execute("/stacker/oci-labels/.stacker-run.sh", nil)
 		if err != nil {
 			return err
 		}
@@ -477,7 +476,7 @@ func (b *Builder) build(s types.Storage, file string) error {
 			}
 
 			// These should all be non-interactive; let's ensure that.
-			err = c.Execute("/stacker/.stacker-run.sh", nil)
+			err = c.Execute("/stacker/imports/.stacker-run.sh", nil)
 			if err != nil {
 				if opts.OnRunFailure != "" {
 					err2 := c.Execute(opts.OnRunFailure, os.Stdin)
@@ -728,7 +727,7 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 	importsDir := path.Join(config.StackerDir, "imports", name)
 	if _, err := os.Stat(importsDir); err == nil {
 		log.Debugf("bind mounting %s into container", importsDir)
-		err = c.BindMount(importsDir, "/stacker", "ro")
+		err = c.BindMount(importsDir, "/stacker/imports", "ro")
 		if err != nil {
 			return err
 		}
@@ -741,7 +740,7 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 		artifactsDir := path.Join(config.StackerDir, "artifacts", name)
 		if _, err := os.Stat(artifactsDir); err == nil {
 			log.Debugf("bind mounting %s into container", artifactsDir)
-			err = c.BindMount(artifactsDir, "/stacker-artifacts", "rw")
+			err = c.BindMount(artifactsDir, "/stacker/artifacts", "rw")
 			if err != nil {
 				return err
 			}
@@ -749,34 +748,18 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 			log.Debugf("not bind mounting %s into container", artifactsDir)
 		}
 
-		bomDir, err := os.MkdirTemp(path.Join(config.StackerDir, "imports", name), "bom-tools-*")
+		// make stacker also available to run the internal bom cmds
+		binary, err := os.Readlink("/proc/self/exe")
+		if err != nil {
+			return errors.Wrapf(err, "couldn't find executable for bind mount")
+		}
+
+		err = c.BindMount(binary, "/stacker/tools/static-stacker", "")
 		if err != nil {
 			return err
 		}
 
-		// copy and bind-mount the embedded bom tool so it can be invoked from the "run" section
-		bomFile, err := os.CreateTemp(bomDir, "stacker-bom-*")
-		if err != nil {
-			return err
-		}
-
-		if err := bomFile.Close(); err != nil {
-			return err
-		}
-
-		if err := embed_exec.ExtractCommand(config.EmbeddedFS, "stacker-bom", bomFile.Name()); err != nil {
-			return err
-		}
-
-		if err := os.Chmod(bomFile.Name(), 0o555); err != nil {
-			return err
-		}
-
-		if err := c.BindMount(bomFile.Name(), "/stacker-bom", ""); err != nil {
-			return err
-		}
-
-		log.Debugf("bind mounting %s into container", bomFile.Name())
+		log.Debugf("bind mounting %s into container", binary)
 	}
 
 	for k, v := range env {

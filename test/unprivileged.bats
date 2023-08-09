@@ -45,7 +45,7 @@ centos:
     import:
         - https://www.cisco.com/favicon.ico
     run: |
-        cp /stacker/favicon.ico /favicon.ico
+        cp /stacker/imports/favicon.ico /favicon.ico
 layer1:
     from:
         type: built
@@ -100,8 +100,8 @@ base:
         - first
         - second
     run: |
-        ls -alh /stacker
-        tar -C /stacker -cv -f /base.tar.gz first second
+        ls -alh /stacker/imports
+        tar -C /stacker/imports -cv -f /base.tar.gz first second
 next:
     from:
         type: tar
@@ -128,7 +128,7 @@ base:
         url: $CENTOS_OCI
     import:
         - test
-    run: cat /stacker/test
+    run: cat /stacker/imports/test
 EOF
     echo unpriv | sudo -s -u $SUDO_USER tee test
     stacker build

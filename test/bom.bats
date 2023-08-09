@@ -27,7 +27,7 @@ bom-test:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker-bom discover -o /stacker-artifacts/installed-packages.json
+      /stacker/tools/static-stacker --internal-userns internal-go bom-discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -77,7 +77,7 @@ bom-test:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker-bom discover -o /stacker-artifacts/installed-packages.json
+      /stacker/tools/static-stacker --internal-userns internal-go bom-discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file

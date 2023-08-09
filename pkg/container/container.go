@@ -137,9 +137,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	// we want to be sure to remove the /stacker from the generated
 	// filesystem after execution. we should probably parameterize this in
 	// the storage API.
-	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
-	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker-artifacts"))
-	defer os.Remove(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker-bom"))
+	defer os.RemoveAll(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
 
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,

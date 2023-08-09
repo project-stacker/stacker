@@ -15,7 +15,7 @@ label:
         type: oci
         url: $CENTOS_OCI
     generate_labels: |
-        echo -n "rocks" > /oci-labels/meshuggah
+        echo -n "rocks" > /stacker/oci-labels/meshuggah
 EOF
 
     stacker build

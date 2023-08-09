@@ -17,7 +17,7 @@ broken_link:
         url: $CENTOS_OCI
     import:
         - dir
-    run: cp -a /stacker/dir/testln /testln
+    run: cp -a /stacker/imports/dir/testln /testln
 EOF
     mkdir -p dir
     ln -s broken dir/testln

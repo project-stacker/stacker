@@ -26,7 +26,7 @@ img:
     import:
         - http://network-test.debian.org/nm
     run: |
-        cp /stacker/nm /root/nm
+        cp /stacker/imports/nm /root/nm
 EOF
 }
 

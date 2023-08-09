@@ -38,8 +38,8 @@ centos:
     import:
         - recursive
     run: |
-        [ -d /stacker/recursive ]
-        [ -f /stacker/recursive/child ]
+        [ -d /stacker/imports/recursive ]
+        [ -f /stacker/imports/recursive/child ]
 EOF
 
     stacker build
@@ -56,9 +56,9 @@ first:
     import:
         - recursive
     run: |
-        [ -d /stacker/recursive ]
-        [ -f /stacker/recursive/child ]
-        cp -a /stacker/recursive /recursive
+        [ -d /stacker/imports/recursive ]
+        [ -f /stacker/imports/recursive/child ]
+        cp -a /stacker/imports/recursive /recursive
 second:
     from:
         type: oci
@@ -66,8 +66,8 @@ second:
     import:
         - stacker://first/recursive
     run: |
-        [ -d /stacker/recursive ]
-        [ -f /stacker/recursive/child ]
+        [ -d /stacker/imports/recursive ]
+        [ -f /stacker/imports/recursive/child ]
 EOF
 
     stacker build
@@ -88,9 +88,9 @@ first:
         - test_file2
         - https://bing.com/favicon.ico
     run: |
-        [ -f /stacker/test_file ]
-        [ -f /stacker/test_file2 ]
-        cp /stacker/test_file /test_file
+        [ -f /stacker/imports/test_file ]
+        [ -f /stacker/imports/test_file2 ]
+        cp /stacker/imports/test_file /test_file
     build_only: true
 second:
     from:
@@ -100,7 +100,7 @@ second:
         path: stacker://first/test_file
         hash: $test_file_sha
     run: |
-        [ -f /stacker/test_file ]
+        [ -f /stacker/imports/test_file ]
 EOF
 
     stacker build
@@ -149,7 +149,7 @@ first:
         - path: test_file
           hash: $test_file_sha
     run: |
-        cp /stacker/test_file /test_file
+        cp /stacker/imports/test_file /test_file
     build_only: true
 second:
     from:
@@ -159,7 +159,7 @@ second:
         path: stacker://first/test_file
         hash: $test_file_sha_upper
     run: |
-        [ -f /stacker/test_file ]
+        [ -f /stacker/imports/test_file ]
 EOF
 
     stacker build
@@ -177,7 +177,7 @@ thing:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
     run: |
-        [ -f /stacker/favicon.ico ]
+        [ -f /stacker/imports/favicon.ico ]
 EOF
 
     stacker build
@@ -216,7 +216,7 @@ thing:
           hash: $test_file_sha
 
     run: |
-        [ -f /stacker/favicon.ico ]
+        [ -f /stacker/imports/favicon.ico ]
 EOF
 
     stacker build --require-hash
@@ -283,8 +283,8 @@ centos:
         - dir
     run: |
         find /stacker
-        [ -f /stacker/dir/one/two/three/four/five/a ]
-        [ -f /stacker/dir/file ]
+        [ -f /stacker/imports/dir/one/two/three/four/five/a ]
+        [ -f /stacker/imports/dir/file ]
 EOF
 
     mkdir -p dir/one/two/three/four/five
@@ -313,9 +313,9 @@ first:
         - test_file2
         - https://bing.com/favicon.ico
     run: |
-        [ -f /stacker/test_file ]
-        [ -f /stacker/test_file2 ]
-        cp /stacker/test_file /test_file
+        [ -f /stacker/imports/test_file ]
+        [ -f /stacker/imports/test_file2 ]
+        cp /stacker/imports/test_file /test_file
     build_only: true
 second:
     from:
@@ -326,7 +326,7 @@ second:
         perms: 0777
         hash: $test_file_sha
     run: |
-        [ -f /stacker/test_file ]
+        [ -f /stacker/imports/test_file ]
 third:
     from:
         type: scratch

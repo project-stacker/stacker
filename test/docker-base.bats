@@ -17,7 +17,7 @@ centos:
     import:
         - https://www.cisco.com/favicon.ico
     run: |
-        cp /stacker/favicon.ico /favicon.ico
+        cp /stacker/imports/favicon.ico /favicon.ico
 layer1:
     from:
         type: built

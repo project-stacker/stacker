@@ -37,9 +37,9 @@ centos:
         - https://www.cisco.com/favicon.ico
         - ./executable
     run:
-        - cp /stacker/\$FAVICON /\$FAVICON
+        - cp /stacker/imports/\$FAVICON /\$FAVICON
         - ls -al /stacker
-        - cp /stacker/executable /usr/bin/executable
+        - cp /stacker/imports/executable /usr/bin/executable
     entrypoint: echo hello world
     environment:
         FOO: bar
@@ -203,9 +203,9 @@ centos:
         - https://www.cisco.com/favicon.ico
         - ./executable
     run:
-        - cp /stacker/\$FAVICON /\$FAVICON
+        - cp /stacker/imports/\$FAVICON /\$FAVICON
         - ls -al /stacker
-        - cp /stacker/executable /usr/bin/executable
+        - cp /stacker/imports/executable /usr/bin/executable
     entrypoint: echo hello world
     environment:
         FOO: bar

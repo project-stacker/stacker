@@ -59,7 +59,7 @@ func BuildLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types.
 	author := l.Annotations[types.AuthorAnnotation]
 	org := l.Annotations[types.OrgAnnotation]
 	license := l.Annotations[types.LicenseAnnotation]
-	dest := "/stacker-artifacts"
+	dest := "/stacker/artifacts"
 	cmd += fmt.Sprintf(" bom-build %s %s %s %s %s %s", dest, author, org, license, pkg.Name, pkg.Version)
 	for _, ppath := range pkg.Paths {
 		cmd += " " + ppath
@@ -117,7 +117,7 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 	author := l.Annotations[types.AuthorAnnotation]
 	org := l.Annotations[types.OrgAnnotation]
 
-	dest := fmt.Sprintf("/stacker-artifacts/%s.json", tag)
+	dest := fmt.Sprintf("/stacker/artifacts/%s.json", tag)
 	cmd += fmt.Sprintf(" bom-verify %s %s %s %s", dest, tag, author, org)
 	err = c.Execute(cmd, os.Stdin)
 	if err != nil {

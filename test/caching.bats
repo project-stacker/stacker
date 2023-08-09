@@ -55,7 +55,7 @@ base:
     import:
         - foo
     run: |
-        cp /stacker/foo /foo
+        cp /stacker/imports/foo /foo
 EOF
     touch foo
     stacker build
@@ -73,7 +73,7 @@ import-cache:
         url: $CENTOS_OCI
     import:
         - link/foo
-    run: cp /stacker/foo/zomg /zomg
+    run: cp /stacker/imports/foo/zomg /zomg
 EOF
     mkdir -p tree1/foo
     echo foo >> tree1/foo/zomg
@@ -98,7 +98,7 @@ a:
     import:
         - foo
     run: |
-        [ -f /stacker/foo/bar ]
+        [ -f /stacker/imports/foo/bar ]
 EOF
 
     mkdir -p foo
@@ -114,7 +114,7 @@ a:
     import:
         - foo
     run: |
-        [ ! -f /stacker/foo/bar ]
+        [ ! -f /stacker/imports/foo/bar ]
 EOF
     rm foo/bar
     stacker build
@@ -131,7 +131,7 @@ bind-test:
     binds:
         - ${{bind_path}} -> /root/tree2/foo
     run: |
-        cp /stacker/zomg /root/zomg1
+        cp /stacker/imports/zomg /root/zomg1
         cp /root/tree2/foo/zomg /root/zomg2
         ls /root
 EOF
@@ -171,7 +171,7 @@ mode-test:
         url: $CENTOS_OCI
     import:
         - executable
-    run: cp /stacker/executable /executable
+    run: cp /stacker/imports/executable /executable
 EOF
     touch executable
     cat stacker.yaml
@@ -206,7 +206,7 @@ test:
         url: $CENTOS_OCI
     import:
         - foo
-    run: cp /stacker/foo /foo
+    run: cp /stacker/imports/foo /foo
 EOF
 
     run_as "$oldbin" --debug build

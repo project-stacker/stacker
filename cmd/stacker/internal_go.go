@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	cli "github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
 	"stackerbuild.io/stacker-bom/pkg/bom"
+	"stackerbuild.io/stacker-bom/pkg/distro"
 	"stackerbuild.io/stacker-bom/pkg/fs"
 	"stackerbuild.io/stacker/pkg/atomfs"
 	"stackerbuild.io/stacker/pkg/lib"
@@ -62,6 +64,10 @@ var internalGoCmd = cli.Command{
 					Action: doAtomfsUmount,
 				},
 			},
+		},
+		&cli.Command{
+			Name:   "bom-discover",
+			Action: doBomDiscover,
 		},
 		&cli.Command{
 			Name:   "bom-build",
@@ -219,6 +225,35 @@ func doAtomfsUmount(ctx *cli.Context) error {
 	return atomfs.Umount(mountpoint)
 }
 
+func doBomDiscover(ctx *cli.Context) error {
+	author := "stacker-internal"
+	org := "stacker-internal"
+
+	if err := fs.Discover(author, org, "/stacker/artifacts/installed-packages.json"); err != nil {
+		return nil
+	}
+
+	return nil
+}
+
+func doBomGenerate(ctx *cli.Context) error { //nolint:unused // used when invoked inside "run:"
+	if ctx.Args().Len() != 1 {
+		return errors.Errorf("wrong number of args for umount")
+	}
+
+	input := ctx.Args().Get(0)
+
+	author := "stacker-internal"
+	org := "stacker-internal"
+	lic := "unknown"
+
+	if err := distro.ParsePackage(input, author, org, lic, fmt.Sprintf("/stacker/artifacts/%s.json", filepath.Base(input))); err != nil {
+		return nil
+	}
+
+	return nil
+}
+
 // pkgname, license, paths...
 func doBomBuild(ctx *cli.Context) error {
 	if ctx.Args().Len() < 7 {
@@ -252,17 +287,17 @@ func doBomVerify(ctx *cli.Context) error {
 	author := ctx.Args().Get(2)
 	org := ctx.Args().Get(3)
 
-	if err := bom.MergeDocuments("/stacker-artifacts", name, author, org, dest); err != nil {
+	if err := bom.MergeDocuments("/stacker/artifacts", name, author, org, dest); err != nil {
 		return err
 	}
 
 	// check against inventory
 	if err := fs.GenerateInventory("/",
 		[]string{"/proc", "/sys", "/dev", "/etc/resolv.conf",
-			"/stacker", "/stacker-artifacts", "/stacker-bom", "/static-stacker"},
-		"/stacker-artifacts/inventory.json"); err != nil {
+			"/stacker", "/stacker/artifacts", "/stacker-bom", "/static-stacker"},
+		"/stacker/artifacts/inventory.json"); err != nil {
 		return err
 	}
 
-	return fs.Verify(dest, "/stacker-artifacts/inventory.json", "")
+	return fs.Verify(dest, "/stacker/artifacts/inventory.json", "")
 }

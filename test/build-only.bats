@@ -85,7 +85,7 @@ centos:
         url: $CENTOS_OCI
     import: https://www.cisco.com/favicon.ico
     run: |
-        cp /stacker/favicon.ico /favicon.ico
+        cp /stacker/imports/favicon.ico /favicon.ico
     build_only: true
 layer1:
     from:
@@ -94,7 +94,7 @@ layer1:
     import:
         - stacker://centos/favicon.ico
     run:
-        - cp /stacker/favicon.ico /favicon2.ico
+        - cp /stacker/imports/favicon.ico /favicon2.ico
 EOF
     stacker build
     umoci unpack --image oci:layer1 dest
@@ -110,7 +110,7 @@ centos:
         url: $CENTOS_OCI
     import: https://www.cisco.com/favicon.ico
     run: |
-        cp /stacker/favicon.ico /favicon.ico
+        cp /stacker/imports/favicon.ico /favicon.ico
     build_only: true
 layer1:
     from:
@@ -119,7 +119,7 @@ layer1:
     import:
         - stacker://centos/favicon.ico
     run:
-        - cp /stacker/favicon.ico /favicon2.ico
+        - cp /stacker/imports/favicon.ico /favicon2.ico
 EOF
     stacker build
     stacker grab centos:/favicon.ico
