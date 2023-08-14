@@ -551,6 +551,8 @@ func (b *Builder) build(s types.Storage, file string) error {
 
 			if err := VerifyLayerArtifacts(opts.Config, s, l, name); err != nil {
 				log.Errorf("failed to validate layer artifacts for %s - %v", name, err)
+				// the generated bom is invalid, remove it so we don't publish it and also get a cache miss for rebuilds
+				_ = os.Remove(path.Join(opts.Config.StackerDir, "artifacts", name, fmt.Sprintf("%s.json", name)))
 				return err
 			}
 		}

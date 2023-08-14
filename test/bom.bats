@@ -55,6 +55,13 @@ bom-test:
 EOF
     run stacker build
     [ "$status" -ne 0 ]
+    # a full inventory for this image
+    [ -f .stacker/artifacts/bom-test/inventory.json ]
+    # sbom for this image shouldn't be generated
+    [ ! -a .stacker/artifacts/bom-test/bom-test.json ]
+    # building a second time also fails
+    run stacker build
+    [ "$status" -ne 0 ]
     stacker clean
 }
 
@@ -102,14 +109,16 @@ bom-test:
 EOF
     stacker build
     [ -f .stacker/artifacts/bom-test/installed-packages.json ]
-    # sbom for this image
-    [ -f .stacker/artifacts/bom-test/bom-test.json ]
     # a full inventory for this image
     [ -f .stacker/artifacts/bom-test/inventory.json ]
+    # sbom for this image
+    [ -f .stacker/artifacts/bom-test/bom-test.json ]
     if [ -nz "${REGISTRY_URL}" ]; then
       stacker publish --skip-tls --url docker://localhost:8080/ --tag latest
       refs=$(regctl artifact tree localhost:8080/bom-test:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs eq 2 ]
+      refs=$(regctl artifact tree localhost:8080/bom-test:latest --filter-artifact-type "application/spdx+json" --format "{{json .}}" | jq '.SPDXID')
+      [ $refs eq "SPDXRef-DOCUMENT" ]
     fi
     stacker clean
 }
