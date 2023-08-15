@@ -254,7 +254,8 @@ func doBomGenerate(ctx *cli.Context) error { //nolint:unused // used when invoke
 	return nil
 }
 
-// pkgname, license, paths...
+// build/roll your own sbom document for a particular dest (file/dir)
+// by specifying details such as author, org, license, etc.
 func doBomBuild(ctx *cli.Context) error {
 	if ctx.Args().Len() < 7 {
 		return errors.Errorf("wrong number of args")
@@ -281,20 +282,19 @@ func doBomVerify(ctx *cli.Context) error {
 		return errors.Errorf("wrong number of args")
 	}
 
-	// merge
 	dest := ctx.Args().Get(0)
 	name := ctx.Args().Get(1)
 	author := ctx.Args().Get(2)
 	org := ctx.Args().Get(3)
 
+	// first merge all individual sbom artifacts that may have been generated
 	if err := bom.MergeDocuments("/stacker/artifacts", name, author, org, dest); err != nil {
 		return err
 	}
 
 	// check against inventory
 	if err := fs.GenerateInventory("/",
-		[]string{"/proc", "/sys", "/dev", "/etc/resolv.conf",
-			"/stacker", "/stacker/artifacts", "/stacker-bom", "/static-stacker"},
+		[]string{"/proc", "/sys", "/dev", "/etc/resolv.conf", "/stacker"},
 		"/stacker/artifacts/inventory.json"); err != nil {
 		return err
 	}

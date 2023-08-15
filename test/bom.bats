@@ -10,7 +10,7 @@ function teardown() {
 
 @test "all container contents must be accounted for" {
   cat > stacker.yaml <<EOF
-bom-test:
+bom-parent:
     from:
         type: oci
         url: $CENTOS_OCI
@@ -27,7 +27,7 @@ bom-test:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker --internal-userns internal-go bom-discover
+      /stacker/tools/static-stacker internal-go bom-discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -56,10 +56,10 @@ EOF
     run stacker build
     [ "$status" -ne 0 ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/bom-test/inventory.json ]
+    [ -f .stacker/artifacts/bom-parent/inventory.json ]
     # sbom for this image shouldn't be generated
-    [ ! -a .stacker/artifacts/bom-test/bom-test.json ]
-    # building a second time also fails
+    [ ! -a .stacker/artifacts/bom-parent/bom-parent.json ]
+    # building a second time also fails due to missed cache
     run stacker build
     [ "$status" -ne 0 ]
     stacker clean
@@ -67,7 +67,7 @@ EOF
 
 @test "bom tool should work inside run" {
   cat > stacker.yaml <<EOF
-bom-test:
+bom-parent:
     from:
         type: oci
         url: $CENTOS_OCI
@@ -84,7 +84,7 @@ bom-test:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker --internal-userns internal-go bom-discover
+      /stacker/tools/static-stacker internal-go bom-discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -108,16 +108,16 @@ bom-test:
       org.opencontainers.image.licenses: MIT
 EOF
     stacker build
-    [ -f .stacker/artifacts/bom-test/installed-packages.json ]
+    [ -f .stacker/artifacts/bom-parent/installed-packages.json ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/bom-test/inventory.json ]
+    [ -f .stacker/artifacts/bom-parent/inventory.json ]
     # sbom for this image
-    [ -f .stacker/artifacts/bom-test/bom-test.json ]
+    [ -f .stacker/artifacts/bom-parent/bom-parent.json ]
     if [ -nz "${REGISTRY_URL}" ]; then
       stacker publish --skip-tls --url docker://localhost:8080/ --tag latest
-      refs=$(regctl artifact tree localhost:8080/bom-test:latest --format "{{json .}}" | jq '.referrer | length')
+      refs=$(regctl artifact tree localhost:8080/bom-parent:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs eq 2 ]
-      refs=$(regctl artifact tree localhost:8080/bom-test:latest --filter-artifact-type "application/spdx+json" --format "{{json .}}" | jq '.SPDXID')
+      refs=$(regctl artifact tree localhost:8080/bom-parent:latest --filter-artifact-type "application/spdx+json" --format "{{json .}}" | jq '.SPDXID')
       [ $refs eq "SPDXRef-DOCUMENT" ]
     fi
     stacker clean
