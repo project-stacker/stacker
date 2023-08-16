@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -47,6 +50,10 @@ var internalGoCmd = cli.Command{
 		&cli.Command{
 			Name:   "copy",
 			Action: doImageCopy,
+		},
+		&cli.Command{
+			Name:   "exec-args",
+			Action: doExecArgs,
 		},
 		&cli.Command{
 			Name: "atomfs",
@@ -104,6 +111,28 @@ func doImageCopy(ctx *cli.Context) error {
 		Dest:     ctx.Args().Get(1),
 		Progress: os.Stdout,
 	})
+}
+
+func doExecArgs(ctx *cli.Context) error {
+	if ctx.Args().Len() != 1 {
+		return errors.Errorf("got %d args, expected 1", ctx.Args().Len())
+	}
+	jblob, err := base64.StdEncoding.DecodeString(ctx.Args().Get(0))
+	if err != nil {
+		return err
+	}
+
+	args := []string{}
+	err = json.Unmarshal(jblob, &args)
+	if err != nil {
+		return errors.Errorf("Failed to unmarshal json argument: %v", err)
+	}
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
 
 func doCP(ctx *cli.Context) error {

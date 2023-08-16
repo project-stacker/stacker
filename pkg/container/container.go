@@ -2,6 +2,8 @@ package container
 
 import (
 	"bufio"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -118,8 +120,18 @@ func (c *Container) containerError(theErr error, msg string) error {
 	return errors.Wrapf(theErr, msg)
 }
 
-func (c *Container) Execute(args string, stdin io.Reader) error {
-	if err := c.SetConfig("lxc.execute.cmd", args); err != nil {
+func (c *Container) Execute(args []string, stdin io.Reader) error {
+	jblob, err := json.Marshal(args)
+	if err != nil {
+		return err
+	}
+
+	base64.StdEncoding.EncodeToString([]byte(jblob))
+
+	cmdStr := "/static-stacker internal-go exec-args "
+	log.Infof("Executing: %s %v", cmdStr, args)
+	err = c.SetConfig("lxc.execute.cmd", cmdStr+base64.StdEncoding.EncodeToString(jblob))
+	if err != nil {
 		return err
 	}
 

@@ -147,7 +147,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 			return err
 		}
 
-		err = c.Execute("/oci-labels/.stacker-run.sh", nil)
+		err = c.Execute([]string{"/oci-labels/.stacker-run.sh"}, nil)
 		if err != nil {
 			return err
 		}
@@ -476,10 +476,10 @@ func (b *Builder) build(s types.Storage, file string) error {
 			}
 
 			// These should all be non-interactive; let's ensure that.
-			err = c.Execute("/stacker/.stacker-run.sh", nil)
+			err = c.Execute([]string{"/stacker/.stacker-run.sh"}, nil)
 			if err != nil {
 				if opts.OnRunFailure != "" {
-					err2 := c.Execute(opts.OnRunFailure, os.Stdin)
+					err2 := c.Execute([]string{opts.OnRunFailure}, os.Stdin)
 					if err2 != nil {
 						log.Infof("failed executing %s: %s\n", opts.OnRunFailure, err2)
 					}
@@ -654,7 +654,17 @@ func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage
 		return err
 	}
 
-	err := c.BindMount("/sys", "/sys", "")
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return errors.Wrapf(err, "couldn't find executable for bind mount")
+	}
+
+	err = c.BindMount(binary, "/static-stacker", "")
+	if err != nil {
+		return err
+	}
+
+	err = c.BindMount("/sys", "/sys", "")
 	if err != nil {
 		return err
 	}

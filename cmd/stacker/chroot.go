@@ -50,10 +50,10 @@ func doChroot(ctx *cli.Context) error {
 		tag = ctx.Args().Get(0)
 	}
 
-	cmd := stacker.DefaultShell
+	cmd := []string{stacker.DefaultShell}
 
 	if ctx.Args().Len() > 1 {
-		cmd = ctx.Args().Get(1)
+		cmd = []string{ctx.Args().Get(1)}
 	}
 
 	file := ctx.String("f")

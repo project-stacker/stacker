@@ -71,8 +71,17 @@ func shouldSkipInternalUserns(ctx *cli.Context) bool {
 		return true
 	}
 
+	search := func(needle string, hay ...string) bool {
+		for _, c := range hay {
+			if c == needle {
+				return true
+			}
+		}
+		return false
+	}
+
 	if args.Len() >= 2 && args.Get(0) == "internal-go" {
-		if args.Get(1) == "atomfs" || args.Get(1) == "cp" || args.Get(1) == "chown" || args.Get(1) == "chmod" {
+		if search(args.Get(1), "atomfs", "cp", "chown", "chmod", "exec-args") {
 			return true
 		}
 	}
