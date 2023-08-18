@@ -8,7 +8,7 @@ build-env:
     - https://gitlab.com/cryptsetup/cryptsetup/-/archive/v2.6.0/cryptsetup-v2.6.0.tar.gz
     - https://github.com/lvmteam/lvm2/archive/refs/tags/v2_03_18.tar.gz
   run: |
-    #!/bin/sh
+    #!/bin/sh -ex
     # libapparmor is only in testing
     head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
 
@@ -23,7 +23,8 @@ build-env:
       gettext-dev \
       lvm2-dev util-linux-dev \
       linux-headers \
-      util-linux-static
+      util-linux-static \
+      po4a
 
     # json-c doesn't have static binaries in alpine
     apk add cmake
@@ -82,7 +83,7 @@ build:
   binds:
     - . -> /stacker-tree
   run: |
-    #!/bin/sh
+    #!/bin/sh -ex
     # golang wants somewhere to put its garbage
     export HOME=/root
     export LXC_VERSION=$(git -C /lxc rev-parse HEAD)
