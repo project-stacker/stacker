@@ -27,7 +27,7 @@ build-env:
 
     # json-c doesn't have static binaries in alpine
     apk add cmake
-    tar -xf /stacker/json-c-*
+    tar -xf /stacker/imports/json-c-*
     cd json-c-*
     mkdir build
     cd build
@@ -36,7 +36,7 @@ build-env:
     cd /
 
     # build libdevmapper.a
-    tar -xf /stacker/v2_03_18.tar.gz
+    tar -xf /stacker/imports/v2_03_18.tar.gz
     cd lvm2-*
     ./configure --enable-static_link
     make install_device-mapper
@@ -45,7 +45,7 @@ build-env:
     # build static cryptsetup without all the command line tools
     apk add gettext gettext-dev zlib-static lz4-static openssl-dev \
       openssl-libs-static popt-dev bash
-    tar -xf /stacker/cryptsetup*
+    tar -xf /stacker/imports/cryptsetup*
     cd cryptsetup*
     ./autogen.sh
     CFLAGS="-D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" \

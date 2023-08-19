@@ -31,8 +31,8 @@ contents2:
         - stacker://contents/first
         - stacker://contents/second
     run: |
-        [ -f /stacker/first ]
-        [ -f /stacker/second ]
+        [ -f /stacker/imports/first ]
+        [ -f /stacker/imports/second ]
 EOF
     stacker build
 }

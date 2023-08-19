@@ -53,7 +53,7 @@ second:
         tag: first
     import: stacker://first/file
     run: |
-        [ -f /stacker/file ]
+        [ -f /stacker/imports/file ]
 EOF
     stacker build
 

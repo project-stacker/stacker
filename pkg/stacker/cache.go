@@ -301,6 +301,15 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 		}
 		return nil, false, nil
 	}
+
+	if l.Bom != nil && l.Bom.Generate {
+		_, err := os.Lstat(path.Join(c.config.StackerDir, "artifacts", name, fmt.Sprintf("%s.json", name)))
+		if err != nil {
+			log.Infof("cache miss because bom is not generated")
+			return nil, false, nil
+		}
+	}
+
 	return &result, true, nil
 }
 

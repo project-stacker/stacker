@@ -146,7 +146,7 @@ importer:
     import:
         - stacker://build/bin/ls
     run: |
-        /stacker/ls
+        /stacker/imports/ls
 EOF
     stacker build --layer-type squashfs
 }

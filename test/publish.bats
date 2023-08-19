@@ -12,7 +12,7 @@ layer1:
     import:
         - import1
     run: |
-        cp /stacker/import1 /root/import1
+        cp /stacker/imports/import1 /root/import1
 EOF
     mkdir -p ocibuilds/sub2
     touch ocibuilds/sub2/import2
@@ -27,7 +27,7 @@ layer2:
     import:
         - import2
     run: |
-        cp /stacker/import2 /root/import2
+        cp /stacker/imports/import2 /root/import2
         cp /root/import1 /root/import1_copied
 EOF
     mkdir -p ocibuilds/sub3

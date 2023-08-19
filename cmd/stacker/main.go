@@ -72,7 +72,8 @@ func shouldSkipInternalUserns(ctx *cli.Context) bool {
 	}
 
 	if args.Len() >= 2 && args.Get(0) == "internal-go" {
-		if args.Get(1) == "atomfs" || args.Get(1) == "cp" || args.Get(1) == "chown" || args.Get(1) == "chmod" {
+		if args.Get(1) == "atomfs" || args.Get(1) == "cp" || args.Get(1) == "chown" || args.Get(1) == "chmod" ||
+			args.Get(1) == "bom-discover" || args.Get(1) == "bom-build" || args.Get(1) == "bom-verify" {
 			return true
 		}
 	}
