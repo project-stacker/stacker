@@ -185,13 +185,11 @@ EOF
 }
 
 @test "can read previous version's cache" {
-    skip "old does not work as a cache due to stacker/import change in c68147cba8d"
-
     # some additional testing that the cache can be read by older versions of
     # stacker (cache_test.go has the full test for the type, this just checks
     # the mechanics of filepaths and such)
     local relurl="https://github.com/project-stacker/stacker/releases/download"
-    local oldver="v1.0.0-rc4"
+    local oldver="v1.0.0-rc5"
     local oldbin="./stacker-$oldver"
     if [ "$PRIVILEGE_LEVEL" != "priv" ]; then
         skip_if_no_unpriv_overlay
