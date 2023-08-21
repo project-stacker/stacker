@@ -49,6 +49,7 @@ STACKER_BUILD_UBUNTU_IMAGE=${STACKER_BUILD_UBUNTU_IMAGE:-${STACKER_DOCKER_BASE}u
 ) 9<$ROOT_DIR/test/main.py
 export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
 export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
+export PATH="$PATH:$ROOT_DIR/hack/tools/bin"
 
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")
@@ -140,4 +141,52 @@ function cmp_files() {
         return 1
     fi
     return 0
+}
+
+function zot_setup {
+  cat > $TEST_TMPDIR/zot-config.json << EOF
+{
+  "distSpecVersion": "1.1.0-dev",
+  "storage": {
+    "rootDirectory": "$TEST_TMPDIR/zot",
+    "gc": true,
+    "dedupe": true
+  },
+  "http": {
+    "address": "$ZOT_HOST",
+    "port": "$ZOT_PORT"
+  },
+  "log": {
+    "level": "error"
+  }
+}
+EOF
+	# start as a background task
+  zot serve $TEST_TMPDIR/zot-config.json &
+  pid=$!
+  # wait until service is up
+  count=5
+  up=0
+  while [[ $count -gt 0 ]]; do
+    if [ ! -d /proc/$pid ]; then
+      echo "zot failed to start or died"
+      exit 1
+    fi
+    up=1
+    curl -f http://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
+    if [ $up -eq 1 ]; then break; fi
+    sleep 1
+    count=$((count - 1))
+  done
+  if [ $up -eq 0 ]; then
+    echo "Timed out waiting for zot"
+    exit 1
+  fi
+  # setup a OCI client
+  regctl registry set --tls=disabled $ZOT_HOST:$ZOT_PORT
+}
+
+function zot_teardown {
+  killall zot
+  rm -f $TEST_TMPDIR/zot-config.json
 }
