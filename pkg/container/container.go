@@ -118,11 +118,7 @@ func (c *Container) containerError(theErr error, msg string) error {
 	return errors.Wrapf(theErr, msg)
 }
 
-func (c *Container) Execute(args string, stdin io.Reader) error {
-	if err := c.SetConfig("lxc.execute.cmd", args); err != nil {
-		return err
-	}
-
+func (c *Container) Execute(args []string, stdin io.Reader) error {
 	f, err := os.CreateTemp("", fmt.Sprintf("stacker_%s_run", c.c.Name()))
 	if err != nil {
 		return err
@@ -142,10 +138,7 @@ func (c *Container) Execute(args string, stdin io.Reader) error {
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,
 		"lxc-wrapper/lxc-wrapper",
-		"spawn",
-		c.c.Name(),
-		c.sc.RootFSDir,
-		f.Name(),
+		append([]string{"spawn", c.c.Name(), c.sc.RootFSDir, f.Name()}, args...)...,
 	)
 	if err != nil {
 		return err

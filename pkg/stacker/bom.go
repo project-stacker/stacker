@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strconv"
 
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/log"
@@ -48,26 +47,19 @@ func BuildLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types.
 		return err
 	}
 
-	cmd := "/stacker/tools/static-stacker"
+	cmd := []string{"/stacker/tools/static-stacker"}
 
 	if sc.Debug {
-		cmd += " --debug"
+		cmd = append(cmd, "--debug")
 	}
 
-	cmd += " internal-go"
-
-	author := l.Annotations[types.AuthorAnnotation]
-	org := l.Annotations[types.OrgAnnotation]
-	license := l.Annotations[types.LicenseAnnotation]
-	dest := "/stacker/artifacts"
-	cmd += fmt.Sprintf(" bom-build %s %s %s %s %s %s", dest,
-		strconv.Quote(author),
-		strconv.Quote(org),
-		strconv.Quote(license),
+	cmd = append(cmd, "internal-go", "bom-build",
+		"/stacker/artifacts",
+		l.Annotations[types.AuthorAnnotation],
+		l.Annotations[types.OrgAnnotation],
+		l.Annotations[types.LicenseAnnotation],
 		pkg.Name, pkg.Version)
-	for _, ppath := range pkg.Paths {
-		cmd += " " + ppath
-	}
+	cmd = append(cmd, pkg.Paths...)
 	err = c.Execute(cmd, os.Stdin)
 	if err != nil {
 		return err
@@ -109,21 +101,16 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 		return err
 	}
 
-	cmd := "/stacker/tools/static-stacker"
+	cmd := []string{"/stacker/tools/static-stacker"}
 
 	if sc.Debug {
-		cmd += " --debug"
+		cmd = append(cmd, "--debug")
 	}
 
-	cmd += " internal-go"
+	cmd = append(cmd, "internal-go", "bom-verify",
+		fmt.Sprintf("/stacker/artifacts/%s.json", tag),
+		tag, l.Annotations[types.AuthorAnnotation], l.Annotations[types.OrgAnnotation])
 
-	author := l.Annotations[types.AuthorAnnotation]
-	org := l.Annotations[types.OrgAnnotation]
-
-	dest := fmt.Sprintf("/stacker/artifacts/%s.json", tag)
-	cmd += fmt.Sprintf(" bom-verify %s %s %s %s", dest, tag,
-		strconv.Quote(author),
-		strconv.Quote(org))
 	err = c.Execute(cmd, os.Stdin)
 	if err != nil {
 		return err
