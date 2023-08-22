@@ -21,7 +21,7 @@ struct child_args {
 	int    command_start;
 };
 
-static int spawn_container(char *name, char *lxcpath, char *config)
+static int spawn_container(char *name, char *lxcpath, char *config, char *argv[])
 {
 	struct lxc_container *c;
 
@@ -38,7 +38,7 @@ static int spawn_container(char *name, char *lxcpath, char *config)
 	}
 
 	c->daemonize = false;
-	if (!c->start(c, 1, NULL)) {
+	if (!c->start(c, 1, argv)) {
 		fprintf(stderr, "failed to start container %s\n", name);
 		return -1;
 	}
@@ -253,16 +253,19 @@ int main(int argc, char *argv[])
 	if (!strcmp(argv[1], "spawn")) {
 		int ret, status;
 		char *name, *lxcpath, *config_path;
+		char **args = NULL;
 
-		if (argc != 5) {
+		if (argc < 5) {
 			fprintf(stderr, "bad number of args for spawn: %d\n", argc);
 			return 1;
 		}
 
-
 		name = argv[2];
 		lxcpath = argv[3];
 		config_path = argv[4];
+		if (argc >= 5) {
+			args = &argv[5];
+		}
 
 		ret = isatty(STDIN_FILENO);
 		if (ret < 0) {
@@ -275,7 +278,7 @@ int main(int argc, char *argv[])
 		if (!ret)
 			setsid();
 
-		status = spawn_container(name, lxcpath, config_path);
+		status = spawn_container(name, lxcpath, config_path, args);
 
 		// Try and propagate the container's exit code.
 		if (WIFEXITED(status)) {

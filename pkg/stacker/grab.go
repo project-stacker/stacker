@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/pkg/errors"
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -26,28 +25,19 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 	defer os.Remove(path.Join(sc.RootFSDir, name, "rootfs", "stacker"))
 
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return errors.Wrapf(err, "couldn't find executable for bind mount")
-	}
-
-	err = c.BindMount(binary, "/stacker/tools/static-stacker", "")
-	if err != nil {
-		return err
-	}
-
 	err = SetupBuildContainerConfig(sc, storage, c, name)
 	if err != nil {
 		return err
 	}
 
-	err = c.Execute(fmt.Sprintf("/stacker/tools/static-stacker internal-go cp %s /stacker/%s", source, path.Base(source)), nil)
+	bcmd := []string{insideStaticStacker, "internal-go"}
+	err = c.Execute(append(bcmd, "cp", source, "/stacker/"+path.Base(source)), nil)
 	if err != nil {
 		return err
 	}
 
 	if mode != nil {
-		err = c.Execute(fmt.Sprintf("/stacker/tools/static-stacker internal-go chmod %s /stacker/%s", fmt.Sprintf("%o", *mode), path.Base(source)), nil)
+		err = c.Execute(append(bcmd, "chmod", fmt.Sprintf("%o", *mode), "/stacker/"+path.Base(source)), nil)
 		if err != nil {
 			return err
 		}
@@ -59,7 +49,7 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 			owns += fmt.Sprintf(":%d", gid)
 		}
 
-		err = c.Execute(fmt.Sprintf("/stacker/tools/static-stacker internal-go chown %s /stacker/%s", owns, path.Base(source)), nil)
+		err = c.Execute(append(bcmd, "chown", owns, "/stacker/"+path.Base(source)), nil)
 		if err != nil {
 			return err
 		}
