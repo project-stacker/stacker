@@ -38,16 +38,7 @@ func BuildLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types.
 		return err
 	}
 
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
-	if err := c.BindMount(binary, "/stacker/tools/static-stacker", ""); err != nil {
-		return err
-	}
-
-	cmd := []string{"/stacker/tools/static-stacker"}
+	cmd := []string{insideStaticStacker}
 
 	if sc.Debug {
 		cmd = append(cmd, "--debug")
@@ -92,16 +83,7 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 		return err
 	}
 
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return err
-	}
-
-	if err := c.BindMount(binary, "/stacker/tools/static-stacker", ""); err != nil {
-		return err
-	}
-
-	cmd := []string{"/stacker/tools/static-stacker"}
+	cmd := []string{insideStaticStacker}
 
 	if sc.Debug {
 		cmd = append(cmd, "--debug")

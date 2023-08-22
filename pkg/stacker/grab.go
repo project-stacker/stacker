@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/pkg/errors"
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -26,22 +25,12 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 	defer os.Remove(path.Join(sc.RootFSDir, name, "rootfs", "stacker"))
 
-	binary, err := os.Readlink("/proc/self/exe")
-	if err != nil {
-		return errors.Wrapf(err, "couldn't find executable for bind mount")
-	}
-
-	err = c.BindMount(binary, "/stacker/tools/static-stacker", "")
-	if err != nil {
-		return err
-	}
-
 	err = SetupBuildContainerConfig(sc, storage, c, name)
 	if err != nil {
 		return err
 	}
 
-	bcmd := []string{"/stacker/tools/static-stacker", "internal-go"}
+	bcmd := []string{insideStaticStacker, "internal-go"}
 	err = c.Execute(append(bcmd, "cp", source, "/stacker/"+path.Base(source)), nil)
 	if err != nil {
 		return err

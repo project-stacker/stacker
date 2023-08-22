@@ -21,7 +21,10 @@ import (
 	"stackerbuild.io/stacker/pkg/types"
 )
 
-const DefaultShell = "/bin/sh"
+const (
+	DefaultShell        = "/bin/sh"
+	insideStaticStacker = "/stacker/tools/static-stacker"
+)
 
 type BuildArgs struct {
 	Config               types.StackerConfig
@@ -687,6 +690,16 @@ func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage
 		return err
 	}
 
+	binary, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
+	// make stacker binary available inside container
+	if err := c.BindMount(binary, insideStaticStacker, ""); err != nil {
+		return err
+	}
+
 	rootfs, err := storage.GetLXCRootfsConfig(name)
 	if err != nil {
 		return err
@@ -749,19 +762,6 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 		} else {
 			log.Debugf("not bind mounting %s into container", artifactsDir)
 		}
-
-		// make stacker also available to run the internal bom cmds
-		binary, err := os.Readlink("/proc/self/exe")
-		if err != nil {
-			return errors.Wrapf(err, "couldn't find executable for bind mount")
-		}
-
-		err = c.BindMount(binary, "/stacker/tools/static-stacker", "")
-		if err != nil {
-			return err
-		}
-
-		log.Debugf("bind mounting %s into container", binary)
 	}
 
 	for k, v := range env {
