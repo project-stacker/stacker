@@ -96,6 +96,16 @@ function require_privilege {
     [ "$PRIVILEGE_LEVEL" = "$1" ] || skip "test not valid for privilege level $PRIVILEGE_LEVEL"
 }
 
+function skip_slow_test {
+    case "${SLOW_TEST:-false}" in
+        true) return;;
+        false) skip "${BATS_TEST_NAME} is slow. Set SLOW_TEST=true to run.";;
+        *) stderr "SLOW_TEST variable must be 'true' or 'false'" \
+            "found '${SLOW_TEST}'"
+           return 1;;
+    esac
+}
+
 function tmpd() {
     mktemp -d "${PWD}/stackertest${1:+-$1}.XXXXXX"
 }
