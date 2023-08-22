@@ -66,16 +66,18 @@ func stackerResult(err error) {
 }
 
 func shouldSkipInternalUserns(ctx *cli.Context) bool {
-	args := ctx.Args()
-	if args.Len() >= 1 && args.Get(0) == "unpriv-setup" {
+	if ctx.Args().Len() < 1 {
+		// no subcommand, no need for namespace
 		return true
 	}
+	arg0 := ctx.Args().Get(0)
 
-	if args.Len() >= 2 && args.Get(0) == "internal-go" {
-		if args.Get(1) == "atomfs" || args.Get(1) == "cp" || args.Get(1) == "chown" || args.Get(1) == "chmod" ||
-			args.Get(1) == "bom-discover" || args.Get(1) == "bom-build" || args.Get(1) == "bom-verify" {
-			return true
-		}
+	if arg0 == "internal-go" && ctx.Args().Get(1) == "testsuite-check-overlay" {
+		return false
+	}
+
+	if arg0 == "bom" || arg0 == "unpriv-setup" || arg0 == "internal-go" {
+		return true
 	}
 
 	return false
@@ -108,6 +110,7 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		&buildCmd,
+		&bomCmd,
 		&recursiveBuildCmd,
 		&convertCmd,
 		&publishCmd,
