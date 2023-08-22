@@ -103,8 +103,8 @@ bom-parent:
         /etc/sysconfig/sshd-permitrootlogin /root/anaconda-* /root/original-* /run/nologin \
         /var/lib/rpm/.rpm.lock /etc/.pwd.lock /etc/BUILDTIME
     annotations:
-      org.opencontainers.image.authors: bom-test
-      org.opencontainers.image.vendor: bom-test
+      org.opencontainers.image.authors: "Alice P. Programmer"
+      org.opencontainers.image.vendor: "ACME Widgets & Trinkets Inc."
       org.opencontainers.image.licenses: MIT
 EOF
     stacker build
