@@ -27,7 +27,7 @@ bom-parent:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker internal-go bom-discover
+      /stacker/tools/static-stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -84,7 +84,7 @@ bom-parent:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker internal-go bom-discover
+      /stacker/tools/static-stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file

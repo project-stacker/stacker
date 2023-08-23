@@ -44,8 +44,7 @@ func BuildLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types.
 		cmd = append(cmd, "--debug")
 	}
 
-	cmd = append(cmd, "internal-go", "bom-build",
-		"/stacker/artifacts",
+	cmd = append(cmd, "bom", "build", "/stacker/artifacts",
 		l.Annotations[types.AuthorAnnotation],
 		l.Annotations[types.OrgAnnotation],
 		l.Annotations[types.LicenseAnnotation],
@@ -89,7 +88,7 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 		cmd = append(cmd, "--debug")
 	}
 
-	cmd = append(cmd, "internal-go", "bom-verify",
+	cmd = append(cmd, "bom", "verify",
 		fmt.Sprintf("/stacker/artifacts/%s.json", tag),
 		tag, l.Annotations[types.AuthorAnnotation], l.Annotations[types.OrgAnnotation])
 
