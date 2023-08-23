@@ -41,7 +41,12 @@ func TestFile(t *testing.T) {
 	})
 
 	Convey("FindFiles", t, func() {
-		src, err := os.CreateTemp("", "src")
+		tdir, err := os.MkdirTemp("", "find-files-test-*")
+		So(err, ShouldBeNil)
+		So(tdir, ShouldNotBeNil)
+		defer os.RemoveAll(tdir)
+
+		src, err := os.CreateTemp(tdir, "src")
 		So(err, ShouldBeNil)
 		So(src, ShouldNotBeNil)
 		defer os.Remove(src.Name())
