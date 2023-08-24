@@ -17,12 +17,16 @@ var bomCmd = cli.Command{
 	Usage: "work with a software bill of materials (BOM)",
 	Subcommands: []*cli.Command{
 		&cli.Command{
+			Name:   "build",
+			Action: doBomBuild,
+		},
+		&cli.Command{
 			Name:   "discover",
 			Action: doBomDiscover,
 		},
 		&cli.Command{
-			Name:   "build",
-			Action: doBomBuild,
+			Name:   "generate",
+			Action: doBomGenerate,
 		},
 		&cli.Command{
 			Name:   "verify",
@@ -42,7 +46,7 @@ func doBomDiscover(ctx *cli.Context) error {
 	return nil
 }
 
-func doBomGenerate(ctx *cli.Context) error { //nolint:unused // used when invoked inside "run:"
+func doBomGenerate(ctx *cli.Context) error {
 	if ctx.Args().Len() != 1 {
 		return errors.Errorf("wrong number of args for umount")
 	}
