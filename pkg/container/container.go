@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -19,12 +20,14 @@ import (
 
 const (
 	ReasonableDefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	lxcConfigRootfsPath   = "lxc.rootfs.path"
 )
 
 // our representation of a container
 type Container struct {
-	sc types.StackerConfig
-	c  *lxc.Container
+	sc      types.StackerConfig
+	c       *lxc.Container
+	workdir string
 }
 
 func New(sc types.StackerConfig, name string) (*Container, error) {
@@ -36,11 +39,16 @@ func New(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	workdir, err := os.MkdirTemp("", "c*")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
 	if err != nil {
 		return nil, err
 	}
-	c := &Container{sc: sc, c: lxcC}
+	c := &Container{sc: sc, c: lxcC, workdir: workdir}
 
 	if err := c.c.SetLogLevel(lxc.TRACE); err != nil {
 		return nil, err
@@ -84,11 +92,24 @@ func (c *Container) SetConfigs(config map[string]string) error {
 }
 
 func (c *Container) SetConfig(name string, value string) error {
-	err := c.c.SetConfigItem(name, value)
+	var err error
+	if name == lxcConfigRootfsPath {
+		err = c.setRootfs(value)
+	} else {
+		err = c.c.SetConfigItem(name, value)
+	}
 	if err != nil {
 		return errors.Errorf("failed setting config %s to %s: %v", name, value, err)
 	}
 	return nil
+}
+
+func (c *Container) setRootfs(rootfs string) error {
+	newRootfs, err := shortenRootfs(rootfs, c.workdir)
+	if err != nil {
+		return err
+	}
+	return c.c.SetConfigItem(lxcConfigRootfsPath, newRootfs)
 }
 
 // containerError tries its best to report as much context about an LXC error
@@ -214,4 +235,80 @@ func (c *Container) SaveConfigFile(p string) error {
 
 func (c *Container) Close() {
 	c.c.Release()
+	if c.workdir != "" {
+		os.RemoveAll(c.workdir)
+	}
+}
+
+// shortenRootfs - shorten an lxc rootfs string to protect from PATH_MAX.
+// mount paths are limited, but they can be shortened by using a symlink trick.
+// a rootfs value for an overlayfs is of the form:
+//
+//	overlay:overlayfs:<roots>/<name>/<path1>:<roots>/<name>/<path2>...,<options>
+//
+// path1 and path2 above are often 'sha256_<hash>/overlay' (which has string length 82)
+//
+// shortenRootfs creates symlinks in workdir named '00', '01'...
+//
+//	<workdir>/00 -> <stacker-roots>/sha256_.../overlay
+//	<workdir>/01 -> <stacker-roots>/sha267_.../overlay
+//
+// so instead of paths with length (len(rootsdir) + 80)
+// you end up with paths of len(workdir) + 2, or workdir + 3 if there are > 99 paths.
+//
+// The use case where we became aware of this had a rootsdir with path lenth 82,
+// and 47 path elements. Its total length was 7580. If shortened with a workdir
+// /tmp/c789283801/ (len 16), then the end result is 910 chars.
+func shortenRootfs(rootfs string, workdir string) (string, error) {
+	// We could simply return if len(rootfs) was < 4096.
+	// That would avoid the workdir indirection in almost all cases, but
+	// would also mean that this code is not tested in almost all cases.
+	// Better to have it tested than be basically dead code.
+	//
+	// if len(rootfs) < 4096 {
+	// 	return rootfs, nil
+	// }
+
+	const prefix = "overlay:overlayfs:"
+	sansPrefix := strings.TrimPrefix(rootfs, prefix)
+	if sansPrefix == rootfs {
+		return rootfs, nil
+	}
+
+	options := ""
+	toks := strings.SplitN(sansPrefix, ",", 2)
+	if len(toks) > 1 {
+		options = "," + toks[1]
+	}
+
+	paths := strings.Split(toks[0], ":")
+	dfmt := "%02d"
+	if len(paths) > 999 {
+		return "", errors.Errorf("too many paths (%d) in rootfs string: %s", len(paths), rootfs)
+	} else if len(paths) > 99 {
+		dfmt = "%03d"
+	}
+
+	newPaths := []string{}
+	for pnum, opath := range paths {
+		if !filepath.IsAbs(opath) {
+			return "", errors.Errorf("path %d is not absolute: %s", pnum, opath)
+		}
+		newPath := filepath.Join(workdir, fmt.Sprintf(dfmt, pnum))
+		if err := os.Symlink(opath, newPath); err != nil {
+			return "", errors.Wrapf(err, "failed to symlink %s -> %s", newPath, opath)
+		}
+		newPaths = append(newPaths, newPath)
+	}
+
+	newrootfs := prefix + strings.Join(newPaths, ":") + options
+	if len(newrootfs) > 4096 {
+		return "", errors.Errorf(
+			"overlayfs rootfs value with %d layers is > 4096 (%d),"+
+				" shortened version via '%s' was still too long (%d)",
+			len(paths), len(rootfs), workdir, len(newrootfs))
+	}
+	log.Debugf("Shortened overlayfs rootfs value with %d layers via workdir %s from %d to %d",
+		len(paths), workdir, len(rootfs), len(newrootfs))
+	return newrootfs, nil
 }
