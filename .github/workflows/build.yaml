@@ -71,6 +71,10 @@ jobs:
           make check VERSION_FULL=${{ matrix.build-id }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
+      - name: show dmesg
+        if: always()
+        run: |
+          sudo dmesg
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
       - uses: actions/cache@v3
