@@ -3,7 +3,6 @@ package overlay
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 
@@ -139,17 +138,16 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 		lowerdirs = append(lowerdirs, contents)
 	}
 
-	// overlayfs doesn't work with < 2 lowerdirs, so we add some
+	// overlayfs doesn't work with 0 lowerdirs, so we add some
 	// workaround dirs if necessary (if e.g. the source only has
 	// one layer, or it's an empty rootfs with no layers, we still
 	// want an overlay mount to keep things consistent)
-	for i := 0; i < 2-len(lowerdirs); i++ {
-		workaround := path.Join(config.RootFSDir, tag, fmt.Sprintf("workaround%d", i))
+	if len(lowerdirs) == 0 {
+		workaround := path.Join(config.RootFSDir, tag, "workaround")
 		err := os.MkdirAll(workaround, 0755)
 		if err != nil {
 			return "", errors.Wrapf(err, "couldn't make workaround dir")
 		}
-
 		lowerdirs = append(lowerdirs, workaround)
 	}
 
