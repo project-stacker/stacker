@@ -88,7 +88,7 @@ func (m Molecule) overlayArgs(dest string) (string, error) {
 
 	// Note that in overlayfs, the first thing is the top most layer in the
 	// overlay.
-	mntOpts := "index=off,lowerdir=" + strings.Join(dirs, ":")
+	mntOpts := "index=off,xino=on,lowerdir=" + strings.Join(dirs, ":")
 	return mntOpts, nil
 }
 
