@@ -65,8 +65,9 @@ func (m Molecule) mountUnderlyingAtoms() error {
 	return nil
 }
 
-// overlayArgs returns all of the mount options to pass to the kernel to
+// overlayArgs - returns all of the mount options to pass to the kernel to
 // actually mount this molecule.
+// This function assumes read-only. It does not provide upperdir or workdir.
 func (m Molecule) overlayArgs(dest string) (string, error) {
 	dirs := []string{}
 	for _, a := range m.Atoms {
@@ -74,9 +75,10 @@ func (m Molecule) overlayArgs(dest string) (string, error) {
 		dirs = append(dirs, target)
 	}
 
-	// overlay doesn't work with one lowerdir. so we do a hack here: we
-	// just create an empty directory called "workaround" in the mounts
-	// directory, and add that to the dir list if it's of length one.
+	// overlay doesn't work with only one lowerdir and no upperdir.
+	// For consistency in that specific case we add a hack here.
+	// We create an empty directory called "workaround" in the mounts
+	// directory, and add that to lowerdir list.
 	if len(dirs) == 1 {
 		workaround := m.config.MountedAtomsPath("workaround")
 		if err := os.MkdirAll(workaround, 0755); err != nil {

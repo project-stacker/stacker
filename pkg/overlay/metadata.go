@@ -138,10 +138,11 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 		lowerdirs = append(lowerdirs, contents)
 	}
 
-	// overlayfs doesn't work with 0 lowerdirs, so we add some
-	// workaround dirs if necessary (if e.g. the source only has
-	// one layer, or it's an empty rootfs with no layers, we still
-	// want an overlay mount to keep things consistent)
+	// lxc.rootfs.path overlay string is of form
+	//  'overlayfs:lowerdir[:lowerdir2:lowerdir3...]:upperdir'
+	// 1 or more lowerdir and 1 upperdir are required.
+	// In the case of an empty rootfs with no layers there would be no
+	// lowerdirs but want an overlay mount to keep things consistent.
 	if len(lowerdirs) == 0 {
 		workaround := path.Join(config.RootFSDir, tag, "workaround")
 		err := os.MkdirAll(workaround, 0755)
@@ -167,6 +168,7 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 
 	overlayArgs.WriteString(":")
 
+	// the upperdir is the final token in an 'overlayfs:' lxc.rootfs.path string
 	overlayArgs.WriteString(path.Join(config.RootFSDir, tag, "overlay"))
 
 	log.Debugf("lxc rootfs overlay arg %s", overlayArgs.String())
