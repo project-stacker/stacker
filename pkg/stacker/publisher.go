@@ -125,9 +125,11 @@ func fileDigest(path string) (*godigest.Digest, error) {
 }
 
 // publishArtifact to a registry/repo for this subject
-func (p *Publisher) publishArtifact(path, mtype, registry, repo, subject string, skipTLS bool) error {
+func (p *Publisher) publishArtifact(path, mtype, registry, repo, subjectTag string, skipTLS bool) error {
 	username := p.opts.Username
 	password := p.opts.Password
+
+	subject := distspecURL(registry, repo, subjectTag, skipTLS)
 
 	// check subject exists
 	res, err := clientRequest(http.MethodHead, subject, username, password, nil, nil)
@@ -160,26 +162,6 @@ func (p *Publisher) publishArtifact(path, mtype, registry, repo, subject string,
 		return err
 	}
 
-	// upload with POST, PUT sequence
-	var regUrl string
-	if skipTLS {
-		regUrl = fmt.Sprintf("http://%s/v2%s/blobs/uploads/", registry, strings.Split(repo, ":")[0])
-	} else {
-		regUrl = fmt.Sprintf("https://%s/v2%s/blobs/uploads/", registry, strings.Split(repo, ":")[0])
-	}
-	log.Debugf("new blob upload (POST): %s", regUrl)
-	res, err = clientRequest(http.MethodPost, regUrl, username, password, nil, nil)
-	if err != nil {
-		log.Errorf("post unable to check subject:%s, err:%s", subject, err)
-		return err
-	}
-	log.Debugf("http response headers: +%v status:%v", res.Header, res.Status)
-	loc, err := res.Location()
-	if err != nil {
-		log.Errorf("unable get upload location url:%s, err:%s", regUrl, err)
-		return err
-	}
-
 	fh, err := os.Open(path)
 	if err != nil {
 		log.Errorf("unable to open file:%s, err:%s", path, err)
@@ -187,28 +169,18 @@ func (p *Publisher) publishArtifact(path, mtype, registry, repo, subject string,
 	}
 	defer fh.Close()
 
-	log.Debugf("finish blob upload (PUT): %s", regUrl)
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodPut, loc.String(), fh)
-	if err != nil {
-		log.Errorf("unable to create a http request url:%s", subject)
+	if err := uploadBlob(registry, repo, path, username, password, fh, finfo.Size(), dgst, skipTLS); err != nil {
+		log.Errorf("unable to upload file:%s, err:%s", path, err)
 		return err
 	}
-	if username != "" && password != "" {
-		req.Header.Add("Authorization", "Basic "+basicAuth(username, password))
-	}
-	req.URL.RawQuery = url.Values{
-		"digest": {dgst.String()},
-	}.Encode()
-	req.ContentLength = finfo.Size()
 
-	res, err = http.DefaultClient.Do(req)
-	if err != nil {
-		log.Errorf("http request failed url:%s", subject)
+	// check and upload emptyJSON blob
+	erdr := bytes.NewReader(ispec.DescriptorEmptyJSON.Data)
+	edgst := ispec.DescriptorEmptyJSON.Digest
+
+	if err := uploadBlob(registry, repo, path, username, password, erdr, ispec.DescriptorEmptyJSON.Size, &edgst, skipTLS); err != nil {
+		log.Errorf("unable to upload file:%s, err:%s", path, err)
 		return err
-	}
-	if res == nil || res.StatusCode != http.StatusCreated {
-		log.Errorf("unable to upload artifact:%s to url:%s", path, regUrl)
-		return errors.Errorf("unable to upload artifact:%s to url:%s", path, regUrl)
 	}
 
 	// upload the reference manifest
@@ -241,6 +213,7 @@ func (p *Publisher) publishArtifact(path, mtype, registry, repo, subject string,
 	}
 
 	// artifact manifest
+	var regUrl string
 	mdgst := godigest.FromBytes(content)
 	if skipTLS {
 		regUrl = fmt.Sprintf("http://%s/v2%s/manifests/%s", registry, strings.Split(repo, ":")[0], mdgst.String())
@@ -261,7 +234,92 @@ func (p *Publisher) publishArtifact(path, mtype, registry, repo, subject string,
 		return errors.Errorf("unable to upload manifest, url:%s", regUrl)
 	}
 
-	log.Infof("artifact '%s' sucessfully uploaded to url:%s", path, regUrl)
+	log.Infof("Copying artifact '%s' done", path)
+
+	return nil
+}
+
+func distspecURL(registry, repo, tag string, skipTLS bool) string {
+	var url string
+
+	if skipTLS {
+		url = fmt.Sprintf("http://%s/v2%s/manifests/%s", registry, strings.Split(repo, ":")[0], tag)
+	} else {
+		url = fmt.Sprintf("https://%s/v2%s/manifests/%s", registry, strings.Split(repo, ":")[0], tag)
+	}
+
+	return url
+}
+
+func uploadBlob(registry, repo, path, username, password string, reader io.Reader, size int64, dgst *godigest.Digest, skipTLS bool) error {
+	// upload with POST, PUT sequence
+	var regUrl string
+	if skipTLS {
+		regUrl = fmt.Sprintf("http://%s/v2%s/blobs/%s", registry, strings.Split(repo, ":")[0], dgst.String())
+	} else {
+		regUrl = fmt.Sprintf("https://%s/v2%s/blobs/%s", registry, strings.Split(repo, ":")[0], dgst.String())
+	}
+
+	subject := distspecURL(registry, repo, "", skipTLS)
+
+	log.Debugf("check blob before upload (HEAD): %s", regUrl)
+	res, err := clientRequest(http.MethodHead, regUrl, username, password, nil, nil)
+	if err != nil {
+		log.Errorf("unable to check blob:%s, err:%s", subject, err)
+		return err
+	}
+	log.Debugf("http response headers: +%v status:%v", res.Header, res.Status)
+	hdr := res.Header.Get("Docker-Content-Digest")
+	if hdr != "" {
+		log.Infof("Copying blob %s skipped: already exists", dgst.Hex()[:12])
+		return nil
+	}
+
+	if skipTLS {
+		regUrl = fmt.Sprintf("http://%s/v2%s/blobs/uploads/", registry, strings.Split(repo, ":")[0])
+	} else {
+		regUrl = fmt.Sprintf("https://%s/v2%s/blobs/uploads/", registry, strings.Split(repo, ":")[0])
+	}
+
+	log.Debugf("new blob upload (POST): %s", regUrl)
+	res, err = clientRequest(http.MethodPost, regUrl, username, password, nil, nil)
+	if err != nil {
+		log.Errorf("post unable to check subject:%s, err:%s", subject, err)
+		return err
+	}
+	log.Debugf("http response headers: +%v status:%v", res.Header, res.Status)
+	loc, err := res.Location()
+	if err != nil {
+		log.Errorf("unable get upload location url:%s, err:%s", regUrl, err)
+		return err
+	}
+
+	log.Debugf("finish blob upload (PUT): %s", regUrl)
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodPut, loc.String(), reader)
+	if err != nil {
+		log.Errorf("unable to create a http request url:%s", subject)
+		return err
+	}
+	if username != "" && password != "" {
+		req.Header.Add("Authorization", "Basic "+basicAuth(username, password))
+	}
+	req.URL.RawQuery = url.Values{
+		"digest": {dgst.String()},
+	}.Encode()
+
+	req.ContentLength = size
+
+	res, err = http.DefaultClient.Do(req)
+	if err != nil {
+		log.Errorf("http request failed url:%s", subject)
+		return err
+	}
+	if res == nil || res.StatusCode != http.StatusCreated {
+		log.Errorf("unable to upload artifact:%s to url:%s", path, regUrl)
+		return errors.Errorf("unable to upload artifact:%s to url:%s", path, regUrl)
+	}
+
+	log.Infof("Copying blob %s done", dgst.Hex()[:12])
 
 	return nil
 }
@@ -393,23 +451,15 @@ func (p *Publisher) Publish(file string) error {
 					registry := url.Host
 					repo := url.Path
 
-					var subject string
-
-					if opts.SkipTLS {
-						subject = fmt.Sprintf("http://%s/v2%s/manifests/%s", registry, strings.Split(repo, ":")[0], layerTypeTag)
-					} else {
-						subject = fmt.Sprintf("https://%s/v2%s/manifests/%s", registry, strings.Split(repo, ":")[0], layerTypeTag)
-					}
-
 					// publish sbom
 					if err := p.publishArtifact(path.Join(opts.Config.StackerDir, "artifacts", layerName, fmt.Sprintf("%s.json", layerName)),
-						"application/spdx+json", registry, repo, subject, opts.SkipTLS); err != nil {
+						"application/spdx+json", registry, repo, layerTypeTag, opts.SkipTLS); err != nil {
 						return err
 					}
 
 					// publish inventory
 					if err := p.publishArtifact(path.Join(opts.Config.StackerDir, "artifacts", layerName, "inventory.json"),
-						"application/vnd.stackerbuild.inventory+json", registry, repo, subject, opts.SkipTLS); err != nil {
+						"application/vnd.stackerbuild.inventory+json", registry, repo, layerTypeTag, opts.SkipTLS); err != nil {
 						return err
 					}
 
