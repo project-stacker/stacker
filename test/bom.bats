@@ -9,6 +9,7 @@ function teardown() {
 }
 
 @test "all container contents must be accounted for" {
+  skip_slow_test
   cat > stacker.yaml <<EOF
 bom-parent:
     from:
@@ -66,6 +67,7 @@ EOF
 }
 
 @test "bom tool should work inside run" {
+  skip_slow_test
   cat > stacker.yaml <<EOF
 bom-parent:
     from:

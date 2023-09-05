@@ -48,9 +48,7 @@ EOF
 }
 
 @test "alpine" {
-  if [ -z "${SLOW_TEST}" ]; then
-    skip "test since slow tests are not enabled"
-  fi
+  skip_slow_test
   git clone https://github.com/alpinelinux/docker-alpine.git
   chmod -R a+rwx docker-alpine
   cd docker-alpine
@@ -65,9 +63,7 @@ EOF
 }
 
 @test "elasticsearch" {
-  if [ -z "${SLOW_TEST}" ]; then
-    skip "test since slow tests are not enabled"
-  fi
+  skip_slow_test
   git clone https://github.com/elastic/dockerfiles.git
   chmod -R a+rwx dockerfiles
   cd dockerfiles/elasticsearch
@@ -81,9 +77,7 @@ EOF
 }
 
 @test "python" {
-  if [ -z "${SLOW_TEST}" ]; then
-    skip "test since slow tests are not enabled"
-  fi
+  skip_slow_test
   git clone https://github.com/docker-library/python.git
   cd python/3.11/alpine3.17
   chmod -R a+rw .
