@@ -106,6 +106,26 @@ bom-parent:
       org.opencontainers.image.authors: "Alice P. Programmer"
       org.opencontainers.image.vendor: "ACME Widgets & Trinkets Inc."
       org.opencontainers.image.licenses: MIT
+
+bom-child:
+  from:
+    type: built
+    tag: bom-parent
+  bom:
+    generate: true
+    packages:
+    - name: pkg3
+      version: 1.0.0
+      license: Apache-2.0
+      paths: [/pkg3]
+  run: |
+    # our own custom packages
+    mkdir -p /pkg3
+    touch /pkg3/file
+  annotations:
+      org.opencontainers.image.authors: bom-test
+      org.opencontainers.image.vendor: bom-test
+      org.opencontainers.image.licenses: MIT
 EOF
     stacker build
     [ -f .stacker/artifacts/bom-parent/installed-packages.json ]
@@ -113,12 +133,22 @@ EOF
     [ -f .stacker/artifacts/bom-parent/inventory.json ]
     # sbom for this image
     [ -f .stacker/artifacts/bom-parent/bom-parent.json ]
-    if [ -nz "${REGISTRY_URL}" ]; then
-      stacker publish --skip-tls --url docker://localhost:8080/ --tag latest
-      refs=$(regctl artifact tree localhost:8080/bom-parent:latest --format "{{json .}}" | jq '.referrer | length')
-      [ $refs eq 2 ]
-      refs=$(regctl artifact tree localhost:8080/bom-parent:latest --filter-artifact-type "application/spdx+json" --format "{{json .}}" | jq '.SPDXID')
-      [ $refs eq "SPDXRef-DOCUMENT" ]
+    # a full inventory for this image
+    [ -f .stacker/artifacts/bom-child/inventory.json ]
+    # sbom for this image
+    [ -f .stacker/artifacts/bom-child/bom-child.json ]
+    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+      zot_setup
+      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
+      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --format "{{json .}}" | jq '.referrer | length')
+      [ $refs -eq 2 ]
+      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
+      [ $refs == \"SPDXRef-DOCUMENT\" ]
+      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-child:latest --format "{{json .}}" | jq '.referrer | length')
+      [ $refs -eq 2 ]
+      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-child:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
+      [ $refs == \"SPDXRef-DOCUMENT\" ]
+      zot_teardown
     fi
     stacker clean
 }

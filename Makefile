@@ -22,6 +22,14 @@ STACKER_BUILD_UBUNTU_IMAGE?=$(STACKER_DOCKER_BASE)ubuntu:latest
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-5.0
 
+# helper tools
+TOOLSDIR := $(shell pwd)/hack/tools
+REGCLIENT := $(TOOLSDIR)/bin/regctl
+REGCLIENT_VERSION := v0.5.1
+# OCI registry
+ZOT := $(TOOLSDIR)/bin/zot
+ZOT_VERSION := 2.0.0-rc6
+
 STAGE1_STACKER ?= ./stacker-dynamic
 
 STACKER_DEPS = $(GO_SRC) go.mod go.sum
@@ -58,13 +66,23 @@ lint: cmd/stacker/lxc-wrapper/lxc-wrapper $(GO_SRC)
 	go test -v -trimpath -cover -coverpkg stackerbuild.io/stacker/./... -coverprofile=coverage.txt -covermode=atomic -tags "$(BUILD_TAGS)" stackerbuild.io/stacker/./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 
+$(REGCLIENT):
+	mkdir -p $(TOOLSDIR)/bin
+	curl -Lo $(REGCLIENT) https://github.com/regclient/regclient/releases/download/$(REGCLIENT_VERSION)/regctl-linux-amd64
+	chmod +x $(REGCLIENT)
+
+$(ZOT):
+	mkdir -p $(TOOLSDIR)/bin
+	curl -Lo $(ZOT) https://github.com/project-zot/zot/releases/download/v$(ZOT_VERSION)/zot-linux-amd64-minimal
+	chmod +x $(ZOT)
+
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
 
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
-check: stacker lint
+check: stacker lint $(REGCLIENT) $(ZOT)
 	sudo -E PATH="$$PATH" \
 		LXC_BRANCH=$(LXC_BRANCH) \
 		LXC_CLONE_URL=$(LXC_CLONE_URL) \
