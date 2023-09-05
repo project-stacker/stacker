@@ -12,23 +12,25 @@ jobs:
   slow-tests:
     name: "slow tests"
     runs-on: ubuntu-20.04
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    strategy:
+      matrix:
+        go-version: ["1.20"]
     steps:
-      - uses: actions/cache@v3
-        id: restore-build
+      - uses: actions/checkout@v3
+      - name: Set up golang ${{ matrix.go-version }}
+        uses: actions/setup-go@v3
         with:
-          path: stacker
-          key: ${{ github.sha }}
-      - name: zot registry
-        env:
-          ZOT_HOST: localhost
-          ZOT_PORT: 5000
-        run: |
-          # start a zot instance (minimal)
-          podman run -d -p ${ZOT_PORT}:${ZOT_PORT} ghcr.io/project-zot/zot-minimal-linux-amd64:latest
-          # check if reachable
-          while true; do x=0; curl -f http://${REGISTRY_URL}/v2/ || x=1; if [ $x -eq 0 ]; then break; fi; sleep 1; done
+          go-version: ${{ matrix.go-version }}
       - name: test
         env:
           SLOW_TEST: true
+          REGISTRY_URL: localhost:5000
+          ZOT_HOST: localhost
+          ZOT_PORT: 8080
         run: |
           make check
