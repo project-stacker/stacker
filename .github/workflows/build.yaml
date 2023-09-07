@@ -2,18 +2,31 @@ name: Reusable stacker build
 on:
   workflow_call:
     inputs:
+      # note >-, args needs to be strings to be used as inputs
+      # for the reusable build.yaml workflow
       go-version:
-        required: true
+        required: false
         type: string
         description: 'Stringified JSON object listing go versions'
+        default: >-
+          ["1.20.x"]
       privilege-level:
-        required: true
+        required: false
         type: string
         description: 'Stringified JSON object listing stacker privilege-level'
+        default: >-
+          ["unpriv", "priv"]
       build-id:
-        required: true
+        required: false
         type: string
-        description: 'Stringified JSON object listing stacker build-id'
+        description: 'build-id'
+        default: "${{ github.sha }}"
+      slow-test:
+        required: false
+        type: boolean
+        description: 'Should slow tests be run?'
+        default: true
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -26,7 +39,6 @@ jobs:
       matrix:
         go-version: ${{fromJson(inputs.go-version)}}
         privilege-level: ${{fromJson(inputs.privilege-level)}}
-        build-id: ${{fromJson(inputs.build-id)}}
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v3
@@ -42,6 +54,7 @@ jobs:
           echo "GOPATH=$gopath" >> $GITHUB_ENV
           echo "GOCACHE=$gopath/gocache" >> $GITHUB_ENV
           echo "PATH=$gopath/bin:$PATH" >> $GITHUB_ENV
+          echo "SLOW_TEST=${{inputs.slow-test}}" >> $GITHUB_ENV
 
           echo "PWD=$PWD"
           cat "$GITHUB_ENV"
@@ -60,17 +73,17 @@ jobs:
       - name: Build-level1
         run: |
           make show-info
-          make stacker-dynamic VERSION_FULL=${{ matrix.build-id }}
+          make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}
       - name: Build
         run: |
-          make stacker VERSION_FULL=${{ matrix.build-id }}
+          make stacker VERSION_FULL=${{ inputs.build-id }}
         env:
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
       - name: Test
         run: |
-          make check VERSION_FULL=${{ matrix.build-id }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
+          make check VERSION_FULL=${{ inputs.build-id }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
@@ -81,4 +94,4 @@ jobs:
         id: restore-build
         with:
           path: stacker
-          key: ${{ matrix.build-id }}
+          key: ${{ inputs.build-id }}
