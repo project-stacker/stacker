@@ -82,7 +82,10 @@ PRIVILEGE_LEVEL?=
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
-check: stacker lint $(REGCLIENT) $(ZOT)
+check: lint test
+
+.PHONY: test
+test: stacker $(REGCLIENT) $(ZOT)
 	sudo -E PATH="$$PATH" \
 		LXC_BRANCH=$(LXC_BRANCH) \
 		LXC_CLONE_URL=$(LXC_CLONE_URL) \
