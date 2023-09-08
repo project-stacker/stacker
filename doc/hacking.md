@@ -1,3 +1,50 @@
+## Building
+Stacker builds in a two step process where it builds a dynamically linked stacker
+on the local system and then uses that stacker to build a statically linked
+stacker with 'build.yaml'.
+
+The Makefile supports setting some variables for quicker development.
+
+ * You can skip the initial (stage1) dynamic build of stacker by providing
+   the make system with a STAGE1_STACKER value.  If you had a downloaded stacker
+   in /usr/local/bin, then you could use it with:
+
+       make STAGE1_STACKER=/usr/local/bin/stacker
+
+   Doing so will both speed up the build process and remove the need for several
+   host-installed libraries and dependencies that are needed to build.
+
+ * Build and test currently requires access to 3 images. By default they are pulled
+   from docker.io via 'docker://image'.  To remove the network dependency on docker.io
+   or just to speed up iterative development, you can copy these images to a local
+   oci repository or local zot repository and point the Make system at that.
+
+       $ OCI_D=/tmp/my.oci
+       $ for d in alpine:edge centos:latest ubuntu:latest; do
+           skopeo copy docker://$d oci:$OCI_D:$d; done
+
+   And then invoke make like:
+
+       make STACKER_DOCKER_BASE="oci:$OCI_D:"
+
+   I have a nightly sync job that copies these to a local zot repo and then I can build with:
+
+       make STACKER_DOCKER_BASE="docker://local-zot:5000/docker-sync"
+
+ * Running test
+
+   Test can be run with a simple 'make test', and will respect the STACKER_DOCKER_BASE value
+   set above.
+
+   You can limit the tests run by specifying a TEST name during make invocation.
+   To run all the tests in the file `test/binds.bat`, and use your local image repository:
+
+       make test TEST=dir-whiteout STACKER_DOCKER_BASE=oci:$OCI_D:
+
+   By default, test will run both priviledged (priv) and unprivileged (unpriv) tests.
+
+       make test PRIVILEGE_LEVEL=unpriv 
+
 ## Hacking stacker
 
 The first step to trying to find a bug in stacker is to run it with --debug.
