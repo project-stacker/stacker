@@ -42,6 +42,8 @@ jobs:
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v3
+      - name: Clean disk space
+        uses: ./.github/actions/clean-runner
       - uses: benjlevesque/short-sha@v2.1
         id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
@@ -70,6 +72,8 @@ jobs:
       - name: Go-download
         run: |
           make go-download
+      - name: Show disk usage before building the binaries
+        uses: ./.github/actions/show-disk-usage
       - name: Build-level1
         run: |
           make show-info
@@ -81,6 +85,9 @@ jobs:
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
+      - name: Show disk usage before running the tests
+        if: always()
+        uses: ./.github/actions/show-disk-usage
       - name: Test
         run: |
           make check VERSION_FULL=${{ inputs.build-id }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
@@ -88,6 +95,9 @@ jobs:
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
+      - name: Show disk usage after running the tests
+        if: always()
+        uses: ./.github/actions/show-disk-usage
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
       - uses: actions/cache@v3
