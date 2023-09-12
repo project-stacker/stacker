@@ -50,7 +50,7 @@ func canMountOverlay() error {
 		return errors.Wrapf(err, "couldn't create overlay mountpoint dir")
 	}
 
-	opts := fmt.Sprintf("lowerdir=%s:%s", lower1, lower2)
+	opts := fmt.Sprintf("userxattr,lowerdir=%s:%s", lower1, lower2)
 	err = unix.Mount("overlay", mountpoint, "overlay", 0, opts)
 	defer unix.Unmount(mountpoint, 0)
 	if err != nil {
