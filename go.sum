@@ -704,8 +704,6 @@ github.com/opencontainers/runtime-spec v1.1.0-rc.1/go.mod h1:jwyrGlmzljRJv/Fgzds
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
 github.com/opencontainers/selinux v1.11.0 h1:+5Zbo97w3Lbmb3PeqQtpmTkMwsW5nRI3YaLpt7tQ7oU=
 github.com/opencontainers/selinux v1.11.0/go.mod h1:E5dMC3VPuVvVHDYmi78qvhJp8+M586T4DlDRYpFkyec=
-github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749 h1:EECxchxtKj3Xb7sl9bS/mZp7FtnF6riC9XDEBO6XXrM=
-github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749/go.mod h1:+wlU3qzSMNKO4Wq18nhiFzDG/DMRr0/FkL+yrRMj5XM=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
 github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170 h1:DiLBVp4DAcZlBVBEtJpNWZpZVq0AEeCY7Hqk8URVs4o=
 github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170/go.mod h1:uQd4a7Rh3ZsVg5j0lNyAfyxIeGde9yrlhjF78GzeW0c=
@@ -739,6 +737,8 @@ github.com/proglottis/gpgme v0.1.3 h1:Crxx0oz4LKB3QXc5Ea0J19K/3ICfy3ftr5exgUK1AU
 github.com/proglottis/gpgme v0.1.3/go.mod h1:fPbW/EZ0LvwQtH8Hy7eixhp1eF3G39dtx7GUN+0Gmy0=
 github.com/project-stacker/stacker-bom v0.0.0-20230522080732-de2712897250 h1:5gSyDxGXisvvu+aMUq7WRxgq3phvdy9/1CM/TqUHLVQ=
 github.com/project-stacker/stacker-bom v0.0.0-20230522080732-de2712897250/go.mod h1:P0o0hINRm/kcAB0CRf/W9RMLBWWb2EzzhPysXipj3Cg=
+github.com/project-stacker/umoci v0.0.0-20230913180343-4d41477ef0ba h1:rbHvoVz5yf/DaJ4fnlrtWghuDfLzX/ZpxGVOyQavWHI=
+github.com/project-stacker/umoci v0.0.0-20230913180343-4d41477ef0ba/go.mod h1:+wlU3qzSMNKO4Wq18nhiFzDG/DMRr0/FkL+yrRMj5XM=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v1.0.0/go.mod h1:db9x61etRT2tGnBNRi70OPL5FsnadC4Ky3P0J6CfImo=
 github.com/prometheus/client_golang v1.4.0/go.mod h1:e9GMxYsXl05ICDXkRhurwBS4Q3OK1iX/F2sw+iXX5zU=
