@@ -41,6 +41,12 @@ jobs:
         privilege-level: ${{fromJson(inputs.privilege-level)}}
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
       - uses: actions/checkout@v3
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
