@@ -234,3 +234,5 @@ require (
 )
 
 replace stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20230522080732-de2712897250
+
+replace github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20230913180343-4d41477ef0ba
