@@ -14,6 +14,8 @@ import (
 	"github.com/anmitsu/go-shlex"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+
+	"stackerbuild.io/stacker/pkg/lib"
 )
 
 const (
@@ -486,100 +488,83 @@ func requireImportHash(imports Imports) error {
 	return nil
 }
 
+// getImportFromInterface -
+//
+//	 an Import (an entry in 'imports'), can be written in yaml as either a string or a map[string]:
+//	  imports:
+//	   - /path/to-file
+//	   - path: /path/f2
+//	This function gets a single entry in that list and returns the Import.
 func getImportFromInterface(v interface{}) (Import, error) {
-	var hash, dest string
-	var mode *fs.FileMode
-	uid := -1
-	gid := -1
+	mode := -1
+	ret := Import{Mode: nil, Uid: lib.UidEmpty, Gid: lib.GidEmpty}
 
-	m, ok := v.(map[interface{}]interface{})
-	if ok {
-		// check for nil hash so that we won't end up with "nil" string values
-		if m["hash"] == nil {
-			hash = ""
-		} else {
-			hash = fmt.Sprintf("%v", m["hash"])
-		}
-
-		if m["dest"] != nil {
-			if !filepath.IsAbs(m["dest"].(string)) {
-				return Import{}, errors.Errorf("Dest path cannot be relative for: %#v", v)
-			}
-
-			dest = fmt.Sprintf("%s", m["dest"])
-		} else {
-			dest = ""
-		}
-
-		if m["mode"] != nil {
-			val := fs.FileMode(m["mode"].(int))
-			mode = &val
-		}
-
-		if _, ok := m["uid"]; ok {
-			uid = m["uid"].(int)
-			if uid < 0 {
-				return Import{}, errors.Errorf("Uid cannot be negative: %v", uid)
-			}
-		}
-
-		if _, ok := m["gid"]; ok {
-			gid = m["gid"].(int)
-			if gid < 0 {
-				return Import{}, errors.Errorf("Gid cannot be negative: %v", gid)
-			}
-		}
-
-		return Import{Hash: hash, Path: fmt.Sprintf("%v", m["path"]), Dest: dest, Mode: mode, Uid: uid, Gid: gid}, nil
-	}
-
-	m2, ok := v.(map[string]interface{})
-	if ok {
-		// check for nil hash so that we won't end up with "nil" string values
-		if m2["hash"] == nil {
-			hash = ""
-		} else {
-			hash = fmt.Sprintf("%v", m2["hash"])
-		}
-
-		if m2["dest"] != nil {
-			if !filepath.IsAbs(m2["dest"].(string)) {
-				return Import{}, errors.Errorf("Dest path cannot be relative for: %#v", v)
-			}
-
-			dest = fmt.Sprintf("%s", m["dest"])
-		} else {
-			dest = ""
-		}
-
-		if m2["mode"] != nil {
-			val := fs.FileMode(m2["mode"].(int))
-			mode = &val
-		}
-
-		if _, ok := m2["uid"]; ok {
-			uid = m2["uid"].(int)
-			if uid < 0 {
-				return Import{}, errors.Errorf("Uid cannot be negative: %v", uid)
-			}
-		}
-
-		if _, ok := m2["gid"]; ok {
-			gid = m2["gid"].(int)
-			if gid < 0 {
-				return Import{}, errors.Errorf("Gid cannot be negative: %v", gid)
-			}
-		}
-
-		return Import{Hash: hash, Path: fmt.Sprintf("%v", m2["path"]), Dest: dest, Mode: mode, Uid: uid, Gid: gid}, nil
-	}
-
-	// if it's not a map then it's a string
+	// if it is a simple string, that is the path
 	s, ok := v.(string)
 	if ok {
-		return Import{Hash: "", Path: fmt.Sprintf("%v", s), Dest: "", Uid: uid, Gid: gid}, nil
+		ret.Path = s
+		return ret, nil
 	}
-	return Import{}, errors.Errorf("Didn't find a matching type for: %#v", v)
+
+	m, ok := v.(map[interface{}]interface{})
+	if !ok {
+		return Import{}, errors.Errorf("could not read imports entry: %#v", v)
+	}
+
+	for k := range m {
+		if _, ok := k.(string); !ok {
+			return Import{}, errors.Errorf("key '%s' in import is not a string: %#v", k, v)
+		}
+	}
+
+	// if present, these must have string values.
+	for name, dest := range map[string]*string{"hash": &ret.Hash, "path": &ret.Path, "dest": &ret.Dest} {
+		val, found := m[name]
+		if !found {
+			continue
+		}
+		s, ok := val.(string)
+		if !ok {
+			return Import{}, errors.Errorf("value for '%s' in import is not a string: %#v", name, v)
+		}
+		*dest = s
+	}
+
+	// if present, these must have int values
+	for name, dest := range map[string]*int{"mode": &mode, "uid": &ret.Uid, "gid": &ret.Gid} {
+		val, found := m[name]
+		if !found {
+			continue
+		}
+		i, ok := val.(int)
+		if !ok {
+			return Import{}, errors.Errorf("value for '%s' in import is not an integer: %#v", name, v)
+		}
+		*dest = i
+	}
+
+	if ret.Path == "" {
+		return ret, errors.Errorf("No 'path' entry found in import: %#v", v)
+	}
+
+	if ret.Dest != "" && !filepath.IsAbs(ret.Dest) {
+		return Import{}, errors.Errorf("'dest' path cannot be relative for: %#v", v)
+	}
+
+	if mode != -1 {
+		m := fs.FileMode(mode)
+		ret.Mode = &m
+	}
+
+	// Empty values are -1
+	if ret.Uid != lib.UidEmpty && ret.Uid < 0 {
+		return Import{}, errors.Errorf("'uid' (%d) cannot be negative: %v", ret.Uid, v)
+	}
+	if ret.Gid != lib.GidEmpty && ret.Gid < 0 {
+		return Import{}, errors.Errorf("'gid' (%d) cannot be negative: %v", ret.Gid, v)
+	}
+
+	return ret, nil
 }
 
 // Custom UnmarshalYAML from string/map/slice of strings/slice of maps into Imports
@@ -590,26 +575,22 @@ func (im *Imports) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	imports, ok := data.([]interface{})
-	if ok {
-		// imports are a list of either strings or maps
-		for _, v := range imports {
-			imp, err := getImportFromInterface(v)
-			if err != nil {
-				return err
-			}
-			*im = append(*im, imp)
+	if !ok {
+		// "import: /path/to/file" is also supported (single import)
+		imp, ok := data.(string)
+		if !ok {
+			return errors.Errorf("'imports' expected an array, found %s: %#v", reflect.TypeOf(data), data)
 		}
-	} else {
-		if data != nil {
-			// import are either string or map
-			imp, err := getImportFromInterface(data)
-			if err != nil {
-				return err
-			}
-			*im = append(*im, imp)
-		}
+		imports = []interface{}{imp}
 	}
-
+	// imports are a list of either strings or maps
+	for _, v := range imports {
+		imp, err := getImportFromInterface(v)
+		if err != nil {
+			return err
+		}
+		*im = append(*im, imp)
+	}
 	return nil
 }
 

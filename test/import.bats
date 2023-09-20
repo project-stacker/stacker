@@ -97,8 +97,8 @@ second:
         type: built
         tag: first
     import:
-        path: stacker://first/test_file
-        hash: $test_file_sha
+        - path: stacker://first/test_file
+          hash: $test_file_sha
     run: |
         [ -f /stacker/imports/test_file ]
 EOF
@@ -156,8 +156,8 @@ second:
         type: built
         tag: first
     import:
-        path: stacker://first/test_file
-        hash: $test_file_sha_upper
+        - path: stacker://first/test_file
+          hash: $test_file_sha_upper
     run: |
         [ -f /stacker/imports/test_file ]
 EOF
@@ -322,29 +322,29 @@ second:
         type: built
         tag: first
     import:
-        path: stacker://first/test_file
-        perms: 0777
-        hash: $test_file_sha
+        - path: stacker://first/test_file
+          perms: 0777
+          hash: $test_file_sha
     run: |
         [ -f /stacker/imports/test_file ]
 third:
     from:
         type: scratch
     import:
-        path: stacker://first/test_file
-        mode: 0777
-        hash: $test_file_sha
-        dest: /
+        - path: stacker://first/test_file
+          mode: 0777
+          hash: $test_file_sha
+          dest: /
 fourth:
     from:
         type: scratch
     import:
-        path: test_file
-        hash: $test_file_sha
-        mode: 0777
-        uid: 1000
-        gid: 1000
-        dest: /usr/bin
+        - path: test_file
+          hash: $test_file_sha
+          mode: 0777
+          uid: 1000
+          gid: 1000
+          dest: /usr/bin
 fifth:
   from:
     type: scratch
