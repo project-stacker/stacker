@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const GidEmpty, UidEmpty = -1, -1
+
 func FileCopy(dest string, source string, mode *fs.FileMode, uid, gid int) error {
 	os.RemoveAll(dest)
 
@@ -69,6 +71,10 @@ func FileCopy(dest string, source string, mode *fs.FileMode, uid, gid int) error
 
 	_, err = io.Copy(d, s)
 	return err
+}
+
+func FileCopyNoPerms(dest string, source string) error {
+	return FileCopy(dest, source, nil, UidEmpty, GidEmpty)
 }
 
 // FindFiles searches for paths matching a particular regex under a given folder
