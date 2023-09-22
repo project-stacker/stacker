@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,9 +26,6 @@ var (
 	version     = ""
 	lxc_version = ""
 )
-
-//go:embed lxc-wrapper/lxc-wrapper
-var embeddedFS embed.FS
 
 func shouldShowProgress(ctx *cli.Context) bool {
 	/* if the user provided explicit recommendations, follow those */
@@ -84,6 +80,9 @@ func shouldSkipInternalUserns(ctx *cli.Context) bool {
 }
 
 func main() {
+	if !hasEmbedded {
+		panic("stacker was built without embedded binaries.")
+	}
 	sigquits := make(chan os.Signal, 1)
 	go func() {
 		for range sigquits {

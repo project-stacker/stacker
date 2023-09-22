@@ -65,9 +65,9 @@ jobs:
           sudo add-apt-repository -y ppa:project-machine/squashfuse
           sudo apt-get update
           sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
-          GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
           sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin squashfuse
+          GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
+          make download-tools
           echo "running kernel is: $(uname -a)"
       - name: Go-download
         run: |

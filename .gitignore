@@ -3,6 +3,8 @@
 /stacker
 /stacker-dynamic
 .build
+coverage.txt
+hack/
 
 # IDEs
 .vscode
