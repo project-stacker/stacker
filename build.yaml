@@ -82,6 +82,7 @@ build:
     tag: build-env
   binds:
     - . -> /stacker-tree
+    - ${{BUILD_D}} -> /build
   run: |
     #!/bin/sh -ex
     # golang wants somewhere to put its garbage
@@ -90,6 +91,6 @@ build:
     export VERSION_FULL=${{VERSION_FULL}}
 
     cd /stacker-tree
-    make show-info
-    make -C cmd/stacker/lxc-wrapper clean
-    make stacker-static
+    make BUILD_D=/build show-info
+    make BUILD_D=/build -C cmd/stacker/lxc-wrapper clean
+    make BUILD_D=/build stacker-static

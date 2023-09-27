@@ -1,7 +1,7 @@
 TOP_LEVEL := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 BUILD_D = $(TOP_LEVEL)/.build
-export GOPATH = $(BUILD_D)/gopath
-export GOCACHE = $(GOPATH)/gocache
+export GOPATH ?= $(BUILD_D)/gopath
+export GOCACHE ?= $(GOPATH)/gocache
 
 GO_SRC=$(shell find pkg cmd -name \*.go)
 VERSION?=$(shell git describe --tags || git rev-parse HEAD)
@@ -44,7 +44,8 @@ STACKER_DEPS = $(GO_SRC) go.mod go.sum
 
 stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
 	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
-		-f build.yaml --shell-fail \
+		-f build.yaml \
+		--substitute BUILD_D=$(BUILD_D) \
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
