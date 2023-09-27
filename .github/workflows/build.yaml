@@ -185,6 +185,7 @@ jobs:
             make go-download
             make show-info
             make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}
+            export QEMU_STRACE=1
             make stacker VERSION_FULL=${{ inputs.build-id }} STACKER_BUILD_BASE_IMAGE=${{ env.BASE_IMAGE }}
             EOF
       - name: Get the output
