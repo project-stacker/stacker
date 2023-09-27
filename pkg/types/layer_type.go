@@ -15,6 +15,13 @@ type LayerType struct {
 	Verity squashfs.VerityMetadata
 }
 
+func (lt LayerType) String() string {
+	if lt.Verity {
+		return fmt.Sprintf(lt.Type + "+verity")
+	}
+	return lt.Type
+}
+
 func (lt LayerType) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("%s+%v", lt.Type, lt.Verity)), nil
 }

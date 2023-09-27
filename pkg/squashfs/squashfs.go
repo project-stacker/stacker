@@ -18,13 +18,17 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	"stackerbuild.io/stacker/pkg/log"
+	"stackerbuild.io/stacker/pkg/mount"
 )
 
 var checkZstdSupported sync.Once
 var zstdIsSuspported bool
 
-var tryKernelMountSquash bool = true
-var kernelSquashMountFailed error = errors.New("kernel squash mount failed")
+var exPolInfo struct {
+	once   sync.Once
+	err    error
+	policy *ExtractPolicy
+}
 
 // ExcludePaths represents a list of paths to exclude in a squashfs listing.
 // Users should do something like filepath.Walk() over the whole filesystem,
@@ -168,52 +172,30 @@ func MakeSquashfs(tempdir string, rootfs string, eps *ExcludePaths, verity Verit
 	return blob, GenerateSquashfsMediaType(compression, verity), rootHash, nil
 }
 
-// maybeKernelSquashMount - try to mount squashfile with kernel mount
-//
-//	if global tryKernelMountSquash is false, do not try
-//	if environment variable STACKER_ALLOW_SQUASHFS_KERNEL_MOUNTS is "false", do not try.
-//	try.  If it fails, log message and set tryKernelMountSquash=false.
-func maybeKernelSquashMount(squashFile, extractDir string) (bool, error) {
-	if !tryKernelMountSquash {
+func isMountedAtDir(src, dest string) (bool, error) {
+	dstat, err := os.Stat(dest)
+	if os.IsNotExist(err) {
 		return false, nil
 	}
-
-	const strTrue, strFalse = "true", "false"
-	const envName = "STACKER_ALLOW_SQUASHFS_KERNEL_MOUNTS"
-	envVal := os.Getenv(envName)
-	if envVal == strFalse {
-		log.Debugf("Not trying kernel mounts per %s=%s", envName, envVal)
-		tryKernelMountSquash = false
+	if !dstat.IsDir() {
 		return false, nil
-	} else if envVal != strTrue && envVal != "" {
-		return false, errors.Errorf("%s must be '%s' or '%s', found '%s'", envName, strTrue, strFalse, envVal)
+	}
+	mounts, err := mount.ParseMounts("/proc/self/mountinfo")
+	if err != nil {
+		return false, err
 	}
 
-	ecmd := []string{"mount", "-tsquashfs", "-oloop,ro", squashFile, extractDir}
-	var output bytes.Buffer
-	cmd := exec.Command(ecmd[0], ecmd[1:]...)
-	cmd.Stdin = nil
-	cmd.Stdout = &output
-	cmd.Stderr = cmd.Stdout
-	err := cmd.Run()
-	if err == nil {
-		return true, nil
+	fdest, err := filepath.Abs(dest)
+	if err != nil {
+		return false, err
 	}
-	exitError, ok := err.(*exec.ExitError)
-	if !ok {
-		tryKernelMountSquash = false
-		return false, errors.Errorf("Unexpected error (no-rc), in exec (%v): %v", ecmd, err)
+	for _, m := range mounts {
+		if m.Target == fdest {
+			return true, nil
+		}
 	}
 
-	status, ok := exitError.Sys().(syscall.WaitStatus)
-	if !ok {
-		tryKernelMountSquash = false
-		return false, errors.Errorf("Unexpected error (no-status) in exec (%v): %v", ecmd, err)
-	}
-
-	// we can't really tell why the mount failed. mount(8) does not give a lot specific rc exits.
-	log.Debugf("maybeKernelSquashMount(%s) exited %d: %s", squashFile, status.ExitStatus(), strings.TrimRight(output.String(), "\n"))
-	return false, kernelSquashMountFailed
+	return false, nil
 }
 
 func findSquashfusePath() string {
@@ -300,36 +282,295 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func ExtractSingleSquash(squashFile string, extractDir string) error {
+type ExtractPolicy struct {
+	Extractors  []SquashExtractor
+	Extractor   SquashExtractor
+	Excuses     map[string]error
+	initialized bool
+	mutex       sync.Mutex
+}
+
+type SquashExtractor interface {
+	Name() string
+	IsAvailable() error
+	// Mount - Mount or extract path to dest.
+	//   Return nil on "already extracted"
+	//   Return error on failure.
+	Mount(path, dest string) error
+}
+
+func NewExtractPolicy(args ...string) (*ExtractPolicy, error) {
+	p := &ExtractPolicy{
+		Extractors: []SquashExtractor{},
+		Excuses:    map[string]error{},
+	}
+
+	allEx := []SquashExtractor{
+		&KernelExtractor{},
+		&SquashFuseExtractor{},
+		&UnsquashfsExtractor{},
+	}
+	byName := map[string]SquashExtractor{}
+	for _, i := range allEx {
+		byName[i.Name()] = i
+	}
+
+	for _, i := range args {
+		extractor, ok := byName[i]
+		if !ok {
+			return nil, errors.Errorf("Unknown extractor: '%s'", i)
+		}
+		excuse := extractor.IsAvailable()
+		if excuse != nil {
+			p.Excuses[i] = excuse
+			continue
+		}
+		p.Extractors = append(p.Extractors, extractor)
+	}
+	return p, nil
+}
+
+type UnsquashfsExtractor struct {
+	mutex sync.Mutex
+}
+
+func (k *UnsquashfsExtractor) Name() string {
+	return "unsquashfs"
+}
+
+func (k *UnsquashfsExtractor) IsAvailable() error {
+	if which("unsquashfs") == "" {
+		return errors.Errorf("no 'unsquashfs' in PATH")
+	}
+	return nil
+}
+
+func (k *UnsquashfsExtractor) Mount(squashFile, extractDir string) error {
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
+
+	// check if already extracted
+	empty, err := isEmptyDir(extractDir)
+	if err != nil {
+		return errors.Wrapf(err, "Error checking for empty dir")
+	}
+	if !empty {
+		return nil
+	}
+
+	log.Debugf("unsquashfs %s -> %s", squashFile, extractDir)
+	cmd := exec.Command("unsquashfs", "-f", "-d", extractDir, squashFile)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = nil
+	err = cmd.Run()
+
+	// on failure, remove the directory
+	if err != nil {
+		if rmErr := os.RemoveAll(extractDir); rmErr != nil {
+			log.Errorf("Failed to remove %s after failed extraction of %s: %v", extractDir, squashFile, rmErr)
+		}
+		return err
+	}
+
+	// assert that extraction must create files. This way we can assume non-empty dir above
+	// was populated by unsquashfs.
+	empty, err = isEmptyDir(extractDir)
+	if err != nil {
+		return errors.Errorf("Failed to read %s after successful extraction of %s: %v",
+			extractDir, squashFile, err)
+	}
+	if empty {
+		return errors.Errorf("%s was an empty fs image", squashFile)
+	}
+
+	return nil
+}
+
+type KernelExtractor struct {
+	mutex sync.Mutex
+}
+
+func (k *KernelExtractor) Name() string {
+	return "kmount"
+}
+
+func (k *KernelExtractor) IsAvailable() error {
+	if !amHostRoot() {
+		return errors.Errorf("not host root")
+	}
+	return nil
+}
+
+func (k *KernelExtractor) Mount(squashFile, extractDir string) error {
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
+
+	if mounted, err := isMountedAtDir(squashFile, extractDir); err != nil {
+		return err
+	} else if mounted {
+		return nil
+	}
+
+	ecmd := []string{"mount", "-tsquashfs", "-oloop,ro", squashFile, extractDir}
+	var output bytes.Buffer
+	cmd := exec.Command(ecmd[0], ecmd[1:]...)
+	cmd.Stdin = nil
+	cmd.Stdout = &output
+	cmd.Stderr = cmd.Stdout
+	err := cmd.Run()
+	if err == nil {
+		return nil
+	}
+
+	var retErr error
+
+	exitError, ok := err.(*exec.ExitError)
+	if !ok {
+		retErr = errors.Errorf("kmount(%s) had unexpected error (no-rc), in exec (%v): %v",
+			squashFile, ecmd, err)
+	} else if status, ok := exitError.Sys().(syscall.WaitStatus); !ok {
+		retErr = errors.Errorf("kmount(%s) had unexpected error (no-status), in exec (%v): %v",
+			squashFile, ecmd, err)
+	} else {
+		retErr = errors.Errorf("kmount(%s) exited %d: %v", squashFile, status.ExitStatus(), output.String())
+	}
+
+	return retErr
+}
+
+type SquashFuseExtractor struct {
+	mutex sync.Mutex
+}
+
+func (k *SquashFuseExtractor) Name() string {
+	return "squashfuse"
+}
+
+func (k *SquashFuseExtractor) IsAvailable() error {
+	if findSquashfusePath() == "" {
+		return errors.Errorf("no 'squashfuse' in PATH")
+	}
+	return nil
+}
+
+func (k *SquashFuseExtractor) Mount(squashFile, extractDir string) error {
+	k.mutex.Lock()
+	defer k.mutex.Unlock()
+
+	if mounted, err := isMountedAtDir(squashFile, extractDir); mounted && err == nil {
+		log.Debugf("[%s] %s already mounted -> %s", k.Name(), squashFile, extractDir)
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	cmd, err := squashFuse(squashFile, extractDir)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("squashFuse mounted (%d) %s -> %s", cmd.Process.Pid, squashFile, extractDir)
+	if err := cmd.Process.Release(); err != nil {
+		return errors.Errorf("Failed to release process %s: %v", cmd, err)
+	}
+	return nil
+}
+
+// ExtractSingleSquashPolicy - extract squashfile to extractDir
+func ExtractSingleSquashPolicy(squashFile, extractDir string, policy *ExtractPolicy) error {
+	const initName = "init"
+	if policy == nil {
+		return errors.Errorf("policy cannot be nil")
+	}
+
+	// avoid taking a lock if already initialized (possibly premature optimization)
+	if !policy.initialized {
+		policy.mutex.Lock()
+		// We may have been waiting on the initializer. If so, then the policy will now be initialized.
+		// if not, then we are the initializer.
+		if !policy.initialized {
+			defer policy.mutex.Unlock()
+			defer func() {
+				policy.initialized = true
+			}()
+		} else {
+			policy.mutex.Unlock()
+		}
+	}
+
 	err := os.MkdirAll(extractDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	if mounted, err := maybeKernelSquashMount(squashFile, extractDir); err == nil && mounted {
-		return nil
-	} else if err != kernelSquashMountFailed {
+	fdest, err := filepath.Abs(extractDir)
+	if err != nil {
 		return err
 	}
 
-	cmd, err := squashFuse(squashFile, extractDir)
-	if err == nil {
-		if err := cmd.Process.Release(); err != nil {
-			return errors.Errorf("Failed to release process %s: %v", cmd, err)
+	if policy.initialized {
+		if err, ok := policy.Excuses[initName]; ok {
+			return err
 		}
-		return nil
-	} else if err != squashNotFound {
-		return err
+		return policy.Extractor.Mount(squashFile, fdest)
 	}
-	if p := which("unsquashfs"); p != "" {
-		log.Debugf("Extracting %s -> %s with unsquashfs -f -d %s %s", extractDir, squashFile, extractDir, squashFile)
-		cmd := exec.Command("unsquashfs", "-f", "-d", extractDir, squashFile)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = nil
-		return cmd.Run()
+
+	// At this point we are the initialzer
+	if policy.Excuses == nil {
+		policy.Excuses = map[string]error{}
 	}
-	return errors.Errorf("Unable to extract squash archive %s", squashFile)
+
+	if policy.Extractors == nil || len(policy.Extractors) == 0 {
+		policy.Excuses[initName] = errors.Errorf("policy had no extractors")
+		return policy.Excuses[initName]
+	}
+
+	var extractor SquashExtractor
+	allExcuses := []string{}
+	for _, extractor = range policy.Extractors {
+		err = extractor.Mount(squashFile, fdest)
+		if err == nil {
+			policy.Extractor = extractor
+			log.Debugf("Selected squashfs extractor %s", extractor.Name())
+			return nil
+		}
+		policy.Excuses[extractor.Name()] = err
+	}
+
+	for n, exc := range policy.Excuses {
+		allExcuses = append(allExcuses, fmt.Sprintf("%s: %v", n, exc))
+	}
+
+	// nothing worked. populate Excuses[initName]
+	policy.Excuses[initName] = errors.Errorf("No suitable extractor found:\n  " + strings.Join(allExcuses, "\n  "))
+	return policy.Excuses[initName]
+}
+
+// ExtractSingleSquash - extract the squashFile to extractDir
+// Initialize a extractPolicy struct and then call ExtractSingleSquashPolicy
+// wik()th that.
+func ExtractSingleSquash(squashFile string, extractDir string) error {
+	exPolInfo.once.Do(func() {
+		const envName = "STACKER_SQUASHFS_EXTRACT_POLICY"
+		const defPolicy = "kmount squashfuse unsquashfs"
+		val := os.Getenv(envName)
+		if val == "" {
+			val = defPolicy
+		}
+		exPolInfo.policy, exPolInfo.err = NewExtractPolicy(strings.Fields(val)...)
+		if exPolInfo.err == nil {
+			for k, v := range exPolInfo.policy.Excuses {
+				log.Debugf(" squashfs extractor %s is not available: %v", k, v)
+			}
+		}
+	})
+
+	if exPolInfo.err != nil {
+		return exPolInfo.err
+	}
+
+	return ExtractSingleSquashPolicy(squashFile, extractDir, exPolInfo.policy)
 }
 
 func mksquashfsSupportsZstd() bool {
@@ -351,6 +592,19 @@ func mksquashfsSupportsZstd() bool {
 	})
 
 	return zstdIsSuspported
+}
+
+func isEmptyDir(path string) (bool, error) {
+	fh, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = fh.ReadDir(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }
 
 // which - like the unix utility, return empty string for not-found.
