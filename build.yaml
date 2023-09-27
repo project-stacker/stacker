@@ -81,7 +81,8 @@ build:
     type: built
     tag: build-env
   binds:
-    - . -> /stacker-tree
+    - source: .
+      dest: /stacker-tree
   run: |
     #!/bin/sh -ex
     # golang wants somewhere to put its garbage
