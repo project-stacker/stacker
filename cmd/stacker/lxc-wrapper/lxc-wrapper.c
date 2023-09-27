@@ -136,7 +136,7 @@ static int do_nsexec(char* mode, int argc, char *argv[], int *status)
 	pid_t pid;
 	int ret, cur, group_start = -1, command_start = -1;
 	char c = 'x', thepid[20];
-	static char child_stack[STACK_SIZE];
+	static char child_stack[STACK_SIZE] __attribute__ ((aligned (16)));
 	struct child_args args;
 
 	// userns - should a userns be used?
