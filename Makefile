@@ -31,7 +31,7 @@ REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
-ZOT_VERSION := 2.0.0-rc6
+ZOT_VERSION := v2.0.0-rc6
 
 GOLANGCI_LINT_VERSION = v1.54.2
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
@@ -94,7 +94,7 @@ $(REGCLIENT):
 	$(call dlbin,$@,https://github.com/regclient/regclient/releases/download/$(REGCLIENT_VERSION)/regctl-linux-amd64)
 
 $(ZOT):
-	$(call dlbin,$@,https://github.com/regclient/regclient/releases/download/$(REGCLIENT_VERSION)/regctl-linux-amd64)
+	$(call dlbin,$@,https://github.com/project-zot/zot/releases/download/$(ZOT_VERSION)/zot-linux-amd64-minimal)
 
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
