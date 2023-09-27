@@ -300,7 +300,7 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func ExtractSingleSquash(squashFile string, extractDir string, storageType string) error {
+func ExtractSingleSquash(squashFile string, extractDir string) error {
 	err := os.MkdirAll(extractDir, 0755)
 	if err != nil {
 		return err

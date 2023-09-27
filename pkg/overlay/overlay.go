@@ -14,8 +14,6 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
-	"stackerbuild.io/stacker/pkg/mount"
-	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
@@ -168,23 +166,10 @@ func (o *overlay) snapshot(source string, target string) error {
 	for _, m := range ovl.Manifests {
 		manifest = m
 	}
-	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+	ociDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
 	for _, layer := range manifest.Layers {
-		if !squashfs.IsSquashfsMediaType(layer.MediaType) {
-			continue
-		}
-		digest := layer.Digest
-		contents := overlayPath(o.config.RootFSDir, digest, "overlay")
-		mounted, err := mount.IsMountpoint(contents)
-		if err == nil && mounted {
-			// We have already mounted this atom
-			continue
-		}
-		if hasDirEntries(contents) {
-			// We have done an unsquashfs of this atom
-			continue
-		}
-		if err := unpackOne(cacheDir, contents, digest, true); err != nil {
+		err := unpackOne(layer, ociDir, overlayPath(o.config.RootFSDir, layer.Digest, "overlay"))
+		if err != nil {
 			return errors.Wrapf(err, "Failed mounting %#v", layer)
 		}
 	}

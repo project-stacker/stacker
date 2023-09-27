@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/klauspost/pgzip"
@@ -28,6 +29,8 @@ import (
 	"stackerbuild.io/stacker/pkg/storage"
 	"stackerbuild.io/stacker/pkg/types"
 )
+
+var tarEx sync.Mutex
 
 func safeOverlayName(d digest.Digest) string {
 	// dirs used in overlay lowerdir args can't have : in them, so lets
@@ -57,36 +60,19 @@ func (o *overlay) Unpack(tag, name string) error {
 
 	pool := NewThreadPool(runtime.NumCPU())
 
-	for _, layer := range manifest.Layers {
-		digest := layer.Digest
-		contents := overlayPath(o.config.RootFSDir, digest, "overlay")
-		if squashfs.IsSquashfsMediaType(layer.MediaType) {
-			// don't really need to do this in parallel, but what
-			// the hell.
-			pool.Add(func(ctx context.Context) error {
-				return unpackOne(cacheDir, contents, digest, true)
-			})
-		} else {
-			switch layer.MediaType {
-			case ispec.MediaTypeImageLayer:
-				fallthrough
-			case ispec.MediaTypeImageLayerGzip:
-				// don't extract things that have already been
-				// extracted
-				if _, err := os.Stat(contents); err == nil {
-					continue
-				}
-
-				// TODO: when the umoci API grows support for uid
-				// shifting, we can use the fancier features of context
-				// cancelling in the thread pool...
-				pool.Add(func(ctx context.Context) error {
-					return unpackOne(cacheDir, contents, digest, false)
-				})
-			default:
-				return errors.Errorf("unknown media type %s", layer.MediaType)
-			}
+	seen := map[digest.Digest]bool{}
+	for _, curLayer := range manifest.Layers {
+		// avoid calling unpackOne twice for the same digest
+		if seen[curLayer.Digest] {
+			continue
 		}
+		seen[curLayer.Digest] = true
+
+		// copy layer to avoid race on pool access.
+		l := curLayer
+		pool.Add(func(ctx context.Context) error {
+			return unpackOne(l, cacheDir, overlayPath(o.config.RootFSDir, l.Digest, "overlay"))
+		})
 	}
 
 	pool.DoneAddingJobs()
@@ -655,29 +641,57 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	return ovl.write(config, name)
 }
 
-func unpackOne(ociDir string, bundlePath string, digest digest.Digest, isSquashfs bool) error {
-	if isSquashfs {
+// unpackOne - unpack a single layer (Descriptor) found in ociDir to extractDir
+//
+//	The result of calling unpackOne is either error or the contents available
+//	at the provided extractDir.  The extractDir should be either empty or
+//	fully populated with this layer.
+func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
+	// population of a dir is not atomic, at least for tar extraction.
+	// As a result, we could hasDirEntries(extractDir) at the same time that
+	// something is un-populating that dir due to a failed extraction (like
+	// os.RemoveAll below).
+	// There needs to be a lock on the extract dir (scoped to the overlay storage backend).
+	// A sync.RWMutex would work well here since it is safe to check as long
+	// as no one is populating or unpopulating.
+	if hasDirEntries(extractDir) {
+		// the directory was already populated.
+		return nil
+	}
+
+	if squashfs.IsSquashfsMediaType(l.MediaType) {
 		return squashfs.ExtractSingleSquash(
-			path.Join(ociDir, "blobs", "sha256", digest.Encoded()),
-			bundlePath, "overlay")
+			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
 	}
+	switch l.MediaType {
+	case ispec.MediaTypeImageLayer, ispec.MediaTypeImageLayerGzip:
+		tarEx.Lock()
+		defer tarEx.Unlock()
 
-	oci, err := umoci.OpenLayout(ociDir)
-	if err != nil {
+		oci, err := umoci.OpenLayout(ociDir)
+		if err != nil {
+			return err
+		}
+		defer oci.Close()
+
+		compressed, err := oci.GetBlob(context.Background(), l.Digest)
+		if err != nil {
+			return err
+		}
+		defer compressed.Close()
+
+		uncompressed, err := pgzip.NewReader(compressed)
+		if err != nil {
+			return err
+		}
+
+		err = layer.UnpackLayer(extractDir, uncompressed, nil)
+		if err != nil {
+			if rmErr := os.RemoveAll(extractDir); rmErr != nil {
+				log.Errorf("Failed to remove dir '%s' after failed extraction: %v", extractDir, rmErr)
+			}
+		}
 		return err
 	}
-	defer oci.Close()
-
-	compressed, err := oci.GetBlob(context.Background(), digest)
-	if err != nil {
-		return err
-	}
-	defer compressed.Close()
-
-	uncompressed, err := pgzip.NewReader(compressed)
-	if err != nil {
-		return err
-	}
-
-	return layer.UnpackLayer(bundlePath, uncompressed, nil)
+	return errors.Errorf("unknown media type %s", l.MediaType)
 }
