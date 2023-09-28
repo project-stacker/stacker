@@ -186,7 +186,7 @@ jobs:
             make show-info
             make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}
             export QEMU_STRACE=1
-            make stacker VERSION_FULL=${{ inputs.build-id }} STACKER_BUILD_BASE_IMAGE=${{ env.BASE_IMAGE }}
+            make stacker STACKER_REAL_UID=0 VERSION_FULL=${{ inputs.build-id }} STACKER_BUILD_BASE_IMAGE=${{ env.BASE_IMAGE }}
             EOF
       - name: Get the output
         # Echo the `uname` output parameter from the `runcmd` step
