@@ -65,7 +65,7 @@ func DirCopy(dest string, source string) error {
 				return err
 			}
 		} else {
-			if err = FileCopy(dstfp, srcfp, nil, -1, -1); err != nil {
+			if err = FileCopyNoPerms(dstfp, srcfp); err != nil {
 				return err
 			}
 		}

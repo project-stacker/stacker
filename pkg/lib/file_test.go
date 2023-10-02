@@ -25,7 +25,7 @@ func TestFile(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer os.Remove(dest.Name())
 
-			err = lib.FileCopy(dest.Name(), src.Name(), nil, -1, -1)
+			err = lib.FileCopyNoPerms(dest.Name(), src.Name())
 			So(err, ShouldBeNil)
 		})
 
@@ -35,7 +35,7 @@ func TestFile(t *testing.T) {
 			defer os.Remove(dest.Name())
 
 			mode := fs.FileMode(0644)
-			err = lib.FileCopy(dest.Name(), src.Name(), &mode, -1, -1)
+			err = lib.FileCopy(dest.Name(), src.Name(), &mode, lib.UidEmpty, lib.GidEmpty)
 			So(err, ShouldBeNil)
 		})
 	})
