@@ -126,7 +126,11 @@ func importFile(imp string, cacheDir string, hash string, idest string, mode *fs
 
 	var dest string
 	if imp[len(imp)-1:] != "/" {
-		dest = path.Join(cacheDir, path.Base(imp))
+		if idest != "" && path.Base(imp) != path.Base(idest) {
+			dest = path.Join(cacheDir, path.Base(idest))
+		} else {
+			dest = path.Join(cacheDir, path.Base(imp))
+		}
 	} else {
 		dest = cacheDir
 	}
@@ -163,10 +167,18 @@ func importFile(imp string, cacheDir string, hash string, idest string, mode *fs
 		case mtree.Extra:
 			srcpath := path.Join(imp, d.Path())
 			var destpath string
-			if imp[len(imp)-1:] == "/" {
-				destpath = path.Join(cacheDir, d.Path())
+			if imp[len(imp)-1:] != "/" {
+				if idest != "" && path.Base(imp) != path.Base(idest) {
+					if idest[len(idest)-1:] != "/" {
+						destpath = path.Join(cacheDir, path.Base(idest), d.Path())
+					} else {
+						destpath = path.Join(cacheDir, path.Base(imp), d.Path())
+					}
+				} else {
+					destpath = path.Join(cacheDir, path.Base(imp), d.Path())
+				}
 			} else {
-				destpath = path.Join(cacheDir, path.Base(imp), d.Path())
+				destpath = path.Join(cacheDir, d.Path())
 			}
 
 			if d.New().IsDir() {
@@ -360,7 +372,7 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 
 			dest := i.Dest
 
-			if i.Dest[len(i.Dest)-1:] != "/" {
+			if i.Dest[len(i.Dest)-1:] != "/" && i.Path[len(i.Path)-1:] != "/" {
 				dest = path.Dir(i.Dest)
 			}
 
