@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -73,40 +72,6 @@ type Bom struct {
 	Packages []Package `yaml:"packages" json:"packages,omitempty"`
 }
 
-func validateDataAsBind(i interface{}) (map[interface{}]interface{}, error) {
-	bindMap, ok := i.(map[interface{}]interface{})
-	if !ok {
-		return nil, errors.Errorf("unable to cast into map[interface{}]interface{}: %T", i)
-	}
-
-	// validations
-	bindSource, ok := bindMap["Source"]
-	if !ok {
-		return nil, errors.Errorf("bind source missing: %v", i)
-	}
-
-	_, ok = bindSource.(string)
-	if !ok {
-		return nil, errors.Errorf("unknown bind source type, expected string: %T", i)
-	}
-
-	bindDest, ok := bindMap["Dest"]
-	if !ok {
-		return nil, errors.Errorf("bind dest missing: %v", i)
-	}
-
-	_, ok = bindDest.(string)
-	if !ok {
-		return nil, errors.Errorf("unknown bind dest type, expected string: %T", i)
-	}
-
-	if bindSource == "" || bindDest == "" {
-		return nil, errors.Errorf("empty source or dest: %v", i)
-	}
-
-	return bindMap, nil
-}
-
 func getStringOrStringSlice(data interface{}, xform func(string) ([]string, error)) ([]string, error) {
 	// The user didn't supply run: at all, so let's not do anything.
 	if data == nil {
@@ -125,14 +90,6 @@ func getStringOrStringSlice(data interface{}, xform func(string) ([]string, erro
 			switch v := i.(type) {
 			case string:
 				s = v
-			case interface{}:
-				bindMap, err := validateDataAsBind(i)
-				if err != nil {
-					return nil, err
-				}
-
-				// validations passed, return as string in form: source -> dest
-				s = fmt.Sprintf("%s -> %s", bindMap["Source"], bindMap["Dest"])
 			default:
 				return nil, errors.Errorf("unknown run array type: %T", i)
 			}
@@ -205,87 +162,77 @@ func (c *Command) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+type bindType struct {
+	Source string `yaml:"source" json:"source,omitempty"`
+	Dest   string `yaml:"dest" json:"dest,omitempty"`
+}
+
+// toBind - copy to Bind type and check.
+func (b *bindType) toBind(bs *Bind) error {
+	if b.Source == "" {
+		return errors.Errorf("unexpected 'bind': missing required field 'source': %#v", b)
+	}
+	bs.Source = b.Source
+	bs.Dest = b.Dest
+	if bs.Dest == "" {
+		bs.Dest = bs.Source
+	}
+	return nil
+}
+
+func (b *bindType) toBindFromString(bind *Bind, asStr string) error {
+	toks := strings.Fields(asStr)
+	if len(toks) == 1 {
+		bind.Source = toks[0]
+		bind.Dest = toks[0]
+		return nil
+	} else if len(toks) == 3 && toks[1] == "->" {
+		bind.Source = toks[0]
+		bind.Dest = toks[2]
+		return nil
+	}
+	return errors.Errorf("invalid Bind: %s", string(asStr))
+}
+
 type Bind struct {
-	Source string `yaml:"source" json:"source"`
-	Dest   string `yaml:"dest" json:"dest"`
+	Source string `yaml:"source,omitempty" json:"source,omitempty"`
+	Dest   string `yaml:"dest,omitempty" json:"dest,omitempty"`
 }
 
 type Binds []Bind
 
-func (bs *Bind) MarshalJSON() ([]byte, error) {
-	var sb strings.Builder
-	if bs.Dest == "" {
-		sb.WriteString(fmt.Sprintf("%q", bs.Source))
-	} else {
-		var sbt strings.Builder
-		sbt.WriteString(fmt.Sprintf("%s -> %s", bs.Source, bs.Dest))
-		sb.WriteString(fmt.Sprintf("%q", sbt.String()))
+func (bs *Bind) UnmarshalJSON(data []byte) error {
+	btype := bindType{}
+	if err := json.Unmarshal(data, &btype); err == nil {
+		return btype.toBind(bs)
 	}
 
-	return []byte(sb.String()), nil
+	asStr := ""
+	err := json.Unmarshal(data, &asStr)
+	if err != nil {
+		return errors.Errorf("invalid Bind: %s", string(data))
+	}
+
+	return btype.toBindFromString(bs, asStr)
 }
 
-func (bs *Binds) UnmarshalJSON(data []byte) error {
-	var rawBinds []string
-
-	if err := json.Unmarshal(data, &rawBinds); err != nil {
-		return err
+func (bs *Bind) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	btype := bindType{}
+	if err := unmarshal(&btype); err == nil {
+		return btype.toBind(bs)
 	}
 
-	*bs = Binds{}
-	for _, bind := range rawBinds {
-		parts := strings.Split(bind, "->")
-		if len(parts) != 1 && len(parts) != 2 {
-			return errors.Errorf("invalid bind mount %s", bind)
-		}
-
-		source := strings.TrimSpace(parts[0])
-		target := source
-
-		if len(parts) == 2 {
-			target = strings.TrimSpace(parts[1])
-		}
-
-		*bs = append(*bs, Bind{Source: source, Dest: target})
+	asStr := ""
+	if err := unmarshal(&asStr); err == nil {
+		return btype.toBindFromString(bs, asStr)
 	}
 
-	return nil
-}
-
-func (bs *Binds) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var data interface{}
-	err := unmarshal(&data)
-	if err != nil {
-		return errors.WithStack(err)
+	if err := unmarshal(&data); err != nil {
+		return errors.Errorf("unexpected error unmarshaling bind yaml: %v", err)
 	}
 
-	xform := func(s string) ([]string, error) {
-		return []string{s}, nil
-	}
-
-	rawBinds, err := getStringOrStringSlice(data, xform)
-	if err != nil {
-		return err
-	}
-
-	*bs = Binds{}
-	for _, bind := range rawBinds {
-		parts := strings.Split(bind, "->")
-		if len(parts) != 1 && len(parts) != 2 {
-			return errors.Errorf("invalid bind mount %s", bind)
-		}
-
-		source := strings.TrimSpace(parts[0])
-		target := source
-
-		if len(parts) == 2 {
-			target = strings.TrimSpace(parts[1])
-		}
-
-		*bs = append(*bs, Bind{Source: source, Dest: target})
-	}
-
-	return nil
+	return errors.Errorf("unexpected 'bind' data of type: %s: %#v", reflect.TypeOf(data), data)
 }
 
 type Layer struct {

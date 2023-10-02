@@ -43,12 +43,15 @@ bind-test:
         type: oci
         url: ${{CENTOS_OCI}}
     binds:
-        - Source: ${{bind_path}}
-          Dest: /root/tree1/foo
+        - source: ${{bind_path1}}
+          dest: /root/tree1/foo
+        - source: ${{bind_path2}}
     run: |
         touch /root/tree1/foo/bar
+        [ -f "${{bind_path2}}/file1" ]
 EOF
-    mkdir -p tree1/foo
+    mkdir -p tree1/foo tree2/bar
+    touch tree2/bar/file1
 
     # since we are creating directory as
     # real root and then `touch`-ing a file
@@ -56,9 +59,16 @@ EOF
     # for others
     chmod +666 tree1/foo
 
-    bind_path=$(realpath tree1/foo)
+    bind_path1=$(realpath tree1/foo)
+    bind_path2=$(realpath tree2/bar)
 
-    out=$(stacker build --substitute bind_path=$bind_path  --substitute CENTOS_OCI=$CENTOS_OCI)
+    out=$(stacker build \
+        "--substitute=bind_path1=${bind_path1}" \
+        "--substitute=bind_path2=${bind_path2}" \
+        "--substitute=CENTOS_OCI=$CENTOS_OCI" ) || {
+             printf "%s\n" "$out" 1>&2
+             exit 1
+        }
     [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
 
     stat tree1/foo/bar
