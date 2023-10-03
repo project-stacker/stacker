@@ -223,6 +223,17 @@ func findSquashfusePath() string {
 	return which("squashfuse")
 }
 
+// findSquashfusePath - find the path to a squashfuse
+// program we can use.  Return that path as the first
+// argument.  The second argument is true if the squashfuse
+// program supports -o notify_pipe=PATH.
+func sqfuseSupportsNotify(p string) bool {
+	args := []string{"--help"}
+	out, _ := exec.Command(p, args...).CombinedOutput()
+	// squashfuse --help always returns an error...  so we ignore it.
+	return strings.Contains(string(out), "notify_pipe=PATH")
+}
+
 var squashNotFound = errors.Errorf("squashfuse program not found")
 
 // squashFuse - mount squashFile to extractDir
@@ -233,6 +244,22 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	var cmd *exec.Cmd
 	if sqfuse == "" {
 		return cmd, squashNotFound
+	}
+
+	sqNotify := sqfuseSupportsNotify(sqfuse)
+
+	notifyOpts := ""
+	notifyPath := ""
+	if sqNotify {
+		sockdir, err := os.MkdirTemp("", "sock")
+		if err != nil {
+			return cmd, err
+		}
+		notifyPath = filepath.Join(sockdir, "notifypipe")
+		if err := syscall.Mkfifo(notifyPath, 0640); err != nil {
+			return cmd, err
+		}
+		notifyOpts = "notify_pipe=" + notifyPath
 	}
 
 	// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
@@ -258,7 +285,11 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	// It would be nice to only enable debug (or maybe to only log to file at all)
 	// if 'stacker --debug', but we do not have access to that info here.
 	// to debug squashfuse, use "allow_other,debug"
-	cmd = exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
+	optionArgs := "allow_other,debug"
+	if notifyOpts != "" {
+		optionArgs += "," + notifyOpts
+	}
+	cmd = exec.Command(sqfuse, "-f", "-o", optionArgs, squashFile, extractDir)
 	cmd.Stdin = nil
 	cmd.Stdout = cmdOut
 	cmd.Stderr = cmdOut
@@ -278,9 +309,45 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	// c. a timeout (timeLimit) was hit
 	startTime := time.Now()
 	timeLimit := 30 * time.Second
+	alarmCh := make(chan struct{})
 	go func() {
 		cmd.Wait()
+		close(alarmCh)
 	}()
+	if sqNotify {
+		notifyCh := make(chan struct{})
+		log.Infof("%s supports notify pipe, watching %q", sqfuse, notifyPath)
+		go func() {
+			f, err := os.Open(notifyPath)
+			if err != nil {
+				return
+			}
+			defer f.Close()
+			for {
+				b1 := make([]byte, 1)
+				n1, err := f.Read(b1)
+				if err != nil {
+					return
+				}
+				if err == nil && n1 >= 1 {
+					break
+				}
+			}
+			close(notifyCh)
+		}()
+		if err != nil {
+			return cmd, errors.Wrapf(err, "Failed reading %q", notifyPath)
+		}
+
+		select {
+		case <-alarmCh:
+			cmd.Process.Kill()
+			return cmd, errors.Wrapf(err, "Gave up on squashFuse mount of %s with %s after %s", squashFile, sqfuse, timeLimit)
+		case <-notifyCh:
+			return cmd, nil
+		}
+	}
+	log.Infof("%s does not support notify pipe", sqfuse)
 	for count := 0; !fileChanged(fiPre, extractDir); count++ {
 		if cmd.ProcessState != nil {
 			// process exited, the Wait() call in the goroutine above
