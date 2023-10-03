@@ -19,13 +19,11 @@ The Makefile supports setting some variables for quicker development.
    or just to speed up iterative development, you can copy these images to a local
    oci repository or local zot repository and point the Make system at that.
 
-       $ OCI_D=/tmp/my.oci
-       $ for d in alpine:edge centos:latest ubuntu:latest; do
-           skopeo copy docker://$d oci:$OCI_D:$d; done
+       $ make docker-clone STACKER_DOCKER_BASE=docker:// CLONE_D=/tmp/my-oci
 
    And then invoke make like:
 
-       make STACKER_DOCKER_BASE="oci:$OCI_D:"
+       make STACKER_DOCKER_BASE="oci:/tmp/my-oci:"
 
    I have a nightly sync job that copies these to a local zot repo and then I can build with:
 

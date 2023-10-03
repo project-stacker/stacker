@@ -57,6 +57,7 @@ jobs:
           echo "GOCACHE=$gopath/gocache" >> $GITHUB_ENV
           echo "PATH=$gopath/bin:$PATH" >> $GITHUB_ENV
           echo "SLOW_TEST=${{inputs.slow-test}}" >> $GITHUB_ENV
+          echo "STACKER_DOCKER_BASE=oci:$PWD/.build/oci-clone:" >> $GITHUB_ENV
 
           echo "PWD=$PWD"
           cat "$GITHUB_ENV"
@@ -69,6 +70,9 @@ jobs:
           GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
           make download-tools
           echo "running kernel is: $(uname -a)"
+      - name: docker-clone
+        run: |
+          make docker-clone "STACKER_DOCKER_BASE=docker://" CLONE_D="$PWD/.build/oci-clone"
       - name: Go-download
         run: |
           make go-download
