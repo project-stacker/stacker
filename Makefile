@@ -6,6 +6,7 @@ export GOCACHE = $(GOPATH)/gocache
 GO_SRC=$(shell find pkg cmd -name \*.go)
 VERSION?=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL?=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
+HASH = \#
 
 LXC_VERSION?=$(shell pkg-config --modversion lxc)
 
@@ -21,6 +22,7 @@ STACKER_DOCKER_BASE?=docker://
 STACKER_BUILD_BASE_IMAGE?=$(STACKER_DOCKER_BASE)alpine:edge
 STACKER_BUILD_CENTOS_IMAGE?=$(STACKER_DOCKER_BASE)centos:latest
 STACKER_BUILD_UBUNTU_IMAGE?=$(STACKER_DOCKER_BASE)ubuntu:latest
+STACKER_BUILD_IMAGES = $(STACKER_BUILD_BASE_IMAGE) $(STACKER_BUILD_CENTOS_IMAGE) $(STACKER_BUILD_UBUNTU_IMAGE)
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-5.0
 
@@ -116,7 +118,19 @@ test: stacker $(REGCLIENT) $(ZOT)
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
-.PHONY:
+
+CLONE_D = $(BUILD_D)/oci-clone
+CLONE_RETRIES = 3
+.PHONY: docker-clone
+docker-clone:
+	mkdir -p $(CLONE_D)
+	vr() { echo "$$" "$$@" 1>&2; "$$@"; }; \
+	for u in $(STACKER_BUILD_IMAGES); do \
+		name=$${u$(HASH)$(HASH)*/}; \
+		vr skopeo copy --retry-times $(CLONE_RETRIES) "$$u" "oci:$(CLONE_D):$${name}"; \
+	done
+
+.PHONY: show-info
 show-info:
 	@echo BUILD_D=$(BUILD_D)
 	@go env
