@@ -3,6 +3,7 @@ package overlay
 import (
 	"bytes"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path"
 
@@ -117,7 +118,15 @@ func (ovl overlayMetadata) lxcRootfsString(config types.StackerConfig, tag strin
 	for _, layer := range manifest.Layers {
 		contents := overlayPath(config.RootFSDir, layer.Digest, "overlay")
 		if _, err := os.Stat(contents); err != nil {
-			return "", errors.Wrapf(err, "%s does not exist", contents)
+			if errors.Is(err, fs.ErrNotExist) {
+				// some docker layers may be empty tars, so ignore these
+				// https://github.com/moby/moby/issues/20917#issuecomment-191901912
+				log.Warnf("%s skipping empty tar layer", layer.Digest)
+
+				continue
+			}
+
+			return "", errors.Wrapf(err, "%s unable to stat", contents)
 		}
 		lowerdirs = append(lowerdirs, contents)
 	}

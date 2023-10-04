@@ -87,7 +87,11 @@ func SetupRootfs(o BaseLayerOpts) error {
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:
-		return setupContainersImageRootfs(o)
+		err := setupContainersImageRootfs(o)
+		if err != nil && errors.Is(err, types.ErrEmptyLayers) {
+			return o.Storage.SetupEmptyRootfs(o.Name)
+		}
+		return err
 	default:
 		return errors.Errorf("unknown layer type: %v", o.Layer.From.Type)
 	}
