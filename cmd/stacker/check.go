@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/pkg/xattr"
@@ -26,12 +27,23 @@ func doCheck(ctx *cli.Context) error {
 		return errors.Wrapf(err, "couldn't get kernel info")
 	}
 
-	log.Infof(kernel)
+	log.Infof("os/kernel: %s", kernel)
 
 	if err := os.MkdirAll(config.RootFSDir, 0700); err != nil {
 		return errors.Wrapf(err, "couldn't create rootfs dir for testing")
 	}
 
+	// internally there are many checks to avoid symlinks
+	evalp, err := filepath.EvalSymlinks(config.RootFSDir)
+	if err != nil {
+		return errors.Wrapf(err, "%s: unable to evaluate path for symlinks", config.RootFSDir)
+	}
+
+	if evalp != config.RootFSDir {
+		return errors.Errorf("%s: roots dir (--roots-dir) path uses symbolic links, use %q instead", config.RootFSDir, evalp)
+	}
+
+	// not all underlying filesystems are compatible
 	fstype, err := stacker.MountInfo(config.RootFSDir)
 	if err != nil {
 		return errors.Wrapf(err, "%s: couldn't get fs type", config.RootFSDir)
