@@ -140,6 +140,9 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 			return err
 		}
 
+		log.Debugf("new oci layer %s [%s] created from path %s as part of %s:%s",
+			desc.Digest, layerType, overlayPath(config.RootFSDir, theLayer.Digest), name, tag)
+
 		// slight hack, but this is much faster than a cp, and the
 		// layers are the same, just in different formats
 		err = os.Symlink(overlayPath(config.RootFSDir, theLayer.Digest), overlayPath(config.RootFSDir, desc.Digest))
@@ -218,7 +221,8 @@ func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerT
 						return err
 					}
 				} else {
-					log.Debugf("converting between %v and %v", sourceLayerType, layerType)
+					log.Debugf("creating oci image %s (type=%s) by converting %s (type=%s)",
+						layerType.LayerName(name), layerType, sourceLayerType.LayerName(name), sourceLayerType)
 					err = ConvertAndOutput(o.config, cacheTag, name, layerType)
 					if err != nil {
 						return err
@@ -433,6 +437,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		return false, errors.Wrapf(err, "couldn't make new layer overlay dir")
 	}
 
+	log.Debugf("renaming %s -> %s", dir, path.Join(target, "overlay"))
 	err = os.Rename(dir, path.Join(target, "overlay"))
 	if err != nil {
 		if !os.IsExist(err) {
@@ -463,6 +468,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 	for _, desc := range descs[1:] {
 		linkPath := overlayPath(config.RootFSDir, desc.Digest)
 
+		log.Debugf("link %s -> %s", linkPath, target)
 		err = os.Symlink(target, linkPath)
 		if err != nil {
 			// as above, this symlink may already exist; if it does, we can
@@ -534,7 +540,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		mutators = append(mutators, mutator)
 	}
 
-	log.Debugf("Generating overlay_dirs layers")
+	log.Debugf("Generating overlay_dirs layers for %s", name)
 	mutated := false
 	for i, layerType := range layerTypes {
 		ods, ok := ovl.OverlayDirLayers[layerType]
