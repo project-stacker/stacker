@@ -31,3 +31,13 @@ EOF
     umoci unpack --image oci:layer1 dest
     [ ! -f dest/rootfs/favicon.ico ]
 }
+
+@test "image with empty layer" {
+    cat > stacker.yaml <<EOF
+image:
+    from:
+        type: docker
+        url: docker://ghcr.io/project-stacker/grafana-oss:10.1.2-ubuntu
+EOF
+    stacker build
+}
