@@ -63,12 +63,7 @@ jobs:
           cat "$GITHUB_ENV"
       - name: install dependencies
         run: |
-          sudo add-apt-repository -y ppa:project-machine/squashfuse
-          sudo apt-get update
-          sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
-          sudo apt-get install -yy autoconf automake make autogen autoconf libtool binutils git squashfs-tools libcryptsetup-dev libdevmapper-dev cryptsetup-bin squashfuse
-          GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
-          make download-tools
+          ./install-build-deps.sh
           echo "running kernel is: $(uname -a)"
       - name: docker-clone
         run: |
