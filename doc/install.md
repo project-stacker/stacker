@@ -31,18 +31,18 @@ https://golang.org/doc/install#install
 The other build dependencies can be satisfied with the following command and
 packages:
 
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev build-essential
     sudo apt install libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev
 
 #### **Ubuntu 22.04**
 
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev
+    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev build-essential
     sudo apt install libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev cryptsetup-bin pkg-config
 
 
 **To run `make check` you will also need:**
 
-    sudo apt install bats jq tree
+    sudo apt install bats jq tree curl squashfs-tools
 
 **umoci** - https://github.com/opencontainers/umoci
 
