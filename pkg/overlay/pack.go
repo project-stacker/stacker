@@ -32,6 +32,12 @@ import (
 
 var tarEx sync.Mutex
 
+// Container image layers are often tar.gz, however there is nothing in the
+// spec or documentation which standardizes compression params which can cause
+// different layer hashes even for the same tar. So picking compression params
+// that most tooling appears to be using.
+const gzipBlockSize = mutate.GzipBlockSize(256 << 12)
+
 func safeOverlayName(d digest.Digest) string {
 	// dirs used in overlay lowerdir args can't have : in them, so lets
 	// sanitize it
@@ -408,7 +414,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		defer blob.Close()
 
 		if layerType.Type == "tar" {
-			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.GzipCompressor, nil)
+			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.GzipCompressor.WithOpt(gzipBlockSize), nil)
 			if err != nil {
 				return false, err
 			}

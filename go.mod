@@ -20,7 +20,7 @@ require (
 	github.com/moby/buildkit v0.11.4
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc4
-	github.com/opencontainers/umoci v0.4.8-0.20230920134428-7dc114a520bc
+	github.com/opencontainers/umoci v0.0.0-00000000000000-000000000000
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
 	github.com/sirupsen/logrus v1.9.0
@@ -30,7 +30,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vbatts/go-mtree v0.5.3
-	golang.org/x/sys v0.10.0
+	golang.org/x/sys v0.13.0
 	golang.org/x/term v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.5.2-0.20230512052447-fef7b03b207d
@@ -233,4 +233,7 @@ require (
 	sigs.k8s.io/release-utils v0.7.4 // indirect
 )
 
-replace stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20230522080732-de2712897250
+replace (
+	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20231019200834-3f97387412c4
+	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20230522080732-de2712897250
+)
