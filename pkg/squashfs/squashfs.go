@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	"stackerbuild.io/stacker/pkg/log"
@@ -42,6 +43,15 @@ type ExcludePaths struct {
 	exclude map[string]bool
 	include []string
 }
+
+type squashFuseInfoStruct struct {
+	Path           string
+	Version        string
+	SupportsNotfiy bool
+}
+
+var once sync.Once
+var squashFuseInfo = squashFuseInfoStruct{"", "", false}
 
 func NewExcludePaths() *ExcludePaths {
 	return &ExcludePaths{
@@ -198,11 +208,45 @@ func isMountedAtDir(src, dest string) (bool, error) {
 	return false, nil
 }
 
-func findSquashfusePath() string {
+func findSquashFuseInfo() {
+	var sqfsPath string
 	if p := which("squashfuse_ll"); p != "" {
-		return p
+		sqfsPath = p
+	} else {
+		sqfsPath = which("squashfuse")
 	}
-	return which("squashfuse")
+	if sqfsPath == "" {
+		return
+	}
+	version, supportsNotify := sqfuseSupportsMountNotification(sqfsPath)
+	log.Infof("Found squashfuse at %s (version=%s notify=%t)", sqfsPath, version, supportsNotify)
+	squashFuseInfo = squashFuseInfoStruct{sqfsPath, version, supportsNotify}
+}
+
+// sqfuseSupportsMountNotification - returns true if squashfuse supports mount
+// notification, false otherwise
+// sqfuse is the path to the squashfuse binary
+func sqfuseSupportsMountNotification(sqfuse string) (string, bool) {
+	cmd := exec.Command(sqfuse)
+
+	// `squashfuse` always returns an error...  so we ignore it.
+	out, _ := cmd.CombinedOutput()
+
+	firstLine := strings.Split(string(out[:]), "\n")[0]
+	version := strings.Split(firstLine, " ")[1]
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return version, false
+	}
+	// squashfuse notify mechanism was merged in 0.5.0
+	constraint, err := semver.NewConstraint(">= 0.5.0")
+	if err != nil {
+		return version, false
+	}
+	if constraint.Check(v) {
+		return version, true
+	}
+	return version, false
 }
 
 var squashNotFound = errors.Errorf("squashfuse program not found")
@@ -211,10 +255,26 @@ var squashNotFound = errors.Errorf("squashfuse program not found")
 // return a pointer to the squashfuse cmd.
 // The caller of the this is responsible for the process created.
 func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
-	sqfuse := findSquashfusePath()
 	var cmd *exec.Cmd
-	if sqfuse == "" {
+
+	once.Do(findSquashFuseInfo)
+	if squashFuseInfo.Path == "" {
 		return cmd, squashNotFound
+	}
+
+	notifyOpts := ""
+	notifyPath := ""
+	if squashFuseInfo.SupportsNotfiy {
+		sockdir, err := os.MkdirTemp("", "sock")
+		if err != nil {
+			return cmd, err
+		}
+		defer os.RemoveAll(sockdir)
+		notifyPath = filepath.Join(sockdir, "notifypipe")
+		if err := syscall.Mkfifo(notifyPath, 0640); err != nil {
+			return cmd, err
+		}
+		notifyOpts = "notify_pipe=" + notifyPath
 	}
 
 	// given extractDir of path/to/some/dir[/], log to path/to/some/.dir-squashfs.log
@@ -240,12 +300,16 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	// It would be nice to only enable debug (or maybe to only log to file at all)
 	// if 'stacker --debug', but we do not have access to that info here.
 	// to debug squashfuse, use "allow_other,debug"
-	cmd = exec.Command(sqfuse, "-f", "-o", "allow_other,debug", squashFile, extractDir)
+	optionArgs := "allow_other,debug"
+	if notifyOpts != "" {
+		optionArgs += "," + notifyOpts
+	}
+	cmd = exec.Command(squashFuseInfo.Path, "-f", "-o", optionArgs, squashFile, extractDir)
 	cmd.Stdin = nil
 	cmd.Stdout = cmdOut
 	cmd.Stderr = cmdOut
 	cmdOut.Write([]byte(fmt.Sprintf("# %s\n", strings.Join(cmd.Args, " "))))
-	log.Debugf("Extracting %s -> %s with %s [%s]", squashFile, extractDir, sqfuse, logf)
+	log.Debugf("Extracting %s -> %s with %s [%s]", squashFile, extractDir, squashFuseInfo.Path, logf)
 	err = cmd.Start()
 	if err != nil {
 		return cmd, err
@@ -260,18 +324,57 @@ func squashFuse(squashFile, extractDir string) (*exec.Cmd, error) {
 	// c. a timeout (timeLimit) was hit
 	startTime := time.Now()
 	timeLimit := 30 * time.Second
+	alarmCh := make(chan struct{})
 	go func() {
 		cmd.Wait()
+		close(alarmCh)
 	}()
+	if squashFuseInfo.SupportsNotfiy {
+		notifyCh := make(chan byte)
+		log.Infof("%s supports notify pipe, watching %q", squashFuseInfo.Path, notifyPath)
+		go func() {
+			f, err := os.Open(notifyPath)
+			if err != nil {
+				return
+			}
+			defer f.Close()
+			b1 := make([]byte, 1)
+			for {
+				n1, err := f.Read(b1)
+				if err != nil {
+					return
+				}
+				if err == nil && n1 >= 1 {
+					break
+				}
+			}
+			notifyCh <- b1[0]
+		}()
+		if err != nil {
+			return cmd, errors.Wrapf(err, "Failed reading %q", notifyPath)
+		}
+
+		select {
+		case <-alarmCh:
+			cmd.Process.Kill()
+			return cmd, errors.Wrapf(err, "Gave up on squashFuse mount of %s with %s after %s", squashFile, squashFuseInfo.Path, timeLimit)
+		case ret := <-notifyCh:
+			if ret == 's' {
+				return cmd, nil
+			} else {
+				return cmd, errors.Errorf("squashfuse returned an error, check %s", logf)
+			}
+		}
+	}
 	for count := 0; !fileChanged(fiPre, extractDir); count++ {
 		if cmd.ProcessState != nil {
 			// process exited, the Wait() call in the goroutine above
 			// caused ProcessState to be populated.
-			return cmd, errors.Errorf("squashFuse mount of %s with %s exited unexpectedly with %d", squashFile, sqfuse, cmd.ProcessState.ExitCode())
+			return cmd, errors.Errorf("squashFuse mount of %s with %s exited unexpectedly with %d", squashFile, squashFuseInfo.Path, cmd.ProcessState.ExitCode())
 		}
 		if time.Since(startTime) > timeLimit {
 			cmd.Process.Kill()
-			return cmd, errors.Wrapf(err, "Gave up on squashFuse mount of %s with %s after %s", squashFile, sqfuse, timeLimit)
+			return cmd, errors.Wrapf(err, "Gave up on squashFuse mount of %s with %s after %s", squashFile, squashFuseInfo.Path, timeLimit)
 		}
 		if count%10 == 1 {
 			log.Debugf("%s is not yet mounted...(%s)", extractDir, time.Since(startTime))
@@ -448,7 +551,8 @@ func (k *SquashFuseExtractor) Name() string {
 }
 
 func (k *SquashFuseExtractor) IsAvailable() error {
-	if findSquashfusePath() == "" {
+	once.Do(findSquashFuseInfo)
+	if squashFuseInfo.Path == "" {
 		return errors.Errorf("no 'squashfuse' in PATH")
 	}
 	return nil
