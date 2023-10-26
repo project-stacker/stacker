@@ -10,6 +10,8 @@ import (
 	"stackerbuild.io/stacker/pkg/squashfs"
 )
 
+var ErrEmptyLayers = errors.New("empty layers")
+
 type LayerType struct {
 	Type   string
 	Verity squashfs.VerityMetadata
@@ -53,7 +55,7 @@ func NewLayerType(lt string, verity squashfs.VerityMetadata) (LayerType, error) 
 
 func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	if len(manifest.Layers) == 0 {
-		return LayerType{}, errors.Errorf("no existing layers to determine layer type")
+		return NewLayerType("tar", squashfs.VerityMetadataMissing)
 	}
 
 	switch manifest.Layers[0].MediaType {
