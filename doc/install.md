@@ -2,11 +2,11 @@
 
 ### Go Dependency
 
-Stacker requires at least go 1.11.
+Stacker requires at least go 1.20.
 
-#### Ubuntu 20.04
+#### Ubuntu 22.04
 
-On Ubuntu 20.04 you can install Go using the instructions at:
+On Ubuntu 22.04 you can install Go using the instructions at:
 https://github.com/golang/go/wiki/Ubuntu
 
 #### Fedora 31
@@ -26,23 +26,19 @@ https://golang.org/doc/install#install
 
 ### Other Dependencies
 
-#### **Ubuntu 20.04**
-
-The other build dependencies can be satisfied with the following command and
-packages:
-
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev build-essential
-    sudo apt install libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev
+The other build dependencies can be satisfied by running:
 
 #### **Ubuntu 22.04**
 
-    sudo apt install lxc-dev libacl1-dev libgpgme-dev libcap-dev libseccomp-dev build-essential
-    sudo apt install libpam0g-dev libselinux-dev libssl-dev libzstd-dev libcryptsetup-dev libdevmapper-dev cryptsetup-bin pkg-config
 
+    This script will install the current library and build-time depedencies.
+    Once installed it will prepare the system for build by fetching golang
+    tools, downloading go modules and preparing a mirror of remote OCI images.
+
+
+    sudo ./install-build-deps.sh
 
 **To run `make check` you will also need:**
-
-    sudo apt install bats jq tree curl squashfs-tools
 
 **umoci** - https://github.com/opencontainers/umoci
 
@@ -67,4 +63,4 @@ packages:
 ### Building the Stacker Binary
 
 Finally, once you have the build dependencies, stacker can be built with a
-simple `make`. The stacker binary will be output as `./stacker`.
+simple `make stacker`. The stacker binary will be output as `./stacker`.
