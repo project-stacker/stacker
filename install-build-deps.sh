@@ -3,12 +3,18 @@ set -o pipefail
 set -o errexit
 
 installdeps_fedora() {
-        sudo dnf install \
-        bats \
-        jq \
-        lxc-devel \
-        libcap-devel \
-        libacl-devel
+  sudo dnf install \
+    bats \
+    jq \
+    lxc-devel \
+    libcap-devel \
+    libacl-devel
+  # skopeo deps
+  sudo dnf install \
+    gpgme-devel \
+    libassuan-devel \
+    btrfs-progs-devel \
+    device-mapper-devel
     if ! command -v go 2>/dev/null; then
         sudo dnf install golang
         go version
@@ -35,9 +41,15 @@ installdeps_ubuntu() {
             lxc-utils \
             parallel \
             pkg-config \
-            skopeo \
             squashfs-tools \
             squashfuse
+    # skopeo deps
+    sudo apt -yy install \
+       libgpgme-dev \
+       libassuan-dev \
+       libbtrfs-dev \
+       libdevmapper-dev \
+       pkg-config
     if ! command -v go 2>/dev/null; then
         sudo apt -yy install golang-go
         go version

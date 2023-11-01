@@ -31,6 +31,8 @@ HACK_D := $(TOP_LEVEL)/hack
 TOOLS_D := $(HACK_D)/tools
 REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
+export SKOPEO = $(TOOLS_D)/bin/skopeo
+export SKOPEO_VERSION = 1.9.3
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.0.0-rc6
@@ -99,6 +101,19 @@ $(REGCLIENT):
 $(ZOT):
 	$(call dlbin,$@,https://github.com/project-zot/zot/releases/download/$(ZOT_VERSION)/zot-linux-amd64-minimal)
 
+$(SKOPEO):
+	@mkdir -p "$(TOOLS_D)/bin"; \
+	tmpdir=$$(mktemp -d); \
+	cd $$tmpdir; \
+	git clone https://github.com/containers/skopeo.git; \
+	cd skopeo; \
+	git fetch --all --tags --prune; \
+	git checkout tags/v$(SKOPEO_VERSION) -b tag-$(SKOPEO_VERSION); \
+	make bin/skopeo; \
+	cp bin/skopeo $(SKOPEO); \
+	cd $(TOP_LEVEL); \
+	rm -rf $$tmpdir;
+
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
 
@@ -108,7 +123,7 @@ PRIVILEGE_LEVEL?=
 check: lint test go-test
 
 .PHONY: test
-test: stacker $(REGCLIENT) $(ZOT)
+test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT)
 	sudo -E PATH="$$PATH" \
 		LXC_BRANCH=$(LXC_BRANCH) \
 		LXC_CLONE_URL=$(LXC_CLONE_URL) \
