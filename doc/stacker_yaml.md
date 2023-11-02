@@ -55,13 +55,14 @@ Hub.
 
 `tar`: `url` is required, everything else is ignored.
 
-`oci`: `url` is required, of the form `path:tag`. This uses the OCI image at
-`url` (which may be a local path).
+`oci`: `url` is required, and must be a local OCI layout URI of the form `oci:/local/path/image:tag`
 
 `built`: `tag` is required, everything else is ignored. `built` bases this
 layer on a previously specified layer in the stacker file.
 
-`scratch`: which is an empty rootfs and can be used to host statically built binaries.
+`scratch`: the base image is an empty rootfs, and can be used with the `dest` field
+of `import` to generate minimal images, e.g. for statically built binaries.
+
 
 ### `import`
 
