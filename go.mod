@@ -3,6 +3,7 @@ module stackerbuild.io/stacker
 go 1.20
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/apex/log v1.9.0
 	github.com/apparentlymart/go-shquot v0.0.1
@@ -45,7 +46,6 @@ require (
 	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/Microsoft/hcsshim v0.10.0-rc.7 // indirect
