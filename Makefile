@@ -44,6 +44,19 @@ lint: cmd/stacker/lxc-wrapper/lxc-wrapper $(GO_SRC)
 	go test -tags "$(BUILD_TAGS)" ./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 
+$(SKOPEO):
+	@mkdir -p "$(TOOLS_D)/bin"; \
+	tmpdir=$$(mktemp -d); \
+	cd $$tmpdir; \
+	git clone https://github.com/containers/skopeo.git; \
+	cd skopeo; \
+	git fetch --all --tags --prune; \
+	git checkout tags/v$(SKOPEO_VERSION) -b tag-$(SKOPEO_VERSION); \
+	make bin/skopeo; \
+	cp bin/skopeo $(SKOPEO); \
+	cd $(TOP_LEVEL); \
+	rm -rf $$tmpdir;
+
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
 
