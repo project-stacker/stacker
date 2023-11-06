@@ -390,6 +390,130 @@ eigth:
     [ -f /dir/file2 ]
     [ -f /dir/files/file3 ]
 EOF
-
     stacker build
+}
+
+@test "import with dir contents" {
+  mkdir folder1
+  touch folder1/file1
+  mkdir folder1/subfolder2
+  touch folder1/subfolder2/subfile1
+  cat > stacker.yaml <<EOF
+first:
+  from:
+    type: oci
+    url: $CENTOS_OCI
+  import:
+  - path: folder1/
+    dest: /folder1/
+  run: |
+    [ -f /folder1/file1 ]
+
+second:
+  from:
+    type: built
+    tag: first
+  run: |
+    mkdir -p /folder1
+    touch /folder1/file1
+    touch /folder1/file2
+
+third:
+  from:
+    type: oci
+    url: $CENTOS_OCI
+  import:
+    - path: stacker://second/folder1/
+      dest: /folder1/
+  run: |
+    [ -f /folder1/file1 ]
+    [ -f /folder1/file2 ]
+
+fourth:
+  from:
+    type: oci
+    url: $CENTOS_OCI
+  import:
+  - path: folder1/
+    dest: /
+  run: |
+    ls -l /
+    [ -f /file1 ]
+    mkdir -p /folder4/subfolder5
+    touch /folder4/subfolder5/subfile6
+
+fifth:
+  from:
+    type: oci
+    url: $CENTOS_OCI
+  import:
+  - path: folder1/subfolder2/
+    dest: /folder3/
+  - path: folder1/subfolder2
+    dest: /folder4
+  - path: stacker://fourth/folder4/subfolder5/
+    dest: /folder6/
+  - path: stacker://fourth/folder4/
+    dest: /folder7/
+  run: |
+    ls -l /folder*
+    [ -f /folder3/subfile1 ]
+    [ ! -e /folder3/subfolder2 ]
+    [ -f /folder4/subfile1 ]
+    [ -f /folder6/subfile6 ]
+    [ ! -e /folder6/subfolder5 ]
+    [ -f /folder7/subfolder5/subfile6 ]
+EOF
+    stacker build
+}
+
+@test "dir path behavior" {
+  mkdir -p folder1
+  touch folder1/file1
+  mkdir -p folder1/subfolder2
+  touch folder1/subfolder2/subfile1
+  cat > stacker.yaml <<EOF
+src_folder_dest_non_existent_folder_case1:
+  from:
+    type: docker
+    url: docker://ubuntu:latest
+  import:
+  - path: folder1
+    dest: /folder2
+  run: |
+    [ -f /folder2/file1 ]
+
+src_folder_dest_non_existent_folder_case2:
+  from:
+    type: docker
+    url: docker://ubuntu:latest
+  import:
+  - path: folder1/
+    dest: /folder2
+  run: |
+    [ -f /folder2/file1 ]
+
+src_folder_dest_non_existent_folder_case3:
+  from:
+    type: docker
+    url: docker://ubuntu:latest
+  import:
+  - path: folder1
+    dest: /folder2/
+  run: |
+    ls -al /
+    ls -al /folder2
+    [ -f /folder2/folder1/file1 ]
+
+src_folder_dest_non_existent_folder_case4:
+  from:
+    type: docker
+    url: docker://ubuntu:latest
+  import:
+  - path: folder1/
+    dest: /folder2/
+  run: |
+    [ -f /folder2/file1 ]
+EOF
+  stacker build
 }

@@ -43,5 +43,5 @@ func doGrab(ctx *cli.Context) error {
 		return err
 	}
 
-	return stacker.Grab(config, s, name, parts[1], cwd, nil, -1, -1)
+	return stacker.Grab(config, s, name, parts[1], cwd, "", nil, -1, -1)
 }

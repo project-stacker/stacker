@@ -108,6 +108,8 @@ func validateOverlayDirs(name string, overlayDirs []types.OverlayDir, rootfs str
 		break
 	}
 
+	log.Debugf("overlayDirs: %+v", overlayDirs)
+
 	for ovlindex, ovldir := range overlayDirs {
 		if ovldir.Dest == "" {
 			continue
@@ -124,6 +126,15 @@ func validateOverlayDirs(name string, overlayDirs []types.OverlayDir, rootfs str
 				return errors.Wrapf(err, "unable to stat %s", contents)
 			}
 
+			contents, err = filepath.EvalSymlinks(contents)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+
+				return errors.Wrapf(err, "unable to eval symlink %s", contents)
+			}
+
 			dest := path.Join(contents, ovldir.Dest)
 			realdest, err := filepath.EvalSymlinks(dest)
 			if err != nil {
@@ -135,6 +146,10 @@ func validateOverlayDirs(name string, overlayDirs []types.OverlayDir, rootfs str
 			}
 
 			overlayDirs[ovlindex].Dest = strings.TrimPrefix(realdest, contents)
+			if overlayDirs[ovlindex].Dest == "" {
+				overlayDirs[ovlindex].Dest = ovldir.Dest
+			}
+
 			if ovldir.Dest != overlayDirs[ovlindex].Dest {
 				log.Infof("overlay dest %s is a symlink, patching to %s", ovldir.Dest, overlayDirs[ovlindex].Dest)
 				break

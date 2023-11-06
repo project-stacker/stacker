@@ -11,7 +11,7 @@ import (
 )
 
 func Grab(sc types.StackerConfig, storage types.Storage, name string, source string, targetDir string,
-	mode *fs.FileMode, uid, gid int,
+	idest string, mode *fs.FileMode, uid, gid int,
 ) error {
 	c, err := container.New(sc, name)
 	if err != nil {
@@ -31,7 +31,12 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 
 	bcmd := []string{insideStaticStacker, "internal-go"}
-	err = c.Execute(append(bcmd, "cp", source, "/stacker/"+path.Base(source)), nil)
+
+	if idest == "" || source[len(source)-1:] != "/" {
+		err = c.Execute(append(bcmd, "cp", source, "/stacker/"+path.Base(source)), nil)
+	} else {
+		err = c.Execute(append(bcmd, "cp", source, "/stacker/"), nil)
+	}
 	if err != nil {
 		return err
 	}

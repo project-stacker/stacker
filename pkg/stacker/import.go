@@ -124,7 +124,17 @@ func importFile(imp string, cacheDir string, hash string, idest string, mode *fs
 		return dest, nil
 	}
 
-	dest := path.Join(cacheDir, path.Base(imp))
+	var dest string
+	if imp[len(imp)-1:] != "/" {
+		if idest != "" && path.Base(imp) != path.Base(idest) {
+			dest = path.Join(cacheDir, path.Base(idest))
+		} else {
+			dest = path.Join(cacheDir, path.Base(imp))
+		}
+	} else {
+		dest = cacheDir
+	}
+
 	if err := os.MkdirAll(dest, 0755); err != nil {
 		return "", errors.Wrapf(err, "failed making cache dir")
 	}
@@ -156,7 +166,20 @@ func importFile(imp string, cacheDir string, hash string, idest string, mode *fs
 			fallthrough
 		case mtree.Extra:
 			srcpath := path.Join(imp, d.Path())
-			destpath := path.Join(cacheDir, path.Base(imp), d.Path())
+			var destpath string
+			if imp[len(imp)-1:] != "/" {
+				if idest != "" && path.Base(imp) != path.Base(idest) {
+					if idest[len(idest)-1:] != "/" {
+						destpath = path.Join(cacheDir, path.Base(idest), d.Path())
+					} else {
+						destpath = path.Join(cacheDir, path.Base(imp), d.Path())
+					}
+				} else {
+					destpath = path.Join(cacheDir, path.Base(imp), d.Path())
+				}
+			} else {
+				destpath = path.Join(cacheDir, d.Path())
+			}
 
 			if d.New().IsDir() {
 				fi, err := os.Lstat(destpath)
@@ -260,7 +283,7 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 			return "", err
 		}
 		defer cleanup()
-		err = Grab(c, storage, snap, url.Path, cache, mode, uid, gid)
+		err = Grab(c, storage, snap, url.Path, cache, idest, mode, uid, gid)
 		if err != nil {
 			return "", err
 		}
@@ -349,7 +372,7 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 
 			dest := i.Dest
 
-			if i.Dest[len(i.Dest)-1:] != "/" {
+			if i.Dest[len(i.Dest)-1:] != "/" && i.Path[len(i.Path)-1:] != "/" {
 				dest = path.Dir(i.Dest)
 			}
 
