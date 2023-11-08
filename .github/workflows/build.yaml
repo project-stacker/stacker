@@ -48,7 +48,6 @@ jobs:
               make -j2 &&
               sudo make -j2 install &&
               sudo ldconfig -v)
-          (cd /tmp && git clone https://github.com/anuvu/squashfs && cd squashfs && make && sudo cp squashtool/squashtool /usr/bin)
       - if: github.event_name != 'release' || github.event.action != 'published'
         name: Build and test
         run: |
