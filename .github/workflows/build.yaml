@@ -35,6 +35,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -yy lxc-utils lxc-dev libacl1-dev jq libcap-dev libseccomp-dev libpam-dev bats parallel libzstd-dev
+          # skopeo deps
+          sudo apt-get install -yy \
+             libgpgme-dev \
+             libassuan-dev \
+             libbtrfs-dev \
+             libdevmapper-dev \
+             pkg-config
           GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
           sudo cp ~/go/bin/umoci /usr/bin
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
