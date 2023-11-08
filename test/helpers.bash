@@ -141,3 +141,60 @@ function cmp_files() {
     fi
     return 0
 }
+
+function test_copy_buffer_size() {
+   local buffer_size=$1
+   local file_type=$2
+
+   # create a temporary dir
+   local tmpdir=$(mktemp -d "$BATS_TEST_TMPDIR"/copy${1:+-$1}.XXXXXX)
+   cd "$tmpdir"
+   if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+     return
+   fi
+
+   "${ROOT_DIR}/stacker" unpriv-setup
+   chown -R $SUDO_USER:$SUDO_USER .
+
+   mkdir folder1
+   truncate -s $buffer_size folder1/file1
+   if [ $file_type = "tar" ]
+   then
+     tar cvf test.$file_type folder1
+   elif [ $file_type = "tar.gz" ]
+   then
+     tar cvzf test.$file_type folder1
+   else
+    echo "unknown file type: $file_type"
+    exit 1
+   fi
+   cat > stacker.yaml <<EOF
+tar:
+  from:
+    type: tar
+    url: test.$file_type
+EOF
+  stacker build
+  cat oci/index.json | jq .
+  m1=$(cat oci/index.json | jq .manifests[0].digest | sed  's/sha256://' | tr -d \")
+  cat oci/blobs/sha256/"$m1" | jq .
+  l1=$(cat oci/blobs/sha256/"$m1" | jq .layers[0].digest | sed  's/sha256://' | tr -d \")
+  $SKOPEO --version
+  [[ "$($SKOPEO --version)" =~ "skopeo version ${SKOPEO_VERSION}" ]] || {
+    echo "$SKOPEO --version should be ${SKOPEO_VERSION}"
+    exit 1
+  }
+  $SKOPEO copy --format=oci oci:oci:tar containers-storage:test:tar
+  $SKOPEO copy --format=oci containers-storage:test:tar oci:oci:test
+  cat oci/index.json | jq .
+  m2=$(cat oci/index.json | jq .manifests[1].digest | sed  's/sha256://' | tr -d \")
+  cat oci/blobs/sha256/"$m2" | jq .
+  l2=$(cat oci/blobs/sha256/"$m2" | jq .layers[0].digest | sed  's/sha256://' | tr -d \")
+  echo "$l1"
+  echo "$l2"
+  [ "$l1" = "$l2" ]
+  stacker clean
+  rm -rf folder1
+  cd "$ROOT_DIR"
+  rm -rf "tmpdir"
+}

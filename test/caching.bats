@@ -185,12 +185,19 @@ EOF
 }
 
 @test "can read previous version's cache" {
-    git clone https://github.com/project-stacker/stacker
-    (cd stacker && make LXC_BRANCH=$(grep ^LXC_BRANCH Makefile | cut -d'=' -f 2) LXC_CLONE_URL=$LXC_CLONE_URL)
-
     # some additional testing that the cache can be read by older versions of
     # stacker (cache_test.go has the full test for the type, this just checks
     # the mechanics of filepaths and such)
+    local relurl="https://github.com/project-stacker/stacker/releases/download"
+    local oldver="v0.40.1"
+    local oldbin="./stacker-$oldver"
+    if [ "$PRIVILEGE_LEVEL" != "priv" ]; then
+        skip_if_no_unpriv_overlay
+    fi
+
+    wget -O "$oldbin" --progress=dot:mega "$relurl/$oldver/stacker"
+    chmod 755 "$oldbin"
+
     touch foo
     cat > stacker.yaml <<EOF
 test:
@@ -202,13 +209,7 @@ test:
     run: cp /stacker/foo /foo
 EOF
 
-    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
-        ./stacker/stacker --debug build
-    else
-        skip_if_no_unpriv_overlay
-        sudo -u $SUDO_USER ./stacker/stacker --debug build
-    fi
-
+    run_as "$oldbin" --debug build
     stacker build
 }
 

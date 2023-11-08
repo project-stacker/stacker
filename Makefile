@@ -2,6 +2,9 @@ GO_SRC=$(shell find . -path ./.build -prune -false -o -name \*.go)
 VERSION?=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL?=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 
+export SKOPEO = $(TOOLS_D)/bin/skopeo
+export SKOPEO_VERSION = 1.9.3
+
 LXC_VERSION?=$(shell pkg-config --modversion lxc)
 
 BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo
@@ -44,13 +47,26 @@ lint: cmd/stacker/lxc-wrapper/lxc-wrapper $(GO_SRC)
 	go test -tags "$(BUILD_TAGS)" ./...
 	$(shell go env GOPATH)/bin/golangci-lint run --build-tags "$(BUILD_TAGS)"
 
+$(SKOPEO):
+	@mkdir -p "$(TOOLS_D)/bin"; \
+	tmpdir=$$(mktemp -d); \
+	cd $$tmpdir; \
+	git clone https://github.com/containers/skopeo.git; \
+	cd skopeo; \
+	git fetch --all --tags --prune; \
+	git checkout tags/v$(SKOPEO_VERSION) -b tag-$(SKOPEO_VERSION); \
+	make bin/skopeo; \
+	cp bin/skopeo $(SKOPEO); \
+	cd $(TOP_LEVEL); \
+	rm -rf $$tmpdir;
+
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
 
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
-check: stacker lint
+check: stacker lint $(SKOPEO)
 	sudo -E PATH="$$PATH" \
 		LXC_BRANCH=$(LXC_BRANCH) \
 		LXC_CLONE_URL=$(LXC_CLONE_URL) \

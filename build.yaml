@@ -8,22 +8,21 @@ build-env:
     - https://gitlab.com/cryptsetup/cryptsetup/-/archive/v2.4.3/cryptsetup-v2.4.3.tar.gz
     - https://github.com/lvmteam/lvm2/archive/refs/tags/v2_03_15.tar.gz
   run: |
-    #!/bin/sh
+    #!/bin/sh -ex
     # libapparmor is only in testing
     head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
 
     apk add git findutils go automake autoconf make gcc libtool \
-      acl-dev acl-static \
+      acl-dev acl-static build-base \
       libseccomp-dev libseccomp-static \
       libcap-dev libcap-static \
       libapparmor-dev \
       zlib-static lz4-static \
-      zstd-dev \
+      zstd-dev zstd-static \
       xz \
       gettext-dev \
-      lvm2-dev util-linux-dev \
-      squashfs-tools-ng-dev \
-      linux-headers
+      lvm2-dev util-linux-dev util-linux-static \
+      linux-headers po4a
 
     # json-c doesn't have static binaries in alpine
     apk add cmake
@@ -44,11 +43,12 @@ build-env:
 
     # build static cryptsetup without all the command line tools
     apk add gettext gettext-dev zlib-static lz4-static openssl-dev \
-      openssl-libs-static popt-dev
+      openssl-libs-static popt-dev bash
     tar -xf /stacker/cryptsetup*
     cd cryptsetup*
     ./autogen.sh
-    ./configure --enable-static \
+    CFLAGS="-D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" \
+      ./configure --enable-static \
       --disable-cryptsetup --disable-veritysetup --disable-integritysetup \
       --disable-nls --disable-ssh-token
     make -j$(grep -c processor /proc/cpuinfo) install
@@ -72,6 +72,15 @@ build-env:
     make -j$(grep -c processor /proc/cpuinfo) install
     cd /
 
+    # build squashfs-tools-ng at origin/fixes-1.2.0
+    git clone https://github.com/AgentD/squashfs-tools-ng
+    cd squashfs-tools-ng
+    git checkout origin/fixes-1.2.0
+    ./autogen.sh
+    ./configure --prefix=/usr
+    make -j2
+    make -j2 install
+
 build:
   build_only: true
   from:
@@ -80,7 +89,7 @@ build:
   binds:
     - . -> /stacker-tree
   run: |
-    #!/bin/sh
+    #!/bin/sh -ex
     # golang wants somewhere to put its garbage
     export HOME=/root
     export GOPATH=/stacker-tree/.build/gopath

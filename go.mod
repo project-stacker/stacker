@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
-	github.com/anuvu/squashfs v0.0.0-20220228153512-67c8ca12cbf4
+	github.com/anuvu/squashfs v0.0.4
 	github.com/apex/log v1.9.0
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
@@ -23,24 +23,25 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
 	github.com/smartystreets/goconvey v1.7.2
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.4
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
-	github.com/urfave/cli v1.22.10
-	github.com/vbatts/go-mtree v0.5.2
-	golang.org/x/sys v0.3.0
-	golang.org/x/term v0.3.0
+	github.com/urfave/cli v1.22.12
+	github.com/vbatts/go-mtree v0.5.3
+	golang.org/x/sys v0.14.0
+	golang.org/x/term v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	github.com/AdaLogics/go-fuzz-headers v0.0.0-20211102141018-f7be0cbad29c // indirect
-	github.com/BurntSushi/toml v0.4.1 // indirect
+	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/Microsoft/hcsshim v0.9.2 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/containerd/containerd v1.6.1 // indirect
@@ -56,7 +57,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.6.4 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -86,7 +87,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mtrmac/gpgme v0.1.2 // indirect
-	github.com/opencontainers/runc v1.1.2 // indirect
+	github.com/opencontainers/runc v1.1.8 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417 // indirect
 	github.com/opencontainers/selinux v1.10.0 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
@@ -96,7 +97,7 @@ require (
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rootless-containers/proto/go-proto v0.0.0-20210921234734-69430b6543fb // indirect
+	github.com/rootless-containers/proto/go-proto v0.0.0-20230421021042-4cd87ebadd67 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
@@ -109,16 +110,18 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/crypto v0.8.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc // indirect
 	google.golang.org/grpc v1.44.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/containers/image/v5 => github.com/anuvu/image/v5 v5.0.0-20211117201351-4c24aa76235c
+
+replace github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20231025233220-c7bb24d57e98
