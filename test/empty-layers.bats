@@ -61,3 +61,28 @@ EOF
 
     [ "$layers0" = "$layers1" ]
 }
+
+@test "an image with empty layers" {
+  umoci init --layout oci
+  umoci new --image oci:emptylayer
+  chmod -R a+rw oci
+
+  cat > stacker.yaml <<EOF
+test_empty_layer:
+    from:
+        type: oci
+        url: oci:emptylayer
+EOF
+    stacker build
+}
+
+@test "a real-world docker image with empty/filler layer" {
+    cat > stacker.yaml <<EOF
+image:
+    from:
+        type: docker
+        url: docker://ghcr.io/project-stacker/grafana-oss:10.1.2-ubuntu
+EOF
+    stacker build
+}
+

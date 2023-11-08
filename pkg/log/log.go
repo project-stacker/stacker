@@ -46,6 +46,10 @@ func Infof(msg string, v ...interface{}) {
 	addStackerLogSentinel(log.NewEntry(log.Log.(*log.Logger))).Infof(msg, v...)
 }
 
+func Warnf(msg string, v ...interface{}) {
+	addStackerLogSentinel(log.NewEntry(log.Log.(*log.Logger))).Warnf(msg, v...)
+}
+
 func Errorf(msg string, v ...interface{}) {
 	addStackerLogSentinel(log.NewEntry(log.Log.(*log.Logger))).Errorf(msg, v...)
 }
