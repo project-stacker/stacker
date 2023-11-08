@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - rel-**
 
 jobs:
   check-commit-message-style:
