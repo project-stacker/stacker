@@ -397,6 +397,9 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		if ovl.HasBuiltOCIOutput {
 			for i, layerType := range layerTypes {
 				manifest := ovl.Manifests[layerType]
+				if len(manifest.Layers) < 1 {
+					continue
+				}
 				layer := manifest.Layers[len(manifest.Layers)-1]
 
 				config := ovl.Configs[layerType]
