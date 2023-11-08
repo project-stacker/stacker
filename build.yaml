@@ -13,16 +13,16 @@ build-env:
     head -n1 /etc/apk/repositories | sed 's/main/testing/g' >> /etc/apk/repositories
 
     apk add git findutils go automake autoconf make gcc libtool \
-      acl-dev acl-static \
+      acl-dev acl-static build-base \
       libseccomp-dev libseccomp-static \
       libcap-dev libcap-static \
       libapparmor-dev \
       zlib-static lz4-static \
-      zstd-dev \
+      zstd-dev zstd-static \
       xz \
       gettext-dev \
-      lvm2-dev util-linux-dev \
-      linux-headers
+      lvm2-dev util-linux-dev util-linux-static \
+      linux-headers po4a
 
     # json-c doesn't have static binaries in alpine
     apk add cmake
@@ -43,11 +43,12 @@ build-env:
 
     # build static cryptsetup without all the command line tools
     apk add gettext gettext-dev zlib-static lz4-static openssl-dev \
-      openssl-libs-static popt-dev
+      openssl-libs-static popt-dev bash
     tar -xf /stacker/cryptsetup*
     cd cryptsetup*
     ./autogen.sh
-    ./configure --enable-static \
+    CFLAGS="-D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" \
+      ./configure --enable-static \
       --disable-cryptsetup --disable-veritysetup --disable-integritysetup \
       --disable-nls --disable-ssh-token
     make -j$(grep -c processor /proc/cpuinfo) install
