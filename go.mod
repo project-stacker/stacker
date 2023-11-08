@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
-	github.com/anuvu/squashfs v0.0.0-20220228153512-67c8ca12cbf4
+	github.com/anuvu/squashfs v0.0.4
 	github.com/apex/log v1.9.0
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/containers/image/v5 v5.16.1
@@ -74,7 +74,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/klauspost/compress v1.14.4 // indirect
+	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.4 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect

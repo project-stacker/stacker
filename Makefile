@@ -17,6 +17,12 @@ STACKER_BUILD_UBUNTU_IMAGE?=$(STACKER_DOCKER_BASE)ubuntu:latest
 LXC_CLONE_URL?=https://github.com/lxc/lxc
 LXC_BRANCH?=stable-5.0
 
+HACK_D := $(TOP_LEVEL)/hack
+# helper tools
+TOOLS_D := $(HACK_D)/tools
+export SKOPEO = $(TOOLS_D)/bin/skopeo
+export SKOPEO_VERSION = 1.9.3
+
 stacker: stacker-dynamic
 	./stacker-dynamic --debug $(STACKER_OPTS) build \
 		-f build.yaml --shell-fail \
@@ -63,7 +69,7 @@ PRIVILEGE_LEVEL?=
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
-check: stacker lint
+check: stacker lint $(SKOPEO)
 	sudo -E PATH="$$PATH" \
 		LXC_BRANCH=$(LXC_BRANCH) \
 		LXC_CLONE_URL=$(LXC_CLONE_URL) \
