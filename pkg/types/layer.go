@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -236,27 +237,29 @@ func (bs *Bind) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Layer struct {
-	From           ImageSource       `yaml:"from" json:"from"`
-	Imports        Imports           `yaml:"import" json:"import,omitempty"`
-	OverlayDirs    OverlayDirs       `yaml:"overlay_dirs" json:"overlay_dirs,omitempty"`
-	Run            StringList        `yaml:"run" json:"run,omitempty"`
-	Cmd            Command           `yaml:"cmd" json:"cmd,omitempty"`
-	Entrypoint     Command           `yaml:"entrypoint" json:"entrypoint,omitempty"`
-	FullCommand    Command           `yaml:"full_command" json:"full_command,omitempty"`
-	BuildEnvPt     []string          `yaml:"build_env_passthrough" json:"build_env_passthrough,omitempty"`
-	BuildEnv       map[string]string `yaml:"build_env" json:"build_env,omitempty"`
-	Environment    map[string]string `yaml:"environment" json:"environment,omitempty"`
-	Volumes        []string          `yaml:"volumes" json:"volumes,omitempty"`
-	Labels         map[string]string `yaml:"labels" json:"labels,omitempty"`
-	GenerateLabels StringList        `yaml:"generate_labels" json:"generate_labels,omitempty"`
-	WorkingDir     string            `yaml:"working_dir" json:"working_dir,omitempty"`
-	BuildOnly      bool              `yaml:"build_only" json:"build_only,omitempty"`
-	Binds          Binds             `yaml:"binds" json:"binds,omitempty"`
-	RuntimeUser    string            `yaml:"runtime_user" json:"runtime_user,omitempty"`
-	Annotations    map[string]string `yaml:"annotations" json:"annotations,omitempty"`
-	OS             *string           `yaml:"os" json:"os,omitempty"`
-	Arch           *string           `yaml:"arch" json:"arch,omitempty"`
-	Bom            *Bom              `yaml:"bom" json:"bom,omitempty"`
+	From            ImageSource       `yaml:"from" json:"from"`
+	Imports         Imports           `yaml:"imports" json:"imports,omitempty"`
+	LegacyImport    Imports           `yaml:"import" json:"import,omitempty"`
+	OverlayDirs     OverlayDirs       `yaml:"overlay_dirs" json:"overlay_dirs,omitempty"`
+	Run             StringList        `yaml:"run" json:"run,omitempty"`
+	Cmd             Command           `yaml:"cmd" json:"cmd,omitempty"`
+	Entrypoint      Command           `yaml:"entrypoint" json:"entrypoint,omitempty"`
+	FullCommand     Command           `yaml:"full_command" json:"full_command,omitempty"`
+	BuildEnvPt      []string          `yaml:"build_env_passthrough" json:"build_env_passthrough,omitempty"`
+	BuildEnv        map[string]string `yaml:"build_env" json:"build_env,omitempty"`
+	Environment     map[string]string `yaml:"environment" json:"environment,omitempty"`
+	Volumes         []string          `yaml:"volumes" json:"volumes,omitempty"`
+	Labels          map[string]string `yaml:"labels" json:"labels,omitempty"`
+	GenerateLabels  StringList        `yaml:"generate_labels" json:"generate_labels,omitempty"`
+	WorkingDir      string            `yaml:"working_dir" json:"working_dir,omitempty"`
+	BuildOnly       bool              `yaml:"build_only" json:"build_only,omitempty"`
+	Binds           Binds             `yaml:"binds" json:"binds,omitempty"`
+	RuntimeUser     string            `yaml:"runtime_user" json:"runtime_user,omitempty"`
+	Annotations     map[string]string `yaml:"annotations" json:"annotations,omitempty"`
+	OS              *string           `yaml:"os" json:"os,omitempty"`
+	Arch            *string           `yaml:"arch" json:"arch,omitempty"`
+	Bom             *Bom              `yaml:"bom" json:"bom,omitempty"`
+	wasLegacyImport bool
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {
@@ -355,6 +358,15 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 			layer.Arch = &arch
 		}
 
+		if len(layer.LegacyImport) != 0 && len(layer.Imports) != 0 {
+			return nil, errors.New(fmt.Sprintf("layer '%s' cannot have both 'import' and 'imports'", name))
+		}
+		if len(layer.LegacyImport) != 0 {
+			layer.Imports = layer.LegacyImport
+			layer.LegacyImport = nil
+			layer.wasLegacyImport = true
+		}
+
 		ret[name], err = layer.absolutify(referenceDirectory)
 		if err != nil {
 			return nil, err
@@ -423,6 +435,11 @@ func (l Layer) absolutify(referenceDirectory string) (Layer, error) {
 	}
 
 	return ret, nil
+}
+
+// WasLegacyImport - return true if this layer used legacy 'import' directive.
+func (l Layer) WasLegacyImport() bool {
+	return l.wasLegacyImport
 }
 
 func requireImportHash(imports Imports) error {

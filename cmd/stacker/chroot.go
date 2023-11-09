@@ -98,11 +98,11 @@ func doChroot(ctx *cli.Context) error {
 	}
 	defer c.Close()
 
-	err = stacker.SetupBuildContainerConfig(config, s, c, name)
+	err = stacker.SetupBuildContainerConfig(config, s, c, types.InternalStackerDir, name)
 	if err != nil {
 		return err
 	}
-	err = stacker.SetupLayerConfig(config, c, layer, name)
+	err = stacker.SetupLayerConfig(config, c, layer, types.InternalStackerDir, name)
 	if err != nil {
 		return err
 	}

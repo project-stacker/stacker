@@ -64,10 +64,10 @@ layer on a previously specified layer in the stacker file.
 of `import` to generate minimal images, e.g. for statically built binaries.
 
 
-### `import`
+### `imports`
 
-The `import` directive describes what files should be made available in
-`/stacker` during the `run` phase. There are three forms of importing supported
+The `imports` directive describes what files should be made available in
+`/stacker/imports` during the `run` phase. There are three forms of importing supported
 today:
 
     /path/to/file
@@ -89,10 +89,10 @@ Will grab /path/to/file from the previously built layer `$name`.
 
 #### `import hash`
 
-The `import` directive also supports specifying the hash(sha256sum) of import source,
-for all the three forms presented above, for example:
+Each entry in the `imports' directive also supports specifying the hash(sha256sum) of
+import source, for all the three forms presented above, for example:
 ```
-import:
+imports:
   - path: config.json
     hash: f55af805b012017bc....
   - path: http://example.com/foo.tar.gz
@@ -115,7 +115,7 @@ If `--require-hash` is not passed, this import mode can be combined with uncheck
 and only files which have the hash specified will be checked.
 
 ```
-import:
+imports:
   - path: "config.json
     hash: "BEEFcafeaaaaAAAA...."
   - /path/to/file
@@ -127,10 +127,16 @@ The `import` directive also supports specifying the destination path (specified
 by `dest`) in the resulting container image, where the source file (specified
 by `path`) will be copyied to, for example:
 ```
-import:
+imports:
   - path: config.json
     dest: /
 ```
+
+
+### (Deprecated) `import`
+The deprecated `import` directive works like `imports` except that
+the entries in the `import` array will be placed into `/stacker/` rather
+than `/stacker/imports`.
 
 ### `overlay_dirs`
 This directive works only with OverlayFS backend storage.

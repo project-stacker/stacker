@@ -15,6 +15,12 @@ import (
 	"stackerbuild.io/stacker/pkg/log"
 )
 
+const (
+	InternalStackerDir       = "/stacker"
+	LegacyInternalStackerDir = "/.stacker"
+	BinStacker               = "bin/stacker"
+)
+
 type BuildConfig struct {
 	Prerequisites []string `yaml:"prerequisites"`
 }
@@ -209,6 +215,14 @@ func NewStackerfile(stackerfile string, validateHash bool, substitutions []strin
 	sf.internal, err = parseLayers(sf.ReferenceDirectory, lms, validateHash)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, name := range sf.FileOrder {
+		layer := sf.internal[name]
+		if layer.WasLegacyImport() {
+			log.Warnf("Deprecated 'import' directive used in layer '%s' of file '%s'. "+
+				"Change from 'import' to 'imports', and '/stacker/' to '/stacker/imports/'", name, stackerfile)
+		}
 	}
 
 	return &sf, err

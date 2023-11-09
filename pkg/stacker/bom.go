@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/log"
@@ -27,24 +28,25 @@ func BuildLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types.
 	}
 	defer c.Close()
 
-	err = SetupBuildContainerConfig(sc, storage, c, tag)
+	inDir := types.InternalStackerDir
+	err = SetupBuildContainerConfig(sc, storage, c, inDir, tag)
 	if err != nil {
 		log.Errorf("build container %v", err)
 		return err
 	}
 
-	err = SetupLayerConfig(sc, c, l, tag)
+	err = SetupLayerConfig(sc, c, l, inDir, tag)
 	if err != nil {
 		return err
 	}
 
-	cmd := []string{insideStaticStacker}
+	cmd := []string{filepath.Join(inDir, types.BinStacker)}
 
 	if sc.Debug {
 		cmd = append(cmd, "--debug")
 	}
 
-	cmd = append(cmd, "bom", "build", "/stacker/artifacts",
+	cmd = append(cmd, "bom", "build", filepath.Join(inDir, "artifacts"),
 		l.Annotations[types.AuthorAnnotation],
 		l.Annotations[types.OrgAnnotation],
 		l.Annotations[types.LicenseAnnotation],
@@ -71,25 +73,26 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 	}
 	defer c.Close()
 
-	err = SetupBuildContainerConfig(sc, storage, c, tag)
+	inDir := types.InternalStackerDir
+	err = SetupBuildContainerConfig(sc, storage, c, inDir, tag)
 	if err != nil {
 		log.Errorf("build container %v", err)
 		return err
 	}
 
-	err = SetupLayerConfig(sc, c, l, tag)
+	err = SetupLayerConfig(sc, c, l, inDir, tag)
 	if err != nil {
 		return err
 	}
 
-	cmd := []string{insideStaticStacker}
+	cmd := []string{filepath.Join(inDir, types.BinStacker)}
 
 	if sc.Debug {
 		cmd = append(cmd, "--debug")
 	}
 
 	cmd = append(cmd, "bom", "verify",
-		fmt.Sprintf("/stacker/artifacts/%s.json", tag),
+		fmt.Sprintf(types.InternalStackerDir+"/artifacts/%s.json", tag),
 		tag, l.Annotations[types.AuthorAnnotation], l.Annotations[types.OrgAnnotation])
 
 	err = c.Execute(cmd, os.Stdin)
