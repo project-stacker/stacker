@@ -190,6 +190,7 @@ func maybeKernelSquashMount(squashFile, extractDir string) (bool, error) {
 	ecmd := []string{"mount", "-tsquashfs", "-oloop,ro", squashFile, extractDir}
 	var output bytes.Buffer
 	cmd := exec.Command(ecmd[0], ecmd[1:]...)
+	cmd.Env = append(cmd.Environ(), "LANG=C")
 	cmd.Stdin = nil
 	cmd.Stdout = &output
 	cmd.Stderr = cmd.Stdout
@@ -207,6 +208,10 @@ func maybeKernelSquashMount(squashFile, extractDir string) (bool, error) {
 	if !ok {
 		tryKernelMountSquash = false
 		return false, errors.Errorf("Unexpected error (no-status) in exec (%v): %v", ecmd, err)
+	}
+
+	if status.ExitStatus() == 1 && strings.Contains(output.String(), "is already mounted") {
+		return true, nil
 	}
 
 	// we can't really tell why the mount failed. mount(8) does not give a lot specific rc exits.
