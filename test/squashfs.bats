@@ -225,3 +225,46 @@ EOF
     cat layer1/message
     [ "$(cat layer1/message)" == "foo bar" ]
 }
+
+@test "build squashfs then tar" {
+  echo "x" > x
+  cat > stacker.yaml <<"EOF"
+install-base:
+  build_only: true
+  from:
+    type: docker
+    url: "docker://zothub.io/machine/bootkit/rootfs:v0.0.17.231018-squashfs"
+    
+install-rootfs-pkg:
+  from:
+    type: built
+    tag: install-base
+  build_only: true
+  run: |
+    #!/bin/sh -ex
+    writefile() {
+      mkdir -p "${1%/*}"
+      echo "write $1" 1>&2
+      cat >"$1"
+    }
+
+    writefile /etc/systemd/network/20-wire-enp0s-dhcp.network <<"END"
+    [Match]
+    Name=enp0s*
+    [Network]
+    DHCP=yes
+    END
+
+demo-zot:
+  from:
+    type: built
+    tag: install-rootfs-pkg
+  import:
+    - x
+  run: |
+    #!/bin/sh -ex
+    cp /stacker/imports/x /usr/bin/x
+EOF
+  stacker build --layer-type=squashfs
+  stacker build --layer-type=tar
+}
