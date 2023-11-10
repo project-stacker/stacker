@@ -151,9 +151,11 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 
 		// slight hack, but this is much faster than a cp, and the
 		// layers are the same, just in different formats
-		err = os.Symlink(overlayPath(config.RootFSDir, theLayer.Digest), overlayPath(config.RootFSDir, desc.Digest))
-		if err != nil {
-			return errors.Wrapf(err, "failed to create squashfs symlink")
+		if !PathExists(overlayPath(config.RootFSDir, desc.Digest)) {
+			err = os.Symlink(overlayPath(config.RootFSDir, theLayer.Digest), overlayPath(config.RootFSDir, desc.Digest))
+			if err != nil {
+				return errors.Wrapf(err, "failed to create squashfs symlink")
+			}
 		}
 		newManifest.Layers = append(newManifest.Layers, desc)
 		newConfig.RootFS.DiffIDs = append(newConfig.RootFS.DiffIDs, desc.Digest)
@@ -165,6 +167,29 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 	}
 
 	return nil
+}
+
+func IsSymlink(path string) (bool, error) {
+	statInfo, err := os.Lstat(path)
+	if err != nil {
+		return false, err
+	}
+	return (statInfo.Mode() & os.ModeSymlink) != 0, nil
+}
+
+func PathExists(path string) bool {
+	statInfo, err := os.Stat(path)
+	if statInfo == nil {
+		isLink, err := IsSymlink(path)
+		if err != nil {
+			return false
+		}
+		return isLink
+	}
+	if err != nil && os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func lookupManifestInDir(dir, name string) (ispec.Manifest, error) {
@@ -372,6 +397,9 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		if ovl.HasBuiltOCIOutput {
 			for i, layerType := range layerTypes {
 				manifest := ovl.Manifests[layerType]
+				if len(manifest.Layers) < 1 {
+					continue
+				}
 				layer := manifest.Layers[len(manifest.Layers)-1]
 
 				config := ovl.Configs[layerType]
