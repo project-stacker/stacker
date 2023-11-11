@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-22.04
     services:
       registry:
-        image: registry:2
+        image: ghcr.io/project-stacker/registry:2
         ports:
           - 5000:5000
     strategy:
