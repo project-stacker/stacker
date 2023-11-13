@@ -13,7 +13,7 @@ function teardown() {
 centos:
     from:
         type: docker
-        url: docker://centos:latest
+        url: oci:${CENTOS_OCI}
     import:
         - https://www.cisco.com/favicon.ico
     run: |

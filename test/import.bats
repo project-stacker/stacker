@@ -356,7 +356,7 @@ fifth:
 sixth:
   from:
     type: docker
-    url: docker://ubuntu:latest
+    url: oci:${UBUNTU_OCI}
   import:
     - stacker://fifth/files/test_file
     - stacker://fifth/file2
@@ -375,7 +375,7 @@ seventh:
 eigth:
   from:
     type: docker
-    url: docker://ubuntu:latest
+    url: oci:${UBUNTU_OCI}
   import:
     - path: test_file
       dest: /dir/files/
@@ -476,7 +476,7 @@ EOF
 src_folder_dest_non_existent_folder_case1:
   from:
     type: docker
-    url: docker://ubuntu:latest
+    url: oci:${UBUNTU_OCI}
   import:
   - path: folder1
     dest: /folder2
@@ -486,7 +486,7 @@ src_folder_dest_non_existent_folder_case1:
 src_folder_dest_non_existent_folder_case2:
   from:
     type: docker
-    url: docker://ubuntu:latest
+    url: oci:${UBUNTU_OCI}
   import:
   - path: folder1/
     dest: /folder2
@@ -496,7 +496,7 @@ src_folder_dest_non_existent_folder_case2:
 src_folder_dest_non_existent_folder_case3:
   from:
     type: docker
-    url: docker://ubuntu:latest
+    url: oci:${UBUNTU_OCI}
   import:
   - path: folder1
     dest: /folder2/
@@ -508,7 +508,7 @@ src_folder_dest_non_existent_folder_case3:
 src_folder_dest_non_existent_folder_case4:
   from:
     type: docker
-    url: docker://ubuntu:latest
+    url: oci:${UBUNTU_OCI}
   import:
   - path: folder1/
     dest: /folder2/
