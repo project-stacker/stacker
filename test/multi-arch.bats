@@ -16,7 +16,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - https://www.cisco.com/favicon.ico
 EOF
     stacker build
@@ -36,7 +36,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - https://www.cisco.com/favicon.ico
 EOF
     bad_stacker build

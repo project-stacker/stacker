@@ -15,7 +15,7 @@ broken_link:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - dir
     run: cp -a /stacker/imports/dir/testln /testln
 EOF

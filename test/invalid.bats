@@ -14,7 +14,7 @@ bad:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - stacker://idontexist/file
 EOF
     bad_stacker build

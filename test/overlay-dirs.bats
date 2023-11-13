@@ -51,7 +51,7 @@ second:
     from:
         type: built
         tag: first
-    import: stacker://first/file
+    imports: stacker://first/file
     run: |
         [ -f /stacker/imports/file ]
 EOF

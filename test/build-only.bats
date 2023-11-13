@@ -83,7 +83,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import: https://www.cisco.com/favicon.ico
+    imports: https://www.cisco.com/favicon.ico
     run: |
         cp /stacker/imports/favicon.ico /favicon.ico
     build_only: true
@@ -91,7 +91,7 @@ layer1:
     from:
         type: built
         tag: busybox
-    import:
+    imports:
         - stacker://busybox/favicon.ico
     run:
         - cp /stacker/imports/favicon.ico /favicon2.ico
@@ -108,7 +108,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import: https://www.cisco.com/favicon.ico
+    imports: https://www.cisco.com/favicon.ico
     run: |
         cp /stacker/imports/favicon.ico /favicon.ico
     build_only: true
@@ -116,7 +116,7 @@ layer1:
     from:
         type: built
         tag: busybox
-    import:
+    imports:
         - stacker://busybox/favicon.ico
     run:
         - cp /stacker/imports/favicon.ico /favicon2.ico

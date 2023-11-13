@@ -9,7 +9,7 @@ layer1_1:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - import1
     run: |
         cp /stacker/imports/import1 /root/import1
@@ -30,7 +30,7 @@ layer2:
     from:
         type: built
         tag: layer1_1
-    import:
+    imports:
         - import2
     run: |
         cp /stacker/imports/import2 /root/import2

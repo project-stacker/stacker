@@ -14,7 +14,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import: import
+    imports: import
 EOF
     echo 1 > import
     stacker build
@@ -32,7 +32,7 @@ busybox:
     from:
         type: tar
         url: .stacker/layer-bases/busybox.tar
-    import:
+    imports:
         - ./stacker.yaml
         - https://www.cisco.com/favicon.ico
         - ./executable
@@ -199,6 +199,7 @@ busybox:
         type: tar
         url: .stacker/layer-bases/busybox.tar
     import:
+    imports:
         - ./stacker.yaml
         - https://www.cisco.com/favicon.ico
         - ./executable

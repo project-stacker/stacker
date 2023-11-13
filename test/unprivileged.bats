@@ -42,7 +42,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - https://www.cisco.com/favicon.ico
     run: |
         cp /stacker/imports/favicon.ico /favicon.ico
@@ -74,7 +74,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - import
 EOF
     stacker build
@@ -96,7 +96,7 @@ base:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - first
         - second
     run: |
@@ -126,7 +126,7 @@ base:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - test
     run: cat /stacker/imports/test
 EOF

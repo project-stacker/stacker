@@ -27,7 +27,7 @@ test:
     from:
         type: oci
         tag: $BUSYBOX_OCI
-    import:
+    imports:
         - stacker://foo/bar
         - stacker://baz/foo
 EOF
@@ -74,7 +74,7 @@ installer-iso-build:
         type: built
         tag: minbase1
     build_only: true
-    import:
+    imports:
         - stacker://installer-initrd/output/installer-initrd-base.cpio
         - stacker://installer-initrd-modules/output/installer-initrd-modules.cpio
     run: |

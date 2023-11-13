@@ -27,7 +27,7 @@ contents2:
     from:
         type: built
         tag: build
-    import:
+    imports:
         - stacker://contents/first
         - stacker://contents/second
     run: |

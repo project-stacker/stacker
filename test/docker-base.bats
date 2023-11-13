@@ -14,7 +14,7 @@ busybox:
     from:
         type: docker
         url: oci:${BUSYBOX_OCI}
-    import:
+    imports:
         - https://www.cisco.com/favicon.ico
     run: |
         cp /stacker/imports/favicon.ico /favicon.ico
