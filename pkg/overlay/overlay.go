@@ -14,6 +14,7 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/pkg/oci"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
@@ -142,14 +143,6 @@ func (o *overlay) SetupEmptyRootfs(name string) error {
 	return ovl.write(o.config, name)
 }
 
-func hasDirEntries(dir string) bool {
-	ents, err := os.ReadDir(dir)
-	if err != nil {
-		return false
-	}
-	return len(ents) != 0
-}
-
 func (o *overlay) snapshot(source string, target string) error {
 	err := o.Create(target)
 	if err != nil {
@@ -168,7 +161,7 @@ func (o *overlay) snapshot(source string, target string) error {
 	}
 	ociDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
 	for _, layer := range manifest.Layers {
-		err := unpackOne(layer, ociDir, overlayPath(o.config.RootFSDir, layer.Digest, "overlay"))
+		err := oci.UnpackOne(layer, ociDir, overlayPath(o.config.RootFSDir, layer.Digest, "overlay"))
 		if err != nil {
 			return errors.Wrapf(err, "Failed mounting %#v", layer)
 		}

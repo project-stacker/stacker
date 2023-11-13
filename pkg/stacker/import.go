@@ -13,6 +13,7 @@ import (
 	"github.com/vbatts/go-mtree"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
+	"stackerbuild.io/stacker/pkg/oci"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
@@ -294,6 +295,38 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		}
 
 		return p, nil
+	} else if url.Scheme == "docker" {
+		if idest != "" && idest[len(idest)-1:] != "/" {
+			return "", errors.Errorf("The destination path must be directory: %s", idest)
+		}
+
+		is := types.ImageSource{Type: "docker", Url: i}
+		if err := importContainersImage(is, c, false); err != nil {
+			return "", err
+		}
+
+		tag, err := is.ParseTag()
+		if err != nil {
+			return "", err
+		}
+
+		pathfunc := func(digest digest.Digest) string {
+			_ = os.Remove(cache)
+			return cache
+		}
+
+		ociDir := path.Join(c.StackerDir, "layer-bases", "oci")
+
+		n, err := oci.Unpack(ociDir, tag, pathfunc)
+		if err != nil {
+			return "", err
+		}
+
+		if n > 1 {
+			return "", errors.Errorf("Currently supporting single-layer container image imports")
+		}
+
+		return cache, nil
 	}
 
 	return "", errors.Errorf("unsupported url scheme %s", i)
