@@ -10,12 +10,12 @@ function teardown() {
 
 @test "multi-arch/os support" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     os: darwin
     arch: arm64
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - https://www.cisco.com/favicon.ico
 EOF
@@ -31,11 +31,11 @@ EOF
 
 @test "multi-arch/os bad config fails" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     os:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - https://www.cisco.com/favicon.ico
 EOF

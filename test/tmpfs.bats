@@ -13,7 +13,7 @@ function teardown() {
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo hello world
 EOF

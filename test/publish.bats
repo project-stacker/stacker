@@ -8,7 +8,7 @@ function setup() {
 layer1:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - import1
     run: |
@@ -35,7 +35,7 @@ EOF
 layer3:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     build_only: true
 EOF
     mkdir -p ocibuilds/sub4
@@ -43,7 +43,7 @@ EOF
 layer4:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         ls > /root/ls_out
 EOF

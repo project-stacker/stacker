@@ -17,10 +17,10 @@ function teardown() {
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         # make sure that /stacker is readonly
-        grep "/stacker" /proc/mounts | grep -P "\sro[\s,]"
+        grep "/stacker" /proc/mounts | grep "[[:space:]]ro[[:space:],]"
 
         # make sure stacker deleted the non-import
         [ ! -f /stacker/foo ]
@@ -33,7 +33,7 @@ EOF
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo hello world
 EOF

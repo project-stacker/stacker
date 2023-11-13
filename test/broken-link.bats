@@ -14,7 +14,7 @@ function teardown() {
 broken_link:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - dir
     run: cp -a /stacker/imports/dir/testln /testln

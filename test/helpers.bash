@@ -40,13 +40,16 @@ function image_copy {
 }
 
 STACKER_DOCKER_BASE=${STACKER_DOCKER_BASE:-docker://}
+STACKER_BUILD_BUSYBOX_IMAGE=${STACKER_BUILD_BUSYBOX_IMAGE:-${STACKER_DOCKER_BASE}busybox:latest}
 STACKER_BUILD_CENTOS_IMAGE=${STACKER_BUILD_CENTOS_IMAGE:-${STACKER_DOCKER_BASE}centos:latest}
 STACKER_BUILD_UBUNTU_IMAGE=${STACKER_BUILD_UBUNTU_IMAGE:-${STACKER_DOCKER_BASE}ubuntu:latest}
 (
     flock 9
+    [ -f "$ROOT_DIR/test/busybox/index.json" ] || (image_copy "${STACKER_BUILD_BUSYBOX_IMAGE}" "oci:$ROOT_DIR/test/busybox:latest" && chmod -R 777 "$ROOT_DIR/test/busybox")
     [ -f "$ROOT_DIR/test/centos/index.json" ] || (image_copy "${STACKER_BUILD_CENTOS_IMAGE}" "oci:$ROOT_DIR/test/centos:latest" && chmod -R 777 "$ROOT_DIR/test/centos")
     [ -f "$ROOT_DIR/test/ubuntu/index.json" ] || (image_copy "${STACKER_BUILD_UBUNTU_IMAGE}" "oci:$ROOT_DIR/test/ubuntu:latest" && chmod -R 777 "$ROOT_DIR/test/ubuntu")
 ) 9<$ROOT_DIR/test/main.py
+export BUSYBOX_OCI="$ROOT_DIR/test/busybox:latest"
 export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
 export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
 export PATH="$PATH:$ROOT_DIR/hack/tools/bin"

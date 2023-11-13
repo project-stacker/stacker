@@ -13,7 +13,7 @@ function teardown() {
 base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     cmd: foo
 layer1:
     from:

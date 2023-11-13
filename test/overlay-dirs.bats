@@ -19,7 +19,7 @@ function teardown() {
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     overlay_dirs:
         - source: dir_to_overlay
     run: |
@@ -42,7 +42,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     overlay_dirs:
         - source: dir_to_overlay
     run: |
@@ -68,7 +68,7 @@ EOF
 build:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     binds:
         - dir_to_overlay -> /dir_to_overlay
     run: |
@@ -98,7 +98,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     overlay_dirs:
         - source: dir_to_overlay
           dest: /usr/local
@@ -122,7 +122,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     overlay_dirs:
         - source: dir_to_overlay1
           dest: /usr/local1
@@ -178,14 +178,15 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     overlay_dirs:
         - source: dir_to_overlay
           dest: /usr/local
     run: |
         [ -f /usr/local/file ]
-        [ "\$(stat --format=%G /usr/local/file )" == "root" ]
-        [ "\$(stat --format=%U /usr/local/file )" == "root" ]
+        # -c == --format, but busybox does not support --format
+        [ "\$(stat -c%G /usr/local/file )" == "root" ]
+        [ "\$(stat -c%U /usr/local/file )" == "root" ]
 EOF
     stacker build
 

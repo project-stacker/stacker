@@ -13,7 +13,7 @@ function teardown() {
 bind-test:
     from:
         type: oci
-        url: ${{CENTOS_OCI}}
+        url: ${{BUSYBOX_OCI}}
     binds:
         - ${{bind_path}} -> /root/tree1/foo
     run: |
@@ -29,7 +29,7 @@ EOF
 
     bind_path=$(realpath tree1/foo)
 
-    out=$(stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI)
+    out=$(stacker build --substitute bind_path=${bind_path} --substitute BUSYBOX_OCI=$BUSYBOX_OCI)
 
     [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
 
@@ -41,7 +41,7 @@ EOF
 bind-test:
     from:
         type: oci
-        url: ${{CENTOS_OCI}}
+        url: ${{BUSYBOX_OCI}}
     binds:
         - source: ${{bind_path1}}
           dest: /root/tree1/foo
@@ -65,7 +65,7 @@ EOF
     out=$(stacker build \
         "--substitute=bind_path1=${bind_path1}" \
         "--substitute=bind_path2=${bind_path2}" \
-        "--substitute=CENTOS_OCI=$CENTOS_OCI" ) || {
+        "--substitute=BUSYBOX_OCI=$BUSYBOX_OCI" ) || {
              printf "%s\n" "$out" 1>&2
              exit 1
         }

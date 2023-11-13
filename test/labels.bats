@@ -13,7 +13,7 @@ function teardown() {
 label:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     generate_labels: |
         echo -n "rocks" > /stacker/oci-labels/meshuggah
 EOF

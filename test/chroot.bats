@@ -14,7 +14,7 @@ function teardown() {
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: touch /test
 EOF
     stacker build
