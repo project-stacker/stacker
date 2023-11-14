@@ -13,7 +13,7 @@ function teardown() {
 build:
     from:
         type: docker
-        url: docker://ubuntu:latest
+        url: oci:${UBUNTU_OCI}
     run: |
         touch /tmp/first
         touch /tmp/second
