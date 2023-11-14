@@ -93,4 +93,8 @@ build:
     cd /stacker-tree
     make BUILD_D=/build show-info
     make BUILD_D=/build -C cmd/stacker/lxc-wrapper clean
-    make BUILD_D=/build stacker-static
+    if [ x${{WITH_COV}} = x"yes" ]; then
+      make BUILD_D=/build stacker-static-cov
+    else
+      make -C /stacker-tree stacker-static
+    fi

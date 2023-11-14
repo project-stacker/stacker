@@ -14,7 +14,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=$(BUILD_D)/oci --roots-dir=$(BUILD_D)/roots --stacker-dir=$(BUILD_D)/stacker --storage-type=overlay
 
-build_stacker = go build -tags "$(BUILD_TAGS) $1" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $2" -o $3 ./cmd/stacker
+build_stacker = go build $1 -tags "$(BUILD_TAGS) $2" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $3" -o $4 ./cmd/stacker
 
 # See doc/hacking.md for how to use a local oci or docker repository.
 STACKER_DOCKER_BASE?=docker://ghcr.io/project-stacker/
@@ -57,15 +57,31 @@ stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
-		--substitute VERSION_FULL=$(VERSION_FULL)
+		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute WITH_COV=no
+
+stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
+	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
+		-f build.yaml \
+		--substitute BUILD_D=$(BUILD_D) \
+		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
+		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
+		--substitute LXC_BRANCH=$(LXC_BRANCH) \
+		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute WITH_COV=yes
 
 stacker-static: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,static_build,-extldflags '-static',stacker)
+	$(call build_stacker,,static_build,-extldflags '-static',stacker)
+
+# can't use a comma in func call args, so do this instead
+, := ,
+stacker-static-cov: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
+	$(call build_stacker,-cover -coverpkg="./pkg/...$(,)./cmd/...",static_build,-extldflags '-static',stacker)
 
 # TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
 # Could find a better way to do this.
 stacker-dynamic: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
-	$(call build_stacker,,,stacker-dynamic)
+	$(call build_stacker,,,,stacker-dynamic)
 
 cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
 	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) -lpthread -ldl" lxc-wrapper
@@ -141,6 +157,21 @@ test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT)
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
+.PHONY: check-cov
+check-cov: lint test-cov
+
+.PHONY: test-cov
+test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT)
+	sudo -E PATH="$$PATH" \
+		-E GOCOVERDIR="$$GOCOVERDIR" \
+		LXC_BRANCH=$(LXC_BRANCH) \
+		LXC_CLONE_URL=$(LXC_CLONE_URL) \
+		STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
+		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
+		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		./test/main.py \
+		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
+		$(patsubst %,test/%.bats,$(TEST))
 
 CLONE_D = $(BUILD_D)/oci-clone
 CLONE_RETRIES = 3

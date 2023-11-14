@@ -18,6 +18,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/log"
+	"stackerbuild.io/stacker/pkg/test"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
@@ -697,6 +698,25 @@ func SetupBuildContainerConfig(config types.StackerConfig, storage types.Storage
 	// make stacker binary available inside container
 	if err := c.BindMount(binary, insideStaticStacker, ""); err != nil {
 		return err
+	}
+
+	// code coverage from inside the container
+	if test.IsCoverageEnabled() {
+		log.Infof("coverage enabled")
+
+		if test.GetCoverageDir() != test.CoverageBindPath {
+			err := c.BindMount(test.GetCoverageDir(), test.CoverageBindPath, "rw")
+			if err != nil {
+				return err
+			}
+
+			log.Debugf("bind mounting %s into container", test.GetCoverageDir())
+		}
+
+		err = c.SetConfig("lxc.environment", fmt.Sprintf("GOCOVERDIR=%s", test.CoverageBindPath))
+		if err != nil {
+			return err
+		}
 	}
 
 	rootfs, err := storage.GetLXCRootfsConfig(name)
