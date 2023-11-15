@@ -1,0 +1,42 @@
+#!/bin/sh
+# vi: ts=4 expandtab
+Usage() {
+    cat <<EOF
+Usage: ${0##*/} oci-dir image [image [...]]
+
+Copy each 'image' into oci repo in 'oci-dir'.
+
+Example:
+    ${0##*/} ./my-oci.d docker://busybox:latest
+EOF
+}
+
+stderr() { echo "$@" 1>&2; }
+
+fail() { [ $# -eq 0 ] || stderr "$@"; exit 1; }
+
+vr() {
+    stderr "$" "$@"
+    "$@" && return 0
+    fail "FAIL[$?]: $*"
+}
+
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && { Usage; exit 0; }
+[ $# -ge 2 ] || {
+    Usage 1>&2;
+    fail "Got $# args, expected 2 or more";
+}
+
+oci_d="$1"
+shift
+
+command -v skopeo >/dev/null 2>&1 ||
+    fail "no 'skopeo' in PATH"
+
+mkdir -p "$oci_d" || fail "failed to create dir '$oci_d'"
+for url in "$@"; do
+    name=${url##*/};
+    vr skopeo copy --retry-times=3 "$url" "oci:${oci_d}:$name" ||
+        fail "Failed to copy '$url' to 'oci:${oci_d}:$name'"
+done
+exit 0
