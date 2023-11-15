@@ -142,16 +142,10 @@ test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT)
 		$(patsubst %,test/%.bats,$(TEST))
 
 
-CLONE_D = $(BUILD_D)/oci-clone
-CLONE_RETRIES = 3
 .PHONY: docker-clone
 docker-clone:
-	mkdir -p $(CLONE_D)
-	vr() { echo "$$" "$$@" 1>&2; "$$@"; }; \
-	for u in $(STACKER_BUILD_IMAGES); do \
-		name=$${u$(HASH)$(HASH)*/}; \
-		vr skopeo copy --retry-times $(CLONE_RETRIES) "$$u" "oci:$(CLONE_D):$${name}"; \
-	done
+	./tools/oci-copy "$(BUILD_D)/oci-clone" $(STACKER_BUILD_IMAGES)
+
 
 .PHONY: show-info
 show-info:
