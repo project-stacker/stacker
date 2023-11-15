@@ -13,7 +13,7 @@ function teardown() {
 parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 child:
     from:
         type: built

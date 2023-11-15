@@ -16,7 +16,7 @@ function basic_test() {
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /hello
 EOF
@@ -48,7 +48,7 @@ EOF
 base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: touch /base
 a:
     from:
@@ -105,7 +105,7 @@ EOF
 
     # c should still be ok
     [ -f c/c ]
-    [ -f c/sbin/init ]
+    [ -f c/bin/sh ]
     stacker internal-go atomfs umount c
 
     # c's last layer shouldn't exist any more, since it is unique
@@ -121,7 +121,7 @@ EOF
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /hello
 EOF

@@ -13,7 +13,7 @@ function teardown() {
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: ls
     annotations:
       a.b.c.key: val

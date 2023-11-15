@@ -34,7 +34,7 @@ function teardown() {
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
 
     stacker --progress build
@@ -46,7 +46,7 @@ EOF
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
 
     stacker build

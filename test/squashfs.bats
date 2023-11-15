@@ -18,7 +18,7 @@ function teardown() {
 build:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     build_only: true
 importer:
     from:
@@ -32,20 +32,20 @@ EOF
 
 @test "squashfs mutate /usr/bin" {
     cat > stacker.yaml <<EOF
-centos1:
+busybox1:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /usr/bin/foo
 EOF
     stacker build --layer-type=squashfs
 
     cat > stacker.yaml <<EOF
-centos2:
+busybox2:
     from:
         type: oci
-        url: oci:centos1-squashfs
+        url: oci:busybox1-squashfs
     run: |
         ls /usr/bin | grep foo
 EOF
@@ -54,10 +54,10 @@ EOF
 
 @test "squashfs import support" {
     cat > stacker.yaml <<EOF
-centos1:
+busybox1:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /1
 EOF
@@ -65,10 +65,10 @@ EOF
     mv oci oci-import
 
     cat > stacker.yaml <<EOF
-centos2:
+busybox2:
     from:
         type: oci
-        url: oci-import:centos1-squashfs
+        url: oci-import:busybox1-squashfs
     run: |
         [ -f /1 ]
 EOF
@@ -77,10 +77,10 @@ EOF
 
 @test "squashfs layer support (overlay)" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /1
 EOF
@@ -93,7 +93,7 @@ EOF
 
     mkdir layer0
     mount -t squashfs oci/blobs/sha256/$layer0 layer0
-    [ -f layer0/bin/bash ]
+    [ -f layer0/bin/sh ]
 
     mkdir layer1
     mount -t squashfs oci/blobs/sha256/$layer1 layer1
@@ -102,10 +102,10 @@ EOF
 
 @test "squashfs file whiteouts (overlay)" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         rm -rf /etc/selinux
         rm -f /usr/bin/ls
@@ -137,12 +137,12 @@ EOF
 build:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     build_only: true
 importer:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - stacker://build/bin/ls
     run: |
@@ -154,16 +154,16 @@ EOF
 @test "built type with squashfs works" {
     mkdir -p .stacker/layer-bases
     chmod 777 .stacker/layer-bases
-    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
-    umoci unpack --image .stacker/layer-bases/oci:centos dest
-    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
     rm -rf dest
 
 	cat > stacker.yaml <<EOF
 base:
   from:
     type: tar
-    url: .stacker/layer-bases/centos.tar
+    url: .stacker/layer-bases/busybox.tar
   run: |
     echo "hello world" > /message
 
@@ -191,16 +191,16 @@ EOF
 @test "built type with squashfs build-only base works (overlay)" {
     mkdir -p .stacker/layer-bases
     chmod 777 .stacker/layer-bases
-    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
-    umoci unpack --image .stacker/layer-bases/oci:centos dest
-    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
     rm -rf dest
 
 	cat > stacker.yaml <<EOF
 base:
   from:
     type: tar
-    url: .stacker/layer-bases/centos.tar
+    url: .stacker/layer-bases/busybox.tar
   run: |
     echo "hello world" > /message
   build_only: true

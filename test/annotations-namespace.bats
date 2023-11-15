@@ -13,7 +13,7 @@ function teardown() {
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: ls
 EOF
     stacker build --annotations-namespace=namespace.example
@@ -28,7 +28,7 @@ EOF
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: ls
 EOF
     stacker build

@@ -13,7 +13,7 @@ function teardown() {
 parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /root/parent
         cat /proc/self/mountinfo

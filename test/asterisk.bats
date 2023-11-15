@@ -13,7 +13,7 @@ function teardown() {
 a:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         mkdir /mybin
         cp /bin/* /mybin

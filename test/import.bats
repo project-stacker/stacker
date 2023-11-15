@@ -14,7 +14,7 @@ function teardown() {
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - https://bing.com/favicon.ico
 EOF
@@ -31,10 +31,10 @@ EOF
     mkdir -p recursive
     touch recursive/child
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - recursive
     run: |
@@ -52,7 +52,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - recursive
     run: |
@@ -62,7 +62,7 @@ first:
 second:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - stacker://first/recursive
     run: |
@@ -81,7 +81,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: test_file
           hash: $test_file_sha
@@ -109,10 +109,10 @@ EOF
 @test "import with unmatched hash should fail" {
     touch test_file
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: test_file
           hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b856
@@ -124,10 +124,10 @@ EOF
 
 @test "invalid hash should fail" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: test_file
           hash: 1234abcdef
@@ -144,7 +144,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: test_file
           hash: $test_file_sha
@@ -172,7 +172,7 @@ EOF
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
@@ -189,7 +189,7 @@ EOF
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: https://www.google.com/favicon.ico
           hash: 0d4856785d1d3c3aad3e5311e654c70c19d335f927c24ebb89dfcd52b2d988cb
@@ -208,7 +208,7 @@ EOF
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
@@ -231,7 +231,7 @@ EOF
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: https://www.google.com/favicon.ico
         - path: test_file
@@ -249,7 +249,7 @@ EOF
 thing:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
@@ -261,10 +261,10 @@ EOF
 
 @test "invalid import " {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - "zomg"
         - - "one"
@@ -275,10 +275,10 @@ EOF
 
 @test "import a full directory tree with siblings" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - dir
     run: |
@@ -306,7 +306,7 @@ EOF
 first:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: test_file
           hash: $test_file_sha
@@ -402,7 +402,7 @@ EOF
 first:
   from:
     type: oci
-    url: $CENTOS_OCI
+    url: $BUSYBOX_OCI
   import:
   - path: folder1/
     dest: /folder1/
@@ -421,7 +421,7 @@ second:
 third:
   from:
     type: oci
-    url: $CENTOS_OCI
+    url: $BUSYBOX_OCI
   import:
     - path: stacker://second/folder1/
       dest: /folder1/
@@ -432,7 +432,7 @@ third:
 fourth:
   from:
     type: oci
-    url: $CENTOS_OCI
+    url: $BUSYBOX_OCI
   import:
   - path: folder1/
     dest: /
@@ -445,7 +445,7 @@ fourth:
 fifth:
   from:
     type: oci
-    url: $CENTOS_OCI
+    url: $BUSYBOX_OCI
   import:
   - path: folder1/subfolder2/
     dest: /folder3/

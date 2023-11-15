@@ -8,7 +8,7 @@ function setup() {
 layer1_1:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - import1
     run: |
@@ -16,7 +16,7 @@ layer1_1:
 layer1_2:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run:
         touch /root/import0
 EOF
@@ -161,7 +161,7 @@ EOF
 one:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /one
 EOF
@@ -212,7 +212,7 @@ EOF
 one:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /one
 EOF
@@ -246,7 +246,7 @@ EOF
 one:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
 
     stacker recursive-build
@@ -260,11 +260,11 @@ EOF
 same:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 same:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
     bad_stacker build | grep "duplicate layer name"
 }
@@ -274,7 +274,7 @@ EOF
 same:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
     cat > b.yaml <<EOF
 config:

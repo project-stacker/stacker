@@ -10,10 +10,10 @@ function teardown() {
 
 @test "multiple stacker builds in a row" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import: import
 EOF
     echo 1 > import
@@ -28,10 +28,10 @@ EOF
 
 @test "basic workings" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: tar
-        url: .stacker/layer-bases/centos.tar
+        url: .stacker/layer-bases/busybox.tar
     import:
         - ./stacker.yaml
         - https://www.cisco.com/favicon.ico
@@ -53,7 +53,7 @@ centos:
 layer1:
     from:
         type: built
-        tag: centos
+        tag: busybox
     run:
         - rm /favicon.ico
 EOF
@@ -62,29 +62,29 @@ EOF
     chmod +x executable
     mkdir -p .stacker/layer-bases
     chmod 777 .stacker/layer-bases
-    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
-    umoci unpack --image .stacker/layer-bases/oci:centos dest
-    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
     rm -rf dest
 
     stacker build --substitute "FAVICON=favicon.ico"
     [ "$status" -eq 0 ]
 
     # did we really download the image to the right place?
-    [ -f .stacker/layer-bases/centos.tar ]
+    [ -f .stacker/layer-bases/busybox.tar ]
 
     # did run actually copy the favicon to the right place?
-    stacker grab centos:/favicon.ico
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha favicon.ico)" ]
+    stacker grab busybox:/favicon.ico
+    [ "$(sha .stacker/imports/busybox/favicon.ico)" == "$(sha favicon.ico)" ]
 
     [ ! -f roots/layer1/rootfs/favicon.ico ] || [ ! -f roots/layer1/overlay/favicon.ico ]
 
     rm executable
-    stacker grab centos:/usr/bin/executable
+    stacker grab busybox:/usr/bin/executable
     [ "$(stat --format="%a" executable)" = "755" ]
 
     # did we do a copy correctly?
-    [ "$(sha .stacker/imports/centos/stacker.yaml)" == "$(sha ./stacker.yaml)" ]
+    [ "$(sha .stacker/imports/busybox/stacker.yaml)" == "$(sha ./stacker.yaml)" ]
 
     # check OCI image generation
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
@@ -140,15 +140,15 @@ EOF
 
 @test "stacker.yaml without imports can run" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /foo
 EOF
     stacker build
-    umoci unpack --image oci:centos dest
+    umoci unpack --image oci:busybox dest
     [ -f dest/rootfs/foo ]
 }
 
@@ -162,25 +162,25 @@ EOF
 @test "use colons in roots-dir path name should fail" {
     local tmpd=$(pwd)
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /foo
 EOF
     bad_stacker --roots-dir $tmpd/with:colon build
     [ "$status" -eq 1 ]
     echo $output | grep "forbidden"
-} 
+}
 
 @test "use colons in layer name should fail" {
     local tmpd=$(pwd)
     cat > stacker.yaml <<EOF
-centos:with:colon:
+busybox:with:colon:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /foo
 EOF
@@ -194,10 +194,10 @@ EOF
     FAVICON: favicon.ico
 EOF
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: tar
-        url: .stacker/layer-bases/centos.tar
+        url: .stacker/layer-bases/busybox.tar
     import:
         - ./stacker.yaml
         - https://www.cisco.com/favicon.ico
@@ -219,7 +219,7 @@ centos:
 layer1:
     from:
         type: built
-        tag: centos
+        tag: busybox
     run:
         - rm /favicon.ico
 EOF
@@ -228,29 +228,29 @@ EOF
     chmod +x executable
     mkdir -p .stacker/layer-bases
     chmod 777 .stacker/layer-bases
-    image_copy oci:$CENTOS_OCI oci:.stacker/layer-bases/oci:centos
-    umoci unpack --image .stacker/layer-bases/oci:centos dest
-    tar caf .stacker/layer-bases/centos.tar -C dest/rootfs .
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
     rm -rf dest
 
     stacker build --substitute-file subs.yaml
     [ "$status" -eq 0 ]
 
     # did we really download the image to the right place?
-    [ -f .stacker/layer-bases/centos.tar ]
+    [ -f .stacker/layer-bases/busybox.tar ]
 
     # did run actually copy the favicon to the right place?
-    stacker grab centos:/favicon.ico
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha favicon.ico)" ]
+    stacker grab busybox:/favicon.ico
+    [ "$(sha .stacker/imports/busybox/favicon.ico)" == "$(sha favicon.ico)" ]
 
     [ ! -f roots/layer1/rootfs/favicon.ico ] || [ ! -f roots/layer1/overlay/favicon.ico ]
 
     rm executable
-    stacker grab centos:/usr/bin/executable
+    stacker grab busybox:/usr/bin/executable
     [ "$(stat --format="%a" executable)" = "755" ]
 
     # did we do a copy correctly?
-    [ "$(sha .stacker/imports/centos/stacker.yaml)" == "$(sha ./stacker.yaml)" ]
+    [ "$(sha .stacker/imports/busybox/stacker.yaml)" == "$(sha ./stacker.yaml)" ]
 
     # check OCI image generation
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)

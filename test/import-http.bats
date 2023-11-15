@@ -11,10 +11,10 @@ function setup() {
     # As we want to be able to have network for base image download
     # in img/stacker1.yaml but disconnect the network for test file download
     cat > img/stacker1.yaml <<EOF
-centos_base:
+busybox_base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         ls
 EOF
@@ -22,7 +22,7 @@ EOF
 img:
     from:
         type: oci
-        url: $(pwd)/oci:centos_base
+        url: $(pwd)/oci:busybox_base
     import:
         - http://network-test.debian.org/nm
     run: |
@@ -75,10 +75,10 @@ function teardown() {
 
 @test "importing to a dest" {
     cat > img/stacker1.yaml <<EOF
-centos_base:
+busybox_base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - path: https://www.cisco.com/favicon.ico
           dest: /dest/icon

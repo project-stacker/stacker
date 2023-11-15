@@ -13,7 +13,7 @@ function teardown() {
 bad:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - stacker://idontexist/file
 EOF
@@ -34,7 +34,7 @@ EOF
 layer1:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
     cat > stacker2.yaml <<EOF
 config:
@@ -43,7 +43,7 @@ config:
 layer2:
     from:
         type: built
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
     bad_stacker build -f stacker2.yaml
 }

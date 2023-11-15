@@ -34,7 +34,7 @@ test:
         type: oci
         url: oci:base
 EOF
-    image_copy oci:$CENTOS_OCI oci:oci:base
+    image_copy oci:$BUSYBOX_OCI oci:oci:base
     stacker build
     image_copy oci:$UBUNTU_OCI oci:oci:base
     stacker build
@@ -47,7 +47,7 @@ EOF
 build-base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 base:
     from:
         type: built
@@ -70,7 +70,7 @@ EOF
 import-cache:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - link/foo
     run: cp /stacker/imports/foo/zomg /zomg
@@ -94,7 +94,7 @@ EOF
 a:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - foo
     run: |
@@ -110,7 +110,7 @@ EOF
 a:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - foo
     run: |
@@ -125,7 +125,7 @@ EOF
 bind-test:
     from:
         type: oci
-        url: ${{CENTOS_OCI}}
+        url: ${{BUSYBOX_OCI}}
     import:
         - tree1/foo/zomg
     binds:
@@ -147,8 +147,8 @@ EOF
     bind_path=$(realpath tree2/foo)
 
     # The layer should be built
-    stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI
-    out=$(stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI)
+    stacker build --substitute bind_path=${bind_path} --substitute BUSYBOX_OCI=$BUSYBOX_OCI
+    out=$(stacker build --substitute bind_path=${bind_path} --substitute BUSYBOX_OCI=$BUSYBOX_OCI)
     [[ "${out}" =~ ^(.*rebuilding cached layer due to use of binds in stacker file.*)$ ]]
     [[ "${out}" =~ ^(.*filesystem bind-test built successfully)$ ]]
 
@@ -158,7 +158,7 @@ EOF
     # just hack it.
     echo baz >> tree2/foo/zomg
     # The layer should be rebuilt since the there is a bind configuration in stacker.yaml
-    stacker build --substitute bind_path=${bind_path} --substitute CENTOS_OCI=$CENTOS_OCI
+    stacker build --substitute bind_path=${bind_path} --substitute BUSYBOX_OCI=$BUSYBOX_OCI
     [[ "${output}" =~ ^(.*filesystem bind-test built successfully)$ ]]
     [[ ! "${output}" =~ ^(.*found cached layer bind-test)$ ]]
 }
@@ -168,7 +168,7 @@ EOF
 mode-test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - executable
     run: cp /stacker/imports/executable /executable
@@ -203,7 +203,7 @@ EOF
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - foo
     run: cp /stacker/imports/foo /foo
@@ -218,7 +218,7 @@ EOF
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
     stacker build
     echo '{"version": 1, "cache": "lolnope"}' > .stacker/build.cache

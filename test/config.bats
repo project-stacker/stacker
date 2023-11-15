@@ -18,7 +18,7 @@ function teardown() {
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
 
     stacker "--oci-dir=$tmpd/args-oci" "--stacker-dir=$tmpd/args-stacker" \
@@ -37,7 +37,7 @@ EOF
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
     cat > "$tmpd/config.yaml" <<EOF
 stacker_dir: $tmpd/config-stacker
@@ -74,7 +74,7 @@ my-build:
     build_only: true
     from:
         type: oci
-        url: ${{CENTOS_OCI}}
+        url: ${{BUSYBOX_OCI}}
     run: |
         #!/bin/sh
         set -e
@@ -103,7 +103,7 @@ oci_dir: $odir
 rootfs_dir: $rdir
 EOF
 
-    stacker "--config=$config_yaml" build "--stacker-file=$stacker_yaml" --substitute CENTOS_OCI=$CENTOS_OCI
+    stacker "--config=$config_yaml" build "--stacker-file=$stacker_yaml" --substitute BUSYBOX_OCI=$BUSYBOX_OCI
 
     cmp_files "$expected" "$rdir/my-base/overlay/content.txt"
 }

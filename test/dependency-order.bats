@@ -26,7 +26,7 @@ EOF
 test:
     from:
         type: oci
-        tag: $CENTOS_OCI
+        tag: $BUSYBOX_OCI
     import:
         - stacker://foo/bar
         - stacker://baz/foo

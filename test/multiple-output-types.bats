@@ -13,7 +13,7 @@ function teardown() {
 test:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo meshuggah > /rocks
 EOF
@@ -36,7 +36,7 @@ EOF
 parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo meshuggah > /rocks
 child:
@@ -72,7 +72,7 @@ EOF
 parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo meshuggah > /rocks
     build_only: true
@@ -109,7 +109,7 @@ EOF
 parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo meshuggah > /rocks
 EOF
@@ -124,7 +124,7 @@ EOF
 one:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 two:
     build_only: true
     from:
@@ -176,7 +176,7 @@ EOF
 one:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 two:
     build_only: true
     from:

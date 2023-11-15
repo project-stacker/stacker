@@ -13,14 +13,14 @@ function teardown() {
 parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         touch /etc/000
         chmod 000 /etc/000
 child:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     run: |
         echo "zomg" > /etc/000
         chmod 000 /etc/000
@@ -38,10 +38,10 @@ EOF
 
 @test "unprivileged stacker" {
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - https://www.cisco.com/favicon.ico
     run: |
@@ -49,13 +49,13 @@ centos:
 layer1:
     from:
         type: built
-        tag: centos
+        tag: busybox
     run:
         - rm /favicon.ico
 EOF
     stacker build
-    umoci unpack --image oci:centos centos
-    [ "$(sha .stacker/imports/centos/favicon.ico)" == "$(sha centos/rootfs/favicon.ico)" ]
+    umoci unpack --image oci:busybox busybox
+    [ "$(sha .stacker/imports/busybox/favicon.ico)" == "$(sha busybox/rootfs/favicon.ico)" ]
     umoci unpack --image oci:layer1 layer1
     [ ! -f layer1/rootfs/favicon.ico ]
 }
@@ -70,10 +70,10 @@ chmod -w import
 EOF
 
     cat > stacker.yaml <<EOF
-centos:
+busybox:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - import
 EOF
@@ -95,7 +95,7 @@ EOF
 base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - first
         - second
@@ -125,7 +125,7 @@ EOF
 base:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
     import:
         - test
     run: cat /stacker/imports/test
@@ -145,7 +145,7 @@ EOF
 image:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: $BUSYBOX_OCI
 EOF
 
     stacker build --layer-type squashfs
@@ -154,6 +154,6 @@ EOF
 
     mkdir layer0
     mount -t squashfs oci/blobs/sha256/$layer0 layer0
-    echo "mount has uid $(stat --format "%u" layer0/usr/bin/mount)"
-    [ "$(stat --format "%u" layer0/usr/bin/mount)" = "0" ]
+    echo "mount has uid $(stat --format "%u" layer0/bin/mount)"
+    [ "$(stat --format "%u" layer0/bin/mount)" = "0" ]
 }
