@@ -13,3 +13,7 @@ jobs:
     uses: ./.github/workflows/build.yaml
     with:
       slow-test: false
+  coverage:
+    uses: ./.github/workflows/coverage.yaml
+    with:
+      slow-test: false
