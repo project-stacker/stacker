@@ -97,8 +97,6 @@ jobs:
       - name: Show disk usage after running the tests
         if: always()
         uses: ./.github/actions/show-disk-usage
-      - name: Upload code coverage
-        uses: codecov/codecov-action@v3
       - uses: actions/cache@v3
         id: restore-build
         with:
