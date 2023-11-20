@@ -81,7 +81,7 @@ installer-iso-build:
         #!/bin/bash -ex
         # populate the iso
         mkdir /output
-        tar -cf /output/installer-iso.tar -C /stacker .
+        ( cd /stacker/imports && tar -cf /output/installer-iso.tar *.cpio )
 
 atomix-installer-iso:
     from:
