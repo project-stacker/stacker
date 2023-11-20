@@ -91,6 +91,13 @@ jobs:
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
+      - name: Show disk usage after running the tests
+        if: always()
+        uses: ./.github/actions/show-disk-usage
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage-${{ matrix.privilege-level}}.txt
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         if: ${{ matrix.privilege-level == 'priv' }}
@@ -99,13 +106,6 @@ jobs:
           name: binary-cov
           path: stacker
           if-no-files-found: error
-      - name: Show disk usage after running the tests
-        if: always()
-        uses: ./.github/actions/show-disk-usage
-      - name: Upload code coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage-${{ matrix.privilege-level}}.txt
       - uses: actions/cache@v3
         id: restore-build
         with:

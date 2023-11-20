@@ -84,14 +84,6 @@ jobs:
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        if: ${{ matrix.privilege-level == 'priv' }}
-        with:
-          # if there is more than 1 go-version, we would need to account for that here.
-          name: binary
-          path: stacker
-          if-no-files-found: error
       - name: Show disk usage before running the tests
         if: always()
         uses: ./.github/actions/show-disk-usage
@@ -107,6 +99,14 @@ jobs:
         uses: ./.github/actions/show-disk-usage
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ matrix.privilege-level == 'priv' }}
+        with:
+          # if there is more than 1 go-version, we would need to account for that here.
+          name: binary
+          path: stacker
+          if-no-files-found: error
       - uses: actions/cache@v3
         id: restore-build
         with:
