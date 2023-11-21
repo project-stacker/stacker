@@ -24,7 +24,7 @@ require (
 	github.com/opencontainers/umoci v0.0.0-00000000000000-000000000000
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/stretchr/testify v1.8.4
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
@@ -32,7 +32,7 @@ require (
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vbatts/go-mtree v0.5.3
 	golang.org/x/sys v0.13.0
-	golang.org/x/term v0.8.0
+	golang.org/x/term v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.5.2-0.20230512052447-fef7b03b207d
 	sigs.k8s.io/yaml v1.3.0
@@ -60,12 +60,12 @@ require (
 	github.com/anchore/packageurl-go v0.1.1-0.20230104203445-02e0a6721501 // indirect
 	github.com/anchore/stereoscope v0.0.0-20230412183729-8602f1afc574 // indirect
 	github.com/anchore/syft v0.80.0 // indirect
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/becheran/wildmatch-go v1.0.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
-	github.com/cloudflare/circl v1.1.0 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/containerd/containerd v1.7.0 // indirect
@@ -80,7 +80,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da // indirect
 	github.com/docker/cli v23.0.1+incompatible // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v23.0.5+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -133,11 +133,12 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/kjk/lzma v0.0.0-20161016003348-3fd93898850d // indirect
-	github.com/klauspost/compress v1.16.5 // indirect
+	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/knqyf263/go-rpmdb v0.0.0-20230301153543-ba94b245509b // indirect
 	github.com/letsencrypt/boulder v0.0.0-20221109233200-85aa52084eaf // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/martencassel/go-apkutils v0.2.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
@@ -164,7 +165,7 @@ require (
 	github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pierrec/lz4/v4 v4.1.17 // indirect
+	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/proglottis/gpgme v0.1.3 // indirect
@@ -213,13 +214,14 @@ require (
 	go.mongodb.org/mongo-driver v1.11.4 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/crypto v0.8.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/exp v0.0.0-20230202163644-54bba9f4231b // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
-	golang.org/x/tools v0.9.1 // indirect
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sync v0.4.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/tools v0.12.0 // indirect
+	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd // indirect
 	google.golang.org/grpc v1.54.0 // indirect
@@ -228,12 +230,12 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	pault.ag/go/debian v0.12.0 // indirect
-	pault.ag/go/topsort v0.0.0-20160530003732-f98d2ad46e1a // indirect
-	sigs.k8s.io/release-utils v0.7.4 // indirect
+	pault.ag/go/debian v0.15.0 // indirect
+	pault.ag/go/topsort v0.1.1 // indirect
+	sigs.k8s.io/release-utils v0.7.5 // indirect
 )
 
 replace (
 	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20231025233220-c7bb24d57e98
-	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20230522080732-de2712897250
+	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.6-0.20231024012454-aff21a698d5b
 )
