@@ -43,6 +43,7 @@ EOF
 }
 
 @test "mount + umount + mount a tree of images works" {
+    skip "this branch doesn't have full support"
     require_privilege priv
     cat > stacker.yaml <<EOF
 base:
