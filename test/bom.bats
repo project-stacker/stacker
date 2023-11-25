@@ -114,7 +114,7 @@ bom-child:
     type: built
     tag: bom-parent
   bom:
-    generate: true
+    generate: ${{GENERATE}}
     packages:
     - name: pkg3
       version: 1.0.0
@@ -129,7 +129,7 @@ bom-child:
       org.opencontainers.image.vendor: bom-test
       org.opencontainers.image.licenses: MIT
 EOF
-    stacker build
+    stacker build --substitute GENERATE=true
     [ -f .stacker/artifacts/bom-parent/installed-packages.json ]
     # a full inventory for this image
     [ -f .stacker/artifacts/bom-parent/inventory.json ]
@@ -163,7 +163,7 @@ bom-alpine:
     type: docker
     url: docker://ghcr.io/project-stacker/alpine:edge
   bom:
-    generate: true
+    generate: ${{GENERATE}}
     packages:
       - name: pkg1
         version: 1.0.0
@@ -175,7 +175,7 @@ bom-alpine:
     org.opencontainers.image.licenses: MIT
   run: |
     # discover installed pkgs
-    /stacker/tools/static-stacker bom discover
+    [ ${{GENERATE}} = true ] && /stacker/tools/static-stacker bom discover
     # run our cmds
     ls -al  /
     # some changes
@@ -183,7 +183,7 @@ bom-alpine:
     # cleanup
     rm -f /etc/alpine-release /etc/apk/arch /etc/apk/repositories /etc/apk/world /etc/issue /etc/os-release /etc/secfixes.d/alpine /lib/apk/db/installed /lib/apk/db/lock /lib/apk/db/scripts.tar /lib/apk/db/triggers
 EOF
-    stacker build
+    stacker build --substitute GENERATE=true
     [ -f .stacker/artifacts/bom-alpine/installed-packages.json ]
     # a full inventory for this image
     [ -f .stacker/artifacts/bom-alpine/inventory.json ]
