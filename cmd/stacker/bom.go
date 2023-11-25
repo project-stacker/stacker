@@ -10,6 +10,7 @@ import (
 	"stackerbuild.io/stacker-bom/pkg/bom"
 	"stackerbuild.io/stacker-bom/pkg/distro"
 	"stackerbuild.io/stacker-bom/pkg/fs"
+	"stackerbuild.io/stacker/pkg/types"
 )
 
 var bomCmd = cli.Command{
@@ -39,7 +40,7 @@ func doBomDiscover(ctx *cli.Context) error {
 	author := "stacker-internal"
 	org := "stacker-internal"
 
-	if err := fs.Discover(author, org, "/stacker/artifacts/installed-packages.json"); err != nil {
+	if err := fs.Discover(author, org, types.InternalStackerDir+"/artifacts/installed-packages.json"); err != nil {
 		return nil
 	}
 
@@ -57,7 +58,8 @@ func doBomGenerate(ctx *cli.Context) error {
 	org := "stacker-internal"
 	lic := "unknown"
 
-	if err := distro.ParsePackage(input, author, org, lic, fmt.Sprintf("/stacker/artifacts/%s.json", filepath.Base(input))); err != nil {
+	if err := distro.ParsePackage(input, author, org, lic, fmt.Sprintf("%s/artifacts/%s.json",
+		types.InternalStackerDir, filepath.Base(input))); err != nil {
 		return nil
 	}
 
@@ -98,16 +100,17 @@ func doBomVerify(ctx *cli.Context) error {
 	org := ctx.Args().Get(3)
 
 	// first merge all individual sbom artifacts that may have been generated
-	if err := bom.MergeDocuments("/stacker/artifacts", name, author, org, dest); err != nil {
+	iDir := types.InternalStackerDir
+	if err := bom.MergeDocuments(iDir+"/artifacts", name, author, org, dest); err != nil {
 		return err
 	}
 
 	// check against inventory
 	if err := fs.GenerateInventory("/",
-		[]string{"/proc", "/sys", "/dev", "/etc/resolv.conf", "/stacker"},
-		"/stacker/artifacts/inventory.json"); err != nil {
+		[]string{"/proc", "/sys", "/dev", "/etc/resolv.conf", iDir},
+		iDir+"/artifacts/inventory.json"); err != nil {
 		return err
 	}
 
-	return fs.Verify(dest, "/stacker/artifacts/inventory.json", "")
+	return fs.Verify(dest, iDir+"/artifacts/inventory.json", "")
 }

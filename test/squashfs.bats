@@ -143,7 +143,7 @@ importer:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - stacker://build/bin/ls
     run: |
         /stacker/imports/ls
@@ -259,7 +259,7 @@ demo-zot:
   from:
     type: built
     tag: install-rootfs-pkg
-  import:
+  imports:
     - x
   run: |
     #!/bin/sh -ex

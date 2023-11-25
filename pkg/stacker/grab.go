@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/types"
@@ -19,30 +20,31 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 	defer c.Close()
 
-	err = c.BindMount(targetDir, "/stacker", "")
+	err = c.BindMount(targetDir, types.InternalStackerDir, "")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(path.Join(sc.RootFSDir, name, "rootfs", "stacker"))
 
-	err = SetupBuildContainerConfig(sc, storage, c, name)
+	err = SetupBuildContainerConfig(sc, storage, c, types.InternalStackerDir, name)
 	if err != nil {
 		return err
 	}
 
-	bcmd := []string{insideStaticStacker, "internal-go"}
+	bcmd := []string{filepath.Join(types.InternalStackerDir, types.BinStacker), "internal-go"}
 
+	iDestName := filepath.Join(types.InternalStackerDir, path.Base(source))
 	if idest == "" || source[len(source)-1:] != "/" {
-		err = c.Execute(append(bcmd, "cp", source, "/stacker/"+path.Base(source)), nil)
+		err = c.Execute(append(bcmd, "cp", source, iDestName), nil)
 	} else {
-		err = c.Execute(append(bcmd, "cp", source, "/stacker/"), nil)
+		err = c.Execute(append(bcmd, "cp", source, types.InternalStackerDir+"/"), nil)
 	}
 	if err != nil {
 		return err
 	}
 
 	if mode != nil {
-		err = c.Execute(append(bcmd, "chmod", fmt.Sprintf("%o", *mode), "/stacker/"+path.Base(source)), nil)
+		err = c.Execute(append(bcmd, "chmod", fmt.Sprintf("%o", *mode), iDestName), nil)
 		if err != nil {
 			return err
 		}
@@ -54,7 +56,7 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 			owns += fmt.Sprintf(":%d", gid)
 		}
 
-		err = c.Execute(append(bcmd, "chown", owns, "/stacker/"+path.Base(source)), nil)
+		err = c.Execute(append(bcmd, "chown", owns, iDestName), nil)
 		if err != nil {
 			return err
 		}

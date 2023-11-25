@@ -3,7 +3,7 @@ build-env:
   from:
     type: docker
     url: ${{STACKER_BUILD_BASE_IMAGE}}
-  import:
+  imports:
     - https://github.com/json-c/json-c/archive/refs/tags/json-c-0.16-20220414.tar.gz
     - https://gitlab.com/cryptsetup/cryptsetup/-/archive/v2.6.0/cryptsetup-v2.6.0.tar.gz
     - https://github.com/lvmteam/lvm2/archive/refs/tags/v2_03_18.tar.gz

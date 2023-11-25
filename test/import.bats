@@ -15,7 +15,7 @@ thing:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - https://bing.com/favicon.ico
 EOF
     stacker build
@@ -35,7 +35,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - recursive
     run: |
         [ -d /stacker/imports/recursive ]
@@ -53,7 +53,7 @@ first:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - recursive
     run: |
         [ -d /stacker/imports/recursive ]
@@ -63,7 +63,7 @@ second:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - stacker://first/recursive
     run: |
         [ -d /stacker/imports/recursive ]
@@ -82,7 +82,7 @@ first:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: test_file
           hash: $test_file_sha
         - test_file2
@@ -96,7 +96,7 @@ second:
     from:
         type: built
         tag: first
-    import:
+    imports:
         - path: stacker://first/test_file
           hash: $test_file_sha
     run: |
@@ -113,7 +113,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: test_file
           hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b856
 EOF
@@ -128,7 +128,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: test_file
           hash: 1234abcdef
 EOF
@@ -145,7 +145,7 @@ first:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: test_file
           hash: $test_file_sha
     run: |
@@ -155,7 +155,7 @@ second:
     from:
         type: built
         tag: first
-    import:
+    imports:
         - path: stacker://first/test_file
           hash: $test_file_sha_upper
     run: |
@@ -173,7 +173,7 @@ thing:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
     run: |
@@ -190,7 +190,7 @@ thing:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: https://www.google.com/favicon.ico
           hash: 0d4856785d1d3c3aad3e5311e654c70c19d335f927c24ebb89dfcd52b2d988cb
 EOF
@@ -209,7 +209,7 @@ thing:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
         - path: test_file
@@ -232,7 +232,7 @@ thing:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: https://www.google.com/favicon.ico
         - path: test_file
           hash: $test_file_sha
@@ -250,7 +250,7 @@ thing:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: https://www.google.com/favicon.ico
           hash: $google_sha
         - path: test_file
@@ -265,7 +265,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - "zomg"
         - - "one"
           - "two"
@@ -279,7 +279,7 @@ busybox:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - dir
     run: |
         find /stacker
@@ -307,7 +307,7 @@ first:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: test_file
           hash: $test_file_sha
         - test_file2
@@ -321,7 +321,7 @@ second:
     from:
         type: built
         tag: first
-    import:
+    imports:
         - path: stacker://first/test_file
           perms: 0777
           hash: $test_file_sha
@@ -330,7 +330,7 @@ second:
 third:
     from:
         type: scratch
-    import:
+    imports:
         - path: stacker://first/test_file
           mode: 0777
           hash: $test_file_sha
@@ -338,7 +338,7 @@ third:
 fourth:
     from:
         type: scratch
-    import:
+    imports:
         - path: test_file
           hash: $test_file_sha
           mode: 0777
@@ -348,7 +348,7 @@ fourth:
 fifth:
   from:
     type: scratch
-  import:
+  imports:
     - path: test_file
       dest: /files/
     - path: test_file2
@@ -357,7 +357,7 @@ sixth:
   from:
     type: docker
     url: oci:${UBUNTU_OCI}
-  import:
+  imports:
     - stacker://fifth/files/test_file
     - stacker://fifth/file2
   run: |
@@ -365,7 +365,7 @@ sixth:
 seventh:
   from:
     type: scratch
-  import:
+  imports:
     - path: test_file
       dest: /files/
     - path: test_file2
@@ -376,7 +376,7 @@ eigth:
   from:
     type: docker
     url: oci:${UBUNTU_OCI}
-  import:
+  imports:
     - path: test_file
       dest: /dir/files/
     - path: test_file2
@@ -403,7 +403,7 @@ first:
   from:
     type: oci
     url: $BUSYBOX_OCI
-  import:
+  imports:
   - path: folder1/
     dest: /folder1/
   run: |
@@ -422,7 +422,7 @@ third:
   from:
     type: oci
     url: $BUSYBOX_OCI
-  import:
+  imports:
     - path: stacker://second/folder1/
       dest: /folder1/
   run: |
@@ -433,7 +433,7 @@ fourth:
   from:
     type: oci
     url: $BUSYBOX_OCI
-  import:
+  imports:
   - path: folder1/
     dest: /
   run: |
@@ -446,7 +446,7 @@ fifth:
   from:
     type: oci
     url: $BUSYBOX_OCI
-  import:
+  imports:
   - path: folder1/subfolder2/
     dest: /folder3/
   - path: folder1/subfolder2
@@ -477,7 +477,7 @@ src_folder_dest_non_existent_folder_case1:
   from:
     type: docker
     url: oci:${UBUNTU_OCI}
-  import:
+  imports:
   - path: folder1
     dest: /folder2
   run: |
@@ -487,7 +487,7 @@ src_folder_dest_non_existent_folder_case2:
   from:
     type: docker
     url: oci:${UBUNTU_OCI}
-  import:
+  imports:
   - path: folder1/
     dest: /folder2
   run: |
@@ -497,7 +497,7 @@ src_folder_dest_non_existent_folder_case3:
   from:
     type: docker
     url: oci:${UBUNTU_OCI}
-  import:
+  imports:
   - path: folder1
     dest: /folder2/
   run: |
@@ -509,11 +509,38 @@ src_folder_dest_non_existent_folder_case4:
   from:
     type: docker
     url: oci:${UBUNTU_OCI}
-  import:
+  imports:
   - path: folder1/
     dest: /folder2/
   run: |
     [ -f /folder2/file1 ]
 EOF
   stacker build
+}
+
+@test "legacy imports" {
+    echo "file1-content" > file1.txt
+    cat > stacker.yaml <<EOF
+legacyimports:
+  from:
+    type: oci
+    url: $CENTOS_OCI
+  # the deprecated singular 'import' directive puts content in /stacker
+  import:
+    - file1.txt
+  run: |
+    [ -f /stacker/file1.txt ]
+
+newimports:
+  from:
+    type: oci
+    url: $CENTOS_OCI
+  # the plural 'imports' directive puts things in /stacker/imports
+  imports:
+    - file1.txt
+  run: |
+    [ -f /stacker/imports/file1.txt ]
+EOF
+
+    stacker build
 }

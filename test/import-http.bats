@@ -23,7 +23,7 @@ img:
     from:
         type: oci
         url: $(pwd)/oci:busybox_base
-    import:
+    imports:
         - http://network-test.debian.org/nm
     run: |
         cp /stacker/imports/nm /root/nm
@@ -79,7 +79,7 @@ busybox_base:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - path: https://www.cisco.com/favicon.ico
           dest: /dest/icon
     run: |

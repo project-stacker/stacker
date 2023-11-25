@@ -98,7 +98,7 @@ output will look something like:
 
 There are two new stacker file directives here:
 
-    import:
+    imports:
         - config.json
         - install.sh
 
@@ -115,8 +115,8 @@ And then there is:
 
     run: |
         mkdir -p /etc/myapp
-        cp /stacker/config.json /etc/myapp/
-        /stacker/install.sh
+        cp /stacker/imports/config.json /etc/myapp/
+        /stacker/imports/install.sh
 
 Which is the set of commands to run in order to install and configure the
 image.
@@ -152,8 +152,8 @@ emitted in the final OCI image. For example:
         from:
             type: docker
             url: docker://centos:latest
-        import: stacker://build/umoci.static
-        run: cp /stacker/umoci.static /usr/bin/umoci
+        imports: stacker://build/umoci.static
+        run: cp /stacker/imports/umoci.static /usr/bin/umoci
 
 Will build a static version of umoci in an ubuntu container, but the final
 image will only contain an `umoci` tag with a statically linked version of
@@ -165,7 +165,7 @@ indicates that the container shouldn't be emitted in the final image, because
 we're going to import something from it and don't need the rest of it. The
 line:
 
-    import: stacker://build/umoci.static
+    imports: stacker://build/umoci.static
 
 is what actually does this import, and it says "from a previously built stacker
 image called 'build', import /umoci.static".

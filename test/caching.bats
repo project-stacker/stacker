@@ -52,7 +52,7 @@ base:
     from:
         type: built
         tag: build-base
-    import:
+    imports:
         - foo
     run: |
         cp /stacker/imports/foo /foo
@@ -71,7 +71,7 @@ import-cache:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - link/foo
     run: cp /stacker/imports/foo/zomg /zomg
 EOF
@@ -95,7 +95,7 @@ a:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - foo
     run: |
         [ -f /stacker/imports/foo/bar ]
@@ -111,7 +111,7 @@ a:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - foo
     run: |
         [ ! -f /stacker/imports/foo/bar ]
@@ -126,7 +126,7 @@ bind-test:
     from:
         type: oci
         url: ${{BUSYBOX_OCI}}
-    import:
+    imports:
         - tree1/foo/zomg
     binds:
         - ${{bind_path}} -> /root/tree2/foo
@@ -169,7 +169,7 @@ mode-test:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - executable
     run: cp /stacker/imports/executable /executable
 EOF
@@ -185,6 +185,7 @@ EOF
 }
 
 @test "can read previous version's cache" {
+    skip "old version does not support imports (plural) directive"
     # some additional testing that the cache can be read by older versions of
     # stacker (cache_test.go has the full test for the type, this just checks
     # the mechanics of filepaths and such)
@@ -204,7 +205,7 @@ test:
     from:
         type: oci
         url: $BUSYBOX_OCI
-    import:
+    imports:
         - foo
     run: cp /stacker/imports/foo /foo
 EOF
