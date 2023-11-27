@@ -28,7 +28,7 @@ bom-parent:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker bom discover
+      /stacker/bin/stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -86,7 +86,7 @@ bom-parent:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker bom discover
+      /stacker/bin/stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -156,12 +156,11 @@ EOF
 }
 
 @test "bom for alpine-based image" {
-  skip_slow_test
   cat > stacker.yaml <<EOF
 bom-alpine:
   from:
-    type: docker
-    url: docker://ghcr.io/project-stacker/alpine:edge
+    type: oci
+    url: $ALPINE_OCI
   bom:
     generate: true
     packages:
@@ -175,7 +174,7 @@ bom-alpine:
     org.opencontainers.image.licenses: MIT
   run: |
     # discover installed pkgs
-    /stacker/tools/static-stacker bom discover
+    /stacker/bin/stacker bom discover
     # run our cmds
     ls -al  /
     # some changes
