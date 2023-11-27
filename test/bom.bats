@@ -160,8 +160,8 @@ EOF
   cat > stacker.yaml <<EOF
 bom-alpine:
   from:
-    type: docker
-    url: docker://ghcr.io/project-stacker/alpine:edge
+    type: oci
+    url: $ALPINE_OCI
   bom:
     generate: true
     packages:
