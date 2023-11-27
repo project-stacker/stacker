@@ -28,7 +28,7 @@ bom-parent:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker bom discover
+      /stacker/bin/stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -86,7 +86,7 @@ bom-parent:
         paths: [/pkg2]
     run: |
       # discover installed pkgs
-      /stacker/tools/static-stacker bom discover
+      /stacker/bin/stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
@@ -175,7 +175,7 @@ bom-alpine:
     org.opencontainers.image.licenses: MIT
   run: |
     # discover installed pkgs
-    /stacker/tools/static-stacker bom discover
+    /stacker/bin/stacker bom discover
     # run our cmds
     ls -al  /
     # some changes
