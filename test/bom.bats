@@ -156,7 +156,6 @@ EOF
 }
 
 @test "bom for alpine-based image" {
-  skip_slow_test
   cat > stacker.yaml <<EOF
 bom-alpine:
   from:
