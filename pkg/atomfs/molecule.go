@@ -24,6 +24,19 @@ type Molecule struct {
 // mountUnderlyingAtoms mounts all the underlying atoms at
 // config.MountedAtomsPath().
 func (m Molecule) mountUnderlyingAtoms() error {
+	// in the case that we have a verity or other mount error we need to
+	// tear down the other underlying atoms so we don't leave verity and loop
+	// devices around unused.
+	atomsMounted := []string{}
+	cleanupAtoms := func(err error) error {
+		for _, target := range atomsMounted {
+			if umountErr := squashfs.Umount(target); umountErr != nil {
+				return errors.Wrapf(umountErr, "failed to unmount atom @ target %q while handling error: %s", target, err)
+			}
+		}
+		return err
+	}
+
 	for _, a := range m.Atoms {
 		target := m.config.MountedAtomsPath(a.Digest.Encoded())
 
@@ -58,8 +71,10 @@ func (m Molecule) mountUnderlyingAtoms() error {
 
 		err = squashfs.Mount(m.config.AtomsPath(a.Digest.Encoded()), target, rootHash)
 		if err != nil {
-			return errors.Wrapf(err, "couldn't mount")
+			return cleanupAtoms(err)
 		}
+
+		atomsMounted = append(atomsMounted, target)
 	}
 
 	return nil
