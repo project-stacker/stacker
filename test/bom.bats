@@ -1,5 +1,17 @@
 load helpers
 
+function setup_file() {
+  if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    zot_setup
+  fi
+}
+
+function teardown_file() {
+  if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    zot_teardown
+  fi
+}
+
 function setup() {
     stacker_setup
 }
@@ -58,9 +70,9 @@ EOF
     run stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
     [ "$status" -ne 0 ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/bom-parent/inventory.json ]
+    [ -f .stacker/artifacts/first/inventory.json ]
     # sbom for this image shouldn't be generated
-    [ ! -a .stacker/artifacts/bom-parent/bom-parent.json ]
+    [ ! -a .stacker/artifacts/first/first.json ]
     # building a second time also fails due to missed cache
     run stacker build
     [ "$status" -ne 0 ]
@@ -111,10 +123,10 @@ bom-parent:
       org.opencontainers.image.vendor: "ACME Widgets & Trinkets Inc."
       org.opencontainers.image.licenses: MIT
 
-bom-child:
+second:
   from:
     type: built
-    tag: bom-parent
+    tag: first
   bom:
     generate: true
     namespace: "https://test.io/artifacts"
@@ -135,23 +147,23 @@ EOF
     stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
     [ -f .stacker/artifacts/bom-parent/installed-packages.json ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/bom-parent/inventory.json ]
+    [ -f .stacker/artifacts/first/inventory.json ]
     # sbom for this image
-    [ -f .stacker/artifacts/bom-parent/bom-parent.json ]
+    [ -f .stacker/artifacts/first/first.json ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/bom-child/inventory.json ]
+    [ -f .stacker/artifacts/second/inventory.json ]
     # sbom for this image
-    [ -f .stacker/artifacts/bom-child/bom-child.json ]
+    [ -f .stacker/artifacts/second/second.json ]
     if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
       zot_setup
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute CENTOS_OCI=${CENTOS_OCI}
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
-      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
+      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/first:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
       [ $refs == \"SPDXRef-DOCUMENT\" ]
-      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-child:latest --format "{{json .}}" | jq '.referrer | length')
+      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/second:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
-      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-child:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
+      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/second:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
       [ $refs == \"SPDXRef-DOCUMENT\" ]
       zot_teardown
     fi
@@ -199,7 +211,97 @@ EOF
       [ $refs -eq 2 ]
       refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-alpine:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
       [ $refs == \"SPDXRef-DOCUMENT\" ]
-      zot_teardown
+    fi
+    stacker clean
+}
+
+@test "pull boms if published" {
+  #skip_slow_test
+  cat > stacker.yaml <<EOF
+parent:
+    from:
+        type: oci
+        url: $ALPINE_OCI
+    bom:
+      generate: true
+      namespace: "https://test.io/artifacts"
+      packages:
+      - name: pkg1
+        version: 1.0.0
+        license: Apache-2.0
+        paths: [/pkg1]
+      - name: pkg2
+        version: 1.0.0
+        license: Apache-2.0
+        paths: [/pkg2]
+    annotations:
+      org.opencontainers.image.authors: "Alice P. Programmer"
+      org.opencontainers.image.vendor: "ACME Widgets & Trinkets Inc."
+      org.opencontainers.image.licenses: MIT
+    run: |
+      # discover installed pkgs
+      /stacker/bin/stacker bom discover
+      # our own custom packages
+      mkdir -p /pkg1
+      touch /pkg1/file
+      mkdir -p /pkg2
+      touch /pkg2/file
+      # cleanup
+      rm -rf /etc/alpine-release /etc/apk/arch /etc/apk/repositories \
+            /etc/apk/world /etc/issue /etc/os-release /etc/secfixes.d/alpine \
+            /lib/apk/db /etc/apk/repositories /etc/apk/world /etc/issue \
+            /etc/alpine-release /etc/apk/arch /etc/os-release /etc/secfixes.d/alpine
+EOF
+    stacker build
+    [ -f .stacker/artifacts/parent/installed-packages.json ]
+    # a full inventory for this image
+    [ -f .stacker/artifacts/parent/inventory.json ]
+    # sbom for this image
+    [ -f .stacker/artifacts/parent/parent.json ]
+    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
+      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/parent:latest --format "{{json .}}" | jq '.referrer | length')
+      [ $refs -eq 2 ]
+      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/parent:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
+      [ $refs == \"SPDXRef-DOCUMENT\" ]
+    fi
+
+  cat > stacker.yaml <<EOF
+child:
+  from:
+    type: docker
+    url: docker://$ZOT_HOST:$ZOT_PORT/parent:latest
+    insecure: true
+  bom:
+    generate: true
+    namespace: "https://test.io/artifacts"
+    packages:
+    - name: pkg3
+      version: 1.0.0
+      license: Apache-2.0
+      paths: [/pkg3]
+  annotations:
+      org.opencontainers.image.authors: bom-test
+      org.opencontainers.image.vendor: bom-test
+      org.opencontainers.image.licenses: MIT
+  run: |
+    # our own custom packages
+    mkdir -p /pkg3
+    touch /pkg3/file
+    [ ! -f /etc/apk/repositories ]
+EOF
+    stacker clean
+    stacker build
+    # a full inventory for this image
+    [ -f .stacker/artifacts/child/inventory.json ]
+    # sbom for this image
+    [ -f .stacker/artifacts/child/child.json ]
+    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
+      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/child:latest --format "{{json .}}" | jq '.referrer | length')
+      [ $refs -eq 2 ]
+      refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/child:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
+      [ $refs == \"SPDXRef-DOCUMENT\" ]
     fi
     stacker clean
 }
