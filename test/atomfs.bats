@@ -8,6 +8,23 @@ function teardown() {
     cleanup
 }
 
+function verity_checkusedloops() {
+    # search for loopdevices which have backing files with the current
+    # BATS_TEST_DIRNAME value and complain if they're present.
+    local usedloops="" found="" x=""
+    for ((x=0; x<5; x++)); do
+        usedloops=$(losetup -a | grep $BATS_TEST_DIRNAME || echo)
+        if [ -n "$usedloops" ]; then
+            found=1
+            udevadm settle
+        else
+            return 0
+        fi
+    done
+    echo "found used loops in testdir=$BATS_TEST_DIRNAME :$usedloops" >&3
+    [ $found = 1 ]
+}
+
 function basic_test() {
     require_privilege priv
     local verity_arg=$1
@@ -30,6 +47,7 @@ EOF
 
 @test "--no-squashfs-verity works" {
     basic_test --no-squashfs-verity
+    verity_checkusedloops
 }
 
 @test "mount + umount works" {
@@ -40,6 +58,7 @@ EOF
     last_layer_num=$(($(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))
     last_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[$last_layer].digest | cut -f2 -d:)
     [ ! -b "/dev/mapper/$last_layer_hash-verity" ]
+    verity_checkusedloops
 }
 
 @test "mount + umount + mount a tree of images works" {
@@ -113,6 +132,7 @@ EOF
     last_layer_num=$(($(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))
     last_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[$last_layer].digest | cut -f2 -d:)
     [ ! -b "/dev/mapper/$last_layer_hash-verity" ]
+    verity_checkusedloops
 }
 
 @test "bad existing verity device is rejected" {
@@ -140,4 +160,5 @@ EOF
     mkdir mountpoint
     bad_stacker internal-go atomfs mount test-squashfs mountpoint | grep "invalid root hash"
     veritysetup close "$devname"
+    verity_checkusedloops
 }
