@@ -207,6 +207,24 @@ function zot_teardown {
   rm -f $TEST_TMPDIR/zot-config.json
 }
 
+function _skopeo() {
+    [ "$1" = "--version" ] && {
+        "$SKOPEO" "$@"
+        return
+    }
+    local uid=""
+    uid=$(id -u)
+    if [ ! -e /run/containers ]; then
+        if [ "$uid" = "0" ]; then
+            mkdir --mode=755 /run/containers || chmod /run/containers 755
+        fi
+    fi
+    [ -n "$TEST_TMPDIR" ]
+    local home="${TEST_TMPDIR}/home"
+    [ -d "$home" ] || mkdir -p "$home"
+    HOME="$home" "$SKOPEO" "$@"
+}
+
 function test_copy_buffer_size() {
    local buffer_size=$1
    local file_type=$2
@@ -244,13 +262,13 @@ EOF
   m1=$(cat oci/index.json | jq .manifests[0].digest | sed  's/sha256://' | tr -d \")
   cat oci/blobs/sha256/"$m1" | jq .
   l1=$(cat oci/blobs/sha256/"$m1" | jq .layers[0].digest | sed  's/sha256://' | tr -d \")
-  $SKOPEO --version
-  [[ "$($SKOPEO --version)" =~ "skopeo version ${SKOPEO_VERSION}" ]] || {
+  _skopeo --version
+  [[ "$(_skopeo --version)" =~ "skopeo version ${SKOPEO_VERSION}" ]] || {
     echo "$SKOPEO --version should be ${SKOPEO_VERSION}"
     exit 1
   }
-  $SKOPEO copy --format=oci oci:oci:tar containers-storage:test:tar
-  $SKOPEO copy --format=oci containers-storage:test:tar oci:oci:test
+  _skopeo copy --format=oci oci:oci:tar containers-storage:test:tar
+  _skopeo copy --format=oci containers-storage:test:tar oci:oci:test
   cat oci/index.json | jq .
   m2=$(cat oci/index.json | jq .manifests[1].digest | sed  's/sha256://' | tr -d \")
   cat oci/blobs/sha256/"$m2" | jq .
@@ -261,5 +279,5 @@ EOF
   stacker clean
   rm -rf folder1
   cd "$ROOT_DIR"
-  rm -rf "tmpdir"
+  rm -rf "$tmpdir"
 }
