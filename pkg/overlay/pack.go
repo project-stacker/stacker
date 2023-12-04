@@ -8,12 +8,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/klauspost/pgzip"
 	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
@@ -24,13 +21,12 @@ import (
 	"github.com/pkg/xattr"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
+	"stackerbuild.io/stacker/pkg/oci"
 	stackeroci "stackerbuild.io/stacker/pkg/oci"
 	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/storage"
 	"stackerbuild.io/stacker/pkg/types"
 )
-
-var tarEx sync.Mutex
 
 // Container image layers are often tar.gz, however there is nothing in the
 // spec or documentation which standardizes compression params which can cause
@@ -49,56 +45,6 @@ func overlayPath(rootfs string, d digest.Digest, subdirs ...string) string {
 	dirs := []string{rootfs, safeName}
 	dirs = append(dirs, subdirs...)
 	return path.Join(dirs...)
-}
-
-func (o *overlay) Unpack(tag, name string) error {
-	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
-	oci, err := umoci.OpenLayout(cacheDir)
-	if err != nil {
-		return err
-	}
-	defer oci.Close()
-
-	manifest, err := stackeroci.LookupManifest(oci, tag)
-	if err != nil {
-		return err
-	}
-
-	pool := NewThreadPool(runtime.NumCPU())
-
-	seen := map[digest.Digest]bool{}
-	for _, curLayer := range manifest.Layers {
-		// avoid calling unpackOne twice for the same digest
-		if seen[curLayer.Digest] {
-			continue
-		}
-		seen[curLayer.Digest] = true
-
-		// copy layer to avoid race on pool access.
-		l := curLayer
-		pool.Add(func(ctx context.Context) error {
-			return unpackOne(l, cacheDir, overlayPath(o.config.RootFSDir, l.Digest, "overlay"))
-		})
-	}
-
-	pool.DoneAddingJobs()
-
-	err = pool.Run()
-	if err != nil {
-		return err
-	}
-
-	err = o.Create(name)
-	if err != nil {
-		return err
-	}
-
-	ovl, err := newOverlayMetadataFromOCI(oci, tag)
-	if err != nil {
-		return err
-	}
-
-	return ovl.write(o.config, name)
 }
 
 func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType types.LayerType) error {
@@ -681,57 +627,32 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	return ovl.write(config, name)
 }
 
-// unpackOne - unpack a single layer (Descriptor) found in ociDir to extractDir
-//
-//	The result of calling unpackOne is either error or the contents available
-//	at the provided extractDir.  The extractDir should be either empty or
-//	fully populated with this layer.
-func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
-	// population of a dir is not atomic, at least for tar extraction.
-	// As a result, we could hasDirEntries(extractDir) at the same time that
-	// something is un-populating that dir due to a failed extraction (like
-	// os.RemoveAll below).
-	// There needs to be a lock on the extract dir (scoped to the overlay storage backend).
-	// A sync.RWMutex would work well here since it is safe to check as long
-	// as no one is populating or unpopulating.
-	if hasDirEntries(extractDir) {
-		// the directory was already populated.
-		return nil
+func (o *overlay) Unpack(tag, name string) error {
+	cacheDir := path.Join(o.config.StackerDir, "layer-bases", "oci")
+
+	pathfunc := func(digest digest.Digest) string {
+		return overlayPath(o.config.RootFSDir, digest, "overlay")
 	}
 
-	if squashfs.IsSquashfsMediaType(l.MediaType) {
-		return squashfs.ExtractSingleSquash(
-			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
-	}
-	switch l.MediaType {
-	case ispec.MediaTypeImageLayer, ispec.MediaTypeImageLayerGzip:
-		tarEx.Lock()
-		defer tarEx.Unlock()
-
-		oci, err := umoci.OpenLayout(ociDir)
-		if err != nil {
-			return err
-		}
-		defer oci.Close()
-
-		compressed, err := oci.GetBlob(context.Background(), l.Digest)
-		if err != nil {
-			return err
-		}
-		defer compressed.Close()
-
-		uncompressed, err := pgzip.NewReader(compressed)
-		if err != nil {
-			return err
-		}
-
-		err = layer.UnpackLayer(extractDir, uncompressed, nil)
-		if err != nil {
-			if rmErr := os.RemoveAll(extractDir); rmErr != nil {
-				log.Errorf("Failed to remove dir '%s' after failed extraction: %v", extractDir, rmErr)
-			}
-		}
+	_, err := oci.Unpack(cacheDir, tag, pathfunc)
+	if err != nil {
 		return err
 	}
-	return errors.Errorf("unknown media type %s", l.MediaType)
+
+	err = o.Create(name)
+	if err != nil {
+		return err
+	}
+
+	oci, err := umoci.OpenLayout(cacheDir)
+	if err != nil {
+		return err
+	}
+
+	ovl, err := newOverlayMetadataFromOCI(oci, tag)
+	if err != nil {
+		return err
+	}
+
+	return ovl.write(o.config, name)
 }

@@ -541,6 +541,35 @@ newimports:
   run: |
     [ -f /stacker/imports/file1.txt ]
 EOF
+  stacker build
+}
 
+@test "importing container images" {
+    cat > stacker.yaml <<EOF
+cimg-import:
+    from:
+      type: oci
+      url: $CENTOS_OCI
+    import:
+    - path: docker://alpine:edge
+      dest: /
+    run: |
+      [ -d /var/lib/apk ]
+
+compose-img:
+    from:
+      type: oci
+      url: $CENTOS_OCI
+    import:
+    - path: docker://ghcr.io/homebrew/core/openssl/1.1:1.1.1k
+      dest: /
+    - path: docker://ghcr.io/homebrew/core/curl:8.0.1
+      dest: /opt/
+    - path: docker://ghcr.io/homebrew/core/ca-certificates:2022-10-11
+      dest: /
+    run: |
+      [ -f /opt/curl/8.0.1/bin/curl ]
+      [ -f /ca-certificates/2022-10-11/share/ca-certificates/cacert.pem ]
+EOF
     stacker build
 }
