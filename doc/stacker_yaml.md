@@ -138,6 +138,8 @@ The deprecated `import` directive works like `imports` except that
 the entries in the `import` array will be placed into `/stacker/` rather
 than `/stacker/imports`.
 
+See https://github.com/project-stacker/stacker/issues/571 for timeline and migration info.
+
 ### `overlay_dirs`
 This directive works only with OverlayFS backend storage.
 
