@@ -1,0 +1,6 @@
+test:
+  from:
+    type: docker
+    url: docker://$YOUR_REGISTRY:5000/c3/minbase@sha256:af4c87a154aea6c5d6fd578f234c70d1f31d42609ddd096f212cbb9d8dbde9be
+  run: |
+    echo "fun" > what-is-hacking
