@@ -29,7 +29,7 @@ func BuildLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types.
 	defer c.Close()
 
 	inDir := types.InternalStackerDir
-	err = SetupBuildContainerConfig(sc, storage, c, inDir, tag)
+	err = SetupBuildContainerConfig(sc, storage, c, inDir, name)
 	if err != nil {
 		log.Errorf("build container %v", err)
 		return err
@@ -74,7 +74,7 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 	defer c.Close()
 
 	inDir := types.InternalStackerDir
-	err = SetupBuildContainerConfig(sc, storage, c, inDir, tag)
+	err = SetupBuildContainerConfig(sc, storage, c, inDir, name)
 	if err != nil {
 		log.Errorf("build container %v", err)
 		return err
