@@ -725,7 +725,9 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 			return err
 		}
 
-		err = layer.UnpackLayer(extractDir, uncompressed, nil)
+		// always unpack with Overlay whiteout mode to prevent ignoring whiteouts in tar layers
+		// see test/publish.bats: "building from published images with whiteouts" for more details
+		err = layer.UnpackLayer(extractDir, uncompressed, &layer.UnpackOptions{WhiteoutMode: layer.OverlayFSWhiteout})
 		if err != nil {
 			if rmErr := os.RemoveAll(extractDir); rmErr != nil {
 				log.Errorf("Failed to remove dir '%s' after failed extraction: %v", extractDir, rmErr)

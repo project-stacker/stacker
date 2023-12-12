@@ -243,3 +243,35 @@ published:
 EOF
 
 }
+
+@test "building from published images with whiteouts" {
+  # This tests the case where an image is published after deleting some entries
+  # We expect that the published image can now be used to build another image,
+  # while respecting the whiteouts (due to deletion)
+  if [ -z "${REGISTRY_URL}" ]; then
+    skip "skipping test because no registry found in REGISTRY_URL env variable"
+  fi
+
+  cat > stacker.yaml <<EOF
+parent:
+  from:
+    type: docker
+    url: docker://ghcr.io/project-stacker/alpine:edge
+  run: |
+    rm -rf /etc/apk/repositories
+EOF
+  stacker build
+  stacker publish --skip-tls --url docker://${REGISTRY_URL} --tag latest
+  stacker clean
+
+  cat > stacker.yaml <<EOF
+child:
+  from:
+    type: docker
+    url: docker://${REGISTRY_URL}/parent:latest
+    insecure: true
+  run: |
+    [ ! -f /etc/apk/repositories ]
+EOF
+  stacker build
+}

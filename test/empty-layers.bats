@@ -77,6 +77,9 @@ EOF
 }
 
 @test "a real-world docker image with empty/filler layer" {
+    if [ "$PRIVILEGE_LEVEL" != "priv" ]; then
+        skip "requires privileges"
+    fi
     cat > stacker.yaml <<EOF
 image:
     from:
