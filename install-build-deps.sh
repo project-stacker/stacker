@@ -54,6 +54,8 @@ installdeps_ubuntu() {
         sudo apt -yy install golang-go
         go version
     fi
+    # Work around an Ubuntu packaging bug. Fixed in 23.04 onward.
+    sudo sed -i 's/#define LXC_DEVEL 1/#define LXC_DEVEL 0/' /usr/include/lxc/version.h
 }
 
 installdeps_golang() {
