@@ -4,7 +4,7 @@ import (
 	"os/user"
 	"strconv"
 
-	"github.com/lxc/lxd/shared/idmap"
+	"github.com/lxc/incus/shared/idmap"
 	"github.com/pkg/errors"
 )
 
