@@ -126,7 +126,7 @@ $(ZOT):
 	$(call dlbin,$@,https://github.com/project-zot/zot/releases/download/$(ZOT_VERSION)/zot-linux-amd64-minimal)
 
 $(SKOPEO):
-	@mkdir -p "$(TOOLS_D)/bin"; \
+	@set -e; mkdir -p "$(TOOLS_D)/bin"; \
 	tmpdir=$$(mktemp -d); \
 	cd $$tmpdir; \
 	git clone https://github.com/containers/skopeo.git; \
