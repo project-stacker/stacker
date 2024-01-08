@@ -304,3 +304,15 @@ EOF
     [ ! -f dest/rootfs/favicon.ico ]
     [ ! -d dest/rootfs/stacker ]
 }
+
+@test "commas in substitute flags ok" {
+    cat > stacker.yaml <<EOF
+busybox:
+    from:
+        type: oci
+        url: $BUSYBOX_OCI
+    run: |
+        touch /foo
+EOF
+    stacker build --substitute "a=b,c"
+}

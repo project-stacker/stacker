@@ -123,6 +123,8 @@ func main() {
 		&checkCmd,
 	}
 
+	app.DisableSliceFlagSeparator = true
+
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:  "work-dir",
