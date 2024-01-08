@@ -1,0 +1,6 @@
+test:
+  from:
+    type: scratch
+  import:
+    - path: 1.README.md
+      dest: /

@@ -1,0 +1,8 @@
+test:
+  from:
+    type: docker
+    url: docker://$YOUR_REGISTRY:5000/c3/minbase:1.0.72
+  import:
+    - path: example.tgz
+  run: |
+    tar zxvf /stacker/imports/example.tgz example.stacker.yaml

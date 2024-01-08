@@ -1,0 +1,17 @@
+build_it:
+  from:
+    type: docker
+    url: docker://$YOUR_REGISTRY/c3/godev:${{C3_VERSION}}
+  build_only: true
+  run: |
+    git clone $url foo
+    cd foo
+    make install
+
+finalcontainer:
+  from: ...
+  import:
+    - path: stacker://build_it/usr/bin/it
+      dest: /usr/bin/it
+  run: |
+  	# do whatever else here, no need to copy the imports because we used 'dest' above
