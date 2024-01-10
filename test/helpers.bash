@@ -227,7 +227,7 @@ function zot_teardown {
 
 function _skopeo() {
     [ "$1" = "--version" ] && {
-        "$SKOPEO" "$@"
+        skopeo "$@"
         return
     }
     local uid=""
@@ -240,7 +240,7 @@ function _skopeo() {
     [ -n "$TEST_TMPDIR" ]
     local home="${TEST_TMPDIR}/home"
     [ -d "$home" ] || mkdir -p "$home"
-    HOME="$home" "$SKOPEO" "$@"
+    HOME="$home" skopeo "$@"
 }
 
 function dir_has_only() {
@@ -332,7 +332,7 @@ EOF
   l1=$(cat oci/blobs/sha256/"$m1" | jq .layers[0].digest | sed  's/sha256://' | tr -d \")
   _skopeo --version
   [[ "$(_skopeo --version)" =~ "skopeo version ${SKOPEO_VERSION}" ]] || {
-    echo "$SKOPEO --version should be ${SKOPEO_VERSION}"
+    echo "skopeo --version should be ${SKOPEO_VERSION}"
     exit 1
   }
   _skopeo copy --format=oci oci:oci:tar containers-storage:test:tar
