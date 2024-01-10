@@ -41,9 +41,11 @@ REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
 export SKOPEO = $(TOOLS_D)/bin/skopeo
 export SKOPEO_VERSION = 1.9.3
+export BATS = $(TOOLS_D)/bin/bats
+BATS_VERSION := v1.10.0
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
-ZOT_VERSION := v2.0.0-rc6
+ZOT_VERSION := v2.0.0
 
 GOLANGCI_LINT_VERSION = v1.54.2
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
@@ -138,6 +140,12 @@ $(SKOPEO):
 	cd $(TOP_LEVEL); \
 	rm -rf $$tmpdir;
 
+$(BATS):
+	rm -rf bats-core; \
+	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git; \
+	cd bats-core; ./install.sh $(TOOLS_D); cd ..; \
+	rm -rf bats-core
+
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
 
@@ -147,8 +155,8 @@ PRIVILEGE_LEVEL?=
 check: lint test go-test
 
 .PHONY: test
-test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT)
-	sudo -E PATH="$$PATH" \
+test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
+	sudo -E PATH="$$PATH:$(TOOLS_D)/bin" \
 		LXC_BRANCH=$(LXC_BRANCH) \
 		LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \

@@ -4,7 +4,6 @@ set -o errexit
 
 installdeps_fedora() {
   sudo dnf install \
-    bats \
     jq \
     lxc-devel \
     libcap-devel \
@@ -24,7 +23,6 @@ installdeps_fedora() {
 installdeps_ubuntu() {
     sudo add-apt-repository -y ppa:project-machine/squashfuse
     sudo apt -yy install \
-            bats \
             build-essential \
             cryptsetup-bin \
             jq \
