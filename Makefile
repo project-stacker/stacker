@@ -37,11 +37,12 @@ LXC_BRANCH?=stable-5.0
 HACK_D := $(TOP_LEVEL)/hack
 # helper tools
 TOOLS_D := $(HACK_D)/tools
+export PATH := $(TOOLS_D)/bin:$(PATH)
 REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
-export SKOPEO = $(TOOLS_D)/bin/skopeo
+SKOPEO = $(TOOLS_D)/bin/skopeo
 export SKOPEO_VERSION = 1.9.3
-export BATS = $(TOOLS_D)/bin/bats
+BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
@@ -156,9 +157,7 @@ check: lint test go-test
 
 .PHONY: test
 test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
-	sudo -E PATH="$$PATH:$(TOOLS_D)/bin" \
-		LXC_BRANCH=$(LXC_BRANCH) \
-		LXC_CLONE_URL=$(LXC_CLONE_URL) \
+	sudo -E \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
@@ -172,10 +171,8 @@ check-cov: lint test-cov
 
 .PHONY: test-cov
 test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT)
-	sudo -E PATH="$$PATH" \
+	sudo -E \
 		-E GOCOVERDIR="$$GOCOVERDIR" \
-		LXC_BRANCH=$(LXC_BRANCH) \
-		LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
@@ -185,7 +182,7 @@ test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT)
 		$(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: docker-clone
-docker-clone:
+docker-clone: $(SKOPEO)
 	./tools/oci-copy "$(BUILD_D)/oci-clone" $(STACKER_BUILD_IMAGES)
 
 
