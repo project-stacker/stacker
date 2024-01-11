@@ -42,7 +42,7 @@ EOF
   if [ -z "${REGISTRY_URL}" ]; then
     skip "test because no registry found in REGISTRY_URL env variable"
   fi
-  stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app --skip-tls --url docker://${REGISTRY_URL} --layer app --tag latest
+  stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app --skip-tls --url docker://${REGISTRY_URL} --image app --tag latest
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
 }
@@ -56,7 +56,7 @@ EOF
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --substitute STACKER_VOL1="$TEMPDIR"
   if [ -nz "${REGISTRY_URL}" ]; then
-    stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --substitute STACKER_VOL1="$TEMPDIR" --skip-tls --url docker://${REGISTRY_URL} --layer alpine --tag latest
+    stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --substitute STACKER_VOL1="$TEMPDIR" --skip-tls --url docker://${REGISTRY_URL} --image alpine --tag latest
   fi
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
@@ -70,7 +70,7 @@ EOF
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch
   if [ -nz "${REGISTRY_URL}" ]; then
-    stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch --skip-tls --url docker://${REGISTRY_URL} --layer elasticsearch --tag latest
+    stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch --skip-tls --url docker://${REGISTRY_URL} --image elasticsearch --tag latest
   fi
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
@@ -84,7 +84,7 @@ EOF
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=python
   if [ -nz "${REGISTRY_URL}" ]; then
-    stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=python --skip-tls --url docker://${REGISTRY_URL} --layer python --tag latest
+    stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=python --skip-tls --url docker://${REGISTRY_URL} --image python --tag latest
   fi
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
