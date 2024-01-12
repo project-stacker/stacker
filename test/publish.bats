@@ -118,7 +118,7 @@ function teardown() {
 
 @test "publish selected multiple layers" {
     stacker recursive-build -d ocibuilds
-    stacker publish -d ocibuilds --url oci:oci_publish --tag test1 --layer layer1 --layer layer6
+    stacker publish -d ocibuilds --url oci:oci_publish --tag test1 --image layer1 --image layer6
 
      # Unpack published image and check content
     umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
