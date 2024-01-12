@@ -3,7 +3,6 @@ package stacker
 import (
 	"fmt"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 
@@ -20,24 +19,24 @@ func Grab(sc types.StackerConfig, storage types.Storage, name string, source str
 	}
 	defer c.Close()
 
-	err = c.BindMount(targetDir, types.InternalStackerDir, "")
+	err = SetupBuildContainerConfig(sc, storage, c, types.InternalStackerDir, name)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(path.Join(sc.RootFSDir, name, "rootfs", "stacker"))
 
-	err = SetupBuildContainerConfig(sc, storage, c, types.InternalStackerDir, name)
+	idestdir := filepath.Join(types.InternalStackerDir, "grab")
+	err = c.BindMount(targetDir, idestdir, "")
 	if err != nil {
 		return err
 	}
 
 	bcmd := []string{filepath.Join(types.InternalStackerDir, types.BinStacker), "internal-go"}
 
-	iDestName := filepath.Join(types.InternalStackerDir, path.Base(source))
+	iDestName := filepath.Join(idestdir, path.Base(source))
 	if idest == "" || source[len(source)-1:] != "/" {
 		err = c.Execute(append(bcmd, "cp", source, iDestName), nil)
 	} else {
-		err = c.Execute(append(bcmd, "cp", source, types.InternalStackerDir+"/"), nil)
+		err = c.Execute(append(bcmd, "cp", source, idestdir+"/"), nil)
 	}
 	if err != nil {
 		return err

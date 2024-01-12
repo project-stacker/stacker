@@ -9,7 +9,14 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 function skip_if_no_unpriv_overlay {
-    run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug internal-go testsuite-check-overlay
+    local wdir=""
+    # use a workdir to ensure no side effects to the caller
+    wdir=$(mktemp -d "$PWD/.skipunpriv.XXXXXX")
+    give_user_ownership "$wdir"
+    run sudo -u $SUDO_USER \
+        "${ROOT_DIR}/stacker" "--work-dir=$wdir" --debug \
+            internal-go testsuite-check-overlay
+    rm -Rf "$wdir"
     echo $output
     [ "$status" -eq 50 ] && skip "need newer kernel for unpriv overlay"
     [ "$status" -eq 0 ]
@@ -72,6 +79,17 @@ function stacker_setup() {
     "${ROOT_DIR}/stacker" unpriv-setup
     chown -R $SUDO_USER:$SUDO_USER .
 }
+
+function give_user_ownership() {
+   if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+      return
+   fi
+   if [ -z "$SUDO_UID" ]; then
+      echo "PRIVILEGE_LEVEL=$PRIVILEGE_LEVEL but empty SUDO_USER"
+      exit 1
+   fi
+   chown -R "$SUDO_USER:$SUDO_USER" "$@"
+ }
 
 function cleanup() {
     cd "$ROOT_DIR/test"
@@ -223,6 +241,56 @@ function _skopeo() {
     local home="${TEST_TMPDIR}/home"
     [ -d "$home" ] || mkdir -p "$home"
     HOME="$home" "$SKOPEO" "$@"
+}
+
+function dir_has_only() {
+    local d="$1" oifs="$IFS" unexpected="" f=""
+    shift
+    _RET_MISSING=""
+    _RET_EXTRA=""
+    unexpected=$(
+        shopt -s nullglob;
+        IFS="/"; allexp="/$*/"; IFS="$oifs"
+        # allexp gets /item/item2/ for all items in args
+        x=""
+        cd "$d" || {
+            echo "dir_has_only could not 'cd $d' from $PWD" 1>&2;
+            exit 1;
+        }
+        for found in * .*; do
+            [ "$found" = "." ] || [ "$found" = ".." ] && continue
+            [ "${allexp#*/$found/}" != "$allexp" ] && continue
+            x="$x $found"
+        done
+        echo "$x"
+    ) || return 1
+    _RET_EXTRA="${unexpected# }"
+    for f in "$@"; do
+        [ -e "$d/$f" -o -L "$d/$f" ] && continue
+        _RET_MISSING="${_RET_MISSING} $f"
+    done
+    _RET_MISSING="${_RET_MISSING# }"
+    [ -z "$_RET_MISSING" -a -z "${_RET_EXTRA}" ]
+    return
+}
+
+function dir_is_empty() {
+    dir_has_only "$1"
+}
+
+# log a failure with ERROR:
+# allows more descriptive error:
+#   [ -f file ] || test_error "missing 'file'"
+# compared to just
+#   [ -f file ]
+function test_error() {
+    local m=""
+    echo "ERROR: $1"
+    shift
+    for m in "$@"; do
+        echo "  $m"
+    done
+    return 1
 }
 
 function test_copy_buffer_size() {
