@@ -37,7 +37,6 @@ LXC_BRANCH?=stable-5.0
 HACK_D := $(TOP_LEVEL)/hack
 # helper tools
 TOOLS_D := $(HACK_D)/tools
-export PATH := $(TOOLS_D)/bin:$(PATH)
 REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
 SKOPEO = $(TOOLS_D)/bin/skopeo
@@ -142,7 +141,7 @@ $(SKOPEO):
 	rm -rf $$tmpdir;
 
 $(BATS):
-	rm -rf bats-core; \
+	@set -e; rm -rf bats-core; \
 	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git; \
 	cd bats-core; ./install.sh $(TOOLS_D); cd ..; \
 	rm -rf bats-core
@@ -157,7 +156,7 @@ check: lint test go-test
 
 .PHONY: test
 test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
-	sudo -E \
+	sudo -E PATH="$$PATH:$(TOOLS_D)/bin" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
@@ -171,7 +170,7 @@ check-cov: lint test-cov
 
 .PHONY: test-cov
 test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT)
-	sudo -E \
+	sudo -E PATH="$$PATH:$(TOOLS_D)/bin" \
 		-E GOCOVERDIR="$$GOCOVERDIR" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
