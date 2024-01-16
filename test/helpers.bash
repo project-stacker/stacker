@@ -325,7 +325,10 @@ tar:
     type: tar
     url: test.$file_type
 EOF
+  echo "HERE1"
+  stacker clean
   stacker build
+  echo "HERE2"
   cat oci/index.json | jq .
   m1=$(cat oci/index.json | jq .manifests[0].digest | sed  's/sha256://' | tr -d \")
   cat oci/blobs/sha256/"$m1" | jq .
@@ -335,6 +338,7 @@ EOF
     echo "skopeo --version should be ${SKOPEO_VERSION}"
     exit 1
   }
+  echo "HERE3"
   _skopeo copy --format=oci oci:oci:tar containers-storage:test:tar
   _skopeo copy --format=oci containers-storage:test:tar oci:oci:test
   cat oci/index.json | jq .
@@ -344,7 +348,9 @@ EOF
   echo "$l1"
   echo "$l2"
   [ "$l1" = "$l2" ]
+  echo "HERE10"
   stacker clean
+  echo "HERE11"
   rm -rf folder1
   cd "$ROOT_DIR"
   rm -rf "$tmpdir"
