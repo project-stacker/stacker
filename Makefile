@@ -47,7 +47,7 @@ BATS_VERSION := v1.10.0
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.0.0
 
-export PATH := $(TOOLS_D):$(PATH)
+export PATH := $(TOOLS_D)/bin:$(PATH)
 
 GOLANGCI_LINT_VERSION = v1.54.2
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
@@ -110,7 +110,7 @@ go-test:
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
 
 .PHONY: download-tools
-download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT)
+download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS)
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(dir $@)
@@ -157,7 +157,7 @@ PRIVILEGE_LEVEL?=
 check: lint test go-test
 
 .PHONY: test
-test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
+test: stacker download-tools
 	sudo -E PATH="$(PATH)" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
@@ -171,7 +171,7 @@ test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
 check-cov: lint test-cov
 
 .PHONY: test-cov
-test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
+test-cov: stacker-cov download-tools
 	sudo -E PATH="$(PATH)" \
 		-E GOCOVERDIR="$$GOCOVERDIR" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
