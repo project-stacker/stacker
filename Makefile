@@ -47,6 +47,8 @@ BATS_VERSION := v1.10.0
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.0.0
 
+export PATH := $(TOOLS_D):$(PATH)
+
 GOLANGCI_LINT_VERSION = v1.54.2
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
 
@@ -156,7 +158,7 @@ check: lint test go-test
 
 .PHONY: test
 test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
-	sudo -E PATH="$$PATH:$(TOOLS_D)/bin" \
+	sudo -E PATH="$(PATH)" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
@@ -169,8 +171,8 @@ test: stacker $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
 check-cov: lint test-cov
 
 .PHONY: test-cov
-test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT)
-	sudo -E PATH="$$PATH:$(TOOLS_D)/bin" \
+test-cov: stacker-cov $(REGCLIENT) $(SKOPEO) $(ZOT) $(BATS)
+	sudo -E PATH="$(PATH)" \
 		-E GOCOVERDIR="$$GOCOVERDIR" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
