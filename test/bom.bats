@@ -17,6 +17,7 @@ bom-parent:
         url: $CENTOS_OCI
     bom:
       generate: true
+      namespace: "https://test.io/artifacts"
       packages:
       - name: pkg1
         version: 1.0.0
@@ -75,6 +76,7 @@ bom-parent:
         url: $CENTOS_OCI
     bom:
       generate: true
+      namespace: "https://test.io/artifacts"
       packages:
       - name: pkg1
         version: 1.0.0
@@ -115,6 +117,7 @@ bom-child:
     tag: bom-parent
   bom:
     generate: true
+    namespace: "https://test.io/artifacts"
     packages:
     - name: pkg3
       version: 1.0.0
@@ -163,6 +166,7 @@ bom-alpine:
     url: $ALPINE_OCI
   bom:
     generate: true
+    namespace: "https://test.io/artifacts"
     packages:
       - name: pkg1
         version: 1.0.0
