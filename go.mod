@@ -33,7 +33,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vbatts/go-mtree v0.5.3
-	golang.org/x/sys v0.15.0
+	golang.org/x/sys v0.16.0
 	golang.org/x/term v0.15.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.5.2-0.20231020154325-c94debbb2690
@@ -270,7 +270,7 @@ require (
 	google.golang.org/genproto v0.0.0-20231211222908-989df2bf70f3 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0 // indirect
 	google.golang.org/grpc v1.60.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
@@ -285,6 +285,6 @@ require (
 )
 
 replace (
-	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20231025233220-c7bb24d57e98
+	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20240122204034-cb3aca58b2ec
 	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.6-0.20240118174508-52fb507e9d2e
 )
