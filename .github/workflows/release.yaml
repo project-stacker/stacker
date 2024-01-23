@@ -23,7 +23,7 @@ jobs:
       # note >-, args needs to be strings to be used as inputs
       # for the reusable build.yaml workflow
       go-version: >-
-        ["1.20.x"]
+        ["1.21.x"]
       privilege-level: >-
         ["priv"]
       build-id: "${{needs.build-id.outputs.build-id}}"
