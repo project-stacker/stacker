@@ -93,6 +93,7 @@ func VerifyLayerArtifacts(sc types.StackerConfig, storage types.Storage, l types
 
 	cmd = append(cmd, "bom", "verify",
 		fmt.Sprintf(types.InternalStackerDir+"/artifacts/%s.json", tag),
+		l.Bom.Namespace,
 		tag, l.Annotations[types.AuthorAnnotation], l.Annotations[types.OrgAnnotation])
 
 	err = c.Execute(cmd, os.Stdin)

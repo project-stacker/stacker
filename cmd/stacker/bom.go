@@ -90,18 +90,19 @@ func doBomBuild(ctx *cli.Context) error {
 }
 
 func doBomVerify(ctx *cli.Context) error {
-	if ctx.Args().Len() != 4 {
+	if ctx.Args().Len() != 5 {
 		return errors.Errorf("wrong number of args")
 	}
 
 	dest := ctx.Args().Get(0)
-	name := ctx.Args().Get(1)
-	author := ctx.Args().Get(2)
-	org := ctx.Args().Get(3)
+	namespace := ctx.Args().Get(1)
+	name := ctx.Args().Get(2)
+	author := ctx.Args().Get(3)
+	org := ctx.Args().Get(4)
 
 	// first merge all individual sbom artifacts that may have been generated
 	iDir := types.InternalStackerDir
-	if err := bom.MergeDocuments(iDir+"/artifacts", name, author, org, dest); err != nil {
+	if err := bom.MergeDocuments(iDir+"/artifacts", namespace, name, author, org, dest); err != nil {
 		return err
 	}
 

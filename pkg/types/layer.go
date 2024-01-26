@@ -69,8 +69,9 @@ type Package struct {
 }
 
 type Bom struct {
-	Generate bool      `yaml:"generate" json:"generate"`
-	Packages []Package `yaml:"packages" json:"packages,omitempty"`
+	Generate  bool      `yaml:"generate" json:"generate"`
+	Namespace string    `yaml:"namespace" json:"namespace"`
+	Packages  []Package `yaml:"packages" json:"packages,omitempty"`
 }
 
 func getStringOrStringSlice(data interface{}, xform func(string) ([]string, error)) ([]string, error) {
@@ -332,6 +333,10 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 		}
 
 		if layer.Bom != nil && layer.Bom.Generate {
+			if layer.Bom.Namespace == "" {
+				return nil, errors.Errorf("for bom generation, namespace must be set")
+			}
+
 			if layer.Annotations == nil {
 				return nil, errors.Errorf("for bom generation %s, %s and %s annotations must be set",
 					AuthorAnnotation, OrgAnnotation, LicenseAnnotation)
