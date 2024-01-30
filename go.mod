@@ -286,5 +286,5 @@ require (
 
 replace (
 	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20240122204034-cb3aca58b2ec
-	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.6-0.20240125170016-363073df9862
+	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.6-0.20240130175351-56b135ad668d
 )
