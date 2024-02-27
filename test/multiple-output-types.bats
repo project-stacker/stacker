@@ -9,15 +9,15 @@ function teardown() {
 }
 
 @test "multiple layer type outputs work" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         echo meshuggah > /rocks
 EOF
-    stacker build --layer-type tar --layer-type squashfs
+    stacker build --layer-type tar --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # did the tar output work?
     umoci unpack --image oci:test dest
@@ -32,11 +32,11 @@ EOF
 }
 
 @test "chained multiple layer type outputs work" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         echo meshuggah > /rocks
 child:
@@ -46,7 +46,7 @@ child:
     run: |
         echo primus > /sucks
 EOF
-    stacker build --layer-type tar --layer-type squashfs
+    stacker build --layer-type tar --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # did the tar output work?
     umoci unpack --image oci:child dest
@@ -68,11 +68,11 @@ EOF
 }
 
 @test "build-only multiple layer type outputs work" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         echo meshuggah > /rocks
     build_only: true
@@ -83,7 +83,7 @@ child:
     run: |
         echo primus > /sucks
 EOF
-    stacker build --layer-type tar --layer-type squashfs
+    stacker build --layer-type tar --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # did the tar output work?
     umoci unpack --image oci:child dest
@@ -105,26 +105,26 @@ EOF
 }
 
 @test "multiple output types cache correctly" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         echo meshuggah > /rocks
 EOF
-    stacker build --layer-type tar --layer-type squashfs
-    stacker build --layer-type tar --layer-type squashfs
+    stacker build --layer-type tar --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker build --layer-type tar --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo $output | grep "found cached layer parent"
     echo $output | grep "found cached layer parent-squashfs"
 }
 
 @test "chained built type layers are OK (tar first)" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 one:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 two:
     build_only: true
     from:
@@ -150,7 +150,7 @@ five:
         url: stacker://three/contents.tar
 EOF
 
-    stacker build --layer-type=tar --layer-type=squashfs
+    stacker build --layer-type=tar --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:four four
     [ -f four/rootfs/2 ]
     [ -f four/rootfs/3 ]
@@ -172,11 +172,11 @@ EOF
 }
 
 @test "chained built type layers are OK (squashfs first)" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 one:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 two:
     build_only: true
     from:
@@ -202,7 +202,7 @@ five:
         url: stacker://three/contents.tar
 EOF
 
-    stacker build --layer-type=squashfs --layer-type=tar
+    stacker build --layer-type=squashfs --layer-type=tar --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:four four
     [ -f four/rootfs/2 ]
     [ -f four/rootfs/3 ]

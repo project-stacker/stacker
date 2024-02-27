@@ -30,25 +30,25 @@ function teardown() {
 }
 
 @test "--progress works" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 EOF
 
-    stacker --progress build
+    stacker --progress build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo "$output" | grep "Copying blob"
 }
 
 @test "no progress when not attached to a terminal" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 EOF
 
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     [ -z "$(echo "$output" | grep "Copying blob")" ]
 }

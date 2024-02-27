@@ -9,16 +9,16 @@ function teardown() {
 }
 
 @test "wildcards work in run section" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 a:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         mkdir /mybin
         cp /bin/* /mybin
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:a dest
     [ "$status" -eq 0 ]
 

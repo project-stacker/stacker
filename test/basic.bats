@@ -9,25 +9,25 @@ function teardown() {
 }
 
 @test "multiple stacker builds in a row" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports: import
 EOF
     echo 1 > import
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo 2 > import
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo 3 > import
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo 4 > import
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "basic workings" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: tar
@@ -37,7 +37,7 @@ busybox:
         - https://www.cisco.com/favicon.ico
         - ./executable
     run:
-        - cp /stacker/imports/\$FAVICON /\$FAVICON
+        - cp /stacker/imports/${{FAVICON}} ${{FAVICON}}
         - ls -al /stacker
         - cp /stacker/imports/executable /usr/bin/executable
     entrypoint: echo hello world
@@ -103,7 +103,7 @@ EOF
     cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
 
     # now we need to do --substitute FAVICON=favicon.ico
-    sed -e 's/$FAVICON/favicon.ico/g' stacker.yaml > stacker_after_subs
+    sed -e 's/${{FAVICON}}/favicon.ico/g' stacker.yaml > stacker_after_subs
 
     diff -U5 stacker_yaml_annotation stacker_after_subs
 
@@ -139,15 +139,15 @@ EOF
 }
 
 @test "stacker.yaml without imports can run" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /foo
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:busybox dest
     [ -f dest/rootfs/foo ]
 }
@@ -161,30 +161,30 @@ EOF
 
 @test "use colons in roots-dir path name should fail" {
     local tmpd=$(pwd)
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /foo
 EOF
-    bad_stacker --roots-dir $tmpd/with:colon build
+    bad_stacker --roots-dir $tmpd/with:colon build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     [ "$status" -eq 1 ]
     echo $output | grep "forbidden"
 }
 
 @test "use colons in layer name should fail" {
     local tmpd=$(pwd)
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:with:colon:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /foo
 EOF
-    bad_stacker build
+    bad_stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     [ "$status" -eq 1 ]
     echo $output | grep "forbidden"
 }
@@ -193,7 +193,7 @@ EOF
     cat > subs.yaml << EOF
     FAVICON: favicon.ico
 EOF
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: tar
@@ -204,7 +204,7 @@ busybox:
         - https://www.cisco.com/favicon.ico
         - ./executable
     run:
-        - cp /stacker/imports/\$FAVICON /\$FAVICON
+        - cp /stacker/imports/${{FAVICON}} ${{FAVICON}}
         - ls -al /stacker
         - cp /stacker/imports/executable /usr/bin/executable
     entrypoint: echo hello world
@@ -270,7 +270,7 @@ EOF
     cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
 
     # now we need to do --substitute FAVICON=favicon.ico
-    sed -e 's/$FAVICON/favicon.ico/g' stacker.yaml > stacker_after_subs
+    sed -e 's/${{FAVICON}}/favicon.ico/g' stacker.yaml > stacker_after_subs
 
     diff -U5 stacker_yaml_annotation stacker_after_subs
 
@@ -306,13 +306,13 @@ EOF
 }
 
 @test "commas in substitute flags ok" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /foo
 EOF
-    stacker build --substitute "a=b,c"
+    stacker build --substitute "a=b,c" --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }

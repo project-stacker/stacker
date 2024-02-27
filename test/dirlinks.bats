@@ -9,11 +9,11 @@ function teardown() {
 }
 
 @test "copy_up on a dirlink renders a dirlink (squashfs)" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         mkdir /dir
         ln -s /dir /link
@@ -24,7 +24,7 @@ child:
     run: |
         touch /link/test
 EOF
-    stacker --storage-type=overlay build --layer-type=squashfs
+    stacker --storage-type=overlay build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
     layer1=$(cat oci/blobs/sha256/$manifest | jq -r .layers[1].digest | cut -f2 -d:)

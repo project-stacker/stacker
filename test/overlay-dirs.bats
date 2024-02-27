@@ -15,11 +15,11 @@ function teardown() {
     touch dir_to_overlay/file2
     touch dir_to_overlay/executable
     chmod +x dir_to_overlay/executable
-    cat > stacker.yaml << EOF
+    cat > stacker.yaml <<"EOF"
 first:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     overlay_dirs:
         - source: dir_to_overlay
     run: |
@@ -27,7 +27,7 @@ first:
         [ -f /file2 ]
         [ -x /executable ]
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     umoci unpack --image oci:first dest
     [ -f dest/rootfs/file1 ]
@@ -38,11 +38,11 @@ EOF
 @test "import from overlay_dir works" {
     mkdir dir_to_overlay
     touch dir_to_overlay/file
-    cat > stacker.yaml << EOF
+    cat > stacker.yaml <<"EOF"
 first:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     overlay_dirs:
         - source: dir_to_overlay
     run: |
@@ -55,7 +55,7 @@ second:
     run: |
         [ -f /stacker/imports/file ]
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     umoci unpack --image oci:first dest
     [ -f dest/rootfs/file ]
@@ -64,11 +64,11 @@ EOF
 @test "build binary and import in distroless" {
     mkdir dir_to_overlay
     chmod -R 777 dir_to_overlay
-    cat > stacker.yaml << EOF
+    cat > stacker.yaml <<"EOF"
 build:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     binds:
         - dir_to_overlay -> /dir_to_overlay
     run: |
@@ -82,7 +82,7 @@ contents:
         - source: dir_to_overlay
           dest: /dir_to_overlay
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     ls dir_to_overlay | grep "binaryfile"
     
     umoci unpack --image oci:contents dest
@@ -94,18 +94,18 @@ EOF
 @test "overlay_dirs dest works" {
     mkdir dir_to_overlay
     touch dir_to_overlay/file
-    cat > stacker.yaml << EOF
+    cat > stacker.yaml <<"EOF"
 first:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     overlay_dirs:
         - source: dir_to_overlay
           dest: /usr/local
     run: |
         [ -f /usr/local/file ]
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     umoci unpack --image oci:first dest
     [ -f dest/rootfs/usr/local/file ]
@@ -118,11 +118,11 @@ EOF
     touch dir_to_overlay2/file2.txt
     mkdir dir_to_overlay3
     touch dir_to_overlay3/file3.txt
-    cat > stacker.yaml << EOF
+    cat > stacker.yaml <<"EOF"
 first:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     overlay_dirs:
         - source: dir_to_overlay1
           dest: /usr/local1
@@ -131,15 +131,15 @@ first:
         - source: dir_to_overlay3
           dest: /usr/local3
 EOF
-    stacker build
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo $output | grep "found cached layer first"
     echo "modifying file" > dir_to_overlay1/file1.txt
     echo "modifying file" > dir_to_overlay2/file2.txt
     echo "modifying file" > dir_to_overlay3/file3.txt
     
     NO_DEBUG=1
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo $output | grep "cache miss because content of 3 overlay dirs changed:"
     echo $output | grep "Changed overlay_dir:"
     # without debug should print only 2 dirs
@@ -153,7 +153,7 @@ EOF
     echo "modifying file again" > dir_to_overlay3/file3.txt
 
     NO_DEBUG=0
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo $output | grep "cache miss because content of 3 overlay dirs changed:"
     echo $output | grep "Changed overlay_dir:"
     echo $output | grep "dir_to_overlay1"
@@ -165,7 +165,7 @@ EOF
     result=$(echo $output | grep "and 1 other overlay_dirs. use --debug for complete output" || echo "empty")
     echo $result | grep "empty"
     rm -rf roots
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo $output | grep "cache miss because overlay_dir was missing"
 }
 
@@ -174,7 +174,7 @@ EOF
     touch dir_to_overlay/file
     touch dir_to_overlay/file2
     chown 1234:1234 dir_to_overlay/file
-    cat > stacker.yaml << EOF
+    cat > stacker.yaml <<EOF
 first:
     from:
         type: oci

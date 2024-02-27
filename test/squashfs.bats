@@ -14,11 +14,11 @@ function teardown() {
 }
 
 @test "squashfs + derivative build only layers" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 build:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     build_only: true
 importer:
     from:
@@ -27,21 +27,21 @@ importer:
     run: |
         echo hello world
 EOF
-    stacker build --layer-type squashfs
+    stacker build --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "squashfs mutate /usr/bin" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox1:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /usr/bin/foo
 EOF
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox2:
     from:
         type: oci
@@ -49,19 +49,19 @@ busybox2:
     run: |
         ls /usr/bin | grep foo
 EOF
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "squashfs import support" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox1:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /1
 EOF
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     mv oci oci-import
 
     cat > stacker.yaml <<EOF
@@ -72,20 +72,20 @@ busybox2:
     run: |
         [ -f /1 ]
 EOF
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "squashfs layer support (overlay)" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /1
 EOF
 
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
@@ -101,17 +101,17 @@ EOF
 }
 
 @test "squashfs file whiteouts (overlay)" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         rm -rf /etc/selinux
         rm -f /usr/bin/ls
 EOF
 
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
@@ -133,22 +133,22 @@ EOF
 }
 
 @test "squashfs + build only layers" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 build:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     build_only: true
 importer:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - stacker://build/bin/ls
     run: |
         /stacker/imports/ls
 EOF
-    stacker build --layer-type squashfs
+    stacker build --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "built type with squashfs works" {
@@ -212,7 +212,7 @@ myroot:
   run: |
     echo "foo bar" > /message
 EOF
-    stacker build --layer-type=squashfs
+    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)

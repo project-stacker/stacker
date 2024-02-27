@@ -9,23 +9,23 @@ function teardown() {
 }
 
 @test "file with chmod 000 works" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /etc/000
         chmod 000 /etc/000
 child:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         echo "zomg" > /etc/000
         chmod 000 /etc/000
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:parent parent
     [ -f parent/rootfs/etc/000 ]
     [ "$(stat --format="%a" parent/rootfs/etc/000)" = "0" ]
@@ -37,11 +37,11 @@ EOF
 }
 
 @test "unprivileged stacker" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - https://www.cisco.com/favicon.ico
     run: |
@@ -53,7 +53,7 @@ layer1:
     run:
         - rm /favicon.ico
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:busybox busybox
     [ "$(sha .stacker/imports/busybox/favicon.ico)" == "$(sha busybox/rootfs/favicon.ico)" ]
     umoci unpack --image oci:layer1 layer1
@@ -63,39 +63,39 @@ EOF
 @test "unprivileged read-only imports can be re-cached" {
     require_privilege unpriv
 
-    sudo -s -u $SUDO_USER <<EOF
+    sudo -s -u $SUDO_USER <<"EOF"
 mkdir -p import
 touch import/this
 chmod -w import
 EOF
 
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 busybox:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - import
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     ls -al import import/*
     echo that | sudo -u $SUDO_USER tee import/this
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "/stacker in unprivileged mode gets deleted" {
     require_privilege unpriv
 
-    sudo -s -u $SUDO_USER <<EOF
+    sudo -s -u $SUDO_USER <<"EOF"
 touch first
 touch second
 EOF
 
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 base:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - first
         - second
@@ -107,7 +107,7 @@ next:
         type: tar
         url: stacker://base/base.tar.gz
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     umoci unpack --image oci:base base
     [ ! -d base/rootfs/stacker ]
@@ -121,34 +121,34 @@ EOF
 @test "stacker switching privilege modes fails" {
     require_privilege unpriv
 
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 base:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - test
     run: cat /stacker/imports/test
 EOF
     echo unpriv | sudo -s -u $SUDO_USER tee test
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo priv > test
 
     # always run as privileged...
-    run "${ROOT_DIR}/stacker" --debug build
+    run "${ROOT_DIR}/stacker" --debug build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo $output
     [ "$status" -ne 0 ]
 }
 
 @test "underlying layer output conversion happens in a user namespace" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 image:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 EOF
 
-    stacker build --layer-type squashfs
+    stacker build --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     layer0=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
 

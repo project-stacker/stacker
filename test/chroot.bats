@@ -10,13 +10,13 @@ function teardown() {
 }
 
 @test "chroot goes to a reasonable place" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 thing:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: touch /test
 EOF
-    stacker build
-    echo "[ -f /test ]" | stacker chroot
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    echo "[ -f /test ]" | stacker chroot --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }

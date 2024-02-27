@@ -22,16 +22,16 @@ EOF
 }
 
 @test "imports missing fails and prints" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        tag: $BUSYBOX_OCI
+        tag: ${{BUSYBOX_OCI}}
     imports:
         - stacker://foo/bar
         - stacker://baz/foo
 EOF
-    bad_stacker build
+    bad_stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo "${output}" | grep "couldn't find dependencies for test: stacker://foo/bar, stacker://baz/foo"
 }
 

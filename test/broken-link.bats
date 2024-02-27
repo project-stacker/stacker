@@ -10,18 +10,18 @@ function teardown() {
 }
 
 @test "importing broken symlink is ok" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 broken_link:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - dir
     run: cp -a /stacker/imports/dir/testln /testln
 EOF
     mkdir -p dir
     ln -s broken dir/testln
-	stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:broken_link dest
     [ "$status" -eq 0 ]
 

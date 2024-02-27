@@ -9,16 +9,16 @@ function teardown() {
 }
 
 @test "generate_labels generates oci labels" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 label:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     generate_labels: |
         echo -n "rocks" > /stacker/oci-labels/meshuggah
 EOF
 
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
     [ "$(cat "oci/blobs/sha256/$config" | jq -r .config.Labels.meshuggah)" = "rocks" ]
