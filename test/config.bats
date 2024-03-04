@@ -14,15 +14,15 @@ function teardown() {
 
     local tmpd=$(pwd)
     echo "tmpd $tmpd"
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 EOF
 
     stacker "--oci-dir=$tmpd/args-oci" "--stacker-dir=$tmpd/args-stacker" \
-        "--roots-dir=$tmpd/args-roots" build
+        "--roots-dir=$tmpd/args-roots" build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     [ -d "$tmpd/args-oci" ]
     [ -d "$tmpd/args-stacker" ]
 }
@@ -33,11 +33,11 @@ EOF
     local tmpd=$(pwd)
     echo "tmpd $tmpd"
     find $tmpd
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 EOF
     cat > "$tmpd/config.yaml" <<EOF
 stacker_dir: $tmpd/config-stacker
@@ -45,7 +45,7 @@ oci_dir: $tmpd/config-oci
 rootfs_dir: $tmpd/config-roots
 EOF
 
-    stacker "--config=$tmpd/config.yaml" build
+    stacker "--config=$tmpd/config.yaml" build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     ls
     [ -d "$tmpd/config-oci" ]
     [ -d "$tmpd/config-stacker" ]

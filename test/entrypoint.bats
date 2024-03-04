@@ -9,11 +9,11 @@ function teardown() {
 }
 
 @test "entrypoint mess" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 base:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     cmd: foo
 layer1:
     from:
@@ -26,7 +26,7 @@ layer2:
         tag: layer1
     full_command: baz
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)

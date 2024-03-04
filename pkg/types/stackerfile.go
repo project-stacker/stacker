@@ -58,28 +58,78 @@ func (sf *Stackerfile) Len() int {
 }
 
 func substitute(content string, substitutions []string) (string, error) {
+	// replace all placeholders where we have a substitution provided
+	sub_usage := []int{}
+	unsupported_messages := []string{}
 	for _, subst := range substitutions {
 		membs := strings.SplitN(subst, "=", 2)
 		if len(membs) != 2 {
 			return "", errors.Errorf("invalid substition %s", subst)
 		}
-
-		from := fmt.Sprintf("$%s", membs[0])
 		to := membs[1]
 
-		log.Debugf("substituting %s to %s", from, to)
+		// warn on finding unsupported placeholders matching provided
+		// substitution keys:
+		nobracket := fmt.Sprintf("$%s", membs[0])
+		onebracket := fmt.Sprintf("${%s}", membs[0])
+		bad_content := content
+		for _, unsupp_placeholder := range []string{nobracket, onebracket} {
+			if strings.Contains(content, unsupp_placeholder) {
+				msg := fmt.Sprintf("%q was provided as a substitution "+
+					"and unsupported placeholder %q was found. "+
+					"Replace %q with \"${{%s}}\" to use the substitution.\n", subst,
+					unsupp_placeholder, unsupp_placeholder, membs[0])
+				unsupported_messages = append(unsupported_messages, msg)
+			}
+		}
 
-		content = strings.Replace(content, from, to, -1)
+		// the ${FOO:bar} syntax never worked! but since we documented it
+		// previously, let's warn on it too:
+		bad_re, err := regexp.Compile(fmt.Sprintf(`\$\{%s(:[^\}]*)?\}`, membs[0]))
+		if err != nil {
+			return "", err
+		}
+		bad_matches := bad_re.FindAllString(bad_content, -1)
+		for _, bad_match := range bad_matches {
+			msg := fmt.Sprintf("%q was provided as a substitution "+
+				"and unsupported placeholder %q was found. "+
+				"Replace %q with \"${{%s}\" to use the substitution.\n", subst,
+				bad_match, bad_match, bad_match[2:])
+			unsupported_messages = append(unsupported_messages, msg)
+		}
 
+		nmatches := 0
 		re, err := regexp.Compile(fmt.Sprintf(`\$\{\{%s(:[^\}]*)?\}\}`, membs[0]))
 		if err != nil {
 			return "", err
 		}
 
+		matches := re.FindAllString(content, -1)
 		content = re.ReplaceAllString(content, to)
+
+		if matches != nil {
+			nmatches += len(matches)
+		}
+		sub_usage = append(sub_usage, nmatches)
 	}
 
-	// now, anything that's left we can just use its value
+	for i, numused := range sub_usage {
+		if numused > 0 {
+			log.Debugf("substitution: %q was used %d times", substitutions[i], numused)
+		} else {
+			log.Debugf("substitution: %q was NOT used", substitutions[i])
+		}
+	}
+
+	if len(unsupported_messages) > 0 {
+		for _, msg := range unsupported_messages {
+			log.Errorf(msg)
+		}
+		return "", errors.Errorf("%d instances of unsupported placeholders found. Review log for how to update.", len(unsupported_messages))
+	}
+
+	// now, anything that's left was not provided in substitutions but should
+	// have a default value. Not having a default here is an error.
 	re := regexp.MustCompile(`\$\{\{[^\}]*\}\}`)
 	for {
 		indexes := re.FindAllStringIndex(content, -1)

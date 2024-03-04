@@ -80,27 +80,39 @@ third:
 }
 
 func TestSubstitute(t *testing.T) {
-	s := "$ONE $TWO ${{TWO}} ${{TWO:}} ${{TWO:3}} ${{TWO2:22}} ${{THREE:3}}"
-	result, err := substitute(s, []string{"ONE=1", "TWO=2"})
+	// test supported double bracket syntax with default values
+	s := "${{ONE}} ${{TWO:}} ${{TWO:3}} ${{TWO2:22}} ${{THREE:3}} ${{NOTHING:}}"
+	result, err := substitute(s, []string{"ONE=1", "TWO=2", "BLEH=BLAH"})
 	if err != nil {
 		t.Fatalf("failed substitutition: %s", err)
 	}
 
-	expected := "1 2 2 2 2 22 3"
+	expected := "1 2 2 22 3 "
 	if result != expected {
-		t.Fatalf("bad substitution result, expected %s got %s", expected, result)
+		t.Fatalf("bad substitution result, expected '%s' got '%s'", expected, result)
 	}
 
-	// ${PRODUCT} is ok
-	s = "$PRODUCT ${PRODUCT//x} ${{PRODUCT}}"
-	result, err = substitute(s, []string{"PRODUCT=foo"})
-	if err != nil {
-		t.Fatalf("failed substitution: %s", err)
+	// Test that unsupported single bracket syntax is passed through
+	// (there are warnings printed to help debug)
+	_, err = substitute("${A} ${A:Z}", []string{"A=B"})
+	if err == nil {
+		t.Fatalf("substitution with unsupported placeholders should have failed but didn't")
 	}
 
-	expected = "foo ${PRODUCT//x} foo"
-	if result != expected {
-		t.Fatalf("bad substitution result, expected %s got %s", expected, result)
+	// $PRODUCT or ${PRODUCT} are NOT valid placeholders, but also not errors.
+	// we warn if you provide PRODUCT and we see those invalid placeholders
+	// we do not warn if you have e.g. $DONTWARN but it isn't a provided sub
+	s = "$DONTWARN $PRODUCT ${PRODUCT} ${PRODUCT:def} ${PRODUCT//x} ${{PRODUCT}} ${{PRODUCT:bar}}"
+	_, err = substitute(s, []string{"PRODUCT=foo"})
+	if err == nil {
+		t.Fatalf("substitution with unsupported placeholders should have failed but didn't")
+	}
+
+	// a double bracket placeholder with no default value must be provided
+	s = "${{NOT_SET}}"
+	_, err = substitute(s, []string{})
+	if err == nil {
+		t.Fatalf("expected error for unset variable!")
 	}
 }
 

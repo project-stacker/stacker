@@ -43,11 +43,11 @@ EOF
 }
 
 @test "built-type layer import caching" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 build-base:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 base:
     from:
         type: built
@@ -58,19 +58,19 @@ base:
         cp /stacker/imports/foo /foo
 EOF
     touch foo
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo "second time" > foo
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     umoci unpack --image oci:base dest
     [ "$(cat dest/rootfs/foo)" == "second time" ]
 }
 
 @test "import caching" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 import-cache:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - link/foo
     run: cp /stacker/imports/foo/zomg /zomg
@@ -81,20 +81,20 @@ EOF
     echo bar >> tree2/foo/zomg
 
     ln -s tree1 link
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     rm link && ln -s tree2 link
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     rm link
     umoci unpack --image oci:import-cache dest
     [ "$(sha tree2/foo/zomg)" == "$(sha dest/rootfs/zomg)" ]
 }
 
 @test "remove from a dir" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 a:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - foo
     run: |
@@ -103,21 +103,21 @@ EOF
 
     mkdir -p foo
     touch foo/bar
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     [ "$status" -eq 0 ]
 
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 a:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - foo
     run: |
         [ ! -f /stacker/imports/foo/bar ]
 EOF
     rm foo/bar
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "bind rebuilds" {
@@ -164,21 +164,21 @@ EOF
 }
 
 @test "mode change is re-imported" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 mode-test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - executable
     run: cp /stacker/imports/executable /executable
 EOF
     touch executable
     cat stacker.yaml
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     chmod +x executable
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     umoci unpack --image oci:mode-test dest
     [ -x dest/rootfs/executable ]
@@ -200,28 +200,28 @@ EOF
     chmod 755 "$oldbin"
 
     touch foo
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - foo
     run: cp /stacker/imports/foo /foo
 EOF
 
-    run_as "$oldbin" --debug build
-    stacker build
+    run_as "$oldbin" --debug build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
 
 @test "different old cache version is ok" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 test:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo '{"version": 1, "cache": "lolnope"}' > .stacker/build.cache
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }

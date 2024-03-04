@@ -11,19 +11,35 @@ processed in stacker as:
 
     1 2 3
 
-That is, variables of the form `$FOO` or `${FOO}` are supported, and variables
-with `${FOO:default}` a default value will evaluate to their default if not
-specified on the command line. It is an error to specify a `${FOO}` style
-without a default; to make the default an empty string, use `${FOO:}`.
+In order to avoid conflict with bash or POSIX shells in the `run` section, 
+only placeholders with two braces are supported, e.g. `${{FOO}}`.
+Placeholders with a default value like `${{FOO:default}}` will evaluate to their default if not
+specified on the command line or in a substitution file.
 
-In addition to substitutions provided on the command line, the following
-variables are also available with their values from either command
+Using a `${{FOO}}` placeholder without a default will result in an error if
+there is no substitution provided. If you want an empty string in that case, use
+an empty default: `${{FOO:}}`.
+
+In order to avoid confusion, it is also an error if a placeholder in the shell
+style (`$FOO` or `${FOO}`) is found when the same key has been provided as a
+substitution either via the command line (e.g. `--substitute FOO=bar`) or in a
+substitution file. An error will be printed that explains how to rewrite it:
+
+   error "A=B" was provided as a substitution and unsupported placeholder "${A}" was found. Replace "${A}" with "${{A}}" to use the substitution.
+
+Substitutions can also be specified in a yaml file given with the argument
+`--substitute-file`, with any number of key: value pairs:
+
+    FOO: bar
+    BAZ: bat
+
+In addition to substitutions provided on the command line or a file, the
+following variables are also available with their values from either command
 line flags or stacker-config file.
 
     STACKER_STACKER_DIR config name 'stacker_dir', cli flag '--stacker-dir'-
     STACKER_ROOTFS_DIR  config name 'rootfs_dir', cli flag '--roots-dir'
     STACKER_OCI_DIR     config name 'oci_dir', cli flag '--oci-dir'
-
 
 The stacker build environment will have the following environment variables
 available for reference:

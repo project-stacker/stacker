@@ -4,11 +4,11 @@ function setup() {
     stacker_setup
     mkdir -p ocibuilds/sub1
     touch ocibuilds/sub1/import1
-    cat > ocibuilds/sub1/stacker.yaml <<EOF
+    cat > ocibuilds/sub1/stacker.yaml <<"EOF"
 layer1:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - import1
     run: |
@@ -16,7 +16,7 @@ layer1:
 EOF
     mkdir -p ocibuilds/sub2
     touch ocibuilds/sub2/import2
-    cat > ocibuilds/sub2/stacker.yaml <<EOF
+    cat > ocibuilds/sub2/stacker.yaml <<"EOF"
 config:
     prerequisites:
         - ../sub1/stacker.yaml
@@ -31,24 +31,24 @@ layer2:
         cp /root/import1 /root/import1_copied
 EOF
     mkdir -p ocibuilds/sub3
-    cat > ocibuilds/sub3/stacker.yaml <<EOF
+    cat > ocibuilds/sub3/stacker.yaml <<"EOF"
 layer3:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     build_only: true
 EOF
     mkdir -p ocibuilds/sub4
-    cat > ocibuilds/sub4/stacker.yaml <<EOF
+    cat > ocibuilds/sub4/stacker.yaml <<"EOF"
 layer4:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         ls > /root/ls_out
 EOF
     mkdir -p ocibuilds/sub5
-    cat > ocibuilds/sub5/stacker.yaml <<EOF
+    cat > ocibuilds/sub5/stacker.yaml <<"EOF"
 config:
     prerequisites:
         - ../sub1/stacker.yaml
@@ -59,7 +59,7 @@ layer5:
     build_only: true
 EOF
     mkdir -p ocibuilds/sub6
-    cat > ocibuilds/sub6/stacker.yaml <<EOF
+    cat > ocibuilds/sub6/stacker.yaml <<"EOF"
 config:
     prerequisites:
         - ../sub5/stacker.yaml
@@ -80,8 +80,8 @@ function teardown() {
 
 
 @test "publish layer with custom tag" {
-    stacker build -f ocibuilds/sub4/stacker.yaml
-    stacker publish -f ocibuilds/sub4/stacker.yaml --url oci:oci_publish --tag test1
+    stacker build -f ocibuilds/sub4/stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish -f ocibuilds/sub4/stacker.yaml --url oci:oci_publish --tag test1 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
      # Unpack published image and check content
     mkdir dest
@@ -91,8 +91,8 @@ function teardown() {
 
 
 @test "publish layer with multiple custom tags" {
-    stacker build -f ocibuilds/sub1/stacker.yaml
-    stacker publish -f ocibuilds/sub1/stacker.yaml --url oci:oci_publish --tag test1 --tag test2
+    stacker build -f ocibuilds/sub1/stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish -f ocibuilds/sub1/stacker.yaml --url oci:oci_publish --tag test1 --tag test2 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
      # Unpack published image and check content
     mkdir dest
@@ -104,8 +104,8 @@ function teardown() {
 
 
 @test "publish multiple layers recursively" {
-    stacker recursive-build -d ocibuilds
-    stacker publish -d ocibuilds --url oci:oci_publish --tag test1
+    stacker recursive-build -d ocibuilds --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish -d ocibuilds --url oci:oci_publish --tag test1 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
      # Unpack published image and check content
     umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
@@ -117,8 +117,8 @@ function teardown() {
 }
 
 @test "publish selected multiple layers" {
-    stacker recursive-build -d ocibuilds
-    stacker publish -d ocibuilds --url oci:oci_publish --tag test1 --image layer1 --image layer6
+    stacker recursive-build -d ocibuilds --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish -d ocibuilds --url oci:oci_publish --tag test1 --image layer1 --image layer6 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
      # Unpack published image and check content
     umoci unpack --image oci_publish:layer1_test1 dest/layer1_test1
@@ -131,8 +131,8 @@ function teardown() {
 }
 
 @test "publish single layer with docker url" {
-    stacker build -f ocibuilds/sub1/stacker.yaml
-    stacker publish -f ocibuilds/sub1/stacker.yaml --url docker://docker-reg.fake.com/ --username user --password pass --tag test1 --show-only
+    stacker build -f ocibuilds/sub1/stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish -f ocibuilds/sub1/stacker.yaml --url docker://docker-reg.fake.com/ --username user --password pass --tag test1 --show-only --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # Check command output
     [[ "${lines[-1]}" =~ ^(would publish: ocibuilds\/sub1\/stacker.yaml layer1 to docker://docker-reg.fake.com/layer1:test1)$ ]]
@@ -140,15 +140,15 @@ function teardown() {
 }
 
 @test "do not publish build only layer" {
-    stacker build -f ocibuilds/sub3/stacker.yaml
-    stacker publish -f ocibuilds/sub3/stacker.yaml --url oci:oci_publish --tag test1
+    stacker build -f ocibuilds/sub3/stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish -f ocibuilds/sub3/stacker.yaml --url oci:oci_publish --tag test1 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     # Check the output does not contain the tag since no images should be published
     [[ ${output} =~ "will not publish: ocibuilds/sub3/stacker.yaml build_only layer3" ]]
 }
 
 @test "publish multiple layer types" {
-    stacker --storage-type overlay build -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs
-    stacker --storage-type overlay publish -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs --url oci:oci_publish --tag test1
+    stacker --storage-type overlay build -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker --storage-type overlay publish -f ocibuilds/sub4/stacker.yaml --layer-type tar --layer-type squashfs --url oci:oci_publish --tag test1 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     mkdir dest
 
@@ -170,13 +170,13 @@ function teardown() {
         skip "skipping test because no registry found in REGISTRY_URL env variable"
     fi
 
-    stacker build -f ocibuilds/sub4/stacker.yaml
-    stacker publish --skip-tls -f ocibuilds/sub4/stacker.yaml --url docker://${REGISTRY_URL} --tag test1
+    stacker build -f ocibuilds/sub4/stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish --skip-tls -f ocibuilds/sub4/stacker.yaml --url docker://${REGISTRY_URL} --tag test1 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # check content of published image
     # should have /root/ls_out from sub4/stacker.yaml
     mkdir -p ocibuilds/sub7
-    cat > ocibuilds/sub7/stacker.yaml <<EOF
+    cat > ocibuilds/sub7/stacker.yaml <<"EOF"
 published:
     from:
         type: docker
@@ -192,13 +192,13 @@ EOF
         skip "skipping test because no registry found in REGISTRY_URL env variable"
     fi
 
-    stacker build -f ocibuilds/sub1/stacker.yaml
-    stacker publish --skip-tls -f ocibuilds/sub1/stacker.yaml --url docker://${REGISTRY_URL} --tag test1 --tag test2
+    stacker build -f ocibuilds/sub1/stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish --skip-tls -f ocibuilds/sub1/stacker.yaml --url docker://${REGISTRY_URL} --tag test1 --tag test2 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # check content of published image
     # should have /root/import1 from sub1/stacker.yaml
     mkdir -p ocibuilds/sub8
-    cat > ocibuilds/sub8/stacker.yaml <<EOF
+    cat > ocibuilds/sub8/stacker.yaml <<"EOF"
 published:
     from:
         type: docker
@@ -210,7 +210,7 @@ EOF
     # check content of published image
     # should have /root/import1 from sub1/stacker.yaml
     mkdir -p ocibuilds/sub9
-    cat > ocibuilds/sub9/stacker.yaml <<EOF
+    cat > ocibuilds/sub9/stacker.yaml <<"EOF"
 published:
     from:
         type: docker
@@ -227,17 +227,17 @@ EOF
         skip "skipping test because no registry found in REGISTRY_URL env variable"
     fi
 
-    stacker recursive-build -d ocibuilds
-    stacker publish --skip-tls -d ocibuilds --url docker://${REGISTRY_URL} --tag test1
+    stacker recursive-build -d ocibuilds --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish --skip-tls -d ocibuilds --url docker://${REGISTRY_URL} --tag test1 --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     # check content of published image
     # layer6 should have /root/import1 from sub1/stacker.yaml
     mkdir -p ocibuilds/sub10
-    cat > ocibuilds/sub10/stacker.yaml <<EOF
+    cat > ocibuilds/sub10/stacker.yaml <<"EOF"
 published:
     from:
         type: docker
-        url: docker://${REGISTRY_URL}/layer6:test1
+        url: docker://${{REGISTRY_URL}}/layer6:test1
     run: |
         [ -f /root/import1 ]
 EOF
@@ -252,7 +252,7 @@ EOF
     skip "skipping test because no registry found in REGISTRY_URL env variable"
   fi
 
-  cat > stacker.yaml <<EOF
+  cat > stacker.yaml <<"EOF"
 parent:
   from:
     type: docker
@@ -261,17 +261,17 @@ parent:
     rm -rf /etc/apk/repositories
 EOF
   stacker build
-  stacker publish --skip-tls --url docker://${REGISTRY_URL} --tag latest
+  stacker publish --skip-tls --url docker://${REGISTRY_URL} --tag latest --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
   stacker clean
 
-  cat > stacker.yaml <<EOF
+  cat > stacker.yaml <<"EOF"
 child:
   from:
     type: docker
-    url: docker://${REGISTRY_URL}/parent:latest
+    url: docker://${{REGISTRY_URL}}/parent:latest
     insecure: true
   run: |
     [ ! -f /etc/apk/repositories ]
 EOF
-  stacker build
+  stacker build --substitute REGISTRY_URL=${REGISTRY_URL}
 }

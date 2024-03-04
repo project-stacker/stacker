@@ -10,11 +10,11 @@ function teardown() {
 
 @test "all container contents must be accounted for" {
   skip_slow_test
-  cat > stacker.yaml <<EOF
+  cat > stacker.yaml <<"EOF"
 bom-parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: ${{CENTOS_OCI}}
     bom:
       generate: true
       namespace: "https://test.io/artifacts"
@@ -55,7 +55,7 @@ bom-parent:
       org.opencontainers.image.vendor: bom-test
       org.opencontainers.image.licenses: MIT
 EOF
-    run stacker build
+    run stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
     [ "$status" -ne 0 ]
     # a full inventory for this image
     [ -f .stacker/artifacts/bom-parent/inventory.json ]
@@ -69,11 +69,11 @@ EOF
 
 @test "bom tool should work inside run" {
   skip_slow_test
-  cat > stacker.yaml <<EOF
+  cat > stacker.yaml <<"EOF"
 bom-parent:
     from:
         type: oci
-        url: $CENTOS_OCI
+        url: ${{CENTOS_OCI}}
     bom:
       generate: true
       namespace: "https://test.io/artifacts"
@@ -132,7 +132,7 @@ bom-child:
       org.opencontainers.image.vendor: bom-test
       org.opencontainers.image.licenses: MIT
 EOF
-    stacker build
+    stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
     [ -f .stacker/artifacts/bom-parent/installed-packages.json ]
     # a full inventory for this image
     [ -f .stacker/artifacts/bom-parent/inventory.json ]
@@ -144,7 +144,7 @@ EOF
     [ -f .stacker/artifacts/bom-child/bom-child.json ]
     if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
       zot_setup
-      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
+      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute CENTOS_OCI=${CENTOS_OCI}
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
       refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
@@ -159,11 +159,11 @@ EOF
 }
 
 @test "bom for alpine-based image" {
-  cat > stacker.yaml <<EOF
+  cat > stacker.yaml <<"EOF"
 bom-alpine:
   from:
     type: oci
-    url: $ALPINE_OCI
+    url: ${{ALPINE_OCI}}
   bom:
     generate: true
     namespace: "https://test.io/artifacts"
@@ -186,7 +186,7 @@ bom-alpine:
     # cleanup
     rm -f /etc/alpine-release /etc/apk/arch /etc/apk/repositories /etc/apk/world /etc/issue /etc/os-release /etc/secfixes.d/alpine /lib/apk/db/installed /lib/apk/db/lock /lib/apk/db/scripts.tar /lib/apk/db/triggers
 EOF
-    stacker build
+    stacker build --substitute ALPINE_OCI=${ALPINE_OCI}
     [ -f .stacker/artifacts/bom-alpine/installed-packages.json ]
     # a full inventory for this image
     [ -f .stacker/artifacts/bom-alpine/inventory.json ]
@@ -194,7 +194,7 @@ EOF
     [ -f .stacker/artifacts/bom-alpine/bom-alpine.json ]
     if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
       zot_setup
-      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
+      stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute ALPINE_OCI=${ALPINE_OCI}
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-alpine:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
       refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/bom-alpine:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')

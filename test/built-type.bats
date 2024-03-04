@@ -9,11 +9,11 @@ function teardown() {
 }
 
 @test "built type layers are restored correctly" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     run: |
         touch /root/parent
         cat /proc/self/mountinfo
@@ -25,7 +25,7 @@ child:
         cat /proc/self/mountinfo
         touch /root/child
 EOF
-    stacker build
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     umoci --log=debug unpack --image oci:parent dest/parent
     [ "$status" -eq 0 ]

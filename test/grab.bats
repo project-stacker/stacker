@@ -11,11 +11,11 @@ function teardown() {
 # do a build and a grab in an empty directory and
 # verify that no unexpected files are created.
 @test "grab has no side-effects" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 layer1:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
     imports:
         - myfile.txt
     run: |
@@ -32,7 +32,7 @@ EOF
     expected_sha=$(sha myfile.txt)
 
     cd "$bdir"
-    stacker "--work-dir=$wkdir" build "--stacker-file=$startdir/stacker.yaml"
+    stacker "--work-dir=$wkdir" build "--stacker-file=$startdir/stacker.yaml" --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     dir_is_empty . ||
         test_error "build dir had unexpected files: $_RET_EXTRA"
 

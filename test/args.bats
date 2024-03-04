@@ -9,11 +9,11 @@ function teardown() {
 }
 
 @test "workdir args" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 parent:
     from:
         type: oci
-        url: $BUSYBOX_OCI
+        url: ${{BUSYBOX_OCI}}
 child:
     from:
         type: built
@@ -24,7 +24,7 @@ EOF
   # check defaults
   tmpdir=$(mktemp -d)
   chmod -R a+rwx $tmpdir
-  stacker --work-dir $tmpdir build
+  stacker --work-dir $tmpdir build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
   [ -d $tmpdir ]
   [ -d $tmpdir/.stacker ]
   [ -d $tmpdir/roots ]
@@ -36,7 +36,7 @@ EOF
   chmod -R a+rwx $tmpdir
   stackerdir=$(mktemp -d)
   chmod -R a+rwx $stackerdir
-  stacker --work-dir $tmpdir --stacker-dir $stackerdir build
+  stacker --work-dir $tmpdir --stacker-dir $stackerdir build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
   [ -d $tmpdir ]
   [ ! -d $tmpdir/.stacker ]
   [ -d $tmpdir/roots ]
