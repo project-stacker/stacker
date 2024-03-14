@@ -26,7 +26,7 @@ jobs:
       - name: Tag and push to ghcr
         run: |
           set -e
-          for n in ubuntu:latest alpine:edge centos:latest busybox:latest; do
+          for n in ubuntu:latest alpine:edge alpine:3.19 centos:latest busybox:latest; do
             dest="ghcr.io/${{ github.repository_owner }}/$n"
             docker trust inspect "$n"
             docker pull $n
