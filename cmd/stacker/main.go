@@ -17,14 +17,13 @@ import (
 	"golang.org/x/term"
 	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/container"
+	"stackerbuild.io/stacker/pkg/lib"
 	stackerlog "stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
 var (
-	config      types.StackerConfig
-	version     = ""
-	lxc_version = ""
+	config types.StackerConfig
 )
 
 func shouldShowProgress(ctx *cli.Context) bool {
@@ -94,7 +93,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "stacker"
 	app.Usage = "stacker builds OCI images"
-	app.Version = fmt.Sprintf("stacker %s liblxc %s", version, lxc_version)
+	app.Version = fmt.Sprintf("stacker %s liblxc %s", lib.StackerVersion, lib.LXCVersion)
 
 	configDir := os.Getenv("XDG_CONFIG_HOME")
 	if configDir == "" {
@@ -309,7 +308,7 @@ func main() {
 		}
 
 		stackerlog.FilterNonStackerLogs(handler, logLevel)
-		stackerlog.Debugf("stacker version %s", version)
+		stackerlog.Debugf("stacker version %s", lib.StackerVersion)
 
 		if !ctx.Bool("internal-userns") && !shouldSkipInternalUserns(ctx) && len(os.Args) > 1 {
 			binary, err := os.Readlink("/proc/self/exe")

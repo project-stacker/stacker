@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"stackerbuild.io/stacker/pkg/container"
+	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/test"
 	"stackerbuild.io/stacker/pkg/types"
@@ -281,6 +282,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 	}
 
 	annotations[getStackerContentsAnnotation(opts.AnnotationsNamespace)] = sf.AfterSubstitutions
+	annotations[getStackerVersionAnnotation(opts.AnnotationsNamespace)] = lib.StackerVersion
 
 	history := ispec.History{
 		EmptyLayer: true, // this is only the history for imageConfig edit

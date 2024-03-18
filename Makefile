@@ -14,7 +14,8 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=$(BUILD_D)/oci --roots-dir=$(BUILD_D)/roots --stacker-dir=$(BUILD_D)/stacker --storage-type=overlay
 
-build_stacker = go build $1 -tags "$(BUILD_TAGS) $2" -ldflags "-X main.version=$(VERSION_FULL) -X main.lxc_version=$(LXC_VERSION) $3" -o $4 ./cmd/stacker
+VERSION_LDFLAGS=-X stackerbuild.io/stacker/pkg/lib.StackerVersion=$(VERSION_FULL) -X stackerbuild.io/stacker/pkg/lib.LXCVersion=$(LXC_VERSION)
+build_stacker = go build $1 -tags "$(BUILD_TAGS) $2" -ldflags "$(VERSION_LDFLAGS) $3" -o $4 ./cmd/stacker
 
 # See doc/hacking.md for how to use a local oci or docker repository.
 STACKER_DOCKER_BASE?=docker://ghcr.io/project-stacker/
