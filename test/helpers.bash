@@ -178,6 +178,7 @@ function cmp_files() {
 }
 
 function zot_setup {
+  echo "# starting zot" >&3
   cat > $TEST_TMPDIR/zot-config.json << EOF
 {
   "distSpecVersion": "1.1.0-dev",
@@ -221,8 +222,11 @@ EOF
 }
 
 function zot_teardown {
+  echo "# stopping zot" >&3
   killall zot
+  killall -KILL zot || true
   rm -f $TEST_TMPDIR/zot-config.json
+  rm -rf $TEST_TMPDIR/zot
 }
 
 function _skopeo() {

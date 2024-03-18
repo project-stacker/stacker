@@ -45,7 +45,7 @@ BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
-ZOT_VERSION := v2.0.0
+ZOT_VERSION := v2.0.2
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 

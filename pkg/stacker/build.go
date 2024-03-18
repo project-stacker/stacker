@@ -40,6 +40,8 @@ type BuildArgs struct {
 	SetupOnly            bool
 	Progress             bool
 	AnnotationsNamespace string
+	Username             string
+	Password             string
 }
 
 // Builder is responsible for building the layers based on stackerfiles
