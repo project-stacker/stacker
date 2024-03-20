@@ -269,7 +269,7 @@ func NewStackerfile(stackerfile string, validateHash bool, substitutions []strin
 
 	for _, name := range sf.FileOrder {
 		layer := sf.internal[name]
-		if layer.WasLegacyImport() {
+		if layer.WasLegacyImport {
 			log.Warnf("'import' directive used in layer '%s' inside file '%s' is deprecated. "+
 				"Support for 'import' will be removed in releases after 2025-01-01. "+
 				"Migrate by changing 'import' to 'imports' and '/stacker' to '/stacker/imports'. "+

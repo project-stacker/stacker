@@ -225,3 +225,36 @@ EOF
     echo '{"version": 1, "cache": "lolnope"}' > .stacker/build.cache
     stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
+
+@test "cache comparison of legacy import works across prereqs" {
+    echo "well, hi!"> helloworld
+
+    cat >> stacker-req.yaml << "EOF"
+base:
+    from:
+      type: oci
+      url: ${{BUSYBOX_OCI}}
+    build_only: true
+    import:
+        - helloworld
+    run: |
+      cp /stacker/helloworld /
+EOF
+
+cat >> stacker.yaml << "EOF"
+config:
+  prerequisites:
+      - stacker-req.yaml
+
+buildenv:
+    from:
+        type: built
+        tag: base
+    import:
+        - stacker://base/helloworld
+    run: |
+        cp /stacker/helloworld /h3
+
+EOF
+stacker --debug build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+}

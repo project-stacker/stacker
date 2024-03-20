@@ -22,7 +22,7 @@ import (
 	"stackerbuild.io/stacker/pkg/types"
 )
 
-const currentCacheVersion = 13
+const currentCacheVersion = 14
 
 type ImportType int
 
