@@ -351,6 +351,15 @@ l3:
        mkdir -p /ccc/222/ab
        mkdir -p /ddd/333/ab
 EOF
+    mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
+    rm -rf dest
+    # did we really download the image to the right place?
+    [ -f .stacker/layer-bases/busybox.tar ]
+
     stacker build
     umoci unpack --image oci:l3 l3
 
