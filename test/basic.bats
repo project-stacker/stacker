@@ -350,7 +350,25 @@ l3:
        mkdir -p /aaa/222/ab
        mkdir -p /ccc/222/ab
        mkdir -p /ddd/333/ab
+l4:
+    from:
+      type: built
+      tag: l3
+    run: |
+      [ ! -d /aaa/111 ]
+      [ -d /aaa/222/ab ]
+      [ -d /ccc/222 ]
+      [ ! -d /ccc/111 ]
 EOF
+    mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
+    rm -rf dest
+    # did we really download the image to the right place?
+    [ -f .stacker/layer-bases/busybox.tar ]
+
     stacker build
     umoci unpack --image oci:l3 l3
 
