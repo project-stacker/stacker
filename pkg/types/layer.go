@@ -260,7 +260,7 @@ type Layer struct {
 	OS              *string           `yaml:"os" json:"os,omitempty"`
 	Arch            *string           `yaml:"arch" json:"arch,omitempty"`
 	Bom             *Bom              `yaml:"bom" json:"bom,omitempty"`
-	wasLegacyImport bool
+	WasLegacyImport bool              `yaml:"was_legacy_import" json:"was_legacy_import,omitempty"`
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {
@@ -369,7 +369,7 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 		if len(layer.LegacyImport) != 0 {
 			layer.Imports = layer.LegacyImport
 			layer.LegacyImport = nil
-			layer.wasLegacyImport = true
+			layer.WasLegacyImport = true
 		}
 
 		ret[name], err = layer.absolutify(referenceDirectory)
@@ -440,11 +440,6 @@ func (l Layer) absolutify(referenceDirectory string) (Layer, error) {
 	}
 
 	return ret, nil
-}
-
-// WasLegacyImport - return true if this layer used legacy 'import' directive.
-func (l Layer) WasLegacyImport() bool {
-	return l.wasLegacyImport
 }
 
 func requireImportHash(imports Imports) error {

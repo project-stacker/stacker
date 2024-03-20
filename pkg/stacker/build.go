@@ -116,7 +116,7 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 	}
 
 	inDir := types.InternalStackerDir
-	if l.WasLegacyImport() {
+	if l.WasLegacyImport {
 		inDir = types.LegacyInternalStackerDir
 	}
 
@@ -370,7 +370,9 @@ func (b *Builder) build(s types.Storage, file string) error {
 
 		log.Infof("preparing image %s...", name)
 		inDir := types.InternalStackerDir
-		if l.WasLegacyImport() {
+		if l.WasLegacyImport {
+			log.Debugf("image %s uses legacy import syntax, will also mount imports at %s",
+				name, types.LegacyInternalStackerDir)
 			inDir = types.LegacyInternalStackerDir
 		}
 
