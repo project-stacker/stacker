@@ -82,7 +82,7 @@ EOF
 @test "bom tool should work inside run" {
   skip_slow_test
   cat > stacker.yaml <<"EOF"
-bom-parent:
+first:
     from:
         type: oci
         url: ${{CENTOS_OCI}}
@@ -145,7 +145,7 @@ second:
       org.opencontainers.image.licenses: MIT
 EOF
     stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
-    [ -f .stacker/artifacts/bom-parent/installed-packages.json ]
+    [ -f .stacker/artifacts/first/installed-packages.json ]
     # a full inventory for this image
     [ -f .stacker/artifacts/first/inventory.json ]
     # sbom for this image
@@ -157,7 +157,7 @@ EOF
     if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
       zot_setup
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute CENTOS_OCI=${CENTOS_OCI}
-      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-parent:latest --format "{{json .}}" | jq '.referrer | length')
+      refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/first:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
       refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/first:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
       [ $refs == \"SPDXRef-DOCUMENT\" ]
