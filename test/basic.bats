@@ -350,6 +350,15 @@ l3:
        mkdir -p /aaa/222/ab
        mkdir -p /ccc/222/ab
        mkdir -p /ddd/333/ab
+l4:
+    from:
+      type: built
+      tag: l3
+    run: |
+      [ ! -d l3/rootfs/aaa/111 ]
+      [ -d l3/rootfs/aaa/222/ab ]
+      [ -d l3/rootfs/ccc/222 ]
+      [ ! -d l3/rootfs/ccc/111 ]
 EOF
     mkdir -p .stacker/layer-bases
     chmod 777 .stacker/layer-bases
