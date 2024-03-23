@@ -70,9 +70,9 @@ EOF
     run stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
     [ "$status" -ne 0 ]
     # a full inventory for this image
-    [ -f .stacker/artifacts/first/inventory.json ]
+    [ -f .stacker/artifacts/bom-parent/inventory.json ]
     # sbom for this image shouldn't be generated
-    [ ! -a .stacker/artifacts/first/first.json ]
+    [ ! -a .stacker/artifacts/bom-parent/first.json ]
     # building a second time also fails due to missed cache
     run stacker build
     [ "$status" -ne 0 ]
