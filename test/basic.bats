@@ -316,3 +316,77 @@ busybox:
 EOF
     stacker build --substitute "a=b,c" --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }
+
+@test "Test whiteouts across layers" {
+    # /aaa is created in l1, removed in l2, re-created in l3
+    # /bbb is created in l2, removed in l3
+    # /ccc is created in l2, removed and recreated in l3
+    # /ddd is created in l1, removed and recreated in l2, and extended in l3
+    cat > stacker.yaml <<"EOF"
+l1:
+    from:
+       type: tar
+       url: .stacker/layer-bases/busybox.tar
+    run: |
+       mkdir -p /aaa/111/ab
+       mkdir -p /ddd/111/ab
+l2:
+    from:
+       type: built
+       tag: l1
+    run: |
+       rm -rf /aaa
+       mkdir -p /bbb/111/ab
+       mkdir -p /ccc/111/ab
+       rm -rf /ddd
+       mkdir -p /ddd/222/ab
+l3:
+    from:
+       type: built
+       tag: l2
+    run: |
+       rm -rf /bbb
+       rm -rf /ccc
+       mkdir -p /aaa/222/ab
+       mkdir -p /ccc/222/ab
+       mkdir -p /ddd/333/ab
+l4:
+    from:
+      type: built
+      tag: l3
+    run: |
+      [ ! -d /aaa/111 ]
+      [ -d /aaa/222/ab ]
+      [ -d /ccc/222 ]
+      [ ! -d /ccc/111 ]
+EOF
+    mkdir -p .stacker/layer-bases
+    chmod 777 .stacker/layer-bases
+    image_copy oci:$BUSYBOX_OCI oci:.stacker/layer-bases/oci:busybox
+    umoci unpack --image .stacker/layer-bases/oci:busybox dest
+    tar caf .stacker/layer-bases/busybox.tar -C dest/rootfs .
+    rm -rf dest
+    # did we really download the image to the right place?
+    [ -f .stacker/layer-bases/busybox.tar ]
+
+    stacker build
+    umoci unpack --image oci:l3 l3
+
+    # aaa/111 should be deleted, aaa/222 should exist
+    [ ! -d l3/rootfs/aaa/111 ]
+    [ -d l3/rootfs/aaa/222/ab ]
+
+    # bbb should be deleted entirely
+    [ ! -d l3/rootfs/bbb ]
+
+    # ccc should be like aaa - but doesn't have an intermediate layer
+    [ -d l3/rootfs/ccc/222 ]
+    [ ! -d l3/rootfs/ccc/111 ]
+
+    # ddd should have both 222 and 333 but not 111
+    # This is to test specifically that the opaque xattr is not copied
+    # up, causing 222 to be missed.
+    [ -d l3/rootfs/ddd/333 ]
+    [ -d l3/rootfs/ddd/222 ]
+    [ ! -d l3/rootfs/ddd/111 ]
+}
