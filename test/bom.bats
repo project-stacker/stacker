@@ -305,3 +305,63 @@ EOF
     fi
     stacker clean
 }
+
+@test "all container contents must be accounted for even for build_only layers" {
+  skip_slow_test
+  cat > stacker.yaml <<"EOF"
+bom-parent:
+    build_only: true
+    from:
+        type: oci
+        url: ${{CENTOS_OCI}}
+    bom:
+      generate: true
+      namespace: "https://test.io/artifacts"
+      packages:
+      - name: pkg1
+        version: 1.0.0
+        license: Apache-2.0
+        paths: [/pkg1]
+      - name: pkg2
+        version: 1.0.0
+        license: Apache-2.0
+        paths: [/pkg2]
+    run: |
+      # discover installed pkgs
+      /stacker/bin/stacker bom discover
+      # our own custom packages
+      mkdir -p /pkg1
+      touch /pkg1/file
+      mkdir -p /pkg2
+      touch /pkg2/file
+      # should cause build to fail!
+      mkdir -p /orphan-without-a-package
+      touch /orphan-without-a-package/file
+      # cleanup
+      rm -rf /var/lib/alternatives /tmp/* \
+        /etc/passwd- /etc/group- /etc/shadow- /etc/gshadow- \
+        /etc/sysconfig/network /etc/nsswitch.conf.bak \
+        /etc/rpm/macros.image-language-conf /var/lib/rpm/.dbenv.lock \
+        /var/lib/rpm/Enhancename /var/lib/rpm/Filetriggername \
+        /var/lib/rpm/Recommendname /var/lib/rpm/Suggestname \
+        /var/lib/rpm/Supplementname /var/lib/rpm/Transfiletriggername \
+        /var/log/anaconda \
+        /etc/sysconfig/anaconda /etc/sysconfig/network-scripts/ifcfg-* \
+        /etc/sysconfig/sshd-permitrootlogin /root/anaconda-* /root/original-* /run/nologin \
+        /var/lib/rpm/.rpm.lock /etc/.pwd.lock /etc/BUILDTIME
+    annotations:
+      org.opencontainers.image.authors: bom-test
+      org.opencontainers.image.vendor: bom-test
+      org.opencontainers.image.licenses: MIT
+EOF
+    run stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
+    [ "$status" -ne 0 ]
+    # a full inventory for this image
+    [ -f .stacker/artifacts/bom-parent/inventory.json ]
+    # sbom for this image shouldn't be generated
+    [ ! -a .stacker/artifacts/bom-parent/first.json ]
+    # building a second time also fails due to missed cache
+    run stacker build
+    [ "$status" -ne 0 ]
+    stacker clean
+}
