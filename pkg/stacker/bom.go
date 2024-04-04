@@ -3,10 +3,12 @@ package stacker
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"stackerbuild.io/stacker/pkg/container"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
@@ -108,6 +110,11 @@ func ImportArtifacts(sc types.StackerConfig, src types.ImageSource, name string)
 	if src.Type == types.BuiltLayer {
 		// if a bom is available, add it here so it can be merged
 		srcpath := path.Join(sc.StackerDir, "artifacts", src.Tag, fmt.Sprintf("%s.json", src.Tag))
+
+		_, err := os.Lstat(srcpath)
+		if err != nil && errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
 
 		dstfp, err := os.CreateTemp(path.Join(sc.StackerDir, "artifacts", name), fmt.Sprintf("%s-*.json", name))
 		if err != nil {
