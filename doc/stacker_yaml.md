@@ -1,15 +1,17 @@
 ## The `stacker.yaml` file
 
 When doing a `stacker build`, the behavior of stacker is specified by the yaml
-directives below. In addition to these, stacker allows variable substitions of
-several forms. For example, a line like:
+directives below. 
 
-    $ONE ${{TWO}} ${{THREE:3}}
+Before the yaml is parsed, stacker performs substitution on placeholders in the
+file of the format `${{VAR}}` or `${{VAR:default}}`. For example, a line like:
 
-When run with `stacker build --substitute ONE=1 --substitute TWO=2` is
+    ${{ONE}} ${{TWO:3}}
+
+When run with `stacker build --substitute ONE=1` is
 processed in stacker as:
 
-    1 2 3
+    1 3
 
 In order to avoid conflict with bash or POSIX shells in the `run` section, 
 only placeholders with two braces are supported, e.g. `${{FOO}}`.
