@@ -116,7 +116,9 @@ func ImportArtifacts(sc types.StackerConfig, src types.ImageSource, name string)
 			return nil
 		}
 
-		dstfp, err := os.CreateTemp(path.Join(sc.StackerDir, "artifacts", name), fmt.Sprintf("%s-*.json", name))
+		log.Infof("importing sbom from %s", srcpath)
+
+		dstfp, err := os.CreateTemp(path.Join(sc.StackerDir, "artifacts", name), fmt.Sprintf("%s-*.json", src.Tag))
 		if err != nil {
 			return err
 		}

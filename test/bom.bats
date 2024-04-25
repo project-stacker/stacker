@@ -366,7 +366,7 @@ EOF
     stacker clean
 }
 
-@test "skip bom generation for built layer" {
+@test "generate bom for built layer" {
   skip_slow_test
   cat > stacker.yaml <<"EOF"
 first:
@@ -400,14 +400,6 @@ second:
     generate: true
     namespace: "https://test.io/artifacts"
     packages:
-    - name: pkg1
-      version: 1.0.0
-      license: Apache-2.0
-      paths: [/pkg1]
-    - name: pkg2
-      version: 1.0.0
-      license: Apache-2.0
-      paths: [/pkg2]
     - name: pkg3
       version: 1.0.0
       license: Apache-2.0
