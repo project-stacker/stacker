@@ -176,13 +176,17 @@ to be available under container's /usr/local/ and all the files/dirs from the ho
 /path/to/directory2 to be available under container's /
 
 
-### `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`, `user`
+### `environment`, `labels`, `working_dir`, `volumes`, `cmd`, `entrypoint`
 
 These all correspond exactly to the similarly named bits in the [OCI image
 config
 spec](https://github.com/opencontainers/image-spec/blob/master/config.md#properties),
 and are available for users to pass things through to the runtime environment
 of the image.
+
+### `runtime_user`
+
+This sets the `user` field in the container config, as defined in the [OCI Image config spec](https://github.com/opencontainers/image-spec/blob/master/config.md#properties). 
 
 ### `generate_labels`
 
