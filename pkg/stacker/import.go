@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -59,7 +60,11 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 	}
 	defer f2.Close()
 
-	eq, err := equalfile.New(nil, equalfile.Options{}).CompareReader(f1, f2)
+	// use limited reader to prevent the default cap of 10**10 max file size
+	limf1R := io.LimitReader(f1, info1.Size())
+	limf2R := io.LimitReader(f2, info2.Size())
+
+	eq, err := equalfile.New(nil, equalfile.Options{}).CompareReader(limf1R, limf2R)
 	if err != nil {
 		return false, err
 	}
