@@ -386,11 +386,25 @@ first:
         license: Apache-2.0
         paths: [/pkg2]
     run: |
+      # discover installed pkgs
+      /stacker/bin/stacker bom discover
       # our own custom packages
       mkdir -p /pkg1
       touch /pkg1/file
       mkdir -p /pkg2
       touch /pkg2/file
+      # cleanup
+      rm -rf /var/lib/alternatives /tmp/* \
+        /etc/passwd- /etc/group- /etc/shadow- /etc/gshadow- \
+        /etc/sysconfig/network /etc/nsswitch.conf.bak \
+        /etc/rpm/macros.image-language-conf /var/lib/rpm/.dbenv.lock \
+        /var/lib/rpm/Enhancename /var/lib/rpm/Filetriggername \
+        /var/lib/rpm/Recommendname /var/lib/rpm/Suggestname \
+        /var/lib/rpm/Supplementname /var/lib/rpm/Transfiletriggername \
+        /var/log/anaconda \
+        /etc/sysconfig/anaconda /etc/sysconfig/network-scripts/ifcfg-* \
+        /etc/sysconfig/sshd-permitrootlogin /root/anaconda-* /root/original-* /run/nologin \
+        /var/lib/rpm/.rpm.lock /etc/.pwd.lock /etc/BUILDTIME
     annotations:
       org.opencontainers.image.authors: bom-test
       org.opencontainers.image.vendor: bom-test
