@@ -98,16 +98,20 @@ func Download(cacheDir string, url string, progress bool, expectedHash, remoteHa
 	if err != nil {
 		return "", err
 	}
+
+	downloadHash, err := lib.HashFile(name, false)
+	if err != nil {
+		return "", err
+	}
+
 	if expectedHash != "" {
 		log.Infof("Checking shasum of downloaded file")
-
-		downloadHash, err := lib.HashFile(name, false)
-		if err != nil {
-			return "", err
-		}
-
 		downloadHash = strings.TrimPrefix(downloadHash, "sha256:")
 		log.Debugf("Downloaded file hash: %s", downloadHash)
+
+		if downloadHash != remoteHash {
+			log.Warnf("Downloaded file hash %q does not match hash from HTTP header %q", downloadHash, remoteHash)
+		}
 
 		if expectedHash != downloadHash {
 			os.RemoveAll(name)

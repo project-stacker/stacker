@@ -72,22 +72,26 @@ func filesDiffer(p1 string, info1 os.FileInfo, p2 string, info2 os.FileInfo) (bo
 	return !eq, nil
 }
 
-func verifyImportFileHash(imp string, hash string) error {
-	if len(hash) == 0 {
-		return nil
-	}
+// check that the file's hash matches the given hash.
+// If the given hash is "", that is treated as a match.
+// always return the actual hash.
+func verifyImportFileHash(imp string, hash string) (string, error) {
 	actualHash, err := lib.HashFile(imp, false)
 	if err != nil {
-		return err
+		return actualHash, err
 	}
 
 	actualHash = strings.TrimPrefix(actualHash, "sha256:")
+	if len(hash) == 0 {
+		return actualHash, nil
+	}
+
 	if actualHash != strings.ToLower(hash) {
-		return errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
+		return actualHash, errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
 			imp, hash, actualHash)
 	}
 
-	return nil
+	return actualHash, nil
 }
 
 func importFile(imp string, cacheDir string, hash string, idest string, mode *fs.FileMode, uid, gid int) (string, error) {
@@ -97,7 +101,7 @@ func importFile(imp string, cacheDir string, hash string, idest string, mode *fs
 	}
 
 	if !e1.IsDir() {
-		err := verifyImportFileHash(imp, hash)
+		_, err := verifyImportFileHash(imp, hash)
 		if err != nil {
 			return "", err
 		}
@@ -245,22 +249,25 @@ func validateHash(hash string) error {
 	return nil
 }
 
+// downloads or copies import url depending on scheme, and returns the path and
+// hash of the downloaded file
 func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache string, expectedHash string,
 	idest string, mode *fs.FileMode, uid, gid int, progress bool,
-) (string, error) {
+) (string, string, error) {
 	url, err := types.NewDockerishUrl(i)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// validate the given hash
 	if err = validateHash(expectedHash); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// It's just a path, let's copy it to .stacker.
 	if url.Scheme == "" {
-		return importFile(i, cache, expectedHash, idest, mode, uid, gid)
+		path, err := importFile(i, cache, expectedHash, idest, mode, uid, gid)
+		return path, "", err
 	} else if url.Scheme == "http" || url.Scheme == "https" {
 		// otherwise, we need to download it
 		// first verify the hashes
@@ -273,10 +280,11 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		log.Debugf("Remote file: hash: %s length: %s", remoteHash, remoteSize)
 		// verify if the given hash from stackerfile matches the remote one.
 		if len(expectedHash) > 0 && len(remoteHash) > 0 && strings.ToLower(expectedHash) != remoteHash {
-			return "", errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
+			return "", "", errors.Errorf("The requested hash of %s import is different than the actual hash: %s != %s",
 				i, expectedHash, remoteHash)
 		}
-		return Download(cache, i, progress, expectedHash, remoteHash, remoteSize, idest, mode, uid, gid)
+		path, err := Download(cache, i, progress, expectedHash, remoteHash, remoteSize, idest, mode, uid, gid)
+		return path, remoteHash, err
 	} else if url.Scheme == "stacker" {
 		// we always Grab() things from stacker://, because we need to
 		// mount the container's rootfs to get them and don't
@@ -285,23 +293,19 @@ func acquireUrl(c types.StackerConfig, storage types.Storage, i string, cache st
 		p := path.Join(cache, path.Base(url.Path))
 		snap, cleanup, err := storage.TemporaryWritableSnapshot(url.Host)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		defer cleanup()
 		err = Grab(c, storage, snap, url.Path, cache, idest, mode, uid, gid)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
-		err = verifyImportFileHash(p, expectedHash)
-		if err != nil {
-			return "", err
-		}
-
-		return p, nil
+		// return "" as the hash, it is not checked
+		return p, "", nil
 	}
 
-	return "", errors.Errorf("unsupported url scheme %s", i)
+	return "", "", errors.Errorf("unsupported url scheme %s", i)
 }
 
 func CleanImportsDir(c types.StackerConfig, name string, imports types.Imports, cache *BuildCache) error {
@@ -365,6 +369,7 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 		return errors.Wrapf(err, "couldn't read existing directory")
 	}
 
+	importHashes := map[string]string{}
 	for _, i := range imports {
 		cache := dir
 
@@ -387,9 +392,14 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 			cache = tmpdir
 		}
 
-		name, err := acquireUrl(c, storage, i.Path, cache, i.Hash, i.Dest, i.Mode, i.Uid, i.Gid, progress)
+		name, downloadedFileHash, err := acquireUrl(c, storage, i.Path, cache, i.Hash, i.Dest, i.Mode, i.Uid, i.Gid, progress)
 		if err != nil {
 			return err
+		}
+
+		// "" is returned for local files, ignore they won't be checked anyway
+		if downloadedFileHash != "" {
+			importHashes[i.Path] = downloadedFileHash
 		}
 
 		for i, ext := range existing {
@@ -406,6 +416,11 @@ func Import(c types.StackerConfig, storage types.Storage, name string, imports t
 		if err != nil {
 			return err
 		}
+	}
+
+	log.Infof("imported file hashes (after substitutions):")
+	for path, hash := range importHashes {
+		log.Infof("  - path: %q\n    hash: %q", path, hash)
 	}
 
 	return nil
