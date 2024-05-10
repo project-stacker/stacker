@@ -391,6 +391,10 @@ first:
       touch /pkg1/file
       mkdir -p /pkg2
       touch /pkg2/file
+    annotations:
+      org.opencontainers.image.authors: bom-test
+      org.opencontainers.image.vendor: bom-test
+      org.opencontainers.image.licenses: MIT
 
 second:
   from:
