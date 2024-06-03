@@ -232,14 +232,16 @@ not include all of its build dependencies.
 
 ### `binds`
 
-`binds`: specifies bind mounts from the host to the container. There are two formats:
+`binds`: specifies bind mounts from the host to the container. There are three formats:
 
     binds:
+        - /zomg
         - /foo/bar -> /bar/baz
-	- /zomg
+        - source: /foo/bar
+          dest: /bar/baz
 
-The first one binds /foo/bar to /bar/baz, and the second host /zomg to
-container /zomg.
+The first one binds host `/zomg` to container `/zomg` while the second and third
+bind host `/foo/bar` to container `/bar/baz`.
 
 Right now there is no awareness of change for any of these bind mounts, so
 --no-cache should be used to re-build if the content of the bind mount has
