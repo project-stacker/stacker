@@ -820,9 +820,10 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 	}
 
 	for _, bind := range l.Binds {
+		log.Debugf("bind mounting %q into container at %q", bind.Source, bind.Dest)
 		err = c.BindMount(bind.Source, bind.Dest, "")
 		if err != nil {
-			return err
+			return errors.Errorf("failed to bind mount %q at %q: %s", bind.Source, bind.Dest, err)
 		}
 	}
 
