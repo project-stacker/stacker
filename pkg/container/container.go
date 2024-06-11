@@ -65,6 +65,9 @@ func New(sc types.StackerConfig, name string) (*Container, error) {
 func (c *Container) BindMount(source string, dest string, extraOpts string) error {
 	createOpt := "create=dir"
 	stat, err := os.Stat(source)
+	if os.IsNotExist(err) {
+		return errors.Errorf("bind mount source %q does not exist, refusing bind mount: %s", source, err)
+	}
 	if err == nil && !stat.IsDir() {
 		createOpt = "create=file"
 	}
