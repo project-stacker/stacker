@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	cli "github.com/urfave/cli/v2"
+	"stackerbuild.io/stacker/pkg/erofs"
 	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/stacker"
 	"stackerbuild.io/stacker/pkg/types"
@@ -52,12 +53,16 @@ func initCommonBuildFlags() []cli.Flag {
 		},
 		&cli.StringSliceFlag{
 			Name:  "layer-type",
-			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
+			Usage: "set the output layer type (supported values: tar, squashfs, erofs); can be supplied multiple times",
 			Value: cli.NewStringSlice("tar"),
 		},
 		&cli.BoolFlag{
 			Name:  "no-squashfs-verity",
 			Usage: "do not append dm-verity data to squashfs archives",
+		},
+		&cli.BoolFlag{
+			Name:  "no-verity",
+			Usage: "do not append dm-verity data to non-tar archives",
 		},
 		&cli.BoolFlag{
 			Name:  "require-hash",
@@ -105,6 +110,9 @@ func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 	var err error
 	verity := squashfs.VerityMetadata(!ctx.Bool("no-squashfs-verity"))
 	args.LayerTypes, err = types.NewLayerTypes(ctx.StringSlice("layer-type"), verity)
+	everity := erofs.VerityMetadata(!ctx.Bool("no-erofs-verity"))
+	if everity {
+	}
 	return args, err
 }
 
