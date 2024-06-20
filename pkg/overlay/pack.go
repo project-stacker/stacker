@@ -135,7 +135,7 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 		bundlePath := overlayPath(config.RootFSDir, theLayer.Digest)
 		overlayDir := path.Join(bundlePath, "overlay")
 		// generate blob
-		blob, mediaType, rootHash, err := generateBlob(layerType, overlayDir, config.OCIDir)
+		blob, mediaType, rootHash, err := generateBlob(layerType, overlayDir, config.OCIDir, nil)
 		if err != nil {
 			return err
 		}
@@ -293,13 +293,13 @@ func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.St
 }
 
 // generateBlob generates either a tar blob or a squashfs blob based on layerType
-func generateBlob(layerType types.LayerType, contents string, ociDir string) (io.ReadCloser, string, string, error) {
+func generateBlob(layerType types.LayerType, contents string, ociDir string, lowerDirs []string) (io.ReadCloser, string, string, error) {
 	var blob io.ReadCloser
 	var err error
 	var mediaType string
 	var rootHash string
 	if layerType.Type == "tar" {
-		packOptions := layer.RepackOptions{TranslateOverlayWhiteouts: true}
+		packOptions := layer.RepackOptions{TranslateOverlayWhiteouts: true, OverlayLowerDirs: lowerDirs}
 		blob = layer.GenerateInsertLayer(contents, "/", false, &packOptions)
 		mediaType = ispec.MediaTypeImageLayer
 	} else {
@@ -430,12 +430,22 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		return false, err
 	}
 
+	ovl, err := readOverlayMetadata(config.RootFSDir, name)
+	if err != nil {
+		return false, err
+	}
+
 	descs := []ispec.Descriptor{}
 	for i, layerType := range layerTypes {
 		mutator := mutators[i]
 		var desc ispec.Descriptor
 
-		blob, mediaType, rootHash, err := generateBlob(layerType, dir, config.OCIDir)
+		lowerDirs := []string{}
+		for i := len(ovl.Manifests[layerType].Layers) - 1; i >= 0; i-- {
+			lowerDirs = append(lowerDirs, overlayPath(config.RootFSDir, ovl.Manifests[layerType].Layers[i].Digest))
+		}
+
+		blob, mediaType, rootHash, err := generateBlob(layerType, dir, config.OCIDir, lowerDirs)
 		if err != nil {
 			return false, err
 		}
