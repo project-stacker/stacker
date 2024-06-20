@@ -260,8 +260,12 @@ parent:
   run: |
     rm -rf /etc/apk/repositories
 EOF
+  stacker check
   stacker build
-  stacker publish --skip-tls --url docker://${REGISTRY_URL} --tag latest --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+  manifest0=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+  layers0=$(cat oci/blobs/sha256/$manifest0 | jq -r .layers[1].digest | cut -f2 -d:)
+  bsdtar -tvf oci/blobs/sha256/$layers0
+  stacker publish --skip-tls --url docker://${REGISTRY_URL} --tag latest
   stacker clean
 
   cat > stacker.yaml <<"EOF"
@@ -271,6 +275,10 @@ child:
     url: docker://${{REGISTRY_URL}}/parent:latest
     insecure: true
   run: |
+    ps
+    ls -l /
+    ls -l /etc
+    ls -l /etc/apk
     [ ! -f /etc/apk/repositories ]
 EOF
   stacker build --substitute REGISTRY_URL=${REGISTRY_URL}

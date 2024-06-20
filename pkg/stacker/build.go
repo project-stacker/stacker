@@ -551,7 +551,7 @@ func (b *Builder) build(s types.Storage, file string) error {
 			continue
 		}
 
-		err = s.Repack(name, opts.LayerTypes, b.builtStackerfiles)
+		err = s.Repack(name, l, opts.LayerTypes, b.builtStackerfiles)
 		if err != nil {
 			return err
 		}
