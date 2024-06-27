@@ -18,6 +18,7 @@ installdeps_fedora() {
         sudo dnf install golang
         go version
     fi
+    sudo dnf install bsdtar
 }
 
 installdeps_ubuntu() {
@@ -40,7 +41,8 @@ installdeps_ubuntu() {
             parallel \
             pkg-config \
             squashfs-tools \
-            squashfuse
+            squashfuse \
+            libarchive-tools
     # skopeo deps
     sudo apt -yy install \
        libgpgme-dev \
