@@ -283,13 +283,13 @@ func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerT
 	return nil
 }
 
-func (o *overlay) Repack(name string, layerTypes []types.LayerType, sfm types.StackerFiles) error {
+func (o *overlay) Repack(name string, layer types.Layer, layerTypes []types.LayerType, sfm types.StackerFiles) error {
 	err := o.initializeBasesInOutput(name, layerTypes, sfm)
 	if err != nil {
 		return err
 	}
 
-	return repackOverlay(o.config, name, layerTypes)
+	return repackOverlay(o.config, name, layer, layerTypes)
 }
 
 // generateBlob generates either a tar blob or a squashfs blob based on layerType
@@ -382,7 +382,9 @@ func stripOverlayAttrsUnder(dirPath string) error {
 		})
 }
 
-func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mutate.Mutator, name string, layerTypes []types.LayerType) (bool, error) {
+func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mutate.Mutator,
+	name string, layer types.Layer, layerTypes []types.LayerType,
+) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := os.ReadDir(dir)
 	if err != nil {
@@ -430,7 +432,12 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 		return false, err
 	}
 
-	ovl, err := readOverlayMetadata(config.RootFSDir, name)
+	var ovl overlayMetadata
+	if layer.From.Type != types.BuiltLayer {
+		ovl, err = readOverlayMetadata(config.RootFSDir, name)
+	} else {
+		ovl, err = readOverlayMetadata(config.RootFSDir, layer.From.Tag)
+	}
 	if err != nil {
 		return false, err
 	}
@@ -557,7 +564,7 @@ func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mu
 	return true, nil
 }
 
-func repackOverlay(config types.StackerConfig, name string, layerTypes []types.LayerType) error {
+func repackOverlay(config types.StackerConfig, name string, layer types.Layer, layerTypes []types.LayerType) error {
 	oci, err := umoci.OpenLayout(config.OCIDir)
 	if err != nil {
 		return err
@@ -612,7 +619,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 	// generate blobs for each build layer
 	for _, buildLayer := range ovl.BuiltLayers {
 
-		didMutate, err := generateLayer(config, oci, mutators, buildLayer, layerTypes)
+		didMutate, err := generateLayer(config, oci, mutators, buildLayer, layer, layerTypes)
 		if err != nil {
 			return err
 		}
@@ -647,7 +654,7 @@ func repackOverlay(config types.StackerConfig, name string, layerTypes []types.L
 		return err
 	}
 
-	didMutate, err := generateLayer(config, oci, mutators, name, layerTypes)
+	didMutate, err := generateLayer(config, oci, mutators, name, layer, layerTypes)
 	if err != nil {
 		return err
 	}
