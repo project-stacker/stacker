@@ -73,3 +73,19 @@ EOF
 
     stat tree1/foo/bar
 }
+
+@test "fail on missing bind source" {
+    cat > stacker.yaml <<"EOF"
+hello-binds:
+  from:
+    type: docker
+    url: ${{BUSYBOX_OCI}}
+  binds:
+    - thats_no_dir -> /mydir
+  run: |
+    mkdir -p /hello-stacker-app
+    echo 'echo "Hello Stacker!"' > /hello-stacker-app/hello.sh
+EOF
+
+    bad_stacker build -f stacker.yaml --substitute=BUSYBOX_OCI="$BUSYBOX_OCI"
+}
