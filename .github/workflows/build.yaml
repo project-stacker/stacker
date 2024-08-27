@@ -98,7 +98,9 @@ jobs:
         if: always()
         uses: ./.github/actions/show-disk-usage
       - name: Upload code coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         if: ${{ matrix.privilege-level == 'priv' }}
