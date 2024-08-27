@@ -3,8 +3,7 @@
     <img src="https://github.com/project-stacker/assets/blob/main/images/logo/stacker-logo-text.png" alt="stacker" height="130"/>
 </p>
 
-
-# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=main)](https://github.com/project-stacker/stacker/actions) [![codecov.io](http://codecov.io/github/project-stacker/stacker/coverage.svg?branch=main)](http://codecov.io/github/project-stacker/stacker?branch=main) [![CodeQL](https://github.com/project-stacker/stacker/workflows/CodeQL/badge.svg)](https://github.com/project-stacker/stacker/actions?query=workflow%3ACodeQL) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker) [![nightly](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml/badge.svg)](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml)
+# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=main)](https://github.com/project-stacker/stacker/actions) [![codecov](https://codecov.io/github/project-stacker/stacker/graph/badge.svg?token=uBy8C0fUbL)](https://codecov.io/github/project-stacker/stacker) [![CodeQL](https://github.com/project-stacker/stacker/workflows/CodeQL/badge.svg)](https://github.com/project-stacker/stacker/actions?query=workflow%3ACodeQL) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker) [![nightly](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml/badge.svg)](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml)
 
 Stacker is a tool for building OCI images natively via a declarative yaml format.
 
@@ -42,12 +41,12 @@ Additionally, there are some [tips and tricks](doc/tricks.md) for common usage.
 ### Conference Talks
 
 * An Operator Centric Way to Update Application Containers FOSDEM 2019
-    * [video](https://archive.fosdem.org/2019/schedule/event/containers_atomfs/)
-    * [slides](doc/talks/FOSDEM_2019.pdf)
+  * [video](https://archive.fosdem.org/2019/schedule/event/containers_atomfs/)
+  * [slides](doc/talks/FOSDEM_2019.pdf)
 * Building OCI Images without Privilege OSS EU 2018
-    * [slides](doc/talks/OSS_EU_2018.pdf)
+  * [slides](doc/talks/OSS_EU_2018.pdf)
 * Building OCI Images without Privilege OSS NA 2018
-    * [slides](doc/talks/OSS_NA_2018.pdf)
+  * [slides](doc/talks/OSS_NA_2018.pdf)
 
 (Note that despite the similarity in name of the 2018 talks, the content is
 mostly disjoint; I need to be more creative with naming.)
