@@ -625,7 +625,7 @@ func ExtractSingleSquashPolicy(squashFile, extractDir string, policy *ExtractPol
 		policy.Excuses = map[string]error{}
 	}
 
-	if policy.Extractors == nil || len(policy.Extractors) == 0 {
+	if len(policy.Extractors) == 0 {
 		policy.Excuses[initName] = errors.Errorf("policy had no extractors")
 		return policy.Excuses[initName]
 	}
@@ -647,7 +647,7 @@ func ExtractSingleSquashPolicy(squashFile, extractDir string, policy *ExtractPol
 	}
 
 	// nothing worked. populate Excuses[initName]
-	policy.Excuses[initName] = errors.Errorf("No suitable extractor found:\n  " + strings.Join(allExcuses, "\n  "))
+	policy.Excuses[initName] = errors.Errorf("No suitable extractor found:\n %s", strings.Join(allExcuses, "\n  "))
 	return policy.Excuses[initName]
 }
 

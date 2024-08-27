@@ -19,7 +19,7 @@ type LayerType struct {
 
 func (lt LayerType) String() string {
 	if lt.Verity {
-		return fmt.Sprintf(lt.Type + "+verity")
+		return fmt.Sprintf("%s+verity", lt.Type)
 	}
 	return lt.Type
 }
