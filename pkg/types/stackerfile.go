@@ -123,7 +123,7 @@ func substitute(content string, substitutions []string) (string, error) {
 
 	if len(unsupported_messages) > 0 {
 		for _, msg := range unsupported_messages {
-			log.Errorf(msg)
+			log.Errorf("%s", msg)
 		}
 		return "", errors.Errorf("%d instances of unsupported placeholders found. Review log for how to update.", len(unsupported_messages))
 	}

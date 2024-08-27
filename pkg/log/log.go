@@ -75,7 +75,7 @@ func (th *TextHandler) HandleLog(e *log.Entry) error {
 		}
 	}
 
-	_, err := th.out.WriteString(fmt.Sprintf(e.Message))
+	_, err := th.out.WriteString(e.Message)
 	if err != nil {
 		return err
 	}
