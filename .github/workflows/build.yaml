@@ -26,6 +26,9 @@ on:
         type: boolean
         description: 'Should slow tests be run?'
         default: true
+    secrets:
+      codecov_token:
+        required: true
 
 jobs:
   build:
@@ -100,7 +103,7 @@ jobs:
       - name: Upload code coverage
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.codecov_token }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         if: ${{ matrix.privilege-level == 'priv' }}
