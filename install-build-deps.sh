@@ -42,7 +42,8 @@ installdeps_ubuntu() {
             pkg-config \
             squashfs-tools \
             squashfuse \
-            libarchive-tools
+            libarchive-tools \
+            erofs-utils
     # skopeo deps
     sudo apt -yy install \
        libgpgme-dev \
