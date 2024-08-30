@@ -8,3 +8,5 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
