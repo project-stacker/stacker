@@ -22,10 +22,10 @@ import (
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
 	"github.com/pkg/xattr"
+	stackeroci "machinerun.io/atomfs/oci"
+	"machinerun.io/atomfs/squashfs"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
-	stackeroci "stackerbuild.io/stacker/pkg/oci"
-	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/storage"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -382,7 +382,7 @@ func stripOverlayAttrsUnder(dirPath string) error {
 		})
 }
 
-func generateLayer(config types.StackerConfig, oci casext.Engine, mutators []*mutate.Mutator,
+func generateLayer(config types.StackerConfig, _ casext.Engine, mutators []*mutate.Mutator,
 	name string, layer types.Layer, layerTypes []types.LayerType,
 ) (bool, error) {
 	dir := path.Join(config.RootFSDir, name, "overlay")

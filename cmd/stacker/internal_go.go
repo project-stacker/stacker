@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
-	"stackerbuild.io/stacker/pkg/atomfs"
+	"machinerun.io/atomfs"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/overlay"
