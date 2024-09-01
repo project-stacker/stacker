@@ -10,8 +10,8 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
+	stackeroci "machinerun.io/atomfs/oci"
 	"stackerbuild.io/stacker/pkg/log"
-	stackeroci "stackerbuild.io/stacker/pkg/oci"
 	"stackerbuild.io/stacker/pkg/types"
 )
 

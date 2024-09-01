@@ -13,7 +13,7 @@ import (
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/stretchr/testify/assert"
-	"stackerbuild.io/stacker/pkg/squashfs"
+	"machinerun.io/atomfs/squashfs"
 )
 
 func createImage(dir string, tag string) error {

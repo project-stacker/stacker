@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	cli "github.com/urfave/cli/v2"
-	"stackerbuild.io/stacker/pkg/squashfs"
+	"machinerun.io/atomfs/squashfs"
 	"stackerbuild.io/stacker/pkg/stacker"
 	"stackerbuild.io/stacker/pkg/types"
 )

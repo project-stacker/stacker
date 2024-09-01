@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
+	"machinerun.io/atomfs/squashfs"
 	"stackerbuild.io/stacker/pkg/lib"
-	"stackerbuild.io/stacker/pkg/squashfs"
 	"stackerbuild.io/stacker/pkg/stacker"
 	"stackerbuild.io/stacker/pkg/types"
 )

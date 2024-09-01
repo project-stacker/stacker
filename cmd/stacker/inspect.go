@@ -11,7 +11,7 @@ import (
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
-	stackeroci "stackerbuild.io/stacker/pkg/oci"
+	stackeroci "machinerun.io/atomfs/oci"
 )
 
 var inspectCmd = cli.Command{

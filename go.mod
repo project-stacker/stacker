@@ -5,25 +5,22 @@ go 1.21.0
 toolchain go1.21.6
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/apex/log v1.9.0
 	github.com/apparentlymart/go-shquot v0.0.1
 	github.com/cheggaaa/pb/v3 v3.1.2
 	github.com/containers/image/v5 v5.24.2
 	github.com/dustin/go-humanize v1.0.1
-	github.com/freddierice/go-losetup v0.0.0-20220711213114-2a14873012db
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/klauspost/pgzip v1.2.6
 	github.com/lxc/go-lxc v0.0.0-20230926171149-ccae595aa49e
 	github.com/lxc/incus v0.3.1-0.20231215145534-1719ffcbab9d
-	github.com/martinjungblut/go-cryptsetup v0.0.0-20220520180014-fd0874fd07a6
 	github.com/minio/sha256-simd v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/buildkit v0.11.4
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc4
-	github.com/opencontainers/umoci v0.0.0-00000000000000-000000000000
+	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
 	github.com/sirupsen/logrus v1.9.3
@@ -39,6 +36,12 @@ require (
 	sigs.k8s.io/bom v0.6.0
 	sigs.k8s.io/yaml v1.3.0
 	stackerbuild.io/stacker-bom v0.0.0-00010101000000-000000000000
+)
+
+require (
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
+	github.com/freddierice/go-losetup v0.0.0-20220711213114-2a14873012db // indirect
+	github.com/martinjungblut/go-cryptsetup v0.0.0-20220520180014-fd0874fd07a6 // indirect
 )
 
 require (
@@ -274,6 +277,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	machinerun.io/atomfs v1.1.1
 	modernc.org/libc v1.37.6 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
