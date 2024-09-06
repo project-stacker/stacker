@@ -27,6 +27,8 @@ jobs:
       privilege-level: >-
         ["priv"]
       build-id: "${{needs.build-id.outputs.build-id}}"
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
   release:
     name: "Tagged Release"
     runs-on: ubuntu-20.04
