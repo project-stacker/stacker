@@ -10,16 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func IsSymlink(p string) bool {
-	fi, err := os.Lstat(p)
-	if err != nil {
-		// Some people can't be helped
-		return false
-	}
-
-	return fi.Mode()&os.ModeSymlink != 0
-}
-
 // DirCopy copies a whole directory recursively
 func DirCopy(dest string, source string) error {
 

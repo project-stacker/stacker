@@ -19,7 +19,7 @@ func TestDir(t *testing.T) {
 		_, err = src.Write([]byte("hello world!"))
 		So(err, ShouldBeNil)
 
-		ok := lib.IsSymlink(src.Name())
+		ok, _ := lib.IsSymlink(src.Name())
 		So(ok, ShouldBeFalse)
 	})
 

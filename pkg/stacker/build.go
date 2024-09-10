@@ -340,13 +340,30 @@ func (b *Builder) build(s types.Storage, file string) error {
 	log.Debugf("Dependency Order %v", order)
 
 	var oci casext.Engine
-	if _, statErr := os.Stat(opts.Config.OCIDir); statErr != nil {
-		oci, err = umoci.CreateLayout(opts.Config.OCIDir)
-	} else {
+	ocidirstat, statErr := os.Stat(opts.Config.OCIDir)
+
+	// if it exists, it is a directory, and it has an index.json, try openlayout
+	// otherwise try createlayout
+
+	if statErr == nil {
+		if !ocidirstat.IsDir() {
+			return errors.Errorf("parameter oci-dir=%q exists but is not a directory.", opts.Config.OCIDir)
+		}
+		if !lib.PathExists(filepath.Join(opts.Config.OCIDir, "index.json")) {
+			return errors.Errorf("parameter oci-dir=%q exists but does not look like an OCI Layout.", opts.Config.OCIDir)
+		}
+
 		oci, err = umoci.OpenLayout(opts.Config.OCIDir)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return errors.Wrapf(err, "could not open OCI layout at %q", opts.Config.OCIDir)
+		}
+	} else {
+		log.Infof("Creating new OCI Layout at %q", opts.Config.OCIDir)
+		oci, err = umoci.CreateLayout(opts.Config.OCIDir)
+		if err != nil {
+			return errors.Wrapf(err, "could not create layout at %q", opts.Config.OCIDir)
+		}
+
 	}
 	defer oci.Close()
 

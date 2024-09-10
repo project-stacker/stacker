@@ -111,3 +111,26 @@ func FindFiles(base, pattern string) ([]string, error) {
 
 	return paths, err
 }
+
+func IsSymlink(path string) (bool, error) {
+	statInfo, err := os.Lstat(path)
+	if err != nil {
+		return false, err
+	}
+	return (statInfo.Mode() & os.ModeSymlink) != 0, nil
+}
+
+func PathExists(path string) bool {
+	statInfo, err := os.Stat(path)
+	if statInfo == nil {
+		isLink, err := IsSymlink(path)
+		if err != nil {
+			return false
+		}
+		return isLink
+	}
+	if err != nil && os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
