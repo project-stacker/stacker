@@ -27,8 +27,9 @@ EOF
         continue
     }
     bsdtar -tvf oci/blobs/sha256/$f
-    run "bsdtar -tvf oci/blobs/sha256/$f | grep '.wh.sensors.d'"
-    if [ "$status" -eq 0 ]; then
+    # we expect the grep to fail, if it returns success we fail the test since
+    # it means we have .wh files in the tar which we should NOT.
+    if run bsdtar -tvf oci/blobs/sha256/$f | grep '.wh.sensors.d'; then
       echo "should not have a sensors.d whiteout!";
       exit 1;
     fi
