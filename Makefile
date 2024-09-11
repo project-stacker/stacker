@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 TOP_LEVEL := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 BUILD_D = $(TOP_LEVEL)/.build
 export GOPATH ?= $(BUILD_D)/gopath
@@ -77,6 +78,16 @@ stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapp
 		--substitute VERSION_FULL=$(VERSION_FULL) \
 		--substitute WITH_COV=yes
 
+# On Ubuntu 24.04 the lxc package does not link against libsystemd so the pkg-config
+# below does list -lsystemd; we must add it to the list but only for stacker-dynamic
+ifeq ($(shell awk -F= '/VERSION_ID/ {print $$2}' /etc/os-release),"24.04")
+ifeq (stacker-dynamic,$(firstword $(MAKECMDGOALS)))
+LXC_WRAPPER_LIBS=-lsystemd
+else
+LXC_WRAPPER_LIBS=
+endif
+endif
+
 stacker-static: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,,static_build,-extldflags '-static',stacker)
 
@@ -91,7 +102,7 @@ stacker-dynamic: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
 	$(call build_stacker,,,,stacker-dynamic)
 
 cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
-	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) -lpthread -ldl" lxc-wrapper
+	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) $(LXC_WRAPPER_LIBS) -lpthread -ldl" lxc-wrapper
 
 
 .PHONY: go-download

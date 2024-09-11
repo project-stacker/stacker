@@ -22,27 +22,58 @@ installdeps_fedora() {
 }
 
 installdeps_ubuntu() {
-    sudo add-apt-repository -y ppa:project-machine/squashfuse
-    sudo apt -yy install \
-            build-essential \
-            cryptsetup-bin \
-            jq \
-            libacl1-dev \
-            libcap-dev \
-            libcryptsetup-dev \
-            libdevmapper-dev \
-            libpam0g-dev \
-            libseccomp-dev \
-            libselinux1-dev \
-            libssl-dev \
-            libzstd-dev \
-            lxc-dev \
-            lxc-utils \
-            parallel \
-            pkg-config \
-            squashfs-tools \
-            squashfuse \
-            libarchive-tools
+    PKGS=(
+        build-essential
+        cryptsetup-bin
+        jq
+        libacl1-dev
+        libcap-dev
+        libcryptsetup-dev
+        libdevmapper-dev
+        liblxc-dev
+        libpam0g-dev
+        libseccomp-dev
+        libselinux1-dev
+        libssl-dev
+        libzstd-dev
+        lxc-dev
+        lxc-utils
+        parallel
+        pkg-config
+        squashfs-tools
+        squashfuse
+        libarchive-tools
+    )
+
+    case "$VERSION_ID" in
+        22.04)
+            sudo add-apt-repository -y ppa:project-machine/squashfuse
+            ;;
+        24.04)
+            # lp:2080069
+            # temporarily add puzzleos/dev to pickup lxc-dev package which
+            # provides static liblxc.a
+            sudo add-apt-repository -y ppa:puzzleos/dev
+
+            # allow array to expand again
+            #shellcheck disable=2206
+            PKGS=( ${PKGS[*]} libsystemd-dev )
+
+            # 24.04 has additional apparmor restrictions, probably doesn't apply
+            # for root in github VM but developers will run into this
+            enable_userns
+            ;;
+    esac
+
+    # allow array to expand
+    #shellcheck disable=2206
+    sudo apt -yy install ${PKGS[*]}
+
+    # Work around an Ubuntu packaging bug. Fixed in 23.04 onward.
+    if [ "$VERSION_ID" != "24.04" ]; then
+        sudo sed -i 's/#define LXC_DEVEL 1/#define LXC_DEVEL 0/' /usr/include/lxc/version.h
+    fi
+
     # skopeo deps
     sudo apt -yy install \
        libgpgme-dev \
@@ -54,8 +85,24 @@ installdeps_ubuntu() {
         sudo apt -yy install golang-go
         go version
     fi
-    # Work around an Ubuntu packaging bug. Fixed in 23.04 onward.
-    sudo sed -i 's/#define LXC_DEVEL 1/#define LXC_DEVEL 0/' /usr/include/lxc/version.h
+}
+
+enable_userns() {
+    SYSCTL_USERNS="/etc/sysctl.d/00-enable-userns.conf"
+    if ! [ -s "${SYSCTL_USERNS}" ]; then
+        echo "Add kernel tunables to enable user namespaces in $SYSCTL_USERNS "
+        cat <<EOF | sudo tee "${SYSCTL_USERNS}"
+kernel.apparmor_restrict_unprivileged_io_uring = 0
+kernel.apparmor_restrict_unprivileged_unconfined = 0
+kernel.apparmor_restrict_unprivileged_userns = 0
+kernel.apparmor_restrict_unprivileged_userns_complain = 0
+kernel.apparmor_restrict_unprivileged_userns_force = 0
+kernel.unprivileged_bpf_disabled = 2
+kernel.unprivileged_userns_apparmor_policy = 0
+kernel.unprivileged_userns_clone = 1
+EOF
+        sudo sysctl -p /etc/sysctl.d/00-enable-userns.conf
+    fi
 }
 
 installdeps_golang() {
@@ -77,6 +124,14 @@ case $ID_LIKE in
         exit 1
         ;;
 esac
+
+# add container policy (if not already present
+POLICY="/etc/containers/policy.json"
+if ! [ -s "${POLICY}" ]; then
+    sudo mkdir -p "$(dirname $POLICY)"
+    echo "adding default containers policy (insecure):${POLICY}"
+    echo '{"default":[{"type":"insecureAcceptAnything"}]}' | sudo tee "${POLICY}"
+fi
 
 # install golang deps
 installdeps_golang || exit 1
