@@ -69,6 +69,16 @@ fulldir:
     rm -rf /a1
     mkdir /a1
     touch /a1/newfile
+
+redo:
+  from:
+    type: built
+    tag: bb
+  run: |
+    rm -rf /a1
+    mkdir /a1
+    touch /a1/newfile
+
 EOF
 
   stacker build
@@ -76,12 +86,11 @@ EOF
   # "bb" should not have a whiteout entry for /a1
   md=$(cat oci/index.json | jq .manifests[0].digest | sed s/sha256://g | tr -d \")
   ld=$(cat oci/blobs/sha256/"$md" | jq .layers[-1].digest | sed s/sha256://g | tr -d \")
-  "bsdtar -tvf oci/blobs/sha256/$ld | grep '.wh.a1'"
   run "bsdtar -tvf oci/blobs/sha256/$ld | grep '.wh.a1'"
   [ "$status" -ne 0 ]
 
-  # "fulldir" should have a whiteout entry for /a1
-  md=$(cat oci/index.json | jq .manifests[3].digest | sed s/sha256://g | tr -d \")
+  # "redo" should have a whiteout entry for /a1
+  md=$(cat oci/index.json | jq .manifests[4].digest | sed s/sha256://g | tr -d \")
   ld=$(cat oci/blobs/sha256/"$md" | jq .layers[-1].digest | sed s/sha256://g | tr -d \")
   "bsdtar -tvf oci/blobs/sha256/$ld | grep '.wh.a1'"
   run "bsdtar -tvf oci/blobs/sha256/$ld | grep '.wh.a1'"
