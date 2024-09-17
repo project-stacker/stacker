@@ -151,7 +151,7 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 
 		// slight hack, but this is much faster than a cp, and the
 		// layers are the same, just in different formats
-		if !PathExists(overlayPath(config.RootFSDir, desc.Digest)) {
+		if !lib.PathExists(overlayPath(config.RootFSDir, desc.Digest)) {
 			err = os.Symlink(overlayPath(config.RootFSDir, theLayer.Digest), overlayPath(config.RootFSDir, desc.Digest))
 			if err != nil {
 				return errors.Wrapf(err, "failed to create squashfs symlink")
@@ -167,29 +167,6 @@ func ConvertAndOutput(config types.StackerConfig, tag, name string, layerType ty
 	}
 
 	return nil
-}
-
-func IsSymlink(path string) (bool, error) {
-	statInfo, err := os.Lstat(path)
-	if err != nil {
-		return false, err
-	}
-	return (statInfo.Mode() & os.ModeSymlink) != 0, nil
-}
-
-func PathExists(path string) bool {
-	statInfo, err := os.Stat(path)
-	if statInfo == nil {
-		isLink, err := IsSymlink(path)
-		if err != nil {
-			return false
-		}
-		return isLink
-	}
-	if err != nil && os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
 
 func lookupManifestInDir(dir, name string) (ispec.Manifest, error) {
@@ -374,7 +351,7 @@ func stripOverlayAttrsUnder(dirPath string) error {
 				return err
 			}
 			p := filepath.Join(dirPath, path)
-			if lib.IsSymlink(p) {
+			if isSymlink, _ := lib.IsSymlink(p); isSymlink {
 				// user.* xattrs "can not" exist on symlinks
 				return nil
 			}
