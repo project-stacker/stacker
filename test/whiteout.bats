@@ -78,4 +78,10 @@ EOF
   ld=$(cat oci/blobs/sha256/"$md" | jq .layers[-1].digest | sed s/sha256://g | tr -d \")
   run "bsdtar -tvf oci/blobs/sha256/$ld | grep '.wh.a1'"
   [ "$status" -ne 0 ]
+
+  # "fulldir" should have a whiteout entry for /a1
+  md=$(cat oci/index.json | jq .manifests[3].digest | sed s/sha256://g | tr -d \")
+  ld=$(cat oci/blobs/sha256/"$md" | jq .layers[-1].digest | sed s/sha256://g | tr -d \")
+  run "bsdtar -tvf oci/blobs/sha256/$ld | grep '.wh.a1'"
+  [ "$status" -eq 0 ]
 }
