@@ -54,6 +54,9 @@ export PATH := $(TOOLS_D)/bin:$(PATH)
 GOLANGCI_LINT_VERSION = v1.54.2
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
 
+COLIMA_VERSION = v0.7.5
+COLIMA = $(TOOLS_D)/colima/$(COLIMA_VERSION)/colima
+
 STAGE1_STACKER ?= ./stacker-dynamic
 
 STACKER_DEPS = $(GO_SRC) go.mod go.sum
@@ -122,11 +125,18 @@ go-test:
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
 
 .PHONY: download-tools
-download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS)
+download-tools: $(COLIMA) $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS)
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(dir $@)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(dir $@)"
+	@mkdir -p "$(TOOLS_D)/bin"
+	ln -sf "$@" "$(TOOLS_D)/bin/"
+
+$(COLIMA):
+	@mkdir -p $(dir $@)
+	# download binary
+	curl -Lo "$@" https://github.com/abiosoft/colima/releases/download/$(COLIMA_VERSION)/colima-$(shell uname)-$(shell uname -m)
 	@mkdir -p "$(TOOLS_D)/bin"
 	ln -sf "$@" "$(TOOLS_D)/bin/"
 
