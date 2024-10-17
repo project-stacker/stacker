@@ -67,20 +67,36 @@ takes the form:
 
 Some directives are irrelevant depending on the type. Supported types are:
 
-`docker`: `url` is required, `insecure` is optional. When `insecure` is
-specified, stacker attempts to connect via http instead of https to the Docker
-Hub.
+#### `type: docker`
 
-`tar`: `url` is required, everything else is ignored.
+- `url` is required
 
-`oci`: `url` is required, and must be a local OCI layout URI of the form `oci:/local/path/image:tag`
+- `insecure` is optional. 
 
-`built`: `tag` is required, everything else is ignored. `built` bases this
-layer on a previously specified layer in the stacker file.
+When `insecure` is specified, stacker attempts to connect via http instead of
+https to the Docker Hub.
 
-`scratch`: the base image is an empty rootfs, and can be used with the `dest` field
+#### `type: tar`
+
+- `url` is required, and can be a local path, an http/https URL, or a stacker url of the format `stacker://$imagename/path/to/tar.gz` 
+
+#### `type:oci`
+
+- `url` is required, and can be a local path to an OCI layout, e.g. `/path/to/layout/image:tag`, or a url pointing to a remote OCI image, e.g. `docker://host/repo/image:tag`
+
+#### `type:built`
+
+- `tag` is required, everything else is ignored.
+
+stacker bases this image on another image built in the current session, from the same stacker file or its prerequisites.
+
+
+#### `type: scratch`:
+
+the base image is an empty rootfs, and can be used with the `dest` field
 of `import` to generate minimal images, e.g. for statically built binaries.
 
+Note that empty means no shell to run, so unless you import one, `run:` sections will fail for this type.
 
 ### `imports`
 
@@ -298,3 +314,4 @@ defaults to the host operating system if not specified.
 `arch` is a user-specified string value indicating which machine _architecture_ this image is being
 built for, for example, `amd64`, `arm64`, etc. It is an optional field and it
 defaults to the host machine architecture if not specified.
+
