@@ -22,8 +22,10 @@ import (
 	"github.com/opencontainers/umoci/oci/layer"
 	"github.com/pkg/errors"
 	"github.com/pkg/xattr"
-	stackeroci "machinerun.io/atomfs/oci"
-	"machinerun.io/atomfs/squashfs"
+	stackerfs "machinerun.io/atomfs/pkg/fs"
+	stackeroci "machinerun.io/atomfs/pkg/oci"
+	fstypes "machinerun.io/atomfs/pkg/types"
+	"machinerun.io/atomfs/pkg/verity"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/storage"
@@ -280,7 +282,8 @@ func generateBlob(layerType types.LayerType, contents string, ociDir string, low
 		blob = layer.GenerateInsertLayer(contents, "/", false, &packOptions)
 		mediaType = ispec.MediaTypeImageLayer
 	} else {
-		blob, mediaType, rootHash, err = squashfs.MakeSquashfs(ociDir, contents, nil, layerType.Verity)
+		fsi := stackerfs.New(fstypes.FilesystemType(layerType.Type))
+		blob, mediaType, rootHash, err = fsi.Make(ociDir, contents, nil, layerType.Verity)
 		if err != nil {
 			return nil, "", "", err
 		}
@@ -303,7 +306,7 @@ func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType s
 
 	annotations := map[string]string{}
 	if rootHash != "" {
-		annotations[squashfs.VerityRootHashAnnotation] = rootHash
+		annotations[verity.VerityRootHashAnnotation] = rootHash
 	}
 
 	desc := ispec.Descriptor{
@@ -443,7 +446,7 @@ func generateLayer(config types.StackerConfig, _ casext.Engine, mutators []*muta
 		} else {
 			annotations := map[string]string{}
 			if rootHash != "" {
-				annotations[squashfs.VerityRootHashAnnotation] = rootHash
+				annotations[verity.VerityRootHashAnnotation] = rootHash
 			}
 			desc, err = mutator.Add(context.Background(), mediaType, blob, history, mutate.NoopCompressor, annotations)
 			if err != nil {
@@ -693,10 +696,11 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 		return nil
 	}
 
-	if squashfs.IsSquashfsMediaType(l.MediaType) {
-		return squashfs.ExtractSingleSquash(
+	if fsi := stackerfs.NewFromMediaType(l.MediaType); fsi != nil {
+		return fsi.ExtractSingle(
 			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
 	}
+
 	switch l.MediaType {
 	case ispec.MediaTypeImageLayer, ispec.MediaTypeImageLayerGzip:
 		tarEx.Lock()

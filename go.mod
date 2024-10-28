@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/buildkit v0.11.4
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc4
+	github.com/opencontainers/image-spec v1.1.0
 	github.com/opencontainers/umoci v0.4.8-0.20220412065115-12453f247749
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/xattr v0.4.9
@@ -290,5 +290,6 @@ require (
 
 replace (
 	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20240906174318-e9397ba4ced0
+	machinerun.io/atomfs => github.com/rchincha/atomfs v0.0.0-20250223060538-baa0a62678d1
 	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20240509203427-4d685e046780
 )

@@ -37,16 +37,16 @@ test:
     run: |
         touch /hello
 EOF
-    stacker build --layer-type=squashfs $verity_arg --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker build --layer-type=erofs $verity_arg --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     mkdir mountpoint
-    stacker internal-go atomfs mount test-squashfs mountpoint
+    stacker internal-go atomfs mount test-erofs mountpoint
 
     [ -f mountpoint/hello ]
     stacker internal-go atomfs umount mountpoint
 }
 
-@test "--no-squashfs-verity works" {
-    basic_test --no-squashfs-verity
+@test "--no-verity works" {
+    basic_test --no-verity
     verity_checkusedloops
 }
 
@@ -85,14 +85,14 @@ c:
         tag: base
     run: touch /c
 EOF
-    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     mkdir a
-    stacker internal-go atomfs mount a-squashfs a
+    stacker internal-go atomfs mount a-erofs a
     [ -f a/a ]
 
     mkdir b
-    stacker internal-go atomfs mount b-squashfs b
+    stacker internal-go atomfs mount b-erofs b
     [ -f b/b ]
 
     cat /proc/self/mountinfo
@@ -106,7 +106,7 @@ EOF
     [ -b "/dev/mapper/$first_layer_hash-verity" ]
 
     mkdir c
-    stacker internal-go atomfs mount c-squashfs c
+    stacker internal-go atomfs mount c-erofs c
     [ -f c/c ]
 
     cat /proc/self/mountinfo
@@ -145,7 +145,7 @@ test:
     run: |
         touch /hello
 EOF
-    stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     first_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
@@ -158,7 +158,7 @@ EOF
     veritysetup open mydev "$devname" mydev.hash "$root_hash"
 
     mkdir mountpoint
-    bad_stacker internal-go atomfs mount test-squashfs mountpoint | grep "invalid root hash"
+    bad_stacker internal-go atomfs mount test-erofs mountpoint | grep "invalid root hash"
     veritysetup close "$devname"
     verity_checkusedloops
 }
