@@ -7,14 +7,16 @@ import (
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"machinerun.io/atomfs/squashfs"
+	"machinerun.io/atomfs/pkg/erofs"
+	"machinerun.io/atomfs/pkg/squashfs"
+	"machinerun.io/atomfs/pkg/verity"
 )
 
 var ErrEmptyLayers = errors.New("empty layers")
 
 type LayerType struct {
 	Type   string
-	Verity squashfs.VerityMetadata
+	Verity verity.VerityMetadata
 }
 
 func (lt LayerType) String() string {
@@ -44,14 +46,16 @@ func (lt *LayerType) UnmarshalText(text []byte) error {
 		return errors.Wrapf(err, "bad verity bool: %s", fields[1])
 	}
 
-	lt.Verity = squashfs.VerityMetadata(result)
+	lt.Verity = verity.VerityMetadata(result)
 
 	return nil
 }
 
-func NewLayerType(lt string, verity squashfs.VerityMetadata) (LayerType, error) {
+func NewLayerType(lt string, verity verity.VerityMetadata) (LayerType, error) {
 	switch lt {
 	case "squashfs":
+		return LayerType{Type: lt, Verity: verity}, nil
+	case "erofs":
 		return LayerType{Type: lt, Verity: verity}, nil
 	case "tar":
 		return LayerType{Type: lt}, nil
@@ -62,31 +66,38 @@ func NewLayerType(lt string, verity squashfs.VerityMetadata) (LayerType, error) 
 
 func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	if len(manifest.Layers) == 0 {
-		return NewLayerType("tar", squashfs.VerityMetadataMissing)
+		return NewLayerType("tar", verity.VerityMetadataMissing)
 	}
 
 	switch manifest.Layers[0].MediaType {
 	case squashfs.BaseMediaTypeLayerSquashfs:
 		// older stackers generated media types without compression information
 		fallthrough
-	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression, squashfs.VerityMetadataMissing):
+	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression, verity.VerityMetadataMissing):
 		fallthrough
-	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression, squashfs.VerityMetadataMissing):
-		return NewLayerType("squashfs", squashfs.VerityMetadataMissing)
-	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression, squashfs.VerityMetadataPresent):
+	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression, verity.VerityMetadataMissing):
+		return NewLayerType("squashfs", verity.VerityMetadataMissing)
+	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression, verity.VerityMetadataPresent):
 		fallthrough
-	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression, squashfs.VerityMetadataPresent):
-		return NewLayerType("squashfs", squashfs.VerityMetadataPresent)
+	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression, verity.VerityMetadataPresent):
+		return NewLayerType("squashfs", verity.VerityMetadataPresent)
+	case erofs.BaseMediaTypeLayerErofs:
+		// older stackers generated media types without compression information
+		fallthrough
+	case erofs.GenerateErofsMediaType(erofs.LZ4HCCompression, verity.VerityMetadataMissing):
+		return NewLayerType("erofs", verity.VerityMetadataMissing)
+	case erofs.GenerateErofsMediaType(erofs.LZ4HCCompression, verity.VerityMetadataPresent):
+		return NewLayerType("erofs", verity.VerityMetadataPresent)
 	case ispec.MediaTypeImageLayerGzip:
 		fallthrough
 	case ispec.MediaTypeImageLayer:
-		return NewLayerType("tar", squashfs.VerityMetadataMissing)
+		return NewLayerType("tar", verity.VerityMetadataMissing)
 	default:
 		return LayerType{}, errors.Errorf("invalid layer type %s", manifest.Layers[0].MediaType)
 	}
 }
 
-func NewLayerTypes(lts []string, verity squashfs.VerityMetadata) ([]LayerType, error) {
+func NewLayerTypes(lts []string, verity verity.VerityMetadata) ([]LayerType, error) {
 	ret := []LayerType{}
 	for _, lt := range lts {
 		hoisted, err := NewLayerType(lt, verity)

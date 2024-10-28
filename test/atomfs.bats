@@ -45,8 +45,8 @@ EOF
     stacker internal-go atomfs umount mountpoint
 }
 
-@test "--no-squashfs-verity works" {
-    basic_test --no-squashfs-verity
+@test "--no-verity works" {
+    basic_test --no-verity
     verity_checkusedloops
 }
 

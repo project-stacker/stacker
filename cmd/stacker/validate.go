@@ -50,6 +50,8 @@ func validateLayerTypeFlags(ctx *cli.Context) error {
 			break
 		case "squashfs":
 			break
+		case "erofs":
+			break
 		default:
 			return errors.Errorf("unknown layer type: %s", layerType)
 		}

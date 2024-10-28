@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
-	"machinerun.io/atomfs"
+	"machinerun.io/atomfs/pkg/molecule"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/overlay"
@@ -182,15 +182,15 @@ func doAtomfsMount(ctx *cli.Context) error {
 		return errors.WithStack(err)
 	}
 
-	opts := atomfs.MountOCIOpts{
+	opts := molecule.MountOCIOpts{
 		OCIDir:                 config.OCIDir,
-		MetadataPath:           path.Join(wd, "atomfs-metadata"),
+		MetadataDir:            path.Join(wd, "atomfs-metadata"),
 		Tag:                    tag,
 		Target:                 mountpoint,
 		AllowMissingVerityData: true,
 	}
 
-	mol, err := atomfs.BuildMoleculeFromOCI(opts)
+	mol, err := molecule.BuildMoleculeFromOCI(opts)
 	if err != nil {
 		return err
 	}
@@ -206,5 +206,5 @@ func doAtomfsUmount(ctx *cli.Context) error {
 	}
 
 	mountpoint := ctx.Args().Get(0)
-	return atomfs.Umount(mountpoint)
+	return molecule.Umount(mountpoint)
 }
