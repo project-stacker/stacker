@@ -4,55 +4,24 @@ When doing a `stacker build`, the behavior of stacker is specified by the yaml
 directives below. 
 
 Before the yaml is parsed, stacker performs substitution on placeholders in the
-file of the format `${{VAR}}` or `${{VAR:default}}`. For example, a line like:
+file of the format `${{VAR}}` or `${{VAR:default}}`. See [Substitution
+Syntax](#substitution-syntax) at the end of this file for reference.
 
-    ${{ONE}} ${{TWO:3}}
+A minimal stacker file has one image definition, with a name and a `from` directive specifying the base image.
+It is most common to have some `imports` and a `run` section to make changes to the base.
 
-When run with `stacker build --substitute ONE=1` is
-processed in stacker as:
-
-    1 3
-
-In order to avoid conflict with bash or POSIX shells in the `run` section, 
-only placeholders with two braces are supported, e.g. `${{FOO}}`.
-Placeholders with a default value like `${{FOO:default}}` will evaluate to their default if not
-specified on the command line or in a substitution file.
-
-Using a `${{FOO}}` placeholder without a default will result in an error if
-there is no substitution provided. If you want an empty string in that case, use
-an empty default: `${{FOO:}}`.
-
-In order to avoid confusion, it is also an error if a placeholder in the shell
-style (`$FOO` or `${FOO}`) is found when the same key has been provided as a
-substitution either via the command line (e.g. `--substitute FOO=bar`) or in a
-substitution file. An error will be printed that explains how to rewrite it:
-
-   error "A=B" was provided as a substitution and unsupported placeholder "${A}" was found. Replace "${A}" with "${{A}}" to use the substitution.
-
-Substitutions can also be specified in a yaml file given with the argument
-`--substitute-file`, with any number of key: value pairs:
-
-    FOO: bar
-    BAZ: bat
-
-In addition to substitutions provided on the command line or a file, the
-following variables are also available with their values from either command
-line flags or stacker-config file.
-
-    STACKER_STACKER_DIR config name 'stacker_dir', cli flag '--stacker-dir'-
-    STACKER_ROOTFS_DIR  config name 'rootfs_dir', cli flag '--roots-dir'
-    STACKER_OCI_DIR     config name 'oci_dir', cli flag '--oci-dir'
-
-The stacker build environment will have the following environment variables
-available for reference:
-
-  * `STACKER_LAYER_NAME`: the name of the layer being built.  `STACKER_LAYER_NAME`
-    will be `my-build` when the `run` section below is executed.
-
-      ```yaml
-      my-build:
-        run: echo "Your layer is ${STACKER_LAYER_NAME}"
-      ```
+```yaml
+imagename:
+  from:
+    type: ...
+    url: ...
+  imports:
+    - some/local/path
+    - path: https://some/url
+      hash: expected-hash-of-that-url
+  run: |
+    # shell code to make changes 
+```
 
 ### `from`
 
@@ -67,20 +36,36 @@ takes the form:
 
 Some directives are irrelevant depending on the type. Supported types are:
 
-`docker`: `url` is required, `insecure` is optional. When `insecure` is
-specified, stacker attempts to connect via http instead of https to the Docker
-Hub.
+#### `type: docker`
 
-`tar`: `url` is required, everything else is ignored.
+- `url` is required
 
-`oci`: `url` is required, and must be a local OCI layout URI of the form `oci:/local/path/image:tag`
+- `insecure` is optional. 
 
-`built`: `tag` is required, everything else is ignored. `built` bases this
-layer on a previously specified layer in the stacker file.
+When `insecure` is specified, stacker attempts to connect via http instead of
+https to the Docker Hub.
 
-`scratch`: the base image is an empty rootfs, and can be used with the `dest` field
+#### `type: tar`
+
+- `url` is required, and can be a local path, an http/https URL, or a stacker url of the format `stacker://$imagename/path/to/tar.gz` 
+
+#### `type:oci`
+
+- `url` is required, and can be a local path to an OCI layout, e.g. `/path/to/layout/image:tag`, or a url pointing to a remote OCI image, e.g. `docker://host/repo/image:tag`
+
+#### `type:built`
+
+- `tag` is required, everything else is ignored.
+
+stacker bases this image on another image built in the current session, from the same stacker file or its prerequisites.
+
+
+#### `type: scratch`:
+
+the base image is an empty rootfs, and can be used with the `dest` field
 of `import` to generate minimal images, e.g. for statically built binaries.
 
+Note that empty means no shell to run, so unless you import one, `run:` sections will fail for this type.
 
 ### `imports`
 
@@ -298,3 +283,59 @@ defaults to the host operating system if not specified.
 `arch` is a user-specified string value indicating which machine _architecture_ this image is being
 built for, for example, `amd64`, `arm64`, etc. It is an optional field and it
 defaults to the host machine architecture if not specified.
+
+### Substitution Syntax
+
+Before the yaml is parsed, stacker performs substitution on placeholders in the
+file of the format `${{VAR}}` or `${{VAR:default}}`. See [Substitution
+Syntax](#substitution-syntax) at the end of this document for details.
+
+For example, a line like:
+
+    ${{ONE}} ${{TWO:3}}
+
+When run with `stacker build --substitute ONE=1` is
+processed in stacker as:
+
+    1 3
+
+In order to avoid conflict with bash or POSIX shells in the `run` section, 
+only placeholders with two braces are supported, e.g. `${{FOO}}`.
+Placeholders with a default value like `${{FOO:default}}` will evaluate to their default if not
+specified on the command line or in a substitution file.
+
+Using a `${{FOO}}` placeholder without a default will result in an error if
+there is no substitution provided. If you want an empty string in that case, use
+an empty default: `${{FOO:}}`.
+
+In order to avoid confusion, it is also an error if a placeholder in the shell
+style (`$FOO` or `${FOO}`) is found when the same key has been provided as a
+substitution either via the command line (e.g. `--substitute FOO=bar`) or in a
+substitution file. An error will be printed that explains how to rewrite it:
+
+   error "A=B" was provided as a substitution and unsupported placeholder "${A}" was found. Replace "${A}" with "${{A}}" to use the substitution.
+
+Substitutions can also be specified in a yaml file given with the argument
+`--substitute-file`, with any number of key: value pairs:
+
+    FOO: bar
+    BAZ: bat
+
+In addition to substitutions provided on the command line or a file, the
+following variables are also available with their values from either command
+line flags or stacker-config file.
+
+    STACKER_STACKER_DIR config name 'stacker_dir', cli flag '--stacker-dir'-
+    STACKER_ROOTFS_DIR  config name 'rootfs_dir', cli flag '--roots-dir'
+    STACKER_OCI_DIR     config name 'oci_dir', cli flag '--oci-dir'
+
+The stacker build environment will have the following environment variables
+available for reference:
+
+  * `STACKER_LAYER_NAME`: the name of the layer being built.  `STACKER_LAYER_NAME`
+    will be `my-build` when the `run` section below is executed.
+
+      ```yaml
+      my-build:
+        run: echo "Your layer is ${STACKER_LAYER_NAME}"
+      ```
