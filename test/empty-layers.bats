@@ -48,7 +48,7 @@ child:
     run: |
         echo hello world
 EOF
-    stacker build
+    stacker --debug build
     manifest0=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     manifest1=$(cat oci/index.json | jq -r .manifests[1].digest | cut -f2 -d:)
     echo "$manifest0"

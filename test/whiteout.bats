@@ -9,17 +9,17 @@ function teardown() {
 }
 
 @test "test not adding extraneous whiteouts" {
-    cat > stacker.yaml <<EOF
+    cat > stacker.yaml <<"EOF"
 image:
   from:
-    type: docker
-    url: docker://public.ecr.aws/ubuntu/ubuntu:latest
+    type: oci
+    url: ${{UBUNTU_OCI}}
   run: |
     apt-get update
     apt-get -y install libsensors-config
 EOF
 
-  stacker build
+  stacker build --substitute UBUNTU_OCI=${UBUNTU_OCI}
   echo "checking"
   for f in oci/blobs/sha256/*; do
     file oci/blobs/sha256/$(basename $f) | grep "gzip" || {
@@ -37,12 +37,12 @@ EOF
 }
 
 @test "dont emit whiteout for new dir creates" {
-  cat > stacker.yaml <<EOF
+  cat > stacker.yaml <<"EOF"
   # a1.tar has /a1/file
 bb:
   from:
-    type: docker
-    url: docker://public.ecr.aws/docker/library/busybox:latest
+    type: oci
+    url: ${{BUSYBOX_OCI}}
   run: |
     mkdir /a1
     touch /a1/file
@@ -72,5 +72,5 @@ fulldir:
     touch /a1/newfile
 EOF
 
-  stacker build
+  stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 }

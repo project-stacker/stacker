@@ -9,6 +9,7 @@ require (
 	github.com/cheggaaa/pb/v3 v3.1.2
 	github.com/containers/image/v5 v5.29.3
 	github.com/dustin/go-humanize v1.0.1
+	github.com/google/uuid v1.5.0
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/klauspost/pgzip v1.2.6
 	github.com/lxc/go-lxc v0.0.0-20230926171149-ccae595aa49e
@@ -145,7 +146,6 @@ require (
 	github.com/google/licensecheck v0.3.1 // indirect
 	github.com/google/licenseclassifier/v2 v2.0.0 // indirect
 	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
-	github.com/google/uuid v1.5.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
