@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/google/uuid"
 	"github.com/lxc/go-lxc"
 	"github.com/pkg/errors"
 	embed_exec "stackerbuild.io/stacker/pkg/embed-exec"
@@ -36,7 +37,8 @@ func New(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
+	uniqname := fmt.Sprintf("%s-%s", name, uuid.NewString())
+	lxcC, err := lxc.NewContainer(uniqname, sc.RootFSDir)
 	if err != nil {
 		return nil, err
 	}
