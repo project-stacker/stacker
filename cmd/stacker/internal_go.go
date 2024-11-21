@@ -184,7 +184,7 @@ func doAtomfsMount(ctx *cli.Context) error {
 
 	opts := atomfs.MountOCIOpts{
 		OCIDir:                 config.OCIDir,
-		MetadataPath:           path.Join(wd, "atomfs-metadata"),
+		MetadataDir:            path.Join(wd, "atomfs-metadata"),
 		Tag:                    tag,
 		Target:                 mountpoint,
 		AllowMissingVerityData: true,
