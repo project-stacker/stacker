@@ -66,6 +66,7 @@ func GetBase(o BaseLayerOpts) error {
 // If the layer is a build only layer, this code simply initializes the
 // filesystem in roots to the built tag's filesystem.
 func SetupRootfs(o BaseLayerOpts) error {
+	log.Debugf("In setupRootfs, opts is %+v", o)
 	err := o.Storage.Delete(o.Name)
 	if err != nil && !os.IsNotExist(errors.Unwrap(err)) {
 		return err
@@ -74,9 +75,10 @@ func SetupRootfs(o BaseLayerOpts) error {
 	if o.Layer.From.Type == types.BuiltLayer {
 		// For built type images, we already have the base fs content
 		// and umoci metadata. So let's just use that.
+		log.Debugf("In setupRootfs, using Storage.Restore(%q, %q)", o.Layer.From.Tag, o.Name)
 		return o.Storage.Restore(o.Layer.From.Tag, o.Name)
 	}
-
+	log.Debugf("Whoa, child should not get here")
 	// For everything else, we create a new snapshot and extract whatever
 	// we can on top of it.
 	if err := o.Storage.Create(o.Name); err != nil {

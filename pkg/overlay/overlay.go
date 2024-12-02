@@ -14,6 +14,7 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
+	"stackerbuild.io/stacker/pkg/log"
 	"stackerbuild.io/stacker/pkg/types"
 )
 
@@ -161,6 +162,7 @@ func (o *overlay) snapshot(source string, target string) error {
 	if err != nil {
 		return err
 	}
+	log.Debugf("in snapshot(source=%q, target=%q), overlaymeta is %+v", source, target, ovl)
 
 	var manifest ispec.Manifest
 	for _, m := range ovl.Manifests {

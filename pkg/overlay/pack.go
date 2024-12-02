@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -362,12 +363,15 @@ func stripOverlayAttrsUnder(dirPath string) error {
 func generateLayer(config types.StackerConfig, _ casext.Engine, mutators []*mutate.Mutator,
 	name string, layer types.Layer, layerTypes []types.LayerType,
 ) (bool, error) {
+
+	log.Infof("in generateLayer name=%q layer=%+v", name, layer)
+
 	dir := path.Join(config.RootFSDir, name, "overlay")
 	ents, err := os.ReadDir(dir)
 	if err != nil {
 		return false, errors.Wrapf(err, "coudln't read overlay path %s", dir)
 	}
-
+	log.Debugf("num ents in dir=%q is %d", dir, len(ents))
 	if len(ents) == 0 {
 		ovl, err := readOverlayMetadata(config.RootFSDir, name)
 		if err != nil {
@@ -397,6 +401,24 @@ func generateLayer(config types.StackerConfig, _ casext.Engine, mutators []*muta
 		}
 		return false, nil
 	}
+	log.Debugf("num ents was >0: %+v, %q", ents, ents[0].Name())
+	cmdstr := fmt.Sprintf("findmnt -T %s/%s", dir, ents[0].Name())
+	log.Debugf(cmdstr)
+	cmd := exec.Command("sh", "-c", cmdstr)
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Errorf("%v", err)
+	}
+	log.Debugf("%s", stdoutStderr)
+
+	cmdstr = fmt.Sprintf("findmnt -T %s/", dir)
+	log.Debugf(cmdstr)
+	cmd = exec.Command("sh", "-c", cmdstr)
+	stdoutStderr, err = cmd.CombinedOutput()
+	if err != nil {
+		log.Errorf("%v", err)
+	}
+	log.Debugf("%s", stdoutStderr)
 
 	now := time.Now()
 	history := &ispec.History{
@@ -600,6 +622,7 @@ func repackOverlay(config types.StackerConfig, name string, layer types.Layer, l
 		if err != nil {
 			return err
 		}
+		log.Debugf("in repackOverlay, generateLayer(buildLayer=%q) returned %v", buildLayer, didMutate)
 		if didMutate {
 			mutated = true
 			ovl, err := readOverlayMetadata(config.RootFSDir, buildLayer)
@@ -635,7 +658,7 @@ func repackOverlay(config types.StackerConfig, name string, layer types.Layer, l
 	if err != nil {
 		return err
 	}
-
+	log.Debugf("in repackOverlay, generateLayer(name=%q) returned %v", name, didMutate)
 	// if we didn't do anything, don't do anything :)
 	if !didMutate && !mutated && len(ovl.OverlayDirLayers) == 0 {
 		return nil
@@ -688,8 +711,10 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 	// There needs to be a lock on the extract dir (scoped to the overlay storage backend).
 	// A sync.RWMutex would work well here since it is safe to check as long
 	// as no one is populating or unpopulating.
+	log.Debugf("in unpackOne ociDir=%q, extractDir=%q", ociDir, extractDir)
 	if hasDirEntries(extractDir) {
 		// the directory was already populated.
+		log.Debugf("in unpackOne, hasDirEntries(%q) was true, returning nil and doing nothing", extractDir)
 		return nil
 	}
 
@@ -721,6 +746,7 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 
 		// always unpack with Overlay whiteout mode to prevent ignoring whiteouts in tar layers
 		// see test/publish.bats: "building from published images with whiteouts" for more details
+		log.Debugf("in unpackOne, about to layer.UnpackLayer(extractDir=%q) ", extractDir)
 		err = layer.UnpackLayer(extractDir, uncompressed, &layer.UnpackOptions{WhiteoutMode: layer.OverlayFSWhiteout})
 		if err != nil {
 			if rmErr := os.RemoveAll(extractDir); rmErr != nil {

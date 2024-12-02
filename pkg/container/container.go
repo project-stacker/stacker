@@ -36,13 +36,27 @@ func New(sc types.StackerConfig, name string) (*Container, error) {
 	if err := os.MkdirAll(sc.RootFSDir, 0755); err != nil {
 		return nil, errors.WithStack(err)
 	}
-
+	c := &Container{sc: sc}
 	uniqname := fmt.Sprintf("%s-%s", name, uuid.NewString())
-	lxcC, err := lxc.NewContainer(uniqname, sc.RootFSDir)
-	if err != nil {
-		return nil, err
+	_, err := os.Stat("/tmp/use-uniq-container-name-test")
+	if os.IsNotExist(err) {
+		log.Infof("not setting container name to %q", uniqname)
+		lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
+		if err != nil {
+			return nil, err
+		}
+
+		c.c = lxcC
+	} else {
+
+		log.Infof("setting container name to %q", uniqname)
+		lxcC, err := lxc.NewContainer(uniqname, sc.RootFSDir)
+		if err != nil {
+			return nil, err
+		}
+
+		c.c = lxcC
 	}
-	c := &Container{sc: sc, c: lxcC}
 
 	if err := c.c.SetLogLevel(lxc.TRACE); err != nil {
 		return nil, err
@@ -129,7 +143,8 @@ func (c *Container) Execute(args []string, stdin io.Reader) error {
 		return err
 	}
 	f.Close()
-	defer os.Remove(f.Name())
+	log.Debugf("🏄  🏄  🏄 container config file is at %q", f.Name())
+	//TMP defer os.Remove(f.Name())
 
 	if err := c.c.SaveConfigFile(f.Name()); err != nil {
 		return errors.WithStack(err)

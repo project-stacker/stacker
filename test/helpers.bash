@@ -92,9 +92,10 @@ function give_user_ownership() {
  }
 
 function cleanup() {
-    cd "$ROOT_DIR/test"
-    umount_under "$TEST_TMPDIR"
-    rm -rf "$TEST_TMPDIR" || true
+    #cd "$ROOT_DIR/test"
+    #umount_under "$TEST_TMPDIR"
+    #rm -rf "$TEST_TMPDIR" || true
+    echo "not deleting $TEST_TMPDIR"
 }
 
 function run_as {
