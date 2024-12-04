@@ -73,20 +73,20 @@ func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	case squashfs.BaseMediaTypeLayerSquashfs:
 		// older stackers generated media types without compression information
 		fallthrough
-	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression, verity.VerityMetadataMissing):
+	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression):
 		fallthrough
-	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression, verity.VerityMetadataMissing):
+	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression):
 		return NewLayerType("squashfs", verity.VerityMetadataMissing)
-	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression, verity.VerityMetadataPresent):
+	case squashfs.GenerateSquashfsMediaType(squashfs.GzipCompression):
 		fallthrough
-	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression, verity.VerityMetadataPresent):
+	case squashfs.GenerateSquashfsMediaType(squashfs.ZstdCompression):
 		return NewLayerType("squashfs", verity.VerityMetadataPresent)
 	case erofs.BaseMediaTypeLayerErofs:
 		// older stackers generated media types without compression information
 		fallthrough
-	case erofs.GenerateErofsMediaType(erofs.LZ4HCCompression, verity.VerityMetadataMissing):
+	case erofs.GenerateErofsMediaType(erofs.LZ4HCCompression):
 		return NewLayerType("erofs", verity.VerityMetadataMissing)
-	case erofs.GenerateErofsMediaType(erofs.LZ4HCCompression, verity.VerityMetadataPresent):
+	case erofs.GenerateErofsMediaType(erofs.LZ4HCCompression):
 		return NewLayerType("erofs", verity.VerityMetadataPresent)
 	case ispec.MediaTypeImageLayerGzip:
 		fallthrough
