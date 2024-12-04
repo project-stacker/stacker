@@ -67,6 +67,7 @@ jobs:
       - name: install dependencies
         run: |
           ./install-build-deps.sh
+          sudo apt-get install -y linux-modules-extra-$(uname -r)
           echo "running kernel is: $(uname -a)"
       - name: docker-clone
         run: |

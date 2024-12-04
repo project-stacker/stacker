@@ -8,6 +8,17 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+function give_user_ownership() {
+   if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
+      return
+   fi
+   if [ -z "$SUDO_UID" ]; then
+      echo "PRIVILEGE_LEVEL=$PRIVILEGE_LEVEL but empty SUDO_USER"
+      exit 1
+   fi
+   chown -R "$SUDO_USER:$SUDO_USER" "$@"
+}
+
 function skip_if_no_unpriv_overlay {
     local wdir=""
     # use a workdir to ensure no side effects to the caller
@@ -79,17 +90,6 @@ function stacker_setup() {
     "${ROOT_DIR}/stacker" unpriv-setup
     chown -R $SUDO_USER:$SUDO_USER .
 }
-
-function give_user_ownership() {
-   if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
-      return
-   fi
-   if [ -z "$SUDO_UID" ]; then
-      echo "PRIVILEGE_LEVEL=$PRIVILEGE_LEVEL but empty SUDO_USER"
-      exit 1
-   fi
-   chown -R "$SUDO_USER:$SUDO_USER" "$@"
- }
 
 function cleanup() {
     cd "$ROOT_DIR/test"

@@ -43,6 +43,7 @@ installdeps_ubuntu() {
         squashfs-tools
         squashfuse
         libarchive-tools
+        erofs-utils erofsfuse
     )
 
     case "$VERSION_ID" in
