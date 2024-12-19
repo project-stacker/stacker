@@ -90,6 +90,11 @@ build:
     export LXC_VERSION=$(git -C /lxc rev-parse HEAD)
     export VERSION_FULL=${{VERSION_FULL}}
 
+    # apk go pkg doesn't seem to have the standard go.env which would set GOTOOLCHAIN=auto.
+    # therefore it defaults to 'local', which ignores the `toolchain` line in go.mod
+    # let's re-set it here so we get the right toolchain version as specified in go.mod
+    export GOTOOLCHAIN=auto
+
     cd /stacker-tree
     make BUILD_D=/build show-info
     make BUILD_D=/build -C cmd/stacker/lxc-wrapper clean

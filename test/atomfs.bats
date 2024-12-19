@@ -103,7 +103,7 @@ EOF
     # first layer should still exist since a is still mounted
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     first_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
-    [ ! -b "/dev/mapper/$last_layer_hash-verity" ]
+    [ -b "/dev/mapper/$first_layer_hash-verity" ]
 
     mkdir c
     stacker internal-go atomfs mount c-squashfs c
@@ -120,7 +120,7 @@ EOF
     # first layer should still exist since c is still mounted
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     first_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
-    [ ! -b "/dev/mapper/$last_layer_hash-verity" ]
+    [ -b "/dev/mapper/$first_layer_hash-verity" ]
 
     # c should still be ok
     [ -f c/c ]
@@ -130,7 +130,7 @@ EOF
     # c's last layer shouldn't exist any more, since it is unique
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
     last_layer_num=$(($(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))
-    last_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[$last_layer].digest | cut -f2 -d:)
+    last_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[$last_layer_num].digest | cut -f2 -d:)
     [ ! -b "/dev/mapper/$last_layer_hash-verity" ]
     verity_checkusedloops
 }

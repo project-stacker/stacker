@@ -9,7 +9,7 @@ on:
         type: string
         description: 'Stringified JSON object listing go versions'
         default: >-
-          ["1.21.x"]
+          ["1.22.x", "1.23.x"]
       privilege-level:
         required: false
         type: string
