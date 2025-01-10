@@ -21,15 +21,15 @@ EOF
 
   stacker build
   echo "checking"
-  for f in $(ls oci/blobs/sha256/); do
-    file oci/blobs/sha256/$f | grep "gzip" || {
+  for f in oci/blobs/sha256/*; do
+    file oci/blobs/sha256/$(basename $f) | grep "gzip" || {
       echo "skipping $f"
         continue
     }
-    bsdtar -tvf oci/blobs/sha256/$f
+    bsdtar -tvf $f
     # we expect the grep to fail, if it returns success we fail the test since
     # it means we have .wh files in the tar which we should NOT.
-    if run bsdtar -tvf oci/blobs/sha256/$f | grep '.wh.sensors.d'; then
+    if run bsdtar -tvf $f | grep '.wh.sensors.d'; then
       echo "should not have a sensors.d whiteout!";
       exit 1;
     fi

@@ -169,7 +169,7 @@ PRIVILEGE_LEVEL?=
 check: lint test go-test
 
 .PHONY: test
-test: stacker download-tools
+test: stacker download-tools lintbats
 	sudo -E PATH="$(PATH)" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
@@ -178,6 +178,13 @@ test: stacker download-tools
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
+
+.PHONY: lintbats
+lintbats:
+	# check only SC2031 which finds undefined variables in bats tests but is only an INFO
+	shellcheck -i SC2031 $(patsubst %,test/%.bats,$(TEST))
+	# check all error level issues
+	shellcheck -S error  $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: check-cov
 check-cov: lint test-cov

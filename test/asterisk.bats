@@ -23,8 +23,8 @@ EOF
     [ "$status" -eq 0 ]
 
 
-    for i in $(ls dest/rootfs/bin); do
-        stat dest/rootfs/mybin/$i
+    for i in dest/rootfs/bin/*; do
+        stat dest/rootfs/mybin/$(basename $i)
     done
 }
 

@@ -69,6 +69,7 @@ EOF
         "found rootfs=$rdir" "found oci=$odir" "found stacker=$sdir" \
         "found name=my-build" > "$expected"
 
+    # shellcheck disable=SC1039
     cat > "$stacker_yaml" <<"EOF"
 my-build:
     build_only: true

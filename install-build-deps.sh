@@ -43,6 +43,7 @@ installdeps_ubuntu() {
         squashfs-tools
         squashfuse
         libarchive-tools
+        shellcheck
     )
 
     case "$VERSION_ID" in

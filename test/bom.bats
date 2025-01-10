@@ -1,13 +1,13 @@
 load helpers
 
 function setup_file() {
-  if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+  if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
     zot_setup
   fi
 }
 
 function teardown_file() {
-  if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+  if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
     zot_teardown
   fi
 }
@@ -154,7 +154,7 @@ EOF
     [ -f .stacker/artifacts/second/inventory.json ]
     # sbom for this image
     [ -f .stacker/artifacts/second/second.json ]
-    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
       zot_setup
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute CENTOS_OCI=${CENTOS_OCI}
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/first:latest --format "{{json .}}" | jq '.referrer | length')
@@ -204,7 +204,7 @@ EOF
     [ -f .stacker/artifacts/bom-alpine/inventory.json ]
     # sbom for this image
     [ -f .stacker/artifacts/bom-alpine/bom-alpine.json ]
-    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
       zot_setup
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute ALPINE_OCI=${ALPINE_OCI}
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/bom-alpine:latest --format "{{json .}}" | jq '.referrer | length')
@@ -258,12 +258,16 @@ EOF
     [ -f .stacker/artifacts/parent/inventory.json ]
     # sbom for this image
     [ -f .stacker/artifacts/parent/parent.json ]
-    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/parent:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
       refs=$(regctl artifact get --subject ${ZOT_HOST}:${ZOT_PORT}/parent:latest --filter-artifact-type "application/spdx+json" | jq '.SPDXID')
       [ $refs == \"SPDXRef-DOCUMENT\" ]
+    fi
+
+    if [ -z "${ZOT_HOST}${ZOT_PORT}" ]; then
+      skip "second half of test requires running zot"
     fi
 
   cat > stacker.yaml <<EOF
@@ -296,7 +300,7 @@ EOF
     [ -f .stacker/artifacts/child/inventory.json ]
     # sbom for this image
     [ -f .stacker/artifacts/child/child.json ]
-    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/child:latest --format "{{json .}}" | jq '.referrer | length')
       [ $refs -eq 2 ]
@@ -450,7 +454,7 @@ EOF
     [ -f .stacker/artifacts/second/inventory.json ]
     # sbom for this image
     [ -f .stacker/artifacts/second/second.json ]
-    if [ -n "${ZOT_HOST}:${ZOT_PORT}" ]; then
+    if [ -n "${ZOT_HOST}${ZOT_PORT}" ]; then
       zot_setup
       stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --tag latest --substitute CENTOS_OCI=${CENTOS_OCI}
       refs=$(regctl artifact tree ${ZOT_HOST}:${ZOT_PORT}/second:latest --format "{{json .}}" | jq '.referrer | length')
