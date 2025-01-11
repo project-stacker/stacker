@@ -48,6 +48,8 @@ BATS_VERSION := v1.10.0
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.1.0
+UMOCI := $(TOOLS_D)/bin/umoci
+UMOCI_VERSION := main
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 
@@ -122,7 +124,7 @@ go-test:
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
 
 .PHONY: download-tools
-download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS)
+download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI)
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(dir $@)
@@ -159,6 +161,12 @@ $(BATS):
 	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git; \
 	cd bats-core; ./install.sh $(TOOLS_D); cd ..; \
 	rm -rf bats-core
+
+$(UMOCI):
+	mkdir -p ${GOPATH}/src/github.com/opencontainers/
+	git clone https://github.com/opencontainers/umoci.git ${GOPATH}/src/github.com/opencontainers/umoci
+	cd ${GOPATH}/src/github.com/opencontainers/umoci ; git reset --hard ${UMOCI_VERSION} ; make umoci ; mv umoci $(UMOCI)
+	$(UMOCI) --version
 
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=

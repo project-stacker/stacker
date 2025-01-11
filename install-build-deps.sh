@@ -108,7 +108,6 @@ EOF
 
 installdeps_golang() {
     go version
-    GO111MODULE=off go install github.com/opencontainers/umoci/cmd/umoci
     make download-tools
     make docker-clone
     make go-download
