@@ -42,7 +42,7 @@ EOF
 bb:
   from:
     type: docker
-    url: docker://busybox
+    url: docker://public.ecr.aws/docker/library/busybox:latest
   run: |
     mkdir /a1
     touch /a1/file
