@@ -43,6 +43,7 @@ installdeps_ubuntu() {
         squashfs-tools
         squashfuse
         libarchive-tools
+        shellcheck
     )
 
     case "$VERSION_ID" in
@@ -107,7 +108,6 @@ EOF
 
 installdeps_golang() {
     go version
-    GO111MODULE=off go get github.com/opencontainers/umoci/cmd/umoci
     make download-tools
     make docker-clone
     make go-download

@@ -48,6 +48,8 @@ BATS_VERSION := v1.10.0
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.1.0
+UMOCI := $(TOOLS_D)/bin/umoci
+UMOCI_VERSION := main
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 
@@ -122,7 +124,7 @@ go-test:
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
 
 .PHONY: download-tools
-download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS)
+download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI)
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(dir $@)
@@ -160,6 +162,12 @@ $(BATS):
 	cd bats-core; ./install.sh $(TOOLS_D); cd ..; \
 	rm -rf bats-core
 
+$(UMOCI):
+	mkdir -p ${GOPATH}/src/github.com/opencontainers/
+	git clone https://github.com/opencontainers/umoci.git ${GOPATH}/src/github.com/opencontainers/umoci
+	cd ${GOPATH}/src/github.com/opencontainers/umoci ; git reset --hard ${UMOCI_VERSION} ; make umoci ; mv umoci $(UMOCI)
+	$(UMOCI) --version
+
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
 PRIVILEGE_LEVEL?=
 
@@ -169,7 +177,7 @@ PRIVILEGE_LEVEL?=
 check: lint test go-test
 
 .PHONY: test
-test: stacker download-tools
+test: stacker download-tools lintbats
 	sudo -E PATH="$(PATH)" \
 		STACKER_BUILD_ALPINE_IMAGE=$(STACKER_BUILD_ALPINE_IMAGE) \
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
@@ -178,6 +186,13 @@ test: stacker download-tools
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
+
+.PHONY: lintbats
+lintbats:
+	# check only SC2031 which finds undefined variables in bats tests but is only an INFO
+	shellcheck -i SC2031 $(patsubst %,test/%.bats,$(TEST))
+	# check all error level issues
+	shellcheck -S error  $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: check-cov
 check-cov: lint test-cov

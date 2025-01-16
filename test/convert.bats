@@ -11,7 +11,7 @@ function teardown() {
 
 @test "convert a Dockerfile" {
     cat > Dockerfile <<EOF
-FROM alpine:3.16
+FROM public.ecr.aws/docker/library/alpine:edge
 VOLUME /out
 ARG VERSION=1.0.0
 MAINTAINER unknown
@@ -40,7 +40,7 @@ EOF
   mkdir -p /out
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app
   if [ -z "${REGISTRY_URL}" ]; then
-    skip "test because no registry found in REGISTRY_URL env variable"
+    skip "publish step of test because no registry found in REGISTRY_URL env variable"
   fi
   stacker publish -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app --skip-tls --url docker://${REGISTRY_URL} --image app --tag latest
   rm -f stacker.yaml stacker-subs.yaml

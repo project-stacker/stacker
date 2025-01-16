@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
 	"runtime"
 	"strings"
 
@@ -177,14 +176,8 @@ func doAtomfsMount(ctx *cli.Context) error {
 	tag := ctx.Args().Get(0)
 	mountpoint := ctx.Args().Get(1)
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	opts := atomfs.MountOCIOpts{
 		OCIDir:                 config.OCIDir,
-		MetadataPath:           path.Join(wd, "atomfs-metadata"),
 		Tag:                    tag,
 		Target:                 mountpoint,
 		AllowMissingVerityData: true,

@@ -227,18 +227,23 @@ EOF
 }
 
 @test "build squashfs then tar" {
-  echo "x" > x
   cat > stacker.yaml <<"EOF"
 install-base:
-  build_only: true
-  from:
-    type: docker
-    url: "docker://zothub.io/machine/bootkit/rootfs:v0.0.17.231018-squashfs"
-    
+    from:
+        type: oci
+        url: ${{BUSYBOX_OCI}}
+    run: |
+        touch /1
+EOF
+  stacker build --layer-type=squashfs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+  mv oci oci-import
+
+  echo "x" > x
+  cat > stacker.yaml <<"EOF"
 install-rootfs-pkg:
   from:
-    type: built
-    tag: install-base
+    type: oci
+    url: oci-import:install-base-squashfs
   build_only: true
   run: |
     #!/bin/sh -ex
