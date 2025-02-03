@@ -25,7 +25,7 @@ require (
 	github.com/pkg/xattr v0.4.9
 	github.com/sirupsen/logrus v1.9.3
 	github.com/smartystreets/goconvey v1.7.2
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.25.0
