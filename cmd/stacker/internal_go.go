@@ -176,7 +176,7 @@ func doAtomfsMount(ctx *cli.Context) error {
 	tag := ctx.Args().Get(0)
 	mountpoint := ctx.Args().Get(1)
 
-	opts := atomfs.MountOCIOpts{
+	opts := molecule.MountOCIOpts{
 		OCIDir:                 config.OCIDir,
 		Tag:                    tag,
 		Target:                 mountpoint,
