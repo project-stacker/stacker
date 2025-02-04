@@ -821,8 +821,8 @@ github.com/prometheus/procfs v0.0.8/go.mod h1:7Qr8sr6344vo1JqZ6HhLceV9o3AJ1Ff+Gx
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.12.0 h1:jluTpSng7V9hY0O2R9DzzJHYb2xULk9VTR1V1R/k6Bo=
 github.com/prometheus/procfs v0.12.0/go.mod h1:pcuDEFsWDnvcgNzo4EEweacyhjeA9Zk3cnaOZAZEfOo=
-github.com/rchincha/atomfs v0.0.0-20241204024552-68b03282581c h1:bZ5FHJXuXq02Zz0Kn9WYEsIl34GB/zO+K96FqFQ9ii0=
-github.com/rchincha/atomfs v0.0.0-20241204024552-68b03282581c/go.mod h1:woheEy3EVXE+AFLGwmBRSMtmcOKBM71qiDEYaq7Nwng=
+github.com/rchincha/atomfs v0.0.0-20250201103256-30faaf356b10 h1:5kkxVqs7esdw4e1/P9Qyi0RwutYKzQ0YRLy+ieQAORo=
+github.com/rchincha/atomfs v0.0.0-20250201103256-30faaf356b10/go.mod h1:jrGbuGXiCPi4LFoMvcPRnqPGlxe3pW8UtLEnhUcGRmI=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
