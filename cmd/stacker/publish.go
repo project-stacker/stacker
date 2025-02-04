@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
-	"machinerun.io/atomfs/squashfs"
+	"machinerun.io/atomfs/pkg/verity"
 	"stackerbuild.io/stacker/pkg/lib"
 	"stackerbuild.io/stacker/pkg/stacker"
 	"stackerbuild.io/stacker/pkg/types"
@@ -69,7 +69,7 @@ var publishCmd = cli.Command{
 		},
 		&cli.StringSliceFlag{
 			Name:  "layer-type",
-			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
+			Usage: "set the output layer type (supported values: tar, squashfs, erofs); can be supplied multiple times",
 			Value: cli.NewStringSlice("tar"),
 		},
 		&cli.StringSliceFlag{
@@ -108,7 +108,7 @@ func beforePublish(ctx *cli.Context) error {
 }
 
 func doPublish(ctx *cli.Context) error {
-	verity := squashfs.VerityMetadata(!ctx.Bool("no-squashfs-verity"))
+	verity := verity.VerityMetadata(!ctx.Bool("no-verity"))
 	layerTypes, err := types.NewLayerTypes(ctx.StringSlice("layer-type"), verity)
 	if err != nil {
 		return err
