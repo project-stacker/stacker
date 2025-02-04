@@ -3,7 +3,7 @@
     <img src="https://github.com/project-stacker/assets/blob/main/images/logo/stacker-logo-text.png" alt="stacker" height="130"/>
 </p>
 
-# stacker [![Build Status](https://github.com/project-stacker/stacker/workflows/ci/badge.svg?branch=main)](https://github.com/project-stacker/stacker/actions) [![codecov](https://codecov.io/github/project-stacker/stacker/graph/badge.svg?token=uBy8C0fUbL)](https://codecov.io/github/project-stacker/stacker) [![CodeQL](https://github.com/project-stacker/stacker/workflows/CodeQL/badge.svg)](https://github.com/project-stacker/stacker/actions?query=workflow%3ACodeQL) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker) [![nightly](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml/badge.svg)](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml)
+# stacker [![ci](https://github.com/project-stacker/stacker/actions/workflows/ci.yaml/badge.svg)](https://github.com/project-stacker/stacker/actions/workflows/ci.yaml) [![codecov](https://codecov.io/github/project-stacker/stacker/graph/badge.svg?token=uBy8C0fUbL)](https://codecov.io/github/project-stacker/stacker) [![CodeQL](https://github.com/project-stacker/stacker/workflows/CodeQL/badge.svg)](https://github.com/project-stacker/stacker/actions?query=workflow%3ACodeQL) [![Go Reference](https://pkg.go.dev/badge/stackerbuild.io/stacker.svg)](https://pkg.go.dev/stackerbuild.io/stacker) [![nightly](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml/badge.svg)](https://github.com/project-stacker/stacker/actions/workflows/nightly.yaml)
 
 Stacker is a tool for building OCI images natively via a declarative yaml format.
 
