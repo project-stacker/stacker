@@ -71,7 +71,7 @@ jobs:
           echo "running kernel is: $(uname -a)"
       - name: docker-clone
         run: |
-          make docker-clone "STACKER_DOCKER_BASE=docker://" CLONE_D="$PWD/.build/oci-clone"
+          make docker-clone "STACKER_DOCKER_BASE=docker://ghcr.io/project-stacker/" CLONE_D="$PWD/.build/oci-clone"
       - name: Go-download
         run: |
           make go-download
