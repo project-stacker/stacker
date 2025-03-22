@@ -278,7 +278,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	machinerun.io/atomfs v1.1.3
+	machinerun.io/atomfs v1.2.0
 	modernc.org/libc v1.37.6 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
@@ -290,6 +290,5 @@ require (
 
 replace (
 	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20240906174318-e9397ba4ced0
-	machinerun.io/atomfs => github.com/rchincha/atomfs v0.0.0-20250223060538-baa0a62678d1
 	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20240509203427-4d685e046780
 )
