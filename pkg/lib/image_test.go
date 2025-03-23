@@ -13,7 +13,8 @@ import (
 	"github.com/opencontainers/umoci/mutate"
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/stretchr/testify/assert"
-	"machinerun.io/atomfs/squashfs"
+	"machinerun.io/atomfs/pkg/squashfs"
+	"machinerun.io/atomfs/pkg/verity"
 )
 
 func createImage(dir string, tag string) error {
@@ -48,7 +49,7 @@ func createImage(dir string, tag string) error {
 
 	// need *something* in the layer, why not just recursively include the
 	// OCI image for maximum confusion :)
-	layer, mediaType, _, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil, squashfs.VerityMetadataMissing)
+	layer, mediaType, _, err := squashfs.MakeSquashfs(dir, path.Join(dir, "oci"), nil, verity.VerityMetadataMissing)
 	if err != nil {
 		return err
 	}

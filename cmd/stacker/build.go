@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	cli "github.com/urfave/cli/v2"
-	"machinerun.io/atomfs/squashfs"
+	"machinerun.io/atomfs/pkg/verity"
 	"stackerbuild.io/stacker/pkg/stacker"
 	"stackerbuild.io/stacker/pkg/types"
 )
@@ -52,12 +52,13 @@ func initCommonBuildFlags() []cli.Flag {
 		},
 		&cli.StringSliceFlag{
 			Name:  "layer-type",
-			Usage: "set the output layer type (supported values: tar, squashfs); can be supplied multiple times",
+			Usage: "set the output layer type (supported values: tar, squashfs, erofs); can be supplied multiple times",
 			Value: cli.NewStringSlice("tar"),
 		},
 		&cli.BoolFlag{
-			Name:  "no-squashfs-verity",
-			Usage: "do not append dm-verity data to squashfs archives",
+			Name:    "no-verity",
+			Usage:   "do not append dm-verity data to fs archives",
+			Aliases: []string{"no-squashfs-verity"},
 		},
 		&cli.BoolFlag{
 			Name:  "require-hash",
@@ -103,7 +104,7 @@ func newBuildArgs(ctx *cli.Context) (stacker.BuildArgs, error) {
 		AnnotationsNamespace: ctx.String("annotations-namespace"),
 	}
 	var err error
-	verity := squashfs.VerityMetadata(!ctx.Bool("no-squashfs-verity"))
+	verity := verity.VerityMetadata(!ctx.Bool("no-verity"))
 	args.LayerTypes, err = types.NewLayerTypes(ctx.StringSlice("layer-type"), verity)
 	return args, err
 }

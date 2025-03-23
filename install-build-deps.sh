@@ -44,6 +44,8 @@ installdeps_ubuntu() {
         squashfuse
         libarchive-tools
         shellcheck
+        erofs-utils
+        erofsfuse
     )
 
     case "$VERSION_ID" in
@@ -85,6 +87,11 @@ installdeps_ubuntu() {
     if ! command -v go 2>/dev/null; then
         sudo apt -yy install golang-go
         go version
+    fi
+
+    # cloud kernels, like linux-azure, don't include erofs in the linux-modules package and instead put it linux-modules-extra
+    if ! modinfo erofs &>/dev/null; then
+        sudo apt -yy install linux-modules-extra-$(uname -r)
     fi
 }
 
