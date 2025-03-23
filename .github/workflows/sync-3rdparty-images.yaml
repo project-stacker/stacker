@@ -29,7 +29,7 @@ jobs:
           for n in ubuntu:latest alpine:edge alpine:3.19 centos:latest busybox:latest; do
             dest="ghcr.io/${{ github.repository_owner }}/$n"
             docker trust inspect "$n"
-            docker pull $n
+            docker pull public.ecr.aws/docker/library/$n
             docker tag $n "$dest"
             docker push $dest
           done
