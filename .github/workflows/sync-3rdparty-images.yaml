@@ -30,6 +30,6 @@ jobs:
             dest="ghcr.io/${{ github.repository_owner }}/$n"
             docker trust inspect "$n"
             docker pull public.ecr.aws/docker/library/$n
-            docker tag $n "$dest"
+            docker tag public.ecr.aws/docker/library/$n "$dest"
             docker push $dest
           done
