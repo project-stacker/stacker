@@ -50,7 +50,7 @@ jobs:
       - uses: benjlevesque/short-sha@v2.1
         id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup Environment
@@ -101,7 +101,7 @@ jobs:
         if: always()
         uses: ./.github/actions/show-disk-usage
       - name: Upload code coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.codecov_token }}
       - name: Upload artifacts
