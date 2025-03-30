@@ -53,7 +53,7 @@ UMOCI_VERSION := main
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 
-GOLANGCI_LINT_VERSION = v1.54.2
+GOLANGCI_LINT_VERSION = v1.64.8
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
 
 STAGE1_STACKER ?= ./stacker-dynamic
