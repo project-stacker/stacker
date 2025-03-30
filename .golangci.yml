@@ -1,7 +1,28 @@
+version: "2"
 linters:
-    disable:
-        - errcheck
-issues:
-    exclude:
-        - 'PAXRecords'
-        - 'os.SEEK_' # hard to remember the aliases meanings
+  disable:
+    - errcheck
+    - staticcheck
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: (.+)\.go$
+        text: PAXRecords
+      - path: (.+)\.go$
+        text: os.SEEK_
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
