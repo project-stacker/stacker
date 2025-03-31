@@ -2,7 +2,7 @@ module stackerbuild.io/stacker
 
 go 1.23.0
 
-toolchain go1.23.7
+toolchain go1.24.1
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
@@ -34,7 +34,7 @@ require (
 	golang.org/x/term v0.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.6.0
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 	stackerbuild.io/stacker-bom v0.0.0-00010101000000-000000000000
 )
 
