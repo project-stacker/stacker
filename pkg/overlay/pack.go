@@ -299,7 +299,7 @@ func ociPutBlob(blob io.ReadCloser, config types.StackerConfig, layerMediaType s
 	}
 	defer oci.Close()
 
-	layerDigest, layerSize, err := oci.PutBlob(context.Background(), blob)
+	layerDigest, layerSize, err := oci.PutBlob(context.Background(), blob, digest.Blake3)
 	if err != nil {
 		return ispec.Descriptor{}, err
 	}
@@ -568,6 +568,8 @@ func repackOverlay(config types.StackerConfig, name string, layer types.Layer, l
 			return err
 		}
 
+		mutator = mutator.WithAlgorithm(digest.Blake3)
+
 		mutators = append(mutators, mutator)
 	}
 
@@ -698,7 +700,7 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 
 	if fsi := stackerfs.NewFromMediaType(l.MediaType); fsi != nil {
 		return fsi.ExtractSingle(
-			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
+			path.Join(ociDir, "blobs", "blake3", l.Digest.Encoded()), extractDir)
 	}
 
 	switch l.MediaType {

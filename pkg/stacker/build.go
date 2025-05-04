@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	"github.com/opencontainers/umoci/mutate"
@@ -106,6 +107,8 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 	if err != nil {
 		return errors.Wrapf(err, "mutator failed")
 	}
+
+	mutator.WithAlgorithm(digest.Blake3)
 
 	config, err := mutator.Config(context.Background())
 	if err != nil {

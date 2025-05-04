@@ -2,7 +2,7 @@ module stackerbuild.io/stacker
 
 go 1.23.0
 
-toolchain go1.23.7
+toolchain go1.23.4
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
@@ -30,7 +30,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.27.6
 	github.com/vbatts/go-mtree v0.5.3
-	golang.org/x/sys v0.31.0
+	golang.org/x/sys v0.32.0
 	golang.org/x/term v0.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.6.0
@@ -44,6 +44,7 @@ require (
 	github.com/martinjungblut/go-cryptsetup v0.0.0-20220520180014-fd0874fd07a6 // indirect
 	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
+	github.com/zeebo/blake3 v0.2.4 // indirect
 )
 
 require (
@@ -163,7 +164,7 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/kjk/lzma v0.0.0-20161016003348-3fd93898850d // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/knqyf263/go-rpmdb v0.0.0-20230723082926-067d98befa60 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20221109233200-85aa52084eaf // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
@@ -289,6 +290,9 @@ require (
 )
 
 replace (
-	github.com/opencontainers/umoci => github.com/project-stacker/umoci v0.0.0-20240906174318-e9397ba4ced0
+	github.com/opencontainers/go-digest => github.com/project-zot/go-digest v0.0.0-20250501003621-612e7142c60b
+	github.com/opencontainers/umoci => github.com/rchincha/umoci v0.0.0-20250504153217-51fdad78b6d1
+	machinerun.io/atomfs => github.com/rchincha/atomfs v0.0.0-20250503204552-f40d743999f3
 	stackerbuild.io/stacker-bom => github.com/project-stacker/stacker-bom v0.0.0-20240509203427-4d685e046780
+
 )
