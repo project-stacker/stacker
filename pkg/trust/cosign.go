@@ -1,0 +1,4 @@
+package trust
+
+func VerifyCosign() {
+}
