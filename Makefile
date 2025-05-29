@@ -42,7 +42,7 @@ TOOLS_D := $(HACK_D)/tools
 REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
 SKOPEO = $(TOOLS_D)/bin/skopeo
-export SKOPEO_VERSION = 1.9.3
+export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
 # OCI registry
