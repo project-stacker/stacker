@@ -48,7 +48,7 @@ func generateOverlayDirLayer(name string, layerType types.LayerType, overlayDir 
 	defer oci.Close()
 
 	contents := path.Join(config.RootFSDir, name, "overlay_dirs", path.Base(overlayDir.Source))
-	blob, mediaType, rootHash, err := generateBlob(layerType, contents, config.OCIDir, nil)
+	blob, mediaType, rootHash, err := generateBlob(layerType, contents, config.OCIDir)
 	if err != nil {
 		return ispec.Descriptor{}, err
 	}
