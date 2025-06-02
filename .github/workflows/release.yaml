@@ -31,7 +31,7 @@ jobs:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
   release:
     name: "Tagged Release"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     # needs ci for the cached stacker binary
     needs: [build-id, ci]
     steps:
