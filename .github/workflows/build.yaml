@@ -112,7 +112,7 @@ jobs:
           name: binary
           path: stacker
           if-no-files-found: error
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: restore-build
         with:
           path: stacker
