@@ -34,7 +34,7 @@ require (
 	golang.org/x/term v0.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.6.0
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.5.0
 	stackerbuild.io/stacker-bom v0.0.0-00010101000000-000000000000
 )
 
@@ -45,6 +45,7 @@ require (
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
 )
 
 require (
