@@ -22,7 +22,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/opencontainers/umoci v0.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/pkg/xattr v0.4.10
+	github.com/pkg/xattr v0.4.12
 	github.com/sirupsen/logrus v1.9.3
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/stretchr/testify v1.10.0
