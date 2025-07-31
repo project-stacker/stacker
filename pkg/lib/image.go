@@ -59,6 +59,8 @@ type ImageCopyOpts struct {
 	DestSkipTLS       bool
 	Progress          io.Writer
 	Context           context.Context
+	OverrideOS        string
+	OverrideArch      string
 }
 
 func ImageCopy(opts ImageCopyOpts) error {
@@ -90,7 +92,10 @@ func ImageCopy(opts ImageCopyOpts) error {
 		RemoveSignatures: true,
 	}
 
-	args.SourceCtx = &types.SystemContext{}
+	args.SourceCtx = &types.SystemContext{
+		ArchitectureChoice: opts.OverrideArch,
+		OSChoice:           opts.OverrideOS,
+	}
 
 	if opts.SrcSkipTLS {
 		args.SourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
@@ -104,7 +109,10 @@ func ImageCopy(opts ImageCopyOpts) error {
 		}
 	}
 
-	args.DestinationCtx = &types.SystemContext{}
+	args.DestinationCtx = &types.SystemContext{
+		ArchitectureChoice: opts.OverrideArch,
+		OSChoice:           opts.OverrideOS,
+	}
 
 	if opts.DestSkipTLS {
 		args.DestinationCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
