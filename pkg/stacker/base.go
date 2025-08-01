@@ -46,7 +46,7 @@ func GetBase(o BaseLayerOpts) error {
 	case types.OCILayer:
 		fallthrough
 	case types.DockerLayer:
-		err := importContainersImage(o.Layer.From, o.Config, o.Progress)
+		err := importContainersImage(o.Layer, o.Config, o.Progress)
 		if o.Layer.Bom != nil && o.Layer.Bom.Generate && (o.Layer.From.Type == types.DockerLayer) {
 			bomPath := path.Join(o.Config.StackerDir, "artifacts", o.Name)
 			err = getArtifact(bomPath, "application/spdx+json", o.Layer.From.Url, "", "", o.Layer.From.Insecure)
@@ -105,7 +105,8 @@ func SetupRootfs(o BaseLayerOpts) error {
 	}
 }
 
-func importContainersImage(is types.ImageSource, config types.StackerConfig, progress bool) error {
+func importContainersImage(layer types.Layer, config types.StackerConfig, progress bool) error {
+	is := layer.From
 	toImport, err := is.ContainersImageURL()
 	if err != nil {
 		return err
@@ -138,12 +139,23 @@ func importContainersImage(is types.ImageSource, config types.StackerConfig, pro
 		progressWriter = os.Stderr
 	}
 
+	os := ""
+	if layer.OS != nil {
+		os = *layer.OS
+	}
+	arch := ""
+	if layer.Arch != nil {
+		arch = *layer.Arch
+	}
+
 	log.Infof("loading %s", toImport)
 	err = lib.ImageCopy(lib.ImageCopyOpts{
-		Src:        toImport,
-		Dest:       fmt.Sprintf("oci:%s:%s", cacheDir, tag),
-		SrcSkipTLS: is.Insecure,
-		Progress:   progressWriter,
+		Src:          toImport,
+		Dest:         fmt.Sprintf("oci:%s:%s", cacheDir, tag),
+		SrcSkipTLS:   is.Insecure,
+		Progress:     progressWriter,
+		OverrideOS:   os,
+		OverrideArch: arch,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "couldn't import base layer %s", tag)
