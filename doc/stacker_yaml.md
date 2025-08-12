@@ -84,7 +84,23 @@ will be imported on subsequent builds.
 Will import foo.tar.gz and make it available in `/stacker`. Note that stacker
 will NOT update this file unless the cache is cleared, to avoid excess network
 usage. That means that updates after the first time stacker downloads the file
-will not be reflected.
+will not be reflected. To force re-downloading, use `stacker build --no-cache`.
+
+Stacker supports Basic Authentication for imports from an HTTP server. It will
+attempt to find credentials matching the hostname of the URL in the `auth.json`
+file documented at
+[containers-auth.json](https://github.com/containers/image/blob/main/docs/containers-auth.json.5.md)
+
+So for example, this `auth.json` file will allow authentication to example.com
+with the username and password of `aw:yeah` (encoded as base64).
+
+```json
+{
+  "auths": {
+    "example.com": "YXc6eWVhaA=="
+  }
+}
+```
 
     stacker://$name/path/to/file
 
