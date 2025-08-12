@@ -10,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/containers/image/v5/pkg/docker/config"
+	"github.com/containers/image/v5/types"
+
 	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 	"stackerbuild.io/stacker/pkg/lib"
@@ -17,20 +20,20 @@ import (
 )
 
 // download with caching support in the specified cache dir.
-func Download(cacheDir string, url string, progress bool, expectedHash, remoteHash, remoteSize string,
+func Download(cacheDir string, remoteUrl string, progress bool, expectedHash, remoteHash, remoteSize string,
 	idest string, mode *fs.FileMode, uid, gid int,
 ) (string, error) {
 	var name string
 	if idest != "" && idest[len(idest)-1:] != "/" {
 		name = path.Join(cacheDir, path.Base(idest))
 	} else {
-		name = path.Join(cacheDir, path.Base(url))
+		name = path.Join(cacheDir, path.Base(remoteUrl))
 	}
 
 	if fi, err := os.Stat(name); err == nil {
 		// Couldn't get remoteHash then use cached copy of import
 		if remoteHash == "" {
-			log.Infof("Couldn't obtain file info of %s, using cached copy", url)
+			log.Infof("Couldn't obtain file info of %s, using cached copy", remoteUrl)
 			return name, nil
 		}
 		// File is found in cache
@@ -45,11 +48,11 @@ func Download(cacheDir string, url string, progress bool, expectedHash, remoteHa
 
 		if localHash == remoteHash {
 			// Cached file has same hash as the remote file
-			log.Infof("matched hash of %s, using cached copy", url)
+			log.Infof("matched hash of %s, using cached copy", remoteUrl)
 			return name, nil
 		} else if localSize == remoteSize {
 			// Cached file has same content length as the remote file
-			log.Infof("matched content length of %s, taking a leap of faith and using cached copy", url)
+			log.Infof("matched content length of %s, taking a leap of faith and using cached copy", remoteUrl)
 			return name, nil
 		}
 		// Cached file has a different hash from the remote one
@@ -71,9 +74,28 @@ func Download(cacheDir string, url string, progress bool, expectedHash, remoteHa
 	}
 	defer out.Close()
 
-	log.Infof("downloading %v", url)
+	log.Infof("downloading %v", remoteUrl)
 
-	resp, err := http.Get(url)
+	request, err := http.NewRequest(http.MethodGet, remoteUrl, nil)
+	if err != nil {
+		return "", err
+	}
+
+	u, err := url.Parse(remoteUrl)
+	if err != nil {
+		return "", err
+	}
+
+	creds, err := config.GetCredentials(&types.SystemContext{}, u.Hostname())
+	if err != nil {
+		log.Infof("credentials not found for host %s - reason:%s continuing without creds", u.Host, err)
+	}
+
+	request.SetBasicAuth(creds.Username, creds.Password)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(request)
 	if err != nil {
 		os.RemoveAll(name)
 		return "", err
@@ -82,7 +104,7 @@ func Download(cacheDir string, url string, progress bool, expectedHash, remoteHa
 
 	if resp.StatusCode != 200 {
 		os.RemoveAll(name)
-		return "", errors.Errorf("couldn't download %s: %s", url, resp.Status)
+		return "", errors.Errorf("couldn't download %s: %s", remoteUrl, resp.Status)
 	}
 
 	source := resp.Body
