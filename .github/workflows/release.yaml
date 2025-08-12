@@ -11,7 +11,7 @@ jobs:
     outputs:
       build-id: ${{steps.build-id.outputs.build-id}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: benjlevesque/short-sha@v2.1
         id: short-sha
       - id: build-id

@@ -44,7 +44,7 @@ jobs:
         privilege-level: ${{fromJson(inputs.privilege-level)}}
     name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
       - uses: benjlevesque/short-sha@v2.1
