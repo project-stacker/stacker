@@ -30,7 +30,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.27.6
 	github.com/vbatts/go-mtree v0.5.4
-	golang.org/x/sys v0.33.0
+	golang.org/x/sys v0.35.0
 	golang.org/x/term v0.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/bom v0.6.0
