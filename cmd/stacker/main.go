@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"syscall"
 
 	"github.com/apex/log"
@@ -39,14 +40,36 @@ func shouldShowProgress(ctx *cli.Context) bool {
 	return term.IsTerminal(int(os.Stdout.Fd()))
 }
 
+// allow us to get stack frames from errors.Wrapped errors.
+// this is "considered part of its stable public interface"
+type stackTracer interface {
+	StackTrace() errors.StackTrace
+}
+
 func stackerResult(err error) {
 	if err != nil {
-		format := "error: %v\n"
 		if config.Debug {
-			format = "error: %+v\n"
-		}
+			// print stack trace but stop at first urfave.cli frame:
+			if traceErr, ok := err.(stackTracer); ok {
+				fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+				frames := traceErr.StackTrace()
+				for _, f := range frames {
+					// Need to use +s to get the module path prefix
+					funcName := fmt.Sprintf("%+s", f)
+					if strings.HasPrefix(funcName, "github.com/urfave/cli") {
+						break
+					}
+					fmt.Fprintf(os.Stderr, "%+v\n", f)
+				}
+			} else {
+				// err was not errors.Wrapped:
+				fmt.Fprintf(os.Stderr, "error: %+v\n", err)
+			}
 
-		fmt.Fprintf(os.Stderr, format, err)
+		} else {
+			// just print error summary if not --debug
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		}
 
 		// propagate the wrapped execution's error code if we're in the
 		// userns wrapper
