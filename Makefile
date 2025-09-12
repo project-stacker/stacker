@@ -47,7 +47,7 @@ BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
-ZOT_VERSION := v2.1.0
+ZOT_VERSION := v2.1.8
 UMOCI := $(TOOLS_D)/bin/umoci
 UMOCI_VERSION := main
 

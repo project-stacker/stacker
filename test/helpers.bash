@@ -177,8 +177,7 @@ function cmp_files() {
     return 0
 }
 
-function zot_setup {
-  echo "# starting zot" >&3
+function write_plain_zot_config {
   cat > $TEST_TMPDIR/zot-config.json << EOF
 {
   "distSpecVersion": "1.1.0-dev",
@@ -192,23 +191,97 @@ function zot_setup {
     "port": "$ZOT_PORT"
   },
   "log": {
-    "level": "error"
+    "level": "debug",
+    "output": "$TEST_TMPDIR/zot.log"
   }
 }
 EOF
-	# start as a background task
+
+}
+
+function write_auth_zot_config {
+
+  htpasswd -Bbn iam careful >> $TEST_TMPDIR/htpasswd
+
+  cat > $TEST_TMPDIR/zot-config.json << EOF
+{
+  "distSpecVersion": "1.1.0-dev",
+  "storage": {
+    "rootDirectory": "$TEST_TMPDIR/zot",
+    "gc": true,
+    "dedupe": true
+  },
+  "http": {
+    "tls": {
+      "cert": "$BATS_SUITE_TMPDIR/server.cert",
+      "key": "$BATS_SUITE_TMPDIR/server.key"
+    },
+    "address": "$ZOT_HOST",
+    "port": "$ZOT_PORT",
+    "auth": {
+      "htpasswd": {
+        "path": "$TEST_TMPDIR/htpasswd"
+      }
+    },
+    "accessControl": {
+      "repositories": {
+        "**": {
+          "policies": [{
+              "users": [ "iam" ],
+              "actions": [ "read", "create", "update" ]
+          }]
+        }
+      }
+    }
+  },
+  "log": {
+    "level": "debug",
+    "output": "$TEST_TMPDIR/zot.log",
+    "audit": "$TEST_TMPDIR/zot-audit.log"
+  }
+}
+EOF
+
+}
+
+function zot_setup {
+    write_plain_zot_config
+    start_zot
+}
+
+function zot_setup_auth {
+    write_auth_zot_config
+    start_zot USE_TLS
+}
+
+function start_zot {
+  ZOT_USE_TLS=$1
+  echo "# starting zot at $ZOT_HOST:$ZOT_PORT" >&3
+  # start as a background task
+  zot verify $TEST_TMPDIR/zot-config.json
   zot serve $TEST_TMPDIR/zot-config.json &
   pid=$!
+
+  echo "zot is running at pid $pid"
+  cat $TEST_TMPDIR/zot.log
   # wait until service is up
   count=5
   up=0
+
   while [[ $count -gt 0 ]]; do
     if [ ! -d /proc/$pid ]; then
       echo "zot failed to start or died"
       exit 1
     fi
     up=1
-    curl -f http://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
+    if [[ -n $ZOT_USE_TLS ]]; then
+        echo "testing zot at https://$ZOT_HOST:$ZOT_PORT"
+        curl -v --cacert $BATS_SUITE_TMPDIR/ca.crt  -u "iam:careful" -f https://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
+    else
+        echo "testing zot at http://$ZOT_HOST:$ZOT_PORT"
+        curl -v -f http://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
+    fi
+
     if [ $up -eq 1 ]; then break; fi
     sleep 1
     count=$((count - 1))
@@ -217,8 +290,15 @@ EOF
     echo "Timed out waiting for zot"
     exit 1
   fi
+
+  echo "# zot is up" >&3
   # setup a OCI client
-  regctl registry set --tls=disabled $ZOT_HOST:$ZOT_PORT
+  if [[ -n $ZOT_USE_TLS ]]; then
+      regctl registry set $ZOT_HOST:$ZOT_PORT
+  else
+      regctl registry set --tls=disabled $ZOT_HOST:$ZOT_PORT
+  fi
+
 }
 
 function zot_teardown {
