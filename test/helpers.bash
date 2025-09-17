@@ -73,7 +73,7 @@ export ALPINE_OCI="$ROOT_DIR/test/alpine:edge"
 export BUSYBOX_OCI="$ROOT_DIR/test/busybox:latest"
 export CENTOS_OCI="$ROOT_DIR/test/centos:latest"
 export UBUNTU_OCI="$ROOT_DIR/test/ubuntu:latest"
-export PATH="$PATH:$ROOT_DIR/hack/tools/bin"
+export PATH="$ROOT_DIR/hack/tools/bin:$PATH"
 
 function sha() {
     echo $(sha256sum $1 | cut -f1 -d" ")

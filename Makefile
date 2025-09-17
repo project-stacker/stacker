@@ -124,7 +124,7 @@ go-test:
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
 
 .PHONY: download-tools
-download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI)
+download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(dir $@)
