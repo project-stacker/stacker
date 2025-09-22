@@ -40,10 +40,12 @@ Some directives are irrelevant depending on the type. Supported types are:
 
 - `url` is required
 
-- `insecure` is optional. 
+- `insecure` is optional. If unspecified, the default is is `false`.
 
 When `insecure` is specified, stacker attempts to connect via http instead of
-https to the Docker Hub.
+https to the image registry in the `url`.
+
+When `insecure` is false, Stacker can authenticate to the image registry using HTTP Basic Authentication. See the section "Credential Handling" for further details.
 
 #### `type: tar`
 
@@ -86,21 +88,8 @@ will NOT update this file unless the cache is cleared, to avoid excess network
 usage. That means that updates after the first time stacker downloads the file
 will not be reflected. To force re-downloading, use `stacker build --no-cache`.
 
-Stacker supports Basic Authentication for imports from an HTTP server. It will
-attempt to find credentials matching the hostname of the URL in the `auth.json`
-file documented at
-[containers-auth.json](https://github.com/containers/image/blob/main/docs/containers-auth.json.5.md)
+Stacker supports Basic Authentication for imports from an HTTPS server. See the section "Credential handling" for details.
 
-So for example, this `auth.json` file will allow authentication to example.com
-with the username and password of `aw:yeah` (encoded as base64).
-
-```json
-{
-  "auths": {
-    "example.com": "YXc6eWVhaA=="
-  }
-}
-```
 
     stacker://$name/path/to/file
 
@@ -300,7 +289,7 @@ defaults to the host operating system if not specified.
 built for, for example, `amd64`, `arm64`, etc. It is an optional field and it
 defaults to the host machine architecture if not specified.
 
-### Substitution Syntax
+## Substitution Syntax
 
 Before the yaml is parsed, stacker performs substitution on placeholders in the
 file of the format `${{VAR}}` or `${{VAR:default}}`. See [Substitution
@@ -355,3 +344,35 @@ available for reference:
       my-build:
         run: echo "Your layer is ${STACKER_LAYER_NAME}"
       ```
+
+## Credential Handling
+
+Stacker uses OCI standard credential storage for authenticating to both container registries (for `from` images) and https servers (for `import`s).
+
+Stacker will look for credentials in the `auth.json` file documented at
+[containers-auth.json](https://github.com/containers/image/blob/main/docs/containers-auth.json.5.md).
+The longest matching substring of the import URL is used.
+
+So for example, this `auth.json` file will allow authentication to example.com
+with the username and password of `aw:yeah` (encoded as base64). For a URL
+`https://example.com:8080/reg1/p1/path/to/file.txt` or any other file under
+`reg1/p1` on that host, this file specifies the alternate creds `arr:narr`:
+
+```json
+{
+  "auths": {
+    "example.com": "YXc6eWVhaA==",
+    "example.com:8080/reg1/p1": "YXJyOm5hcnI="
+  }
+}
+```
+
+NOTE: due to the way the subpaths are broken up to search for the longest
+matching subpath, the key in `auth.json` must not have a trailing slash.
+`reg1/p1/` will not match any file's path.`
+
+### Generating auth.json
+
+`auth.json` is simple enough to generate by hand, but it can also be created and
+updated by running `skopeo login $registry_url` for OCI compatible container
+image registries.

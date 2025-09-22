@@ -1,6 +1,7 @@
 package stacker
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -85,12 +86,13 @@ func Download(cacheDir string, remoteUrl string, progress bool, expectedHash, re
 	if err != nil {
 		return "", err
 	}
-
-	creds, err := config.GetCredentials(&types.SystemContext{}, u.Hostname())
+	key := fmt.Sprintf("%s%s", u.Host, u.Path)
+	log.Infof("searching creds for key %q", key)
+	creds, err := config.GetCredentials(&types.SystemContext{}, key)
 	if err != nil {
 		log.Infof("credentials not found for host %s - reason:%s continuing without creds", u.Host, err)
 	}
-
+	log.Infof("found creds for key %q: %+v", key, creds)
 	request.SetBasicAuth(creds.Username, creds.Password)
 
 	client := &http.Client{}
