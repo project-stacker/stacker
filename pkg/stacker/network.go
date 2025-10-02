@@ -92,7 +92,7 @@ func Download(cacheDir string, remoteUrl string, progress bool, expectedHash, re
 	if err != nil {
 		log.Infof("credentials not found for host %s - reason:%s continuing without creds", u.Host, err)
 	}
-	log.Infof("found creds for key %q: %+v", key, creds)
+	log.Debugf("found creds for key %q", key)
 	request.SetBasicAuth(creds.Username, creds.Password)
 
 	client := &http.Client{}
