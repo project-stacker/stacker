@@ -157,10 +157,14 @@ $(SKOPEO):
 	rm -rf $$tmpdir;
 
 $(BATS):
-	@set -e; rm -rf bats-core; \
-	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git; \
-	cd bats-core; ./install.sh $(TOOLS_D); cd ..; \
-	rm -rf bats-core
+	mkdir -p $(TOOLS_D)/bin
+	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git
+	cd bats-core; ./install.sh $(TOOLS_D) ; rm -rf bats-core
+	mkdir -p $(TOP_LEVEL)/test/test_helper
+	git clone --depth 1 https://github.com/bats-core/bats-support $(TOP_LEVEL)/test/test_helper/bats-support
+	git clone --depth 1 https://github.com/bats-core/bats-assert $(TOP_LEVEL)/test/test_helper/bats-assert
+	git clone --depth 1 https://github.com/bats-core/bats-file $(TOP_LEVEL)/test/test_helper/bats-file
+
 
 $(UMOCI):
 	mkdir -p ${GOPATH}/src/github.com/opencontainers/
@@ -227,5 +231,6 @@ vendorup:
 .PHONY: clean
 clean:
 	-unshare -Urm rm -rf stacker stacker-dynamic .build
-	-rm -r ./test/centos ./test/ubuntu
+	-rm -rf ./test/centos ./test/ubuntu ./test/busybox ./test/alpine ./test/test_helper
 	-make -C cmd/stacker/lxc-wrapper clean
+	-rm -rf $(TOOLS_D)
