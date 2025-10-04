@@ -1,4 +1,4 @@
-name: QEMU environment
+name: cross-build using qemu
 
 on:
   push:
@@ -12,20 +12,25 @@ on:
       - published
 
 jobs:
-  build-linux-arm64:
+  build:
     runs-on: oracle-vm-16cpu-64gb-x86-64
+    strategy:
+      matrix:
+        ubuntu: ['noble']
+        arch: ['arm64']
     steps:
-      - name: Install VM dependencies
+      - uses: actions/checkout@v4
+      - name: Install qemu dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-utils cloud-image-utils wget
-      - name: Provision VM
+      - name: Provision qemu vm
         run: |
-          wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-arm64.img
+          wget https://cloud-images.ubuntu.com/${{ matrix.ubuntu }}/current/${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img
 
           qemu-img create -f qcow2 -F qcow2 \
-            -b jammy-server-cloudimg-arm64.img \
-            jammy-snapshot.qcow2 200G
+            -b ${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img \
+            ${{ matrix.ubuntu }}-snapshot.qcow2 200G
 
           cat >"user-data" << EOF
           #cloud-config
@@ -45,7 +50,7 @@ jobs:
             -display none \
             -drive if=pflash,format=raw,readonly=on,file=AAVMF_CODE.fd \
             -drive if=pflash,format=raw,file=AAVMF_VARS.fd \
-            -drive if=none,file=jammy-server-cloudimg-arm64.img,id=hd0,cache=unsafe \
+            -drive if=none,file=${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img,id=hd0,cache=unsafe \
             -device virtio-blk-device,drive=hd0 \
             -drive file=user-data.img,format=raw,media=cdrom,if=none,id=cd0 \
             -device virtio-blk-device,drive=cd0 \
