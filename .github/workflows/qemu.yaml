@@ -88,7 +88,7 @@ jobs:
       - name: Set up golang
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'sudo apt-get update && sudo apt-get install -y golang'
+            'cd /mnt/host_share && sudo tools/install-go'
       - name: install dependencies
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
