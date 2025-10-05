@@ -20,6 +20,8 @@ jobs:
         arch: ['arm64']
     steps:
       - uses: actions/checkout@v4
+      - name: Clean disk space
+        uses: ./.github/actions/clean-runner
       - name: Install qemu dependencies
         run: |
           sudo apt-get update
@@ -30,7 +32,7 @@ jobs:
 
           qemu-img create -f qcow2 -F qcow2 \
             -b ${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img \
-            ${{ matrix.ubuntu }}-snapshot.qcow2 200G
+            ${{ matrix.ubuntu }}-snapshot.qcow2 256G
 
           cat >"user-data" << EOF
           #cloud-config
@@ -87,5 +89,34 @@ jobs:
             sudo mkdir /mnt/host_share
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             sudo mount -t 9p -o trans=virtio,version=9p2000.L host_share /mnt/host_share
+      - name: Set up golang
+        run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ls -alR /mnt/host_share
+            'sudo apt-get update && sudo apt-get install -y golang'
+      - name: install dependencies
+        run: |
+          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
+            'cd /mnt/host_share && sudo ./install-build-deps.sh'
+      - name: Build-level1
+        run: |
+          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
+            make show-info
+          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
+            'cd /mnt/host_share && make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}'
+      - name: Build
+        run: |
+          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
+            'cd /mnt/host_share && make stacker VERSION_FULL=${{ github.sha }}'
+      - name: Check binary
+        run: |
+          cd $GITHUB_WORKSPACE
+      - if: github.event_name == 'release' && github.event.action == 'published'
+        name: Publish artifacts on releases
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: stacker
+          asset_name: stacker-${{ matrix.arch }}
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
