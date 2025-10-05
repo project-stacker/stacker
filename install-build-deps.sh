@@ -53,11 +53,6 @@ installdeps_ubuntu() {
             sudo add-apt-repository -y ppa:project-machine/squashfuse
             ;;
         24.04)
-            # lp:2080069
-            # temporarily add puzzleos/dev to pickup lxc-dev package which
-            # provides static liblxc.a
-            sudo add-apt-repository -y ppa:puzzleos/dev
-
             # allow array to expand again
             #shellcheck disable=2206
             PKGS=( ${PKGS[*]} libsystemd-dev )
