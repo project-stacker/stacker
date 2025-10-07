@@ -52,12 +52,12 @@ installdeps_ubuntu() {
         22.04)
             sudo add-apt-repository -y ppa:project-machine/squashfuse
             ;;
-        24.04)
+        24.04|25.*)
             # allow array to expand again
             #shellcheck disable=2206
             PKGS=( ${PKGS[*]} libsystemd-dev )
 
-            # 24.04 has additional apparmor restrictions, probably doesn't apply
+            # 24.04+ has additional apparmor restrictions, probably doesn't apply
             # for root in github VM but developers will run into this
             enable_userns
             ;;
