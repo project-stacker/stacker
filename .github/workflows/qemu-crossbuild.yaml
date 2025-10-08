@@ -42,7 +42,7 @@ jobs:
           cp /usr/share/AAVMF/AAVMF_VARS.fd .
 
           qemu-system-aarch64 \
-            -m 2048 \
+            -m 16384 \
             -cpu max -smp 4 \
             -machine virt,gic-version=max \
             -display none \
