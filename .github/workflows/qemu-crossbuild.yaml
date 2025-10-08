@@ -30,6 +30,10 @@ jobs:
         run: |
           wget https://cloud-images.ubuntu.com/${{ matrix.ubuntu }}/current/${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img
 
+          qemu-img create -f qcow2 -F qcow2 \
+            -b ${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img \
+            ${{ matrix.ubuntu }}-snapshot.qcow2 256G
+
           cat >"user-data" << EOF
           #cloud-config
           password: passw0rd
@@ -48,7 +52,7 @@ jobs:
             -display none \
             -drive if=pflash,format=raw,readonly=on,file=AAVMF_CODE.fd \
             -drive if=pflash,format=raw,file=AAVMF_VARS.fd \
-            -drive if=none,file=${{ matrix.ubuntu }}-server-cloudimg-${{ matrix.arch }}.img,id=hd0,cache=unsafe \
+            -drive if=none,file="${{ matrix.ubuntu }}-snapshot.qcow2",format=qcow2,id=hd0 \
             -device virtio-blk-device,drive=hd0 \
             -drive file=user-data.img,format=raw,media=cdrom,if=none,id=cd0 \
             -device virtio-blk-device,drive=cd0 \
