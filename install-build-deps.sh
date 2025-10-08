@@ -56,7 +56,7 @@ installdeps_ubuntu() {
             # lp:2080069
             # temporarily add puzzleos/dev to pickup lxc-dev package which
             # provides static liblxc.a
-            sudo add-apt-repository -y ppa:puzzleos/dev
+            sudo add-apt-repository -y ppa:puzzleos/dev-next
 
             # allow array to expand again
             #shellcheck disable=2206
