@@ -100,13 +100,13 @@ jobs:
       - name: Build-level1
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            make show-info
+            sudo make show-info
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'cd /mnt/host_share && make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}'
+            'cd /mnt/host_share && sudo make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}'
       - name: Build
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'cd /mnt/host_share && make stacker VERSION_FULL=${{ github.sha }}'
+            'cd /mnt/host_share && sudo make stacker VERSION_FULL=${{ github.sha }}'
       - name: Check binary
         run: |
           cd $GITHUB_WORKSPACE
