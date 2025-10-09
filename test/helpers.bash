@@ -1,3 +1,7 @@
+load 'test_helper/bats-support/load'
+load 'test_helper/bats-assert/load'
+load 'test_helper/bats-file/load'
+
 function run_git {
     sudo -u $SUDO_USER git "$@"
 }
