@@ -32,18 +32,17 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        go-version: ${{fromJson(inputs.go-version)}}
-        privilege-level: ${{fromJson(inputs.privilege-level)}}
-        runner: ['ubuntu-24.04', 'ubuntu-24.04-arm']
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-24.04
     services:
       registry:
         image: ghcr.io/project-stacker/registry:2
         ports:
           - 5000:5000
-    name: "golang ${{ matrix.runner }} ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
+    strategy:
+      matrix:
+        go-version: ${{fromJson(inputs.go-version)}}
+        privilege-level: ${{fromJson(inputs.privilege-level)}}
+    name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v4
       - name: Clean disk space
