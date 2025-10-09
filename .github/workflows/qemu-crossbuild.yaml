@@ -89,6 +89,8 @@ jobs:
             sudo mkdir /mnt/host_share
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             sudo mount -t 9p -o trans=virtio,version=9p2000.L host_share /mnt/host_share
+          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
+            'mkdir /home/ubuntu/src && cp -R /mnt/host_share/* /home/ubuntu/src/'
       - name: Set up golang
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
@@ -96,17 +98,17 @@ jobs:
       - name: install dependencies
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'cd /mnt/host_share && sudo ./install-build-deps.sh'
+            'cd /home/ubuntu/src && sudo ./install-build-deps.sh'
       - name: Build-level1
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            sudo make show-info
+            bash --login -c 'cd /home/ubuntu/src && make show-info'
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'cd /mnt/host_share && sudo make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}'
+            bash --login -c 'cd /home/ubuntu/src && make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}'
       - name: Build
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'cd /mnt/host_share && sudo make stacker VERSION_FULL=${{ github.sha }}'
+            bash --login -c 'cd /home/ubuntu/src && make stacker VERSION_FULL=${{ github.sha }} && sudo cp /home/ubuntu/src/stacker /mnt/host_share/'
       - name: Check binary
         run: |
           cd $GITHUB_WORKSPACE
