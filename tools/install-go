@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -xe
+
+cd /tmp
+wget -N https://go.dev/dl/go1.24.7.linux-arm64.tar.gz -O golang.tar.gz
+rm -rf /usr/local/go
+tar -xzvf golang.tar.gz -C /usr/local
+echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+echo 'export GOROOT=/usr/local/go' >> /etc/profile
+. /etc/profile
+go env
