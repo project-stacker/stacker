@@ -51,7 +51,7 @@ jobs:
 
           qemu-system-aarch64 \
             -m 16384 \
-            -cpu max -smp 4 \
+            -cpu max -smp 8 \
             -machine virt,gic-version=max \
             -display none \
             -drive if=pflash,format=raw,readonly=on,file=AAVMF_CODE.fd \
@@ -118,6 +118,8 @@ jobs:
       - name: Check binary
         run: |
           cd $GITHUB_WORKSPACE
+          ls -al stacker
+          file stacker
       - if: github.event_name == 'release' && github.event.action == 'published'
         name: Publish artifacts on releases
         uses: svenstaro/upload-release-action@v2
