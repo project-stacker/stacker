@@ -111,15 +111,15 @@ jobs:
       - name: Build-level1
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src; go env; ls -alR"
+            ". /etc/profile; cd /home/ubuntu/src; go env; ls -alR; sudo make clean"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             ". /etc/profile; cd /home/ubuntu/src; make show-info"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src; sudo make stacker-dynamic VERSION_FULL=$SHORT_SHA"
+            ". /etc/profile; cd /home/ubuntu/src; make stacker-dynamic VERSION_FULL=$SHORT_SHA"
       - name: Build
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src; sudo make stacker VERSION_FULL=$SHORT_SHA; sudo cp /home/ubuntu/src/stacker /mnt/host_share/"
+            ". /etc/profile; cd /home/ubuntu/src; make stacker VERSION_FULL=$SHORT_SHA; sudo cp /home/ubuntu/src/stacker /mnt/host_share/"
       - name: Check binary
         run: |
           cd $GITHUB_WORKSPACE
