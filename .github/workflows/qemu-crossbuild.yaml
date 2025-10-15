@@ -111,6 +111,8 @@ jobs:
       - name: Build-level1
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
+            ". /etc/profile; cd /home/ubuntu/src; go env; ls -alR"
+          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             ". /etc/profile; cd /home/ubuntu/src; make show-info"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             ". /etc/profile; cd /home/ubuntu/src;  make stacker-dynamic VERSION_FULL=$SHORT_SHA"
