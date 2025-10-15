@@ -22,6 +22,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
+      - name: Setup Environment
+        run: |
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          cat "$GITHUB_ENV"
       - name: Install qemu dependencies
         run: |
           sudo apt-get update
@@ -106,11 +110,11 @@ jobs:
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             ". /etc/profile; cd /home/ubuntu/src; make show-info"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src;  make stacker-dynamic VERSION_FULL=${{ inputs.build-id }})"
+            ". /etc/profile; cd /home/ubuntu/src;  make stacker-dynamic VERSION_FULL=$SHORT_SHA"
       - name: Build
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src;  make stacker VERSION_FULL=${{ github.sha }}; sudo cp /home/ubuntu/src/stacker /mnt/host_share/"
+            ". /etc/profile; cd /home/ubuntu/src;  make stacker VERSION_FULL=$SHORT_SHA; sudo cp /home/ubuntu/src/stacker /mnt/host_share/"
       - name: Check binary
         run: |
           cd $GITHUB_WORKSPACE
