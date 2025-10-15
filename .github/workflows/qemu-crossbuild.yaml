@@ -89,15 +89,12 @@ jobs:
       - name: Setup passthrough fs mount
         run: |
           set +e
-          make clean
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             sudo mkdir /mnt/host_share
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             sudo mount -t 9p -o trans=virtio,version=9p2000.L host_share /mnt/host_share
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             'mkdir /home/ubuntu/src && cp -R /mnt/host_share/* /home/ubuntu/src/'
-          sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            'ls -alR /home/ubuntu/src'
       - name: Set up golang
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
@@ -111,7 +108,7 @@ jobs:
       - name: Build-level1
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src; go env; ls -alR; sudo make clean"
+            ". /etc/profile; cd /home/ubuntu/src; go env; sudo rm -rf .build"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             ". /etc/profile; cd /home/ubuntu/src; make show-info"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
