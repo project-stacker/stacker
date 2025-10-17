@@ -16,5 +16,5 @@ runs:
         sudo find ./ -size +5M   | xargs ls -lh
         sudo du -sh /var/
         sudo du -sh /var/lib/docker/
-        sudo du -sh /home/runner/work/
+        #sudo du -sh /home/runner/work/
         set +x
