@@ -5,6 +5,8 @@ export GOPATH ?= $(BUILD_D)/gopath
 export GOCACHE ?= $(GOPATH)/gocache
 
 GO_SRC=$(shell find pkg cmd -name \*.go)
+GOARCH=$(shell go env GOARCH)
+GOOS=$(shell go env GOOS)
 VERSION?=$(shell git describe --tags || git rev-parse HEAD)
 VERSION_FULL?=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
 HASH = \#
@@ -57,10 +59,13 @@ GOLANGCI_LINT_VERSION = v1.64.8
 GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
 
 STAGE1_STACKER ?= ./stacker-dynamic
+STACKER_PUBLISH_BIN := stacker-$(GOOS)-$(GOARCH)
 
 STACKER_DEPS = $(GO_SRC) go.mod go.sum
 
 stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
+	echo STACKER_DOCKER_BASE=$(STACKER_DOCKER_BASE)
+	echo STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE)
 	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
 		-f build.yaml \
 		--substitute BUILD_D=$(BUILD_D) \
@@ -79,6 +84,12 @@ stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapp
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
 		--substitute VERSION_FULL=$(VERSION_FULL) \
 		--substitute WITH_COV=yes
+
+.PHONY: publish-stacker-bin
+publish-stacker-bin: $(STACKER_PUBLISH_BIN)
+
+$(STACKER_PUBLISH_BIN): stacker
+	cp -v $< $@
 
 # On Ubuntu 24.04 the lxc package does not link against libsystemd so the pkg-config
 # below does list -lsystemd; we must add it to the list but only for stacker-dynamic
@@ -138,10 +149,10 @@ $(GOLANGCI_LINT):
 dlbin = set -x; mkdir -p $(dir $1) && t=$1.$$$$ && curl -Lo "$$t" "$2" && chmod +x "$$t" && mv "$$t" "$1"
 
 $(REGCLIENT):
-	$(call dlbin,$@,https://github.com/regclient/regclient/releases/download/$(REGCLIENT_VERSION)/regctl-linux-amd64)
+	$(call dlbin,$@,https://github.com/regclient/regclient/releases/download/$(REGCLIENT_VERSION)/regctl-linux-$(GOARCH))
 
 $(ZOT):
-	$(call dlbin,$@,https://github.com/project-zot/zot/releases/download/$(ZOT_VERSION)/zot-linux-amd64-minimal)
+	$(call dlbin,$@,https://github.com/project-zot/zot/releases/download/$(ZOT_VERSION)/zot-linux-$(GOARCH)-minimal)
 
 $(SKOPEO):
 	@set -e; mkdir -p "$(TOOLS_D)/bin"; \
@@ -173,7 +184,7 @@ $(UMOCI):
 	$(UMOCI) --version
 
 TEST?=$(patsubst test/%.bats,%,$(wildcard test/*.bats))
-PRIVILEGE_LEVEL?=
+PRIVILEGE_LEVEL ?= unpriv
 
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
@@ -216,7 +227,6 @@ test-cov: stacker-cov download-tools
 .PHONY: docker-clone
 docker-clone: $(SKOPEO)
 	./tools/oci-copy "$(BUILD_D)/oci-clone" $(STACKER_BUILD_IMAGES)
-
 
 .PHONY: show-info
 show-info:

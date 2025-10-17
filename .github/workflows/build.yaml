@@ -32,17 +32,21 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
     services:
       registry:
         image: ghcr.io/project-stacker/registry:2
         ports:
           - 5000:5000
     strategy:
+      fail-fast: true
       matrix:
+        platform:
+          - linux-amd64  # ubuntu 24.04
+          - linux-arm64  # ubuntu 24.04-arm64
         go-version: ${{fromJson(inputs.go-version)}}
         privilege-level: ${{fromJson(inputs.privilege-level)}}
-    name: "golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
+    runs-on: ${{ matrix.platform == 'linux-amd64' && 'ubuntu-24.04' || matrix.platform == 'linux-arm64' && 'ubuntu-24.04-arm' }}
+    name: "Build platform ${{ matrix.platform }} golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v4
       - name: Clean disk space
@@ -70,7 +74,7 @@ jobs:
           echo "running kernel is: $(uname -a)"
       - name: docker-clone
         run: |
-          make docker-clone "STACKER_DOCKER_BASE=docker://ghcr.io/project-stacker/" CLONE_D="$PWD/.build/oci-clone"
+          make docker-clone STACKER_DOCKER_BASE="docker://ghcr.io/project-stacker/" CLONE_D="$PWD/.build/oci-clone"
       - name: Go-download
         run: |
           make go-download
@@ -104,13 +108,16 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.codecov_token }}
+      - name: Prepare for Upload artifacts
+        run: |
+          make publish-stacker-bin
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         if: ${{ (matrix.privilege-level == 'priv') && (matrix.go-version == '1.23.x') }}
         with:
           # if there is more than 1 go-version, we would need to account for that here.
-          name: binary
-          path: stacker
+          name: stacker-${{ matrix.platform }}
+          path: stacker-${{ matrix.platform }}
           if-no-files-found: error
       - uses: actions/cache@v4
         id: restore-build

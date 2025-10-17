@@ -1,6 +1,7 @@
 load helpers
 
 function setup() {
+    GOARCH=$(go env GOARCH)
     stacker_setup
     cat > stacker.yaml <<"EOF"
 img:
@@ -16,9 +17,9 @@ EOF
     mkdir -p http_root/path/to/
     echo "please" > http_root/path/to/importme
 
-    wget --quiet https://github.com/m3ng9i/ran/releases/download/v0.1.6/ran_linux_amd64.zip
-    unzip ran_linux_amd64.zip
-    mv ran_linux_amd64 ran_for_stackertest
+    wget --quiet https://github.com/m3ng9i/ran/releases/download/v0.1.6/ran_linux_${GOARCH}.zip
+    unzip ran_linux_${GOARCH}.zip
+    mv ran_linux_${GOARCH} ran_for_stackertest
     chmod +x ran_for_stackertest
 
 

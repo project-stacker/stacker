@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -80,7 +81,7 @@ func (c *Converter) convertCommand(cmd *Command) error {
 	log.Debugf("cmd: %+v", cmd)
 	switch strings.ToLower(cmd.Cmd) {
 	case "from":
-		layer := types.Layer{BuildEnv: map[string]string{"arch": "x86_64"}}
+		layer := types.Layer{BuildEnv: map[string]string{"arch": runtime.GOARCH}}
 		c.currDir = ""
 		c.currUid = ""
 		c.currGid = ""

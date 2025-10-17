@@ -23,10 +23,14 @@ installdeps_fedora() {
 
 installdeps_ubuntu() {
     PKGS=(
+        apache2-utils
         build-essential
         cryptsetup-bin
+        erofsfuse
+        erofs-utils
         jq
         libacl1-dev
+        libarchive-tools
         libcap-dev
         libcryptsetup-dev
         libdevmapper-dev
@@ -40,12 +44,13 @@ installdeps_ubuntu() {
         lxc-utils
         parallel
         pkg-config
+        psmisc
+        shellcheck
         squashfs-tools
         squashfuse
-        libarchive-tools
-        shellcheck
-        erofs-utils
-        erofsfuse
+        uidmap
+        uuid-runtime
+        zip
     )
 
     case "$VERSION_ID" in
