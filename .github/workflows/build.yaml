@@ -32,7 +32,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: oracle-vm-4cpu-16gb-arm64
     services:
       registry:
         image: ghcr.io/project-stacker/registry:2
