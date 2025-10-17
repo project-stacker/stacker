@@ -108,7 +108,7 @@ jobs:
       - name: Build-level1
         run: |
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
-            ". /etc/profile; cd /home/ubuntu/src; go env; sudo rm -rf .build"
+            ". /etc/profile; cd /home/ubuntu/src; go env; sudo rm -rf .build ./test/centos ./test/ubuntu; sudo make -C cmd/stacker/lxc-wrapper clean"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
             ". /etc/profile; cd /home/ubuntu/src; make show-info"
           sshpass -p passw0rd ssh -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22225 ubuntu@localhost \
