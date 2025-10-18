@@ -17,6 +17,8 @@ jobs:
       packages: write
     runs-on: ubuntu-latest
     steps:
+      - name: Setup oras
+        uses: oras-project/setup-oras@v1
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v3
         with:
@@ -28,8 +30,5 @@ jobs:
           set -e
           for n in ubuntu:latest alpine:edge alpine:3.19 centos:latest busybox:latest; do
             dest="ghcr.io/${{ github.repository_owner }}/$n"
-            docker trust inspect "$n"
-            docker pull public.ecr.aws/docker/library/$n
-            docker tag public.ecr.aws/docker/library/$n "$dest"
-            docker push $dest
+            oras cp --debug --no-tty public.ecr.aws/docker/library/$n $dest
           done
