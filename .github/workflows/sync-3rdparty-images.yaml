@@ -28,7 +28,7 @@ jobs:
       - name: Tag and push to ghcr
         run: |
           set -e
-          for n in ubuntu:latest alpine:edge alpine:3.19 centos:latest busybox:latest; do
+          for n in ubuntu:latest alpine:edge alpine:3.19 centos:latest busybox:latest registry:2; do
             dest="ghcr.io/${{ github.repository_owner }}/$n"
             oras cp --debug --no-tty public.ecr.aws/docker/library/$n $dest
           done
