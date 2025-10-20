@@ -31,21 +31,27 @@ jobs:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
   release:
     name: "Tagged Release"
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - linux-amd64  # ubuntu 24.04
+          - linux-arm64  # ubuntu 24.04-arm64
+    runs-on: ${{ matrix.platform == 'linux-amd64' && 'ubuntu-24.04' || matrix.platform == 'linux-arm64' && 'ubuntu-24.04-arm' }}
     # needs ci for the cached stacker binary
     needs: [build-id, ci]
     steps:
       - uses: actions/cache@v4
         id: restore-build
         with:
-          path: stacker
-          key: ${{needs.build-id.outputs.build-id}}
+          path: stacker-${{ matrix.platform }}
+          key: ${{needs.build-id.outputs.build-id}}-${{ matrix.platform }}
       - if: github.event_name == 'release' && github.event.action == 'published'
         name: Publish artifacts on releases
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: stacker
+          file: stacker-${{ matrix.platform }}
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: true
