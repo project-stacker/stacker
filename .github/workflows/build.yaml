@@ -122,5 +122,5 @@ jobs:
       - uses: actions/cache@v4
         id: restore-build
         with:
-          path: stacker
-          key: ${{ inputs.build-id }}
+          path: stacker-${{ matrix.platform }}
+          key: ${{ inputs.build-id }}-${{ matrix.platform }}
