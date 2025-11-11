@@ -21,36 +21,52 @@ installdeps_fedora() {
     sudo dnf install bsdtar
 }
 
+COMMON_DEBS=(
+	apache2-utils
+	build-essential
+	cryptsetup-bin
+	curl
+	erofsfuse
+	erofs-utils
+	golang-go
+	jq
+	libacl1-dev
+	libarchive-tools
+	libassuan-dev
+	libbtrfs-dev
+	libcap-dev
+	libcryptsetup-dev
+	libdevmapper-dev
+	libgpgme-dev
+	libpam0g-dev
+	libseccomp-dev
+	libselinux1-dev
+	libssl-dev
+	libzstd-dev
+	lxc-dev
+	parallel
+	pkg-config
+	psmisc
+	shellcheck
+	squashfs-tools
+	squashfuse
+	uidmap
+	uuid-runtime
+	zip
+)
+
+SKOPEO_DEBS=(
+    libgpgme-dev
+    libassuan-dev
+    libbtrfs-dev
+    libdevmapper-dev
+    pkg-config
+)
+
 installdeps_ubuntu() {
     PKGS=(
-        apache2-utils
-        build-essential
-        cryptsetup-bin
-        erofsfuse
-        erofs-utils
-        jq
-        libacl1-dev
-        libarchive-tools
-        libcap-dev
-        libcryptsetup-dev
-        libdevmapper-dev
         liblxc-dev
-        libpam0g-dev
-        libseccomp-dev
-        libselinux1-dev
-        libssl-dev
-        libzstd-dev
-        lxc-dev
         lxc-utils
-        parallel
-        pkg-config
-        psmisc
-        shellcheck
-        squashfs-tools
-        squashfuse
-        uidmap
-        uuid-runtime
-        zip
     )
 
     case "$VERSION_ID" in
@@ -73,31 +89,62 @@ installdeps_ubuntu() {
             ;;
     esac
 
+    sudo apt update
+    echo "Checking lxc-dev policy after possible ppa install"
+    sudo apt-cache policy lxc-dev
+
     # allow array to expand
-    #shellcheck disable=2206
-    sudo apt -yy install ${PKGS[*]}
+    #shellcheck disable=2206,2048,2086
+    sudo apt -yy install ${COMMON_DEBS[*]} ${PKGS[*]}
 
     # Work around an Ubuntu packaging bug. Fixed in 23.04 onward.
     if [ "$VERSION_ID" != "24.04" ]; then
         sudo sed -i 's/#define LXC_DEVEL 1/#define LXC_DEVEL 0/' /usr/include/lxc/version.h
     fi
 
-    # skopeo deps
-    sudo apt -yy install \
-       libgpgme-dev \
-       libassuan-dev \
-       libbtrfs-dev \
-       libdevmapper-dev \
-       pkg-config
+    # skopeo requirements
+    # allow array to expand
+    #shellcheck disable=2206,2048,2086
+    sudo apt -yy install ${SKOPEO_DEBS[*]}
     if ! command -v go 2>/dev/null; then
         sudo apt -yy install golang-go
         go version
     fi
 
     # cloud kernels, like linux-azure, don't include erofs in the linux-modules package and instead put it linux-modules-extra
-    if ! modinfo erofs &>/dev/null; then
-        sudo apt -yy install linux-modules-extra-$(uname -r)
+    if ! sudo modinfo erofs &>/dev/null; then
+        sudo apt -yy install "linux-modules-extra-$(uname -r)"
     fi
+}
+
+installdeps_debian() {
+    PKGS=(
+        lxc-dev
+        zlib1g-dev
+    )
+
+    # allow array to expand
+    #shellcheck disable=2206,2048,2086
+    sudo apt-get -yy install ${COMMON_DEBS[*]} ${PKGS[*]}
+
+    # skopeo requirements
+    # allow array to expand
+    #shellcheck disable=2206,2048,2086
+    sudo apt -yy install ${SKOPEO_DEBS[*]}
+    if ! command -v go 2>/dev/null; then
+        sudo apt -yy install golang-go
+        go version
+    fi
+
+    # make sure we have erofs kernel module
+    if ! sudo modinfo erofs &>/dev/null; then
+        echo "missing erofs kernel module; please install correct linux kernel package with erorfs module"
+        exit 1
+    fi
+
+    case "$VERSION_ID" in
+        13) enable_userns;;
+    esac
 }
 
 enable_userns() {
@@ -126,10 +173,12 @@ installdeps_golang() {
 }
 
 . /etc/os-release
+lsb_release -rd
 
 # install platform deps
-case $ID_LIKE in
-    debian|ubuntu) installdeps_ubuntu;;
+case $ID in
+    ubuntu) installdeps_ubuntu;;
+    debian) installdeps_debian;;
     redhat|fedora) installdeps_fedora;;
     *)
         echo "Unknown os ID_LIKE value $ID_LIKE"
