@@ -181,7 +181,24 @@ function cmp_files() {
     return 0
 }
 
+function check_env_zot() {
+  if [ -z "$ZOT_HOST" ]; then
+     echo "ERROR: ZOT_HOST variable is empty"
+     return 1
+  fi
+  if [ -z "$ZOT_PORT" ]; then
+    echo "ERROR: ZOT_PORT variable is empty"
+    return 1
+  fi
+  return 0
+}
+
 function write_plain_zot_config {
+  if ! check_env_zot; then
+    echo "ERROR: invalid zot env values"
+    return 1
+  fi
+
   cat > $TEST_TMPDIR/zot-config.json << EOF
 {
   "distSpecVersion": "1.1.0-dev",
