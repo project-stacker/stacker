@@ -224,9 +224,11 @@ test-cov: stacker-cov download-tools
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
 
+CLONE_D ?= "$(BUILD_D)/oci-clone"
+
 .PHONY: docker-clone
 docker-clone: $(SKOPEO)
-	./tools/oci-copy "$(BUILD_D)/oci-clone" $(STACKER_BUILD_IMAGES)
+	./tools/oci-copy $(CLONE_D) $(STACKER_BUILD_IMAGES)
 
 .PHONY: show-info
 show-info:
