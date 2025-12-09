@@ -1,6 +1,7 @@
 *.swp
 *.stacker
 /stacker
+/stackertest-*
 /stacker-dynamic
 .build
 coverage.txt
