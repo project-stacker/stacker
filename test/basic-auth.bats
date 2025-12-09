@@ -20,6 +20,11 @@ function teardown() {
 @test "from: authenticated zot works" {
     require_privilege priv
 
+    if [ -z "${ZOT_HOST}${ZOT_PORT}" ]; then
+        echo "skipping test $BATS_SUITE_TEST_NUMBER because it requires running zot."
+        return 0
+    fi
+
     export XDG_RUNTIME_DIR=$TEST_TMPDIR
     mkdir -p $TEST_TMPDIR/containers/
     cat > $TEST_TMPDIR/containers/auth.json <<EOF
