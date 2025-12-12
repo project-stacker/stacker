@@ -79,7 +79,10 @@ EOF
 @test "python" {
   skip_slow_test
   git clone https://github.com/docker-library/python.git
-  cd python/3.11/alpine3.21
+  cd python
+  # pick a specific commit so we don't get broken by upstream changes:
+  git reset --hard aad39d215779f27b410b25f612b6680a75781edb
+  cd 3.11/alpine3.22
   chmod -R a+rw .
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=python
