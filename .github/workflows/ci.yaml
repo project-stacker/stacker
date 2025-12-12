@@ -11,13 +11,9 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
-    with:
-      slow-test: false
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
   coverage:
     uses: ./.github/workflows/coverage.yaml
-    with:
-      slow-test: false
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
