@@ -169,8 +169,10 @@ $(SKOPEO):
 
 $(BATS):
 	mkdir -p $(TOOLS_D)/bin
+	rm -rf bats-core
 	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git
 	cd bats-core; ./install.sh $(TOOLS_D) ; rm -rf bats-core
+	rm -rf $(TOP_LEVEL)/test/test_helper
 	mkdir -p $(TOP_LEVEL)/test/test_helper
 	git clone --depth 1 https://github.com/bats-core/bats-support $(TOP_LEVEL)/test/test_helper/bats-support
 	git clone --depth 1 https://github.com/bats-core/bats-assert $(TOP_LEVEL)/test/test_helper/bats-assert
@@ -178,6 +180,7 @@ $(BATS):
 
 
 $(UMOCI):
+	rm -rf ${GOPATH}/src/github.com/opencontainers/
 	mkdir -p ${GOPATH}/src/github.com/opencontainers/
 	git clone https://github.com/opencontainers/umoci.git ${GOPATH}/src/github.com/opencontainers/umoci
 	cd ${GOPATH}/src/github.com/opencontainers/umoci ; git reset --hard ${UMOCI_VERSION} ; make umoci ; mv umoci $(UMOCI)

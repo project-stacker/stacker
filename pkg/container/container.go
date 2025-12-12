@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/google/uuid"
 	"github.com/lxc/go-lxc"
 	"github.com/pkg/errors"
 	embed_exec "stackerbuild.io/stacker/pkg/embed-exec"
@@ -23,8 +24,9 @@ const (
 
 // our representation of a container
 type Container struct {
-	sc types.StackerConfig
-	c  *lxc.Container
+	sc          types.StackerConfig
+	c           *lxc.Container
+	displayName string
 }
 
 func New(sc types.StackerConfig, name string) (*Container, error) {
@@ -36,17 +38,22 @@ func New(sc types.StackerConfig, name string) (*Container, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	lxcC, err := lxc.NewContainer(name, sc.RootFSDir)
+	// add a UUID to the container name given to LXC so that the command socket
+	// it creates for this container can not clash with any other container
+	// building the same image. Keep the image name around as displayName to use
+	// for mount points, etc.
+	uniqname := fmt.Sprintf("%s-%s", name, uuid.NewString())
+	lxcC, err := lxc.NewContainer(uniqname, sc.RootFSDir)
 	if err != nil {
 		return nil, err
 	}
-	c := &Container{sc: sc, c: lxcC}
+	c := &Container{sc: sc, c: lxcC, displayName: name}
 
 	if err := c.c.SetLogLevel(lxc.TRACE); err != nil {
 		return nil, err
 	}
 
-	logFile := path.Join(sc.StackerDir, "lxc.log")
+	logFile := fmt.Sprintf("%s/lxc-%s.log", sc.StackerDir, name)
 	err = c.c.SetLogFile(logFile)
 	if err != nil {
 		return nil, err
@@ -136,7 +143,7 @@ func (c *Container) Execute(args []string, stdin io.Reader) error {
 	// we want to be sure to remove the /stacker from the generated
 	// filesystem after execution. we should probably parameterize this in
 	// the storage API.
-	defer os.RemoveAll(path.Join(c.sc.RootFSDir, c.c.Name(), "overlay", "stacker"))
+	defer os.RemoveAll(path.Join(c.sc.RootFSDir, c.displayName, "overlay", "stacker"))
 
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,
