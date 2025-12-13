@@ -113,7 +113,7 @@ jobs:
           make publish-stacker-bin
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ (matrix.privilege-level == 'priv') && (matrix.go-version == '1.23.x') }}
+        if: ${{ (matrix.privilege-level == 'priv')}}
         with:
           # if there is more than 1 go-version, we would need to account for that here.
           name: stacker-${{ matrix.platform }}
