@@ -26,6 +26,12 @@ on:
         type: boolean
         description: 'Should slow tests be run?'
         default: true
+      registry-service:
+        required: false
+        type: string
+        description: 'registry service OCI image URI'
+        default: "ghcr.io/project-stacker/registry:2"
+
     secrets:
       codecov_token:
         required: true
@@ -35,7 +41,7 @@ jobs:
     runs-on: ubuntu-24.04
     services:
       registry:
-        image: ghcr.io/project-stacker/registry:2
+        image: ${{ inputs.registry-service }}
         ports:
           - 5000:5000
     strategy:
@@ -91,6 +97,7 @@ jobs:
           go tool covdata percent -i $GOCOVERDIR
           ls -altR $GOCOVERDIR
         env:
+          REGISTRY_SERVICE: ${{ inputs.registry-service }}
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
@@ -104,7 +111,7 @@ jobs:
           files: coverage-${{ matrix.privilege-level}}.txt
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ (matrix.privilege-level == 'priv')}}
+        if: ${{ (matrix.privilege-level == 'priv') }}
         with:
           # if there is more than 1 go-version, we would need to account for that here.
           name: binary-cov

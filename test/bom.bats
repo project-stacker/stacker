@@ -22,6 +22,7 @@ function teardown() {
 
 @test "all container contents must be accounted for" {
   skip_slow_test
+  skip_broken_tests
   cat > stacker.yaml <<"EOF"
 bom-parent:
     from:

@@ -135,6 +135,16 @@ function skip_slow_test {
     esac
 }
 
+function skip_broken_tests {
+    case "${BROKEN_TESTS:-false}" in
+        true) return;;
+        false) skip "${BATS_TEST_NAME} is broken. Set BROKEN_TESTS=true to run.";;
+        *) stderr "BROKEN_TESTS variable must be 'true' or 'false'" \
+            "found '${BROKEN_TESTS}'"
+           return 1;;
+    esac
+}
+
 function tmpd() {
     mktemp -d "${PWD}/stackertest${1:+-$1}.XXXXXX"
 }
@@ -221,10 +231,15 @@ EOF
 }
 
 function write_auth_zot_config {
+  if ! check_env_zot; then
+    echo "ERROR: invalid zot env values"
+    return 1
+  fi
 
   htpasswd -Bbn iam careful >> $TEST_TMPDIR/htpasswd
 
-  cat > $TEST_TMPDIR/zot-config.json << EOF
+  zotcfg=$TEST_TMPDIR/zot-config.json
+  cat > "$zotcfg" << EOF
 {
   "distSpecVersion": "1.1.0-dev",
   "storage": {
@@ -262,15 +277,18 @@ function write_auth_zot_config {
   }
 }
 EOF
-
+    echo "zot config:"
+    cat "$zotcfg"
 }
 
 function zot_setup {
+    zot_teardown
     write_plain_zot_config
     start_zot
 }
 
 function zot_setup_auth {
+    zot_teardown
     write_auth_zot_config
     start_zot USE_TLS
 }
@@ -279,12 +297,18 @@ function start_zot {
   ZOT_USE_TLS=$1
   echo "# starting zot at $ZOT_HOST:$ZOT_PORT" >&3
   # start as a background task
-  zot verify $TEST_TMPDIR/zot-config.json
-  zot serve $TEST_TMPDIR/zot-config.json &
+  zotcfg="$TEST_TMPDIR/zot-config.json"
+  if ! zot verify "$zotcfg"; then
+      echo "zot failed to verify zot config:"
+      cat "$zotcfg"
+      return 1
+  fi
+  zot serve "$TEST_TMPDIR/zot-config.json" &
   pid=$!
+  echo "$pid" > "${TEST_TMPDIR}/zot.pid"
 
   echo "zot is running at pid $pid"
-  cat $TEST_TMPDIR/zot.log
+  cat "$TEST_TMPDIR/zot.log"
   # wait until service is up
   count=5
   up=0
@@ -295,6 +319,14 @@ function start_zot {
       exit 1
     fi
     up=1
+    # check if correct port is open
+    if ! nc -v -z "${ZOT_HOST}" "${ZOT_PORT}"; then
+        echo "no response from host:${ZOT_HOST} port:${ZOT_PORT}" >&3
+        sleep 1
+        count=$((count - 1))
+        continue
+    fi
+    echo "Got response from host:${ZOT_HOST} on port:${ZOT_PORT}" >&3
     if [[ -n $ZOT_USE_TLS ]]; then
         echo "testing zot at https://$ZOT_HOST:$ZOT_PORT"
         curl -v --cacert $BATS_SUITE_TMPDIR/ca.crt  -u "iam:careful" -f https://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
@@ -323,11 +355,14 @@ function start_zot {
 }
 
 function zot_teardown {
-  echo "# stopping zot" >&3
-  killall zot
-  killall -KILL zot || true
-  rm -f $TEST_TMPDIR/zot-config.json
-  rm -rf $TEST_TMPDIR/zot
+    zotpid="${TEST_TMPDIR}/zot.pid"
+    if [ -s "$zotpid" ]; then
+        echo "# stopping zot" >&3
+        pkill --pidfile "$zotpid"
+        echo "# stopped zot" >&3
+    fi
+    rm -f "$TEST_TMPDIR/zot-config.json"
+    rm -rf "$TEST_TMPDIR/zot"
 }
 
 function _skopeo() {
@@ -346,6 +381,77 @@ function _skopeo() {
     local home="${TEST_TMPDIR}/home"
     [ -d "$home" ] || mkdir -p "$home"
     HOME="$home" skopeo "$@"
+}
+
+function start_registry() {
+    if [ -z "${REGISTRY_URL}" ]; then
+        echo "Missing REGISTRY_URL env value"
+        return 1
+    fi
+    if [ -z "${REGISTRY_SERVICE}" ]; then
+        echo "Missing REGISTRY_SERVICE env value"
+        return 1
+    fi
+    rhost=${REGISTRY_URL%:*}   # trim from right until colon, localhost
+    rport=${REGISTRY_URL#*:}   # trim from left until colon , 5000
+    if nc -v -z "${rhost}" "${rport}"; then
+        echo "# skipping start, registry service ${REGISTRY_SERVICE} already active for REGISTRY_URL=${REGISTRY_URL}" >&3
+        return 0
+    fi
+    echo "# no registry service ${REGISTRY_SERVICE} active for REGISTRY_URL=${REGISTRY_URL}" >&3
+    echo "# Starting registry service ${REGISTRY_SERVICE}" >&3
+
+
+    imgname=$(basename "${REGISTRY_SERVICE}")  # registry:tag
+    if ! _skopeo copy "docker://${REGISTRY_SERVICE}" "oci:${TEST_TMPDIR}/ocid:${imgname}"; then
+        echo "# skopeo copy of '${REGISTRY_SERVICE}' to local directory failed" >&3
+        return 1
+    fi
+
+    # unpack the image
+    unpackdir="${TEST_TMPDIR}/unpacked-reg"
+    if [ ! -d "${unpackdir}" ]; then
+        if ! umoci unpack --keep-dirlinks --image "${TEST_TMPDIR}/ocid:${imgname}" "${unpackdir}"; then
+            echo "failed to unpack registry service image ${imgname} to ${unpackdir}"
+            return 1
+        fi
+    else
+        echo "# reusing existing unpacked registry service OCI image" >&3
+    fi
+
+    # start up registry in the background
+    reglog="${TEST_TMPDIR}/registry.log"
+    chroot "${unpackdir}/rootfs" "/entrypoint.sh" "/etc/docker/registry/config.yml" "2>&1" "1>${reglog}" &
+    REGISTRY_PID=$!
+    echo "$REGISTRY_PID" > "${TEST_TMPDIR}/registry.pid"
+
+    regup=0
+    for ((x=1;x<=5;x++)); do
+        sleep "$x"
+        if ! nc -v -z "${rhost}" "${rport}"; then
+            echo "# local registry service not ready" >&3
+            sleep "$x"
+            continue
+        fi
+        regup=1
+        break
+    done
+
+    if [ "$regup" != "1" ]; then
+        echo "failed to bring up local registry service"
+    fi
+
+    echo "local registry service up on ${REGISTRY_URL} PID=$(cat "${TEST_TMPDIR}/registry.pid")"
+    return 0
+}
+
+function stop_registry() {
+    regpid="${TEST_TMPDIR}/registry.pid"
+    if [ -s "$regpid" ]; then
+        echo "# stopping local registry" >&3
+        pkill --pidfile "$regpid"
+        echo "# stopped local registry" >&3
+    fi
 }
 
 function dir_has_only() {

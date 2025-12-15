@@ -15,7 +15,7 @@ def check_env(env_to_check):
     """
     check for required env variables
     """
-    required_vars = ["ZOT_HOST", "ZOT_PORT", "REGISTRY_URL"]
+    required_vars = ["ZOT_HOST", "ZOT_PORT", "REGISTRY_SERVICE", "REGISTRY_URL"]
     errors = []
     for req_var in required_vars:
         if req_var not in env_to_check:
