@@ -50,6 +50,7 @@ for priv in priv_to_test:
         str(options.jobs),
         "--tap",
         "--timing",
+        "--verbose-run",
     ]
     cmd.extend(options.tests)
 
