@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+"""
+test harness for stacker
+"""
 
 import argparse
 import glob
@@ -7,7 +10,7 @@ import os
 import subprocess
 import sys
 
-priv_levels=("priv", "unpriv")
+priv_levels = ("priv", "unpriv")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--privilege-level", choices=priv_levels)
@@ -16,13 +19,21 @@ parser.add_argument("tests", nargs="*", default=glob.glob("./test/*.bats"))
 
 options = parser.parse_args()
 
-priv_to_test=priv_levels
+priv_to_test = priv_levels
 
 if options.privilege_level is not None:
     priv_to_test = [options.privilege_level]
 
 for priv in priv_to_test:
-    cmd = ["bats", "--setup-suite-file", "./test/setup_suite.bash", "--jobs", str(options.jobs), "--tap", "--timing"]
+    cmd = [
+        "bats",
+        "--setup-suite-file",
+        "./test/setup_suite.bash",
+        "--jobs",
+        str(options.jobs),
+        "--tap",
+        "--timing",
+    ]
     cmd.extend(options.tests)
 
     env = os.environ.copy()
