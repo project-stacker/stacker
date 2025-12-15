@@ -10,6 +10,23 @@ import os
 import subprocess
 import sys
 
+
+def check_env(env_to_check):
+    """
+    check for required env variables
+    """
+    required_vars = ["ZOT_HOST", "ZOT_PORT", "REGISTRY_URL"]
+    errors = []
+    for req_var in required_vars:
+        if req_var not in env_to_check:
+            errors.append(f"missing env variable '{req_var}'")
+        if not env_to_check.get(req_var):
+            errors.append(f"env variable '{req_var}' is empyty")
+
+    if len(errors) > 0:
+        raise RuntimeError(f"EnvCheckFailures: {errors}")
+
+
 priv_levels = ("priv", "unpriv")
 
 parser = argparse.ArgumentParser()
@@ -38,6 +55,11 @@ for priv in priv_to_test:
 
     env = os.environ.copy()
     env["PRIVILEGE_LEVEL"] = priv
+    try:
+        check_env
+    except RuntimeError as err:
+        print(f"Failed environment variable check: {err}")
+        sys.exit(1)
 
     print("running tests in modes:", priv)
     try:
