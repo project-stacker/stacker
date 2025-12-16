@@ -44,6 +44,7 @@ TOOLS_D := $(HACK_D)/tools
 REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
 SKOPEO = $(TOOLS_D)/bin/skopeo
+CONTAINERD = $(TOOLS_D)/bin/containerd
 export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
@@ -135,7 +136,7 @@ go-test:
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
 
 .PHONY: download-tools
-download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
+download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO) $(CONTAINERD)
 
 $(GOLANGCI_LINT):
 	@mkdir -p $(dir $@)
@@ -164,6 +165,16 @@ $(SKOPEO):
 	git checkout tags/v$(SKOPEO_VERSION) -b tag-$(SKOPEO_VERSION); \
 	make bin/skopeo; \
 	cp bin/skopeo $(SKOPEO); \
+	cd $(TOP_LEVEL); \
+	rm -rf $$tmpdir;
+
+$(CONTAINERD):
+	@set -e; mkdir -p "$(TOOLS_D)/bin"; \
+	tmpdir=$$(mktemp -d); \
+	cd $$tmpdir; \
+	wget https://github.com/containerd/containerd/releases/download/v2.1.4/containerd-2.1.4-linux-amd64.tar.gz; \
+	tar xvf containerd-2.1.4-linux-amd64.tar.gz; \
+	cp bin/containerd $(CONTAINERD);
 	cd $(TOP_LEVEL); \
 	rm -rf $$tmpdir;
 
