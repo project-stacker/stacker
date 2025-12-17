@@ -1,5 +1,13 @@
 load helpers
 
+function setup_file() {
+    start_registry
+}
+
+function teardown_file() {
+    stop_registry
+}
+
 function setup() {
     stacker_setup
     mkdir -p ocibuilds/sub1

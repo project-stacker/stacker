@@ -69,6 +69,10 @@ installdeps_ubuntu() {
         lxc-utils
     )
 
+    if ! command -v add-apt-repository; then
+        sudo apt-get -y install software-properties-common
+    fi
+
     case "$VERSION_ID" in
         22.04)
             sudo add-apt-repository -y ppa:project-machine/squashfuse

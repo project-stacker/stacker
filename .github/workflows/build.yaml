@@ -26,6 +26,12 @@ on:
         type: boolean
         description: 'Should slow tests be run?'
         default: true
+      registry-service:
+        required: false
+        type: string
+        description: 'registry service OCI image URI'
+        default: "ghcr.io/project-stacker/registry:2"
+
     secrets:
       codecov_token:
         required: true
@@ -34,7 +40,7 @@ jobs:
   build:
     services:
       registry:
-        image: ghcr.io/project-stacker/registry:2
+        image: ${{ inputs.registry-service }}
         ports:
           - 5000:5000
     strategy:
@@ -88,6 +94,7 @@ jobs:
         run: |
           make stacker VERSION_FULL=${{ inputs.build-id }}
         env:
+          REGISTRY_SERVICE: ${{ inputs.registry-service }}
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
@@ -98,6 +105,7 @@ jobs:
         run: |
           make check VERSION_FULL=${{ inputs.build-id }} PRIVILEGE_LEVEL=${{ matrix.privilege-level }}
         env:
+          REGISTRY_SERVICE: ${{ inputs.registry-service }}
           REGISTRY_URL: localhost:5000
           ZOT_HOST: localhost
           ZOT_PORT: 8080
@@ -113,7 +121,7 @@ jobs:
           make publish-stacker-bin
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ (matrix.privilege-level == 'priv') && (matrix.go-version == '1.23.x') }}
+        if: ${{ (matrix.privilege-level == 'priv') }}
         with:
           # if there is more than 1 go-version, we would need to account for that here.
           name: stacker-${{ matrix.platform }}
