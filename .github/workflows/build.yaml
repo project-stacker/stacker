@@ -54,7 +54,7 @@ jobs:
     runs-on: ${{ matrix.platform == 'linux-amd64' && 'ubuntu-24.04' || matrix.platform == 'linux-arm64' && 'ubuntu-24.04-arm' }}
     name: "Build platform ${{ matrix.platform }} golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
       - uses: benjlevesque/short-sha@v2.1
