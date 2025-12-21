@@ -94,7 +94,7 @@ func shouldSkipInternalUserns(ctx *cli.Context) bool {
 		return false
 	}
 
-	if arg0 == "bom" || arg0 == "unpriv-setup" || arg0 == "internal-go" {
+	if arg0 == "unpriv-setup" || arg0 == "internal-go" {
 		return true
 	}
 
@@ -131,7 +131,6 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		&buildCmd,
-		&bomCmd,
 		&recursiveBuildCmd,
 		&convertCmd,
 		&publishCmd,
