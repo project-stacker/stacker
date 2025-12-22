@@ -246,7 +246,8 @@ func (o *overlay) initializeBasesInOutput(name string, layerTypes []types.LayerT
 		defer oci.Close()
 
 		for _, layerType := range layerTypes {
-			err = umoci.NewImage(oci, layerType.LayerName(name))
+			now := time.Now()
+			err = umoci.NewImage(oci, layerType.LayerName(name), &now)
 			if err != nil {
 				return err
 			}

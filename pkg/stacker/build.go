@@ -526,30 +526,6 @@ func (b *Builder) build(s types.Storage, file string) error {
 			}
 		}
 
-		// build artifacts such as BOMs, etc
-		if l.Bom != nil && l.Bom.Generate {
-			log.Debugf("generating layer artifacts for %s", name)
-
-			if err := ImportArtifacts(opts.Config, l.From, name); err != nil {
-				log.Errorf("unable to import previously built artifacts, err:%v", err)
-				return err
-			}
-
-			for _, pkg := range l.Bom.Packages {
-				if err := BuildLayerArtifacts(opts.Config, s, l, name, pkg); err != nil {
-					log.Errorf("failed to generate layer artifacts for %s - %v", name, err)
-					return err
-				}
-			}
-
-			if err := VerifyLayerArtifacts(opts.Config, s, l, name); err != nil {
-				log.Errorf("failed to validate layer artifacts for %s - %v", name, err)
-				// the generated bom is invalid, remove it so we don't publish it and also get a cache miss for rebuilds
-				_ = os.Remove(path.Join(opts.Config.StackerDir, "artifacts", name, fmt.Sprintf("%s.json", name)))
-				return err
-			}
-		}
-
 		// This is a build only layer, meaning we don't need to include
 		// it in the final image, as outputs from it are going to be
 		// imported into future images. Let's just snapshot it and add
@@ -810,21 +786,6 @@ func SetupLayerConfig(config types.StackerConfig, c *container.Container, l type
 		}
 	} else {
 		log.Debugf("not bind mounting %s into container", importsDir)
-	}
-
-	// make the artifacts path available so that boms can be built from the run directive
-	if l.Bom != nil {
-		artifactsDir := path.Join(config.StackerDir, "artifacts", name)
-		if _, err := os.Stat(artifactsDir); err == nil {
-			d := filepath.Join(inDir, "artifacts")
-			log.Debugf("bind mounting %s dir into container at %s", artifactsDir, d)
-			err = c.BindMount(artifactsDir, d, "rw")
-			if err != nil {
-				return err
-			}
-		} else {
-			log.Debugf("not bind mounting %s into container", artifactsDir)
-		}
 	}
 
 	for k, v := range env {
