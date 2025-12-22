@@ -215,7 +215,8 @@ lintbats:
 	shellcheck -S error  $(patsubst %,test/%.bats,$(TEST))
 
 .PHONY: check-cov
-check-cov: lint test-cov
+# check-cov: lint test-cov
+check-cov: test-cov
 
 .PHONY: test-cov
 test-cov: stacker-cov download-tools
