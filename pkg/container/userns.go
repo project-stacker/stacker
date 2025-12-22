@@ -48,33 +48,37 @@ func MaybeRunInNamespace(config types.StackerConfig, userCmd []string) error {
 
 		args = append(args, "usernsexec")
 		wroteU := false
-		for _, idm := range idmapSet.Idmap {
-			if idm.Isuid {
+		setSize := idmapSet.Len()
+		for s := 0; s < setSize; s++ {
+			idm := idmapSet.Entries[s]
+			if idm.IsUID {
 				if !wroteU {
 					wroteU = true
 					args = append(args, "u")
 				}
 				args = append(
 					args,
-					fmt.Sprintf("%d", idm.Nsid),
-					fmt.Sprintf("%d", idm.Hostid),
-					fmt.Sprintf("%d", idm.Maprange),
+					fmt.Sprintf("%d", idm.NSID),
+					fmt.Sprintf("%d", idm.HostID),
+					fmt.Sprintf("%d", idm.MapRange),
 				)
 			}
 		}
 
 		wroteG := false
-		for _, idm := range idmapSet.Idmap {
-			if idm.Isgid {
+		setSize = idmapSet.Len()
+		for s := 0; s < setSize; s++ {
+			idm := idmapSet.Entries[s]
+			if idm.IsGID {
 				if !wroteG {
 					wroteG = true
 					args = append(args, "g")
 				}
 				args = append(
 					args,
-					fmt.Sprintf("%d", idm.Nsid),
-					fmt.Sprintf("%d", idm.Hostid),
-					fmt.Sprintf("%d", idm.Maprange),
+					fmt.Sprintf("%d", idm.NSID),
+					fmt.Sprintf("%d", idm.HostID),
+					fmt.Sprintf("%d", idm.MapRange),
 				)
 			}
 		}
