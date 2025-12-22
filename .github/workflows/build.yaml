@@ -44,7 +44,7 @@ jobs:
         ports:
           - 5000:5000
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         platform:
           - linux-amd64  # ubuntu 24.04
