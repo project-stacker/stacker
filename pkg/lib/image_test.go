@@ -32,7 +32,8 @@ func createImage(dir string, tag string) error {
 	}
 	defer oci.Close()
 
-	err = umoci.NewImage(oci, tag)
+	now := time.Now()
+	err = umoci.NewImage(oci, tag, &now)
 	if err != nil {
 		return err
 	}
@@ -54,7 +55,7 @@ func createImage(dir string, tag string) error {
 		return err
 	}
 
-	now := time.Now()
+	now = time.Now()
 	history := &ispec.History{
 		Created:    &now,
 		CreatedBy:  fmt.Sprintf("stacker test suite %s", tag),
