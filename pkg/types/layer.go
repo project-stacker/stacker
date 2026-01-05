@@ -259,6 +259,7 @@ type Layer struct {
 	Annotations     map[string]string `yaml:"annotations" json:"annotations,omitempty"`
 	OS              *string           `yaml:"os" json:"os,omitempty"`
 	Arch            *string           `yaml:"arch" json:"arch,omitempty"`
+	Bom             *Bom              `yaml:"bom" json:"bom,omitempty"`
 	WasLegacyImport bool              `yaml:"was_legacy_import" json:"was_legacy_import,omitempty"`
 }
 
