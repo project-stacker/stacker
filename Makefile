@@ -55,8 +55,9 @@ UMOCI_VERSION := main
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 
-GOLANGCI_LINT_VERSION = v1.64.8
-GOLANGCI_LINT = $(TOOLS_D)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
+GOLANGCI_LINT_VERSION = 2.7.2
+GOLANGCI_LINT_URL = https://github.com/golangci/golangci-lint/releases/download
+GOLANGCI_LINT = $(TOOLS_D)/bin/golangci-lint
 
 STAGE1_STACKER ?= ./stacker-dynamic
 STACKER_PUBLISH_BIN := stacker-$(GOOS)-$(GOARCH)
@@ -138,10 +139,11 @@ go-test:
 download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
 
 $(GOLANGCI_LINT):
-	@mkdir -p $(dir $@)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(dir $@)"
-	@mkdir -p "$(TOOLS_D)/bin"
-	ln -sf "$@" "$(TOOLS_D)/bin/"
+	@[ -x $(GOLANGCI_LINT) ] || \
+		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) ..." && \
+		curl -sSfL $(GOLANGCI_LINT_URL)/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-$(GOARCH).tar.gz | \
+		tar -C $(TOOLS_D)/bin -xzf - --strip-components=1 golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-$(GOARCH)/golangci-lint
+	@$(GOLANGCI_LINT) version
 
 # dlbin is used with $(call dlbin,path,url)
 # it downloads a url to path and makes it executable.
