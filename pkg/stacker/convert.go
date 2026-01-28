@@ -210,6 +210,7 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			c.env[key] = val
 		}
 	case "workdir":
+		layer.Run = append(layer.Run, fmt.Sprintf("mkdir -p %s", cmd.Value[0]))
 		layer.Run = append(layer.Run, fmt.Sprintf("cd %s", cmd.Value[0]))
 		c.currDir = cmd.Value[0]
 	case "arg":
