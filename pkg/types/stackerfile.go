@@ -53,6 +53,10 @@ func (sf *Stackerfile) Get(name string) (Layer, bool) {
 	return layer, ok
 }
 
+func (sf *Stackerfile) FilePath() string {
+	return sf.path
+}
+
 func (sf *Stackerfile) Len() int {
 	return len(sf.internal)
 }
