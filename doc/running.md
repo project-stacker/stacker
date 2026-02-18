@@ -16,6 +16,11 @@ expects to be able to modify things in `/sys` will fail, since `/sys` is bind
 mounted from the host's `/sys` (sysfs cannot be mounted in a network namespace
 that a user doesn't own).
 
+Stacker also passes through `SOURCE_DATE_EPOCH` if set. When this environment
+variable is set to a Unix timestamp, stacker produces reproducible OCI images
+by clamping all timestamps and stabilizing author metadata. See the
+[stacker.yaml specification](stacker_yaml.md#reproducible-builds) for details.
+
 When running as an unprivileged user, stacker will attempt to run things inside
 a user namespace owned by the user that executed the command, and will try to
 map 65k user and group ids to meet the POSIX standard. This means that

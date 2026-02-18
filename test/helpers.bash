@@ -48,9 +48,9 @@ function run_stacker {
     else
         skip_if_no_unpriv_overlay
         if [[ -n "$NO_DEBUG" && "$NO_DEBUG" = 1 ]]; then
-            run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
+            run sudo --preserve-env=SOURCE_DATE_EPOCH -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
         else
-            run sudo -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
+            run sudo --preserve-env=SOURCE_DATE_EPOCH -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
         fi
     fi
 }

@@ -202,7 +202,7 @@ env into the container.  To let all variables through simply set
 
 If `build_env_passthrough` is not set, then the default value is to allow
 through proxy variables `HTTP_PROXY, HTTPS_PROXY, FTP_PROXY, http_proxy,
-https_proxy, ftp_proxy`.
+https_proxy, ftp_proxy`, as well as `SOURCE_DATE_EPOCH`.
 
 Values in the `build_env` override values passed through via
 
@@ -288,6 +288,38 @@ defaults to the host operating system if not specified.
 `arch` is a user-specified string value indicating which machine _architecture_ this image is being
 built for, for example, `amd64`, `arm64`, etc. It is an optional field and it
 defaults to the host machine architecture if not specified.
+
+## Reproducible Builds
+
+Stacker supports the [`SOURCE_DATE_EPOCH`](https://reproducible-builds.org/specs/source-date-epoch/)
+environment variable for producing reproducible OCI images. When this variable
+is set to a Unix timestamp, stacker will:
+
+- Set the image config `created` timestamp to the specified time instead of
+  the current time.
+- Set the `author` field to `"stacker"` instead of `user@hostname`, avoiding
+  host-specific metadata.
+- Use the specified timestamp for all OCI image history entries.
+- Clamp file timestamps in generated tar layers to the specified time
+  (via umoci).
+- Pass `SOURCE_DATE_EPOCH` through to the build environment so `run` commands
+  can also use it.
+
+### Usage
+
+```bash
+export SOURCE_DATE_EPOCH=1700000000
+stacker build
+```
+
+Building twice with the same `SOURCE_DATE_EPOCH` value and the same inputs
+will produce identical OCI image manifests, config digests, and layer digests.
+
+If `SOURCE_DATE_EPOCH` is set to a non-numeric value, stacker will exit with
+an error: `invalid SOURCE_DATE_EPOCH value`.
+
+When `SOURCE_DATE_EPOCH` is not set, stacker uses the current time and
+`user@hostname` as the author, matching its previous behavior.
 
 ## Substitution Syntax
 

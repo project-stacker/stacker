@@ -32,7 +32,7 @@ func createImage(dir string, tag string) error {
 	}
 	defer oci.Close()
 
-	err = umoci.NewImage(oci, tag)
+	err = umoci.NewImage(oci, tag, nil)
 	if err != nil {
 		return err
 	}

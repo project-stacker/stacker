@@ -9,8 +9,10 @@ import (
 	"path"
 	"path/filepath"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/pkg/errors"
@@ -303,6 +305,16 @@ func main() {
 		}
 
 		config.StorageType = ctx.String("storage-type")
+
+		// For reproducible builds
+		if sde := os.Getenv("SOURCE_DATE_EPOCH"); sde != "" {
+			epoch, err := strconv.ParseInt(sde, 10, 64)
+			if err != nil {
+				return errors.Errorf("invalid SOURCE_DATE_EPOCH value %q: %v", sde, err)
+			}
+			t := time.Unix(epoch, 0).UTC()
+			config.SourceDateEpoch = &t
+		}
 
 		fi, err := os.Stat(config.CacheFile())
 		if err != nil {

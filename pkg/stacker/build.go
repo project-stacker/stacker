@@ -257,7 +257,12 @@ func (b *Builder) updateOCIConfigForOutput(sf *types.Stackerfile, s types.Storag
 
 	author := fmt.Sprintf("%s@%s", username, host)
 
-	meta.Created = time.Now()
+	if opts.Config.SourceDateEpoch != nil {
+		meta.Created = *opts.Config.SourceDateEpoch
+		author = "stacker"
+	} else {
+		meta.Created = time.Now()
+	}
 	meta.Architecture = *l.Arch
 	meta.OS = *l.OS
 	meta.Author = author
