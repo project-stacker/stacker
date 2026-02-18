@@ -314,3 +314,40 @@ EOF
     echo "epoch.txt contents: $(cat dest/rootfs/epoch.txt)"
     [ "$(cat dest/rootfs/epoch.txt)" = "SOURCE_DATE_EPOCH=1700000000" ]
 }
+
+@test "SOURCE_DATE_EPOCH change invalidates build cache" {
+    cat > stacker.yaml <<"EOF"
+test:
+    from:
+        type: oci
+        url: ${{BUSYBOX_OCI}}
+    run: |
+        touch /etc/reproducible.conf
+        mkdir -p /var/data
+        echo "build artifact" > /var/data/output.txt
+EOF
+    # First build with one epoch
+    # shellcheck disable=SC2031
+    export SOURCE_DATE_EPOCH=1700000000
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+
+    config_path=$(get_config_path)
+    created1=$(cat "$config_path" | jq -r '.created')
+    echo "created1: $created1"
+    [ "$created1" = "2023-11-14T22:13:20Z" ]
+
+    # Second build with a DIFFERENT epoch — should NOT use cache
+    export SOURCE_DATE_EPOCH=1600000000
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    echo "$output"
+
+    # The output should indicate a cache miss, not "found cached layer"
+    [[ "$output" != *"found cached layer"* ]]
+
+    config_path=$(get_config_path)
+    created2=$(cat "$config_path" | jq -r '.created')
+    echo "created2: $created2"
+
+    # The timestamp must reflect the NEW epoch, proving a rebuild happened
+    [ "$created2" = "2020-09-13T12:26:40Z" ]
+}

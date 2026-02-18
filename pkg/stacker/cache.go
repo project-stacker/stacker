@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"time"
 
 	"github.com/mitchellh/hashstructure"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -22,7 +23,7 @@ import (
 	"stackerbuild.io/stacker/pkg/types"
 )
 
-const currentCacheVersion = 14
+const currentCacheVersion = 15
 
 type ImportType int
 
@@ -70,6 +71,11 @@ type CacheEntry struct {
 	// mismatch with the current base layer's CacheEntry, the layer should
 	// be rebuilt.
 	Base string
+
+	// SourceDateEpoch is the Unix timestamp from SOURCE_DATE_EPOCH that
+	// was in effect when this layer was built. A change in this value
+	// causes a cache miss because it affects image timestamps and author.
+	SourceDateEpoch *int64 `json:"source_date_epoch,omitempty"`
 }
 
 type BuildCache struct {
@@ -203,6 +209,13 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 
 	if baseHash != result.Base {
 		log.Infof("cache miss because base layer was changed")
+		return nil, false, nil
+	}
+
+	// Check if SOURCE_DATE_EPOCH has changed since the cached build.
+	currentEpoch := sourceDateEpochToInt64(c.config.SourceDateEpoch)
+	if !int64PtrEqual(currentEpoch, result.SourceDateEpoch) {
+		log.Infof("cache miss because SOURCE_DATE_EPOCH changed")
 		return nil, false, nil
 	}
 
@@ -465,12 +478,13 @@ func (c *BuildCache) Put(name string, manifests map[types.LayerType]ispec.Descri
 	}
 
 	ent := CacheEntry{
-		Manifests:   manifests,
-		Imports:     map[string]ImportHash{},
-		OverlayDirs: map[string]OverlayDirHash{},
-		Name:        name,
-		Layer:       l,
-		Base:        baseHash,
+		Manifests:       manifests,
+		Imports:         map[string]ImportHash{},
+		OverlayDirs:     map[string]OverlayDirHash{},
+		Name:            name,
+		Layer:           l,
+		Base:            baseHash,
+		SourceDateEpoch: sourceDateEpochToInt64(c.config.SourceDateEpoch),
 	}
 
 	for _, imp := range l.Imports {
@@ -525,4 +539,22 @@ func (c *BuildCache) persist() error {
 	}
 
 	return os.WriteFile(c.config.CacheFile(), content, 0600)
+}
+
+func sourceDateEpochToInt64(t *time.Time) *int64 {
+	if t == nil {
+		return nil
+	}
+	epoch := t.Unix()
+	return &epoch
+}
+
+func int64PtrEqual(a, b *int64) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
 }
