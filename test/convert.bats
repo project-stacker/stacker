@@ -72,7 +72,7 @@ EOF
 
 @test "elasticsearch" {
   skip_slow_test
-  git clone https://github.com/elastic/dockerfiles.git
+  git clone --branch v8.17.10 --depth 1 https://github.com/elastic/dockerfiles.git
   chmod -R a+rwx dockerfiles
   cd dockerfiles/elasticsearch
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
@@ -83,7 +83,6 @@ EOF
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
 }
-
 @test "python" {
   skip_slow_test
   git clone https://github.com/docker-library/python.git
