@@ -37,7 +37,7 @@ func TestLayerHashing(t *testing.T) {
 	}
 	defer oci.Close()
 
-	err = umoci.NewImage(oci, "centos")
+	err = umoci.NewImage(oci, "centos", nil)
 	if err != nil {
 		t.Fatalf("couldn't create fake centos image %v", err)
 	}

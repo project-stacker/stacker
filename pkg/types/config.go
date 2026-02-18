@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"path"
+	"time"
 )
 
 // StackerConfig is a struct that contains global (or widely used) stacker
@@ -15,6 +16,11 @@ type StackerConfig struct {
 	RootFSDir   string `yaml:"rootfs_dir"`
 	Debug       bool   `yaml:"-"`
 	StorageType string `yaml:"-"`
+
+	// SourceDateEpoch, if set, is used to clamp timestamps in OCI layers
+	// and image configs for reproducible builds. Parsed from the
+	// SOURCE_DATE_EPOCH environment variable.
+	SourceDateEpoch *time.Time `yaml:"-"`
 
 	// EmbeddedFS should contain a (statically linked) lxc-wrapper binary
 	// (built from cmd/lxc-wrapper/lxc-wrapper.c) at

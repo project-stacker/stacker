@@ -598,7 +598,8 @@ func buildEnv(passThrough []string, newEnv map[string]string,
 	}
 	defList := []string{
 		"ftp_proxy", "http_proxy", "https_proxy", "no_proxy",
-		"FTP_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "TERM"}
+		"FTP_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "TERM",
+		"SOURCE_DATE_EPOCH"}
 	matchList := defList
 	if len(passThrough) != 0 {
 		matchList = passThrough
