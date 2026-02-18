@@ -6,6 +6,7 @@
 .build
 coverage.txt
 hack/
+bats-core/
 
 # IDEs
 .vscode

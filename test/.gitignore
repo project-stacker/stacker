@@ -1,2 +1,5 @@
 centos
 ubuntu
+alpine
+busybox
+test_helper
