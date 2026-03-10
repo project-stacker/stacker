@@ -1,6 +1,6 @@
 module stackerbuild.io/stacker
 
-go 1.24.13
+go 1.25.8
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
@@ -172,3 +172,7 @@ replace golang.org/x/net => golang.org/x/net v0.38.0
 replace github.com/vbatts/go-mtree => github.com/vbatts/go-mtree v0.6.0
 
 replace github.com/docker/docker => github.com/docker/docker v25.0.6+incompatible
+
+replace github.com/sigstore/fulcio => github.com/sigstore/fulcio v1.8.3
+
+replace google.golang.org/grpc => google.golang.org/grpc v1.76.0
