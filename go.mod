@@ -7,7 +7,7 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/apparentlymart/go-shquot v0.0.1
 	github.com/cheggaaa/pb/v3 v3.1.2
-	github.com/containers/image/v5 v5.29.3
+	github.com/containers/image/v5 v5.34.3
 	github.com/dustin/go-humanize v1.0.1
 	github.com/google/uuid v1.5.0
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
@@ -171,3 +171,5 @@ replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.15
 replace golang.org/x/net => golang.org/x/net v0.38.0
 
 replace github.com/vbatts/go-mtree => github.com/vbatts/go-mtree v0.6.0
+
+replace github.com/docker/docker => github.com/docker/docker v25.0.6+incompatible
