@@ -4,11 +4,11 @@ import (
 	"os/user"
 	"strconv"
 
-	"github.com/lxc/incus/shared/idmap"
+	"github.com/lxc/incus/v6/shared/idmap"
 	"github.com/pkg/errors"
 )
 
-func ResolveCurrentIdmapSet() (*idmap.IdmapSet, error) {
+func ResolveCurrentIdmapSet() (*idmap.Set, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't resolve current user")
@@ -16,8 +16,8 @@ func ResolveCurrentIdmapSet() (*idmap.IdmapSet, error) {
 	return resolveIdmapSet(currentUser)
 }
 
-func resolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
-	idmapSet, err := idmap.DefaultIdmapSet("", user.Username)
+func resolveIdmapSet(user *user.User) (*idmap.Set, error) {
+	idmapSet, err := idmap.NewSetFromSystem(user.Username)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed parsing /etc/sub{u,g}idmap")
 	}
@@ -35,18 +35,18 @@ func resolveIdmapSet(user *user.User) (*idmap.IdmapSet, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "couldn't decode gid")
 		}
-		hostMap := []idmap.IdmapEntry{
-			idmap.IdmapEntry{
-				Isuid:    true,
-				Hostid:   int64(uid),
-				Nsid:     0,
-				Maprange: 1,
+		hostMap := []idmap.Entry{
+			idmap.Entry{
+				IsUID:    true,
+				HostID:   int64(uid),
+				NSID:     0,
+				MapRange: 1,
 			},
-			idmap.IdmapEntry{
-				Isgid:    true,
-				Hostid:   int64(gid),
-				Nsid:     0,
-				Maprange: 1,
+			idmap.Entry{
+				IsGID:    true,
+				HostID:   int64(gid),
+				NSID:     0,
+				MapRange: 1,
 			},
 		}
 

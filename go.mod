@@ -172,8 +172,12 @@ replace golang.org/x/net => golang.org/x/net v0.38.0
 
 replace github.com/vbatts/go-mtree => github.com/vbatts/go-mtree v0.6.0
 
-replace github.com/docker/docker => github.com/docker/docker v25.0.6+incompatible
+replace github.com/docker/docker => github.com/docker/docker v25.0.13+incompatible
 
 replace github.com/sigstore/fulcio => github.com/sigstore/fulcio v1.8.3
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.76.0
+
+replace github.com/containers/storage => github.com/containers/storage v1.58.0
+
+replace github.com/cyphar/filepath-securejoin => github.com/cyphar/filepath-securejoin v0.4.1
