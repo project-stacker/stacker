@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -184,28 +183,6 @@ func (p *Publisher) Publish(file string) error {
 					return err
 				}
 
-				if is.Type == types.DockerLayer && l.Bom != nil && l.Bom.Generate {
-					url, err := types.NewDockerishUrl(destUrl)
-					if err != nil {
-						return err
-					}
-
-					registry := url.Host
-					repo := url.Path
-
-					// publish sbom
-					if err := publishArtifact(path.Join(opts.Config.StackerDir, "artifacts", layerName, fmt.Sprintf("%s.json", layerName)),
-						"application/spdx+json", registry, repo, layerTypeTag, p.opts.Username, p.opts.Password, opts.SkipTLS); err != nil {
-						return err
-					}
-
-					// publish inventory
-					if err := publishArtifact(path.Join(opts.Config.StackerDir, "artifacts", layerName, "inventory.json"),
-						"application/vnd.stackerbuild.inventory+json", registry, repo, layerTypeTag, p.opts.Username, p.opts.Password, opts.SkipTLS); err != nil {
-						return err
-					}
-
-				}
 			}
 		}
 	}
