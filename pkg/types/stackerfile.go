@@ -276,6 +276,11 @@ func NewStackerfile(stackerfile string, validateHash bool, substitutions []strin
 				"See https://github.com/project-stacker/stacker/issues/571 for migration.",
 				name, stackerfile)
 		}
+		if layer.WasBom {
+			log.Warnf("'bom' directive used in layer '%s' inside file '%s' is deprecated. "+
+				"Support for 'bom' is removed in releases after 2026-03-10. ",
+				name, stackerfile)
+		}
 	}
 
 	return &sf, err
