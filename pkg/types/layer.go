@@ -261,6 +261,7 @@ type Layer struct {
 	Arch            *string           `yaml:"arch" json:"arch,omitempty"`
 	Bom             *Bom              `yaml:"bom" json:"bom,omitempty"`
 	WasLegacyImport bool              `yaml:"was_legacy_import" json:"was_legacy_import,omitempty"`
+	WasBom          bool              `yaml:"was_bom" json:"was_bom,omitempty"`
 }
 
 func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool) (map[string]Layer, error) {
@@ -342,6 +343,11 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 			// if not specified, default to runtime
 			arch := runtime.GOARCH
 			layer.Arch = &arch
+		}
+
+		if layer.Bom != nil {
+			layer.WasBom = true
+			layer.Bom = nil
 		}
 
 		if len(layer.LegacyImport) != 0 && len(layer.Imports) != 0 {
