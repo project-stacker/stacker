@@ -527,7 +527,7 @@ func (b *Builder) build(s types.Storage, file string) error {
 						log.Infof("failed executing %s: %s\n", opts.OnRunFailure, err2)
 					}
 				}
-				return errors.Errorf("run commands failed: %s", err)
+				return errors.Errorf("run commands failed for image %q in %q: %s", name, sf.FilePath(), err)
 			}
 		}
 
