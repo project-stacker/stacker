@@ -28,8 +28,8 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vbatts/go-mtree v0.7.0
-	golang.org/x/sys v0.41.0
-	golang.org/x/term v0.40.0
+	golang.org/x/sys v0.42.0
+	golang.org/x/term v0.41.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -152,13 +152,13 @@ require (
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	go.mongodb.org/mongo-driver v1.17.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa // indirect
-	golang.org/x/net v0.51.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
-	google.golang.org/grpc v1.79.1 // indirect
+	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260316180232-0b37fe3546d5 // indirect
+	google.golang.org/grpc v1.79.3 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	machinerun.io/atomfs v1.2.0
@@ -174,8 +174,6 @@ replace gopkg.in/go-jose/go-jose.v2 => gopkg.in/go-jose/go-jose.v2 v2.6.3
 
 replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.15
 
-replace golang.org/x/net => golang.org/x/net v0.38.0
-
 replace github.com/vbatts/go-mtree => github.com/vbatts/go-mtree v0.5.4
 
 replace github.com/docker/docker => github.com/docker/docker v25.0.13+incompatible
@@ -186,7 +184,7 @@ replace github.com/sigstore/rekor => github.com/sigstore/rekor v1.5.0
 
 replace github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.10.4
 
-replace google.golang.org/grpc => google.golang.org/grpc v1.76.0
+replace google.golang.org/grpc => google.golang.org/grpc v1.79.3
 
 replace github.com/containers/storage => github.com/containers/storage v1.58.0
 
