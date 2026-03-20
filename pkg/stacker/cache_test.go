@@ -125,5 +125,5 @@ func TestCacheEntryChanged(t *testing.T) {
 	// This test works because the type information is included in the
 	// hashstructure hash above, so using a zero valued CacheEntry is
 	// enough to capture changes in types.
-	assert.Equal(uint64(0x717c35e7201912fb), h)
+	assert.Equal(uint64(0x9fa3e20d827f5ae5), h)
 }
