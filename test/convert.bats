@@ -79,7 +79,12 @@ EOF
   skip_slow_test
   # https://github.com/elastic/dockerfiles/archive/refs/tags/v8.17.10.tar.gz
   # SHA256SUM=75f89195b53c9d02d6a45d2bc9d51a11d92b079dcc046893615b04455269ba1a  dockerfiles-8.17.10/elasticsearch/Dockerfile
-  DOCKERFILE="data/elasticsearch-8.17.10.Dockerfile"
+  DOCKERFILE="elasticsearch-8.17.10.Dockerfile"
+
+  # copy data file into TEST_TMPDIR
+  import_test_data_file "${DOCKERFILE}"
+  DOCKERFILE=${TEST_TMPDIR}/${DOCKERFILE}
+
   stacker convert --docker-file $DOCKERFILE --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch
   if [ -nz "${REGISTRY_URL}" ]; then
@@ -88,6 +93,7 @@ EOF
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
 }
+
 @test "python" {
   skip_slow_test
   # git clone https://github.com/docker-library/python.git
@@ -96,7 +102,12 @@ EOF
   # git reset --hard aad39d215779f27b410b25f612b6680a75781edb
   # cd 3.11/alpine3.22
   # SHA256SUM=ada7a604a8359de5914158bca13f539ea24c13d8a3492f511a68444a511a1db8  data/python-3.11-alpine-3.22-Dockerfile
-  DOCKERFILE="data/python-3.11-alpine-3.22-Dockerfile"
+  DOCKERFILE="python-3.11-alpine-3.22-Dockerfile"
+
+  # copy data file into TEST_TMPDIR
+  import_test_data_file "${DOCKERFILE}"
+  DOCKERFILE=${TEST_TMPDIR}/${DOCKERFILE}
+
   stacker convert --docker-file $DOCKERFILE --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=python
   if [ -nz "${REGISTRY_URL}" ]; then

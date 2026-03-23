@@ -12,6 +12,16 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+function import_test_data_file() {
+    export TEST_TMPDIR=$(tmpd $BATS_TEST_NAME)
+    cd $TEST_TMPDIR
+
+    if ! cp "${ROOT_DIR}/test/data/${1}" .; then
+        echo "Failed to import ${ROOT}/test/data/${1} to $TEST_TMPDIR";
+        exit 1
+    fi
+}
+
 function give_user_ownership() {
    if [ "$PRIVILEGE_LEVEL" = "priv" ]; then
       return
