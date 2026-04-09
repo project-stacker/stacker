@@ -10,6 +10,7 @@ function teardown() {
         kill "$pid" 2>/dev/null || true
         wait "$pid" 2>/dev/null || true
     fi
+    zot_teardown
     cleanup
 }
 
@@ -25,6 +26,7 @@ function host_arch() {
 
 function write_containerd_config() {
     local config_file="$1"
+    local hosts_config_path="$2"
     local arch
     arch=$(host_arch)
 
@@ -51,15 +53,41 @@ state = '$TEST_TMPDIR/containerd-state'
 [plugins.'io.containerd.snapshotter.v1.erofs']
   root_path = '$TEST_TMPDIR/containerd-erofs'
 EOF
+
+        if [ -n "$hosts_config_path" ]; then
+                cat >> "$config_file" <<EOF
+
+[plugins.'io.containerd.cri.v1.images'.registry]
+    config_path = '$hosts_config_path'
+EOF
+        fi
+}
+
+function write_registry_mirror_hosts() {
+        local mirror_registry="$1"
+        local hosts_dir="$TEST_TMPDIR/certs.d/$mirror_registry"
+
+        mkdir -p "$hosts_dir"
+        cat > "$hosts_dir/hosts.toml" <<EOF
+server = "https://$mirror_registry"
+
+[host."http://${ZOT_HOST}:${ZOT_PORT}"]
+    capabilities = ["pull", "resolve"]
+EOF
 }
 
 function start_containerd() {
+        start_containerd_with_registry_config ""
+}
+
+function start_containerd_with_registry_config() {
+        local hosts_config_path="$1"
     local containerd_bin="$ROOT_DIR/hack/tools/bin/containerd"
     local config_file="$TEST_TMPDIR/containerd.toml"
     local ctr_bin="$ROOT_DIR/hack/tools/bin/ctr"
     local n=0
 
-    write_containerd_config "$config_file"
+        write_containerd_config "$config_file" "$hosts_config_path"
 
     "$containerd_bin" -c "$config_file" > "$TEST_TMPDIR/containerd.log" 2>&1 &
     echo $! > "$TEST_TMPDIR/containerd.pid"
@@ -78,6 +106,17 @@ function start_containerd() {
     return 1
 }
 
+function ensure_erofs_ready() {
+    run modinfo erofs
+    [ "$status" -eq 0 ] || skip "missing erofs kernel module"
+
+    run modprobe erofs
+    [ "$status" -eq 0 ] || skip "unable to load erofs kernel module"
+
+    run grep -Eq '^nodev[[:space:]]+erofs$|[[:space:]]erofs$' /proc/filesystems
+    [ "$status" -eq 0 ] || skip "erofs filesystem is not available"
+}
+
 @test "stacker erofs image unpacks with containerd erofs snapshotter" {
     require_privilege priv
 
@@ -89,8 +128,7 @@ function start_containerd() {
     [ -x "$containerd_bin" ] || skip "containerd test binary missing"
     [ -x "$ctr_bin" ] || skip "ctr test binary missing"
 
-    run modinfo erofs
-    [ "$status" -eq 0 ] || skip "missing erofs kernel module"
+    ensure_erofs_ready
 
     cat > stacker.yaml <<"EOF"
 test:
@@ -119,7 +157,14 @@ EOF
     esac
 
     run start_containerd
-    [ "$status" -eq 0 ]
+    if [ "$status" -ne 0 ]; then
+        if grep -qE 'EROFS unsupported, please `modprobe erofs`|EROFS unsupported, please .*modprobe erofs' "$TEST_TMPDIR/containerd.log"; then
+            skip "erofs kernel support is unavailable"
+        fi
+        echo "containerd failed to start for unexpected reason" >&3
+        cat "$TEST_TMPDIR/containerd.log" >&3
+        return 1
+    fi
 
     run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" plugins ls
     [ "$status" -eq 0 ]
@@ -138,6 +183,65 @@ EOF
 
     run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" images unpack --snapshotter erofs "$image_ref"
     [ "$status" -eq 0 ]
+
+    run find "$TEST_TMPDIR/containerd-erofs" -type f -name layer.erofs
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
+}
+
+@test "stacker erofs image published to zot runs through containerd mirror" {
+    require_privilege priv
+
+    local containerd_bin="$ROOT_DIR/hack/tools/bin/containerd"
+    local ctr_bin="$ROOT_DIR/hack/tools/bin/ctr"
+    local mirror_registry="docker.io"
+    local mirror_repo="stacker-erofs-mirror-${BATS_TEST_NUMBER}"
+    local mirror_ref="$mirror_registry/library/$mirror_repo:latest"
+
+    [ -x "$containerd_bin" ] || skip "containerd test binary missing"
+    [ -x "$ctr_bin" ] || skip "ctr test binary missing"
+    [ -n "${ZOT_HOST}${ZOT_PORT}" ] || skip "zot env not configured"
+
+    ensure_erofs_ready
+
+    zot_setup
+
+    cat > stacker.yaml <<"EOF"
+test:
+    from:
+        type: oci
+        url: ${{BUSYBOX_OCI}}
+    run: |
+        echo hello-from-zot-mirror > /hello
+EOF
+
+    stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    stacker publish --skip-tls --url docker://${ZOT_HOST}:${ZOT_PORT} --image library/$mirror_repo --tag latest
+
+    write_registry_mirror_hosts "$mirror_registry"
+
+    run start_containerd_with_registry_config "$TEST_TMPDIR/certs.d"
+    if [ "$status" -ne 0 ]; then
+        if grep -qE 'EROFS unsupported, please `modprobe erofs`|EROFS unsupported, please .*modprobe erofs' "$TEST_TMPDIR/containerd.log"; then
+            skip "erofs kernel support is unavailable"
+        fi
+        echo "containerd failed to start for unexpected reason" >&3
+        cat "$TEST_TMPDIR/containerd.log" >&3
+        return 1
+    fi
+
+    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" plugins ls
+    [ "$status" -eq 0 ]
+    echo "$output" | grep -E "io\.containerd\.snapshotter\.v1\s+erofs\s+.*\s+ok"
+    echo "$output" | grep -E "io\.containerd\.differ\.v1\s+erofs\s+.*\s+ok"
+
+    # This image only exists in Zot; successful pull verifies mirror resolution.
+    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" images pull "$mirror_ref"
+    [ "$status" -eq 0 ]
+
+    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" run --rm --snapshotter erofs "$mirror_ref" erofs-mirror-test sh -ec "cat /hello"
+    [ "$status" -eq 0 ]
+    echo "$output" | grep -q "hello-from-zot-mirror"
 
     run find "$TEST_TMPDIR/containerd-erofs" -type f -name layer.erofs
     [ "$status" -eq 0 ]
