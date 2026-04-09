@@ -104,10 +104,18 @@ EOF
     stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest_digest=$(jq -r '.manifests[0].digest' oci/index.json | cut -d: -f2)
-    # OCI format prefixes custom layer types with application/vnd.oci.image.layer.
     mt="$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")"
-    [ "$mt" = "application/vnd.oci.image.layer.vnd.erofs.layer.overlayfs.v1.erofs" ] || \
-    [ "$mt" = "application/vnd.erofs.layer.overlayfs.v1.erofs" ]
+    case "$mt" in
+        application/vnd.oci.image.layer.vnd.erofs.layer.overlayfs.v1.erofs|\
+        application/vnd.oci.image.layer.v1.erofs|\
+        application/vnd.oci.image.layer.v1+erofs|\
+        application/vnd.erofs.layer.overlayfs.v1.erofs)
+            ;;
+        *)
+            echo "unexpected EROFS layer mediaType: $mt" >&3
+            return 1
+            ;;
+    esac
 
     run start_containerd
     [ "$status" -eq 0 ]
