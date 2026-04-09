@@ -49,6 +49,7 @@ CTR = $(TOOLS_D)/bin/ctr
 export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
+CONTAINERD_VERSION := v2.2.2
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.1.8
@@ -174,7 +175,7 @@ $(SKOPEO):
 $(CONTAINERD):
 	@set -e; mkdir -p "$(TOOLS_D)/bin"; \
 	tmpdir=$$(mktemp -d); \
-	$(call dlbin,$$tmpdir/containerd.tar.gz,https://github.com/containerd/containerd/releases/download/v2.1.4/containerd-2.1.4-linux-$(GOARCH).tar.gz); \
+	$(call dlbin,$$tmpdir/containerd.tar.gz,https://github.com/containerd/containerd/releases/download/$(CONTAINERD_VERSION)/containerd-$(CONTAINERD_VERSION:v%=%)-linux-$(GOARCH).tar.gz); \
 	tar -xzf $$tmpdir/containerd.tar.gz -C $$tmpdir; \
 	cp $$tmpdir/bin/containerd $(CONTAINERD); \
 	cp $$tmpdir/bin/ctr $(CTR); \
