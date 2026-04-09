@@ -48,7 +48,12 @@ state = '$TEST_TMPDIR/containerd-state'
   differ = "erofs"
   platform = "linux/$arch"
   snapshotter = "erofs"
-  layer_types = ["vnd.erofs.layer.overlayfs.v1.erofs"]
+    layer_types = [
+        "application/vnd.stacker.image.layer.erofs",
+        "application/vnd.stacker.image.layer.erofs+lz4hc",
+        "application/vnd.stacker.image.layer.erofs+lz4",
+        "application/vnd.stacker.image.layer.erofs+zstd"
+    ]
 
 [plugins.'io.containerd.snapshotter.v1.erofs']
   root_path = '$TEST_TMPDIR/containerd-erofs'
@@ -144,11 +149,10 @@ EOF
     manifest_digest=$(jq -r '.manifests[0].digest' oci/index.json | cut -d: -f2)
     mt="$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")"
     case "$mt" in
-        application/vnd.oci.image.layer.vnd.erofs.layer.overlayfs.v1.erofs|\
-        application/vnd.oci.image.layer.v1.erofs|\
-        application/vnd.oci.image.layer.v1+erofs|\
-        application/vnd.erofs.layer.overlayfs.v1.erofs|\
-        vnd.erofs.layer.overlayfs.v1.erofs)
+        application/vnd.stacker.image.layer.erofs|\
+        application/vnd.stacker.image.layer.erofs+lz4hc|\
+        application/vnd.stacker.image.layer.erofs+lz4|\
+        application/vnd.stacker.image.layer.erofs+zstd)
             ;;
         *)
             echo "unexpected EROFS layer mediaType: $mt" >&3
