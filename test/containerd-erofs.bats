@@ -74,10 +74,16 @@ function write_registry_mirror_hosts() {
 
         mkdir -p "$hosts_dir"
         cat > "$hosts_dir/hosts.toml" <<EOF
-server = "https://$mirror_registry"
+# For this test, make Zot the registry endpoint for docker.io so that
+# both resolve and pull happen against Zot.
+server = "http://${ZOT_HOST}:${ZOT_PORT}"
 
 [host."http://${ZOT_HOST}:${ZOT_PORT}"]
-    capabilities = ["pull", "resolve"]
+  capabilities = ["pull", "resolve"]
+
+# Optional fallback if you want it (keeps behavior stable across containerd versions):
+[host."https://$mirror_registry"]
+  capabilities = ["pull", "resolve"]
 EOF
 }
 
@@ -209,6 +215,18 @@ EOF
     ensure_erofs_ready
 
     zot_setup
+
+    # Ensure Zot is actually up before proceeding
+    for i in $(seq 1 30); do
+        if curl -fsS "http://${ZOT_HOST}:${ZOT_PORT}/v2/" >/dev/null 2>&1; then
+            break
+        fi
+        sleep 1
+    done
+    curl -fsS "http://${ZOT_HOST}:${ZOT_PORT}/v2/" >/dev/null || {
+        echo "zot health check failed" >&3
+        return 1
+    }
 
     cat > stacker.yaml <<"EOF"
 test:
