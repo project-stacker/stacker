@@ -104,7 +104,10 @@ EOF
     stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest_digest=$(jq -r '.manifests[0].digest' oci/index.json | cut -d: -f2)
-    [ "$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")" = "application/vnd.erofs.layer.overlayfs.v1.erofs" ]
+    # OCI format prefixes custom layer types with application/vnd.oci.image.layer.
+    mt="$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")"
+    [ "$mt" = "application/vnd.oci.image.layer.vnd.erofs.layer.overlayfs.v1.erofs" ] || \
+    [ "$mt" = "application/vnd.erofs.layer.overlayfs.v1.erofs" ]
 
     run start_containerd
     [ "$status" -eq 0 ]
