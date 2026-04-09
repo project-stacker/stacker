@@ -109,7 +109,8 @@ EOF
         application/vnd.oci.image.layer.vnd.erofs.layer.overlayfs.v1.erofs|\
         application/vnd.oci.image.layer.v1.erofs|\
         application/vnd.oci.image.layer.v1+erofs|\
-        application/vnd.erofs.layer.overlayfs.v1.erofs)
+        application/vnd.erofs.layer.overlayfs.v1.erofs|\
+        vnd.erofs.layer.overlayfs.v1.erofs)
             ;;
         *)
             echo "unexpected EROFS layer mediaType: $mt" >&3
