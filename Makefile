@@ -45,6 +45,7 @@ REGCLIENT := $(TOOLS_D)/bin/regctl
 REGCLIENT_VERSION := v0.5.1
 SKOPEO = $(TOOLS_D)/bin/skopeo
 CONTAINERD = $(TOOLS_D)/bin/containerd
+CTR = $(TOOLS_D)/bin/ctr
 export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
@@ -173,11 +174,10 @@ $(SKOPEO):
 $(CONTAINERD):
 	@set -e; mkdir -p "$(TOOLS_D)/bin"; \
 	tmpdir=$$(mktemp -d); \
-	cd $$tmpdir; \
-	wget https://github.com/containerd/containerd/releases/download/v2.1.4/containerd-2.1.4-linux-amd64.tar.gz; \
-	tar xvf containerd-2.1.4-linux-amd64.tar.gz; \
-	cp bin/containerd $(CONTAINERD);
-	cd $(TOP_LEVEL); \
+	$(call dlbin,$$tmpdir/containerd.tar.gz,https://github.com/containerd/containerd/releases/download/v2.1.4/containerd-2.1.4-linux-$(GOARCH).tar.gz); \
+	tar -xzf $$tmpdir/containerd.tar.gz -C $$tmpdir; \
+	cp $$tmpdir/bin/containerd $(CONTAINERD); \
+	cp $$tmpdir/bin/ctr $(CTR); \
 	rm -rf $$tmpdir;
 
 $(BATS):

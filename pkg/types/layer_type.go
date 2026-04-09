@@ -14,6 +14,12 @@ import (
 
 var ErrEmptyLayers = errors.New("empty layers")
 
+const (
+	// ContainerdErofsLayerMediaType is the native EROFS OCI media type consumed
+	// by containerd's erofs snapshotter unpack configuration.
+	ContainerdErofsLayerMediaType = "application/vnd.erofs"
+)
+
 type LayerType struct {
 	Type   string
 	Verity verity.VerityMetadata
@@ -85,6 +91,8 @@ func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	case erofs.GenerateErofsMediaType(erofs.LZ4Compression):
 		fallthrough
 	case erofs.GenerateErofsMediaType(erofs.ZstdCompression):
+		fallthrough
+	case ContainerdErofsLayerMediaType:
 		return NewLayerType("erofs", verity.VerityMetadata(verityMetadataPresent))
 	case ispec.MediaTypeImageLayerGzip:
 		fallthrough

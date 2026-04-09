@@ -34,6 +34,14 @@ import (
 
 var tarEx sync.Mutex
 
+func normalizeErofsLayerMediaType(mediaType string) string {
+	if strings.HasPrefix(mediaType, "application/vnd.stacker.image.layer.erofs") {
+		return types.ContainerdErofsLayerMediaType
+	}
+
+	return mediaType
+}
+
 func safeOverlayName(d digest.Digest) string {
 	// dirs used in overlay lowerdir args can't have : in them, so lets
 	// sanitize it
@@ -283,6 +291,9 @@ func generateBlob(layerType types.LayerType, contents string, ociDir string, sou
 		blob, mediaType, rootHash, err = fsi.Make(ociDir, contents, nil, layerType.Verity)
 		if err != nil {
 			return nil, "", "", err
+		}
+		if layerType.Type == "erofs" {
+			mediaType = normalizeErofsLayerMediaType(mediaType)
 		}
 	}
 	return blob, mediaType, rootHash, nil
@@ -685,6 +696,16 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 	}
 
 	if fsi := stackerfs.NewFromMediaType(l.MediaType); fsi != nil {
+		return fsi.ExtractSingle(
+			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
+	}
+
+	if l.MediaType == types.ContainerdErofsLayerMediaType {
+		fsi := stackerfs.New(fstypes.FilesystemType("erofs"))
+		if fsi == nil {
+			return errors.Errorf("failed to initialize erofs filesystem handler")
+		}
+
 		return fsi.ExtractSingle(
 			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
 	}
