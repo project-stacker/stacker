@@ -309,40 +309,35 @@ function start_zot {
 
   echo "zot is running at pid $pid"
   cat "$TEST_TMPDIR/zot.log"
-  # wait until service is up
-  count=5
-  up=0
+    # wait until registry API is reachable; this avoids localhost IPv6/IPv4 races.
+    ready=0
+    for i in $(seq 1 60); do
+        if [ ! -d /proc/$pid ]; then
+            echo "zot failed to start or died"
+            cat "$TEST_TMPDIR/zot.log" >&3 || true
+            exit 1
+        fi
 
-  while [[ $count -gt 0 ]]; do
-    if [ ! -d /proc/$pid ]; then
-      echo "zot failed to start or died"
-      exit 1
-    fi
-    up=1
-    # check if correct port is open
-    if ! nc -v -z "${ZOT_HOST}" "${ZOT_PORT}"; then
-        echo "no response from host:${ZOT_HOST} port:${ZOT_PORT}" >&3
-        sleep 1
-        count=$((count - 1))
-        continue
-    fi
-    echo "Got response from host:${ZOT_HOST} on port:${ZOT_PORT}" >&3
-    if [[ -n $ZOT_USE_TLS ]]; then
-        echo "testing zot at https://$ZOT_HOST:$ZOT_PORT"
-        curl -v --cacert $BATS_SUITE_TMPDIR/ca.crt  -u "iam:careful" -f https://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
-    else
-        echo "testing zot at http://$ZOT_HOST:$ZOT_PORT"
-        curl -v -f http://$ZOT_HOST:$ZOT_PORT/v2/ || up=0
-    fi
+        if [[ -n $ZOT_USE_TLS ]]; then
+            if curl -fsS --connect-timeout 1 --cacert "$BATS_SUITE_TMPDIR/ca.crt" -u "iam:careful" "https://${ZOT_HOST}:${ZOT_PORT}/v2/" >/dev/null; then
+                ready=1
+                break
+            fi
+        else
+            if curl -fsS --connect-timeout 1 "http://${ZOT_HOST}:${ZOT_PORT}/v2/" >/dev/null; then
+                ready=1
+                break
+            fi
+        fi
 
-    if [ $up -eq 1 ]; then break; fi
-    sleep 1
-    count=$((count - 1))
-  done
-  if [ $up -eq 0 ]; then
-    echo "Timed out waiting for zot"
-    exit 1
-  fi
+        sleep 0.5
+    done
+
+    if [ $ready -eq 0 ]; then
+        echo "Timed out waiting for zot at ${ZOT_HOST}:${ZOT_PORT}" >&3
+        cat "$TEST_TMPDIR/zot.log" >&3 || true
+        exit 1
+    fi
 
   echo "# zot is up" >&3
   # setup a OCI client
