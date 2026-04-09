@@ -17,7 +17,7 @@ var ErrEmptyLayers = errors.New("empty layers")
 const (
 	// ContainerdErofsLayerMediaType is the native EROFS OCI media type consumed
 	// by containerd's erofs snapshotter unpack configuration.
-	ContainerdErofsLayerMediaType = "application/vnd.erofs"
+	ContainerdErofsLayerMediaType = "vnd.erofs.layer.overlayfs.v1.erofs"
 )
 
 type LayerType struct {

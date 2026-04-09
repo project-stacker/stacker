@@ -46,7 +46,7 @@ state = '$TEST_TMPDIR/containerd-state'
   differ = "erofs"
   platform = "linux/$arch"
   snapshotter = "erofs"
-  layer_types = ["application/vnd.erofs"]
+  layer_types = ["vnd.erofs.layer.overlayfs.v1.erofs"]
 
 [plugins.'io.containerd.snapshotter.v1.erofs']
   root_path = '$TEST_TMPDIR/containerd-erofs'
@@ -104,7 +104,7 @@ EOF
     stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest_digest=$(jq -r '.manifests[0].digest' oci/index.json | cut -d: -f2)
-    [ "$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")" = "application/vnd.erofs" ]
+    [ "$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")" = "application/vnd.erofs.layer.overlayfs.v1.erofs" ]
 
     run start_containerd
     [ "$status" -eq 0 ]
