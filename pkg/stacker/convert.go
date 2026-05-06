@@ -149,7 +149,9 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			layer.Labels = map[string]string{}
 		}
 
-		for i := 0; i < len(cmd.Value); i += 2 {
+		// parser returns key, value, sep for ENV since v0.16.1
+		// https://github.com/moby/buildkit/commit/6cfa4599029db7f2e6e83feaaa33984785ddd147
+		for i := 0; i < len(cmd.Value); i += 3 {
 			layer.Labels[cmd.Value[i]] = cmd.Value[i+1]
 		}
 	case "maintainer": // ignored, deprecated
@@ -174,12 +176,14 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			c.env = map[string]string{}
 		}
 
-		if len(cmd.Value) < 2 {
+		// parser returns key, value, sep for ENV since v0.16.1
+		// https://github.com/moby/buildkit/commit/6cfa4599029db7f2e6e83feaaa33984785ddd147
+		if len(cmd.Value) < 3 {
 			log.Errorf("unable to parse ENV directive - %v", cmd.Original)
 			return errors.Errorf("invalid arg - %v", cmd.Value)
 		}
 
-		for i := 0; i < len(cmd.Value); i += 2 {
+		for i := 0; i < len(cmd.Value); i += 3 {
 			key = cmd.Value[i]
 			val = cmd.Value[i+1]
 
