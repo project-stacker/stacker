@@ -28,6 +28,7 @@ COMMON_DEBS=(
 	curl
 	erofsfuse
 	erofs-utils
+	git
 	golang-go
 	jq
 	libacl1-dev
