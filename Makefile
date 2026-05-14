@@ -141,6 +141,7 @@ download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
 $(GOLANGCI_LINT):
 	@[ -x $(GOLANGCI_LINT) ] || \
 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) ..." && \
+		mkdir -p "$(TOOLS_D)/bin" && \
 		curl -sSfL $(GOLANGCI_LINT_URL)/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-$(GOARCH).tar.gz | \
 		tar -C $(TOOLS_D)/bin -xzf - --strip-components=1 golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-$(GOARCH)/golangci-lint
 	@$(GOLANGCI_LINT) version
