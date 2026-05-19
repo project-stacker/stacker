@@ -204,6 +204,9 @@ test: stacker download-tools lintbats
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		TOP_LEVEL=$(TOP_LEVEL) \
+		VERSION=$(VERSION) \
+		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -226,6 +229,9 @@ test-cov: stacker-cov download-tools
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		TOP_LEVEL=$(TOP_LEVEL) \
+		VERSION=$(VERSION) \
+		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -245,6 +251,12 @@ show-info:
 vendorup:
 	go get -u
 	go mod tidy
+
+.PHONY: debug
+debug:
+	@echo TOP_LEVEL=$(TOP_LEVEL)
+	@echo VERSION=$(VERSION)
+	@echo VERSION_FULL=$(VERSION_FULL)
 
 .PHONY: clean
 clean:

@@ -93,11 +93,9 @@ EOF
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
     publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.git_version"')
-    # ci does not clone tags. There it tests the fallback-to-commit path.
-    myGitVersion=$(run_git describe --tags) || myGitVersion=$(run_git rev-parse HEAD)
-    [ -n "$(run_git status --porcelain --untracked-files=no)" ] &&
-        dirty="-dirty" || dirty=""
-    [ "$publishedGitVersion" = "$myGitVersion$dirty" ]
+    echo "WARK1: publishedGitVersion=${publishedGitVersion}" >&3
+    echo "WARK1: VERSION_FULL=${VERSION_FULL}" >&3
+    [ "$publishedGitVersion" = "$VERSION_FULL" ]
 
     # need to trim the extra newline from jq
     cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
@@ -260,11 +258,9 @@ EOF
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
     publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.git_version"')
-    # ci does not clone tags. There it tests the fallback-to-commit path.
-    myGitVersion=$(run_git describe --tags) || myGitVersion=$(run_git rev-parse HEAD)
-    [ -n "$(run_git status --porcelain --untracked-files=no)" ] &&
-        dirty="-dirty" || dirty=""
-    [ "$publishedGitVersion" = "$myGitVersion$dirty" ]
+    echo "WARK2: publishedGitVersion=${publishedGitVersion}" >&3
+    echo "WARK2: VERSION_FULL=${VERSION_FULL}" >&3
+    [ "$publishedGitVersion" = "$VERSION_FULL" ]
 
     # need to trim the extra newline from jq
     cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
