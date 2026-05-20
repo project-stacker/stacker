@@ -141,6 +141,7 @@ download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
 $(GOLANGCI_LINT):
 	@[ -x $(GOLANGCI_LINT) ] || \
 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) ..." && \
+		mkdir -p "$(TOOLS_D)/bin" && \
 		curl -sSfL $(GOLANGCI_LINT_URL)/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-$(GOARCH).tar.gz | \
 		tar -C $(TOOLS_D)/bin -xzf - --strip-components=1 golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-$(GOARCH)/golangci-lint
 	@$(GOLANGCI_LINT) version
@@ -203,6 +204,9 @@ test: stacker download-tools lintbats
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		TOP_LEVEL=$(TOP_LEVEL) \
+		VERSION=$(VERSION) \
+		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -225,6 +229,9 @@ test-cov: stacker-cov download-tools
 		STACKER_BUILD_BUSYBOX_IMAGE=$(STACKER_BUILD_BUSYBOX_IMAGE) \
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
+		TOP_LEVEL=$(TOP_LEVEL) \
+		VERSION=$(VERSION) \
+		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -244,6 +251,12 @@ show-info:
 vendorup:
 	go get -u
 	go mod tidy
+
+.PHONY: debug
+debug:
+	@echo TOP_LEVEL=$(TOP_LEVEL)
+	@echo VERSION=$(VERSION)
+	@echo VERSION_FULL=$(VERSION_FULL)
 
 .PHONY: clean
 clean:

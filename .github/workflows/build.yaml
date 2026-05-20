@@ -9,7 +9,7 @@ on:
         type: string
         description: 'Stringified JSON object listing go versions'
         default: >-
-          ["1.25.8"]
+          ["1.25.10"]
       privilege-level:
         required: false
         type: string
@@ -90,6 +90,9 @@ jobs:
         run: |
           make show-info
           make stacker-dynamic VERSION_FULL=${{ inputs.build-id }}
+      - name: Lint
+        run: |
+          make lint
       - name: Build
         run: |
           make stacker VERSION_FULL=${{ inputs.build-id }}

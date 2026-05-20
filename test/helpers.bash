@@ -2,11 +2,12 @@ load 'test_helper/bats-support/load'
 load 'test_helper/bats-assert/load'
 load 'test_helper/bats-file/load'
 
-function run_git {
-    sudo -u $SUDO_USER git "$@"
-}
+if [ -z "${TOP_LEVEL}" ]; then
+    echo "Missing TOP_LEVEL env value"
+    exit 1
+fi
 
-ROOT_DIR=$(run_git rev-parse --show-toplevel)
+ROOT_DIR=${TOP_LEVEL}
 if [ "$(id -u)" != "0" ]; then
     echo "you should be root to run this suite"
     exit 1
