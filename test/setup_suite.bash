@@ -28,7 +28,7 @@ function write_certs {
         -CAkey ca.key \
         -CAcreateserial \
         -out server.cert \
-        -extfile <(echo subjectAltName = DNS:localhost)
+        -extfile <(echo subjectAltName = DNS:localhost,IP:127.0.0.1)
 
     openssl req \
         -newkey rsa:2048 \
