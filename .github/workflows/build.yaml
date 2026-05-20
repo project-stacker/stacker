@@ -60,7 +60,7 @@ jobs:
       - uses: benjlevesque/short-sha@v2.1
         id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup Environment
