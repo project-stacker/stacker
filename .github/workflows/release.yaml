@@ -12,7 +12,7 @@ jobs:
       build-id: ${{steps.build-id.outputs.build-id}}
     steps:
       - uses: actions/checkout@v4
-      - uses: benjlevesque/short-sha@v2.1
+      - uses: benjlevesque/short-sha@v3.0
         id: short-sha
       - id: build-id
         run: echo "build-id=${{ github.event.release.tag_name }}-${{ steps.short-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
