@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
-      - uses: benjlevesque/short-sha@v3.0
+      - uses: benjlevesque/short-sha@v4.0
         id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
         uses: actions/setup-go@v6
