@@ -28,7 +28,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vbatts/go-mtree v0.7.0
 	go.podman.io/image/v5 v5.40.0
-	golang.org/x/sys v0.45.0
+	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.43.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.6.0
