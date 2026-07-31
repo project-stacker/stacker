@@ -176,6 +176,14 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			c.env = map[string]string{}
 		}
 
+		// Dockerfile ENV defines build and runtime variables.
+		// For equivalent in stacker, also add them to layer's
+		// Environment(runtime).
+		//
+		if layer.Environment == nil {
+			layer.Environment = map[string]string{}
+		}
+
 		// parser returns key, value, sep for ENV since v0.16.1
 		// https://github.com/moby/buildkit/commit/6cfa4599029db7f2e6e83feaaa33984785ddd147
 		if len(cmd.Value) < 3 {
@@ -207,11 +215,8 @@ func (c *Converter) convertCommand(cmd *Command) error {
 				}
 			}
 
-			if c.env == nil {
-				c.env = map[string]string{}
-			}
-
 			c.env[key] = val
+			layer.Environment[key] = val
 		}
 	case "workdir":
 		layer.Run = append(layer.Run, fmt.Sprintf("mkdir -p %s", cmd.Value[0]))
