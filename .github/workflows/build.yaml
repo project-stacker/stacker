@@ -9,7 +9,7 @@ on:
         type: string
         description: 'Stringified JSON object listing go versions'
         default: >-
-          ["1.25.11"]
+          ["1.25.12"]
       privilege-level:
         required: false
         type: string
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
-      - uses: benjlevesque/short-sha@v3.0
+      - uses: benjlevesque/short-sha@v4.0
         id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
         uses: actions/setup-go@v6
@@ -116,7 +116,7 @@ jobs:
         if: always()
         uses: ./.github/actions/show-disk-usage
       - name: Upload code coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.codecov_token }}
       - name: Prepare for Upload artifacts
