@@ -4,10 +4,12 @@ set -o errexit
 
 installdeps_fedora() {
   sudo dnf install \
+    kubernetes-cni \
     jq \
     lxc-devel \
     libcap-devel \
-    libacl-devel
+    libacl-devel \
+    runc
   # skopeo deps
   sudo dnf install \
     gpgme-devel \
@@ -24,6 +26,7 @@ installdeps_fedora() {
 COMMON_DEBS=(
 	apache2-utils
 	build-essential
+    containernetworking-plugins
 	cryptsetup-bin
 	curl
 	erofsfuse
@@ -48,6 +51,7 @@ COMMON_DEBS=(
 	parallel
 	pkg-config
 	psmisc
+    runc
 	shellcheck
 	squashfs-tools
 	squashfuse
