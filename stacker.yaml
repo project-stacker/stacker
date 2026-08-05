@@ -1,0 +1,6 @@
+test:
+    from:
+        type: oci
+        url: ${{BUSYBOX_OCI}}
+    run: |
+        echo hello > /hello

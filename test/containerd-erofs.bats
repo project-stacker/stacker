@@ -27,24 +27,25 @@ function host_arch() {
 function write_containerd_config() {
     local config_file="$1"
     local hosts_config_path="$2"
+    local containerd_bin="$ROOT_DIR/hack/tools/bin/containerd"
     local arch
     arch=$(host_arch)
 
-    cat > "$config_file" <<EOF
-version = 3
-root = '$TEST_TMPDIR/containerd-root'
-state = '$TEST_TMPDIR/containerd-state'
+    "$containerd_bin" config default > "$config_file"
 
-[grpc]
-  address = '$TEST_TMPDIR/containerd.sock'
+    # Keep the generated defaults and isolate only the state used by this test.
+    sed -i \
+        -e "s|^root = .*|root = '$TEST_TMPDIR/containerd-root'|" \
+        -e "s|^state = .*|state = '$TEST_TMPDIR/containerd-state'|" \
+        -e "s|^    address = '/run/containerd/containerd.sock'$|    address = '$TEST_TMPDIR/containerd.sock'|" \
+        -e "/io.containerd.service.v1.diff-service/,/^  \[plugins\./ s|^    default = .*|    default = ['erofs', 'walking']|" \
+        -e "/io.containerd.differ.v1.erofs/,/^  \[plugins\./ s|^    mkfs_options = .*|    mkfs_options = ['--sort=none']|" \
+        -e "/io.containerd.snapshotter.v1.erofs/,/^  \[plugins\./ s|^    root_path = .*|    root_path = '$TEST_TMPDIR/containerd-erofs'|" \
+        "$config_file"
 
-[plugins.'io.containerd.service.v1.diff-service']
-  default = ["erofs", "walking"]
+    cat >> "$config_file" <<EOF
 
-[plugins."io.containerd.differ.v1.erofs"]
-  mkfs_options = ["--sort=none"]
-
-[[plugins."io.containerd.transfer.v1.local".unpack_config]]
+[[plugins.'io.containerd.transfer.v1.local'.unpack_config]]
   differ = "erofs"
   platform = "linux/$arch"
   snapshotter = "erofs"
@@ -54,18 +55,13 @@ state = '$TEST_TMPDIR/containerd-state'
         "application/vnd.stacker.image.layer.erofs+lz4",
         "application/vnd.stacker.image.layer.erofs+zstd"
     ]
-
-[plugins.'io.containerd.snapshotter.v1.erofs']
-  root_path = '$TEST_TMPDIR/containerd-erofs'
 EOF
 
-        if [ -n "$hosts_config_path" ]; then
-                cat >> "$config_file" <<EOF
-
-[plugins.'io.containerd.cri.v1.images'.registry]
-    config_path = '$hosts_config_path'
-EOF
-        fi
+    if [ -n "$hosts_config_path" ]; then
+        sed -i \
+            -e "/io.containerd.cri.v1.images'.registry/,/^    \[plugins\./ s|^      config_path = .*|      config_path = '$hosts_config_path'|" \
+            "$config_file"
+    fi
 }
 
 function write_registry_mirror_hosts() {
