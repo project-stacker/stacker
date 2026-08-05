@@ -14,6 +14,9 @@ import (
 
 var ErrEmptyLayers = errors.New("empty layers")
 
+// ContainerdErofsLayerMediaType identifies an unwrapped native EROFS blob.
+const ContainerdErofsLayerMediaType = "application/vnd.erofs.layer.v1"
+
 type LayerType struct {
 	Type   string
 	Verity verity.VerityMetadata
@@ -85,6 +88,8 @@ func NewLayerTypeManifest(manifest ispec.Manifest) (LayerType, error) {
 	case erofs.GenerateErofsMediaType(erofs.LZ4Compression):
 		fallthrough
 	case erofs.GenerateErofsMediaType(erofs.ZstdCompression):
+		fallthrough
+	case ContainerdErofsLayerMediaType:
 		return NewLayerType("erofs", verity.VerityMetadata(verityMetadataPresent))
 	case ispec.MediaTypeImageLayerGzip:
 		fallthrough
