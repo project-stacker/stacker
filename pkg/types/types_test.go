@@ -4,6 +4,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func parse(t *testing.T, content string) *Stackerfile {
@@ -48,6 +50,20 @@ func TestDockerFrom(t *testing.T) {
 
 	if l.From.Url != "" {
 		t.Fatalf("bad url")
+	}
+}
+
+func TestNewLayerTypeManifestContainerdErofs(t *testing.T) {
+	manifest := ispec.Manifest{
+		Layers: []ispec.Descriptor{{MediaType: ContainerdErofsLayerMediaType}},
+	}
+
+	layerType, err := NewLayerTypeManifest(manifest)
+	if err != nil {
+		t.Fatalf("failed to parse containerd EROFS layer type: %s", err)
+	}
+	if layerType.Type != "erofs" {
+		t.Fatalf("expected erofs layer type, got %s", layerType.Type)
 	}
 }
 

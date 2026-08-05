@@ -284,6 +284,11 @@ func generateBlob(layerType types.LayerType, contents string, ociDir string, sou
 		if err != nil {
 			return nil, "", "", err
 		}
+		// LZ4/Zstd selected by mkfs.erofs is filesystem-internal compression;
+		// containerd suffixes describe an additional wrapper around the blob.
+		if layerType.Type == "erofs" {
+			mediaType = types.ContainerdErofsLayerMediaType
+		}
 	}
 	return blob, mediaType, rootHash, nil
 }
@@ -682,6 +687,16 @@ func unpackOne(l ispec.Descriptor, ociDir string, extractDir string) error {
 	if hasDirEntries(extractDir) {
 		// the directory was already populated.
 		return nil
+	}
+
+	if l.MediaType == types.ContainerdErofsLayerMediaType {
+		fsi := stackerfs.New(fstypes.FilesystemType("erofs"))
+		if fsi == nil {
+			return errors.Errorf("failed to initialize erofs filesystem handler")
+		}
+
+		return fsi.ExtractSingle(
+			path.Join(ociDir, "blobs", "sha256", l.Digest.Encoded()), extractDir)
 	}
 
 	if fsi := stackerfs.NewFromMediaType(l.MediaType); fsi != nil {

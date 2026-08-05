@@ -49,7 +49,7 @@ CTR = $(TOOLS_D)/bin/ctr
 export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
 BATS_VERSION := v1.10.0
-CONTAINERD_VERSION := v2.2.2
+CONTAINERD_VERSION := v2.3.3
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.1.8

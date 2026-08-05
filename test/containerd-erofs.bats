@@ -51,12 +51,7 @@ function write_containerd_config() {
   differ = "erofs"
   platform = "linux/$arch"
   snapshotter = "erofs"
-    layer_types = [
-        "application/vnd.stacker.image.layer.erofs",
-        "application/vnd.stacker.image.layer.erofs+lz4hc",
-        "application/vnd.stacker.image.layer.erofs+lz4",
-        "application/vnd.stacker.image.layer.erofs+zstd"
-    ]
+    layer_types = ["application/vnd.erofs.layer.v1"]
 EOF
 
     if [ -n "$hosts_config_path" ]; then
@@ -152,17 +147,7 @@ EOF
 
     manifest_digest=$(jq -r '.manifests[0].digest' oci/index.json | cut -d: -f2)
     mt="$(jq -r '.layers[0].mediaType' "oci/blobs/sha256/$manifest_digest")"
-    case "$mt" in
-        application/vnd.stacker.image.layer.erofs|\
-        application/vnd.stacker.image.layer.erofs+lz4hc|\
-        application/vnd.stacker.image.layer.erofs+lz4|\
-        application/vnd.stacker.image.layer.erofs+zstd)
-            ;;
-        *)
-            echo "unexpected EROFS layer mediaType: $mt" >&3
-            return 1
-            ;;
-    esac
+    [ "$mt" = "application/vnd.erofs.layer.v1" ]
 
     run start_containerd
     if [ "$status" -ne 0 ]; then
