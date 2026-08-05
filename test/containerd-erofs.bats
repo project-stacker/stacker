@@ -2,6 +2,7 @@ load helpers
 
 function setup() {
     stacker_setup
+    CONTAINERD_ADDRESS="/tmp/stacker-containerd-${BATS_TEST_NUMBER}-$$.sock"
 }
 
 function teardown() {
@@ -10,6 +11,7 @@ function teardown() {
         kill "$pid" 2>/dev/null || true
         wait "$pid" 2>/dev/null || true
     fi
+    rm -f "$CONTAINERD_ADDRESS" "$CONTAINERD_ADDRESS.ttrpc"
     zot_teardown
     cleanup
 }
@@ -37,7 +39,7 @@ function write_containerd_config() {
     sed -i \
         -e "s|^root = .*|root = '$TEST_TMPDIR/containerd-root'|" \
         -e "s|^state = .*|state = '$TEST_TMPDIR/containerd-state'|" \
-        -e "s|^\([[:space:]]*\)address = '/run/containerd/containerd.sock'$|\1address = '$TEST_TMPDIR/containerd.sock'|" \
+        -e "s|^\([[:space:]]*\)address = '/run/containerd/containerd.sock'$|\1address = '$CONTAINERD_ADDRESS'|" \
         -e "/io.containerd.service.v1.diff-service/,/^  \[plugins\./ s|^    default = .*|    default = ['erofs', 'walking']|" \
         -e "/io.containerd.differ.v1.erofs/,/^  \[plugins\./ s|^    mkfs_options = .*|    mkfs_options = ['--sort=none']|" \
         -e "/io.containerd.snapshotter.v1.erofs/,/^  \[plugins\./ s|^    root_path = .*|    root_path = '$TEST_TMPDIR/containerd-erofs'|" \
@@ -100,7 +102,7 @@ function start_containerd_with_registry_config() {
     echo $! > "$TEST_TMPDIR/containerd.pid"
 
     while [ "$n" -lt 30 ]; do
-        if "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" plugins ls >/dev/null 2>&1; then
+        if "$ctr_bin" --address "$CONTAINERD_ADDRESS" plugins ls >/dev/null 2>&1; then
             return 0
         fi
 
@@ -172,22 +174,22 @@ EOF
         return 1
     fi
 
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" plugins ls
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" plugins ls
     [ "$status" -eq 0 ]
     echo "$output" | grep -E "io\.containerd\.snapshotter\.v1\s+erofs\s+.*\s+ok"
     echo "$output" | grep -E "io\.containerd\.differ\.v1\s+erofs\s+.*\s+ok"
 
     tar -C oci -cf "$TEST_TMPDIR/stacker-erofs.oci.tar" .
 
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" images import "$TEST_TMPDIR/stacker-erofs.oci.tar"
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" images import "$TEST_TMPDIR/stacker-erofs.oci.tar"
     [ "$status" -eq 0 ]
 
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" images ls -q
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" images ls -q
     [ "$status" -eq 0 ]
     image_ref=$(echo "$output" | grep test-erofs | head -n1)
     [ -n "$image_ref" ]
 
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" images unpack --snapshotter erofs "$image_ref"
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" images unpack --snapshotter erofs "$image_ref"
     [ "$status" -eq 0 ]
 
     run find "$TEST_TMPDIR/containerd-erofs" -type f -name layer.erofs
@@ -248,16 +250,16 @@ EOF
         return 1
     fi
 
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" plugins ls
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" plugins ls
     [ "$status" -eq 0 ]
     echo "$output" | grep -E "io\.containerd\.snapshotter\.v1\s+erofs\s+.*\s+ok"
     echo "$output" | grep -E "io\.containerd\.differ\.v1\s+erofs\s+.*\s+ok"
 
     # This image only exists in Zot; successful pull verifies mirror resolution.
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" images pull "$mirror_ref"
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" images pull "$mirror_ref"
     [ "$status" -eq 0 ]
 
-    run "$ctr_bin" --address "$TEST_TMPDIR/containerd.sock" run --rm --snapshotter erofs "$mirror_ref" erofs-mirror-test sh -ec "cat /hello"
+    run "$ctr_bin" --address "$CONTAINERD_ADDRESS" run --rm --snapshotter erofs "$mirror_ref" erofs-mirror-test sh -ec "cat /hello"
     [ "$status" -eq 0 ]
     echo "$output" | grep -q "hello-from-zot-mirror"
 
