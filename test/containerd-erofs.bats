@@ -37,7 +37,7 @@ function write_containerd_config() {
     sed -i \
         -e "s|^root = .*|root = '$TEST_TMPDIR/containerd-root'|" \
         -e "s|^state = .*|state = '$TEST_TMPDIR/containerd-state'|" \
-        -e "s|^    address = '/run/containerd/containerd.sock'$|    address = '$TEST_TMPDIR/containerd.sock'|" \
+        -e "s|^\([[:space:]]*\)address = '/run/containerd/containerd.sock'$|\1address = '$TEST_TMPDIR/containerd.sock'|" \
         -e "/io.containerd.service.v1.diff-service/,/^  \[plugins\./ s|^    default = .*|    default = ['erofs', 'walking']|" \
         -e "/io.containerd.differ.v1.erofs/,/^  \[plugins\./ s|^    mkfs_options = .*|    mkfs_options = ['--sort=none']|" \
         -e "/io.containerd.snapshotter.v1.erofs/,/^  \[plugins\./ s|^    root_path = .*|    root_path = '$TEST_TMPDIR/containerd-erofs'|" \
