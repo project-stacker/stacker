@@ -74,7 +74,7 @@ func TestConverterConvertCommandErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.c.convertCommand(tt.cmd); err == nil {
+			if err := tt.c.convertCommand(tt.cmd, nil); err == nil {
 				t.Fatal("expected error")
 			}
 		})

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -72,7 +73,7 @@ type Command struct {
 	Value     []string // The contents of the command (ex: `ubuntu:xenial`)
 }
 
-func (c *Converter) convertCommand(cmd *Command) error {
+func (c *Converter) convertCommand(cmd *Command, buildstages []string) error {
 	var layer *types.Layer
 	if c.currLayer != "" {
 		layer = c.output[c.currLayer]
@@ -90,13 +91,24 @@ func (c *Converter) convertCommand(cmd *Command) error {
 			c.subs["IMAGE"] = "app"
 		} else if len(cmd.Value) == 3 && strings.EqualFold(cmd.Value[1], "as") {
 			c.currLayer = cmd.Value[2]
+
+			// Check if the base stage is in a build stage
+			if len(buildstages) != 0 {
+				if slices.Contains(buildstages, cmd.Value[0]) {
+					layer.From.Type = types.BuiltLayer
+					layer.From.Tag = cmd.Value[0]
+				}
+			}
 			// layer.BuildOnly = true	// FIXME: should be enabled
 		} else {
 			return errors.Errorf("unsupported FROM directive")
 		}
 		if !strings.EqualFold(cmd.Value[0], "scratch") {
-			layer.From.Type = "docker"
-			layer.From.Url = fmt.Sprintf("docker://%s", cmd.Value[0])
+			// Have we seen this...
+			if layer.From.Type != types.BuiltLayer {
+				layer.From.Type = types.DockerLayer
+				layer.From.Url = fmt.Sprintf("docker://%s", cmd.Value[0])
+			}
 		} else {
 			layer.From.Type = cmd.Value[0]
 		}
@@ -296,6 +308,7 @@ func (c *Converter) convertCommand(cmd *Command) error {
 }
 
 func (c *Converter) parseFile() error {
+	var buildstages []string
 	file, err := os.Open(c.opts.InputFile)
 	if err != nil {
 		log.Errorf("unable to open file %s", c.opts.InputFile)
@@ -309,6 +322,15 @@ func (c *Converter) parseFile() error {
 		return err
 	}
 
+	// Collect all possible build stages before starting conversion.
+	for _, child := range res.AST.Children {
+		fields := strings.Fields(child.Original)
+		if fields[0] == "FROM" && len(fields) == 4 {
+			buildstages = append(buildstages, fields[3])
+		}
+	}
+
+	// Do conversion
 	for _, child := range res.AST.Children {
 		cmd := Command{
 			Cmd:       child.Value,
@@ -329,7 +351,7 @@ func (c *Converter) parseFile() error {
 			cmd.Value = append(cmd.Value, n.Value)
 		}
 
-		if err := c.convertCommand(&cmd); err != nil {
+		if err := c.convertCommand(&cmd, buildstages); err != nil {
 			return err
 		}
 	}
