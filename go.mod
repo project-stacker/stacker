@@ -6,7 +6,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/apex/log v1.9.0
 	github.com/apparentlymart/go-shquot v0.0.1
-	github.com/cheggaaa/pb/v3 v3.1.7
+	github.com/cheggaaa/pb/v3 v3.2.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/google/uuid v1.6.0
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
@@ -104,8 +104,8 @@ require (
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
-	github.com/mattn/go-isatty v0.0.22 // indirect
-	github.com/mattn/go-runewidth v0.0.24 // indirect
+	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/mattn/go-runewidth v0.0.27 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
