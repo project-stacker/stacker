@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - name: Check Commit Type
         uses: gsactions/commit-message-checker@v2
         with:

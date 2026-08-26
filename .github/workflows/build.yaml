@@ -55,6 +55,9 @@ jobs:
     name: "Build platform ${{ matrix.platform }} golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+          fetch-depth: 0
       - name: Clean disk space
         uses: ./.github/actions/clean-runner
       - uses: benjlevesque/short-sha@v4.0
