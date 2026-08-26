@@ -7,8 +7,9 @@ export GOCACHE ?= $(GOPATH)/gocache
 GO_SRC=$(shell find pkg cmd -name \*.go)
 GOARCH=$(shell go env GOARCH)
 GOOS=$(shell go env GOOS)
-VERSION?=$(shell git describe --tags || git rev-parse HEAD)
-VERSION_FULL?=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
+# --tags includes both annotated and lightweight tags but must match our expected versioning
+VERSION?=$(shell git describe --tags --always --long --dirty --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || echo 'no-git')
+BUILD_ID?=$(shell git rev-parse --short HEAD || echo 'no-git')
 HASH = \#
 
 LXC_VERSION?=$(shell pkg-config --modversion lxc)
@@ -17,7 +18,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=$(BUILD_D)/oci --roots-dir=$(BUILD_D)/roots --stacker-dir=$(BUILD_D)/stacker --storage-type=overlay
 
-VERSION_LDFLAGS=-X stackerbuild.io/stacker/pkg/lib.StackerVersion=$(VERSION_FULL) -X stackerbuild.io/stacker/pkg/lib.LXCVersion=$(LXC_VERSION)
+VERSION_LDFLAGS=-X stackerbuild.io/stacker/pkg/lib.StackerVersion=$(VERSION) -X stackerbuild.io/stacker/pkg/lib.LXCVersion=$(LXC_VERSION)
 build_stacker = go build $1 -tags "$(BUILD_TAGS) $2" -ldflags "$(VERSION_LDFLAGS) $3" -o $4 ./cmd/stacker
 
 # See doc/hacking.md for how to use a local oci or docker repository.
@@ -73,7 +74,7 @@ stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
-		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute VERSION=$(VERSION) \
 		--substitute WITH_COV=no
 
 stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
@@ -83,7 +84,7 @@ stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapp
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
-		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute VERSION=$(VERSION) \
 		--substitute WITH_COV=yes
 
 .PHONY: publish-stacker-bin
@@ -94,7 +95,11 @@ $(STACKER_PUBLISH_BIN): stacker
 
 # On Ubuntu 24.04 the lxc package does not link against libsystemd so the pkg-config
 # below does list -lsystemd; we must add it to the list but only for stacker-dynamic
-ifeq ($(shell awk -F= '/VERSION_ID/ {print $$2}' /etc/os-release),"24.04")
+OS_VERSION_ID ?= "24.04"
+ifneq (,$(wildcard /etc/os-release))
+OS_VERSION_ID := $(shell awk -F= '/VERSION_ID/ {print $$2}' /etc/os-release)
+endif
+ifeq ($(OS_VERSION_ID),"24.04")
 ifeq (stacker-dynamic,$(firstword $(MAKECMDGOALS)))
 LXC_WRAPPER_LIBS=-lsystemd
 else
@@ -205,8 +210,8 @@ test: stacker download-tools lintbats
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
 		TOP_LEVEL=$(TOP_LEVEL) \
+		BUILD_ID=$(BUILD_ID) \
 		VERSION=$(VERSION) \
-		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -230,8 +235,8 @@ test-cov: stacker-cov download-tools
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
 		TOP_LEVEL=$(TOP_LEVEL) \
+		BUILD_ID=$(BUILD_ID) \
 		VERSION=$(VERSION) \
-		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -245,6 +250,9 @@ docker-clone: $(SKOPEO)
 .PHONY: show-info
 show-info:
 	@echo BUILD_D=$(BUILD_D)
+	@echo BUILD_ID=$(BUILD_ID)
+	@echo VERSION=$(VERSION)
+	@echo TOP_LEVEL=$(TOP_LEVEL)
 	@go env
 
 .PHONY: vendorup
@@ -255,8 +263,8 @@ vendorup:
 .PHONY: debug
 debug:
 	@echo TOP_LEVEL=$(TOP_LEVEL)
+	@echo BUILD_ID=$(BUILD_ID)
 	@echo VERSION=$(VERSION)
-	@echo VERSION_FULL=$(VERSION_FULL)
 
 .PHONY: clean
 clean:

@@ -88,7 +88,7 @@ build:
     # golang wants somewhere to put its garbage
     export HOME=/root
     export LXC_VERSION=$(git -C /lxc rev-parse HEAD)
-    export VERSION_FULL=${{VERSION_FULL}}
+    export VERSION=${{VERSION}}
 
     # apk go pkg doesn't seem to have the standard go.env which would set GOTOOLCHAIN=auto.
     # therefore it defaults to 'local', which ignores the `toolchain` line in go.mod
