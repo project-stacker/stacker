@@ -22,10 +22,10 @@ type StackerConfig struct {
 	// SOURCE_DATE_EPOCH environment variable.
 	SourceDateEpoch *time.Time `yaml:"-"`
 
-	// EmbeddedFS should contain a (statically linked) lxc-wrapper binary
-	// (built from cmd/lxc-wrapper/lxc-wrapper.c) at
-	// lxc-wrapper/lxc-wrapper.
-	EmbeddedFS embed.FS `yaml:"-"`
+	// EmbeddedFS should contain a statically linked lxc-wrapper binary built
+	// from cmd/lxc-wrapper/lxc-wrapper.c at EmbeddedWrapperPath.
+	EmbeddedFS          embed.FS `yaml:"-"`
+	EmbeddedWrapperPath string   `yaml:"-"`
 }
 
 // Substitutions - return an array of substitutions for StackerFiles

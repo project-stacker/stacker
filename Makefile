@@ -61,11 +61,17 @@ GOLANGCI_LINT_URL = https://github.com/golangci/golangci-lint/releases/download
 GOLANGCI_LINT = $(TOOLS_D)/bin/golangci-lint
 
 STAGE1_STACKER ?= ./stacker-dynamic
-STACKER_PUBLISH_BIN := stacker-$(GOOS)-$(GOARCH)
+STACKER_PUBLISH_BIN = stacker-$(GOOS)-$(GOARCH)
+LXC_WRAPPER_DYNAMIC = cmd/stacker/lxc-wrapper/lxc-wrapper-host
+LXC_WRAPPER_STATIC = cmd/stacker/lxc-wrapper/lxc-wrapper-static
+LINT = $(BUILD_D)/lint
+GO_TEST = $(BUILD_D)/go-test
 
 STACKER_DEPS = $(GO_SRC) go.mod go.sum
+STACKER_DYNAMIC_DEPS = $(GO_TEST) $(STACKER_DEPS) $(LXC_WRAPPER_DYNAMIC)
+STACKER_STATIC_DEPS = $(STACKER_DEPS) $(LXC_WRAPPER_STATIC)
 
-stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
+stacker: $(STAGE1_STACKER) build.yaml
 	echo STACKER_DOCKER_BASE=$(STACKER_DOCKER_BASE)
 	echo STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE)
 	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
@@ -77,7 +83,7 @@ stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
 		--substitute VERSION=$(VERSION) \
 		--substitute WITH_COV=no
 
-stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
+stacker-cov: $(STAGE1_STACKER) build.yaml
 	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
 		-f build.yaml \
 		--substitute BUILD_D=$(BUILD_D) \
@@ -107,38 +113,42 @@ LXC_WRAPPER_LIBS=
 endif
 endif
 
-stacker-static: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-static: $(STACKER_STATIC_DEPS)
 	$(call build_stacker,,static_build,-extldflags '-static',stacker)
 
 # can't use a comma in func call args, so do this instead
 , := ,
-stacker-static-cov: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-static-cov: $(STACKER_STATIC_DEPS)
 	$(call build_stacker,-cover -coverpkg="./pkg/...$(,)./cmd/...",static_build,-extldflags '-static',stacker)
 
-# TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
-# Could find a better way to do this.
-stacker-dynamic: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-dynamic: $(STACKER_DYNAMIC_DEPS)
 	$(call build_stacker,,,,stacker-dynamic)
 
-cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
-	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) $(LXC_WRAPPER_LIBS) -lpthread -ldl" lxc-wrapper
+$(LXC_WRAPPER_DYNAMIC) $(LXC_WRAPPER_STATIC): cmd/stacker/lxc-wrapper/lxc-wrapper.c
+	make -C cmd/stacker/lxc-wrapper OUTPUT=$(notdir $@) LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) $(LXC_WRAPPER_LIBS) -lpthread -ldl"
 
 
 .PHONY: go-download
 go-download:
 	go mod download
 
-.PHONY: lint
-lint: $(GO_SRC) $(GOLANGCI_LINT)
+lint: $(LINT)
+
+$(LINT): $(GO_SRC) go.mod go.sum $(GOLANGCI_LINT)
 	go mod tidy
 	go fmt ./... && ([ -z $(CI) ] || git diff --exit-code)
 	bash test/static-analysis.sh
 	$(GOLANGCI_LINT) run --build-tags "$(BUILD_TAGS) skipembed"
+	@mkdir -p $(dir $@)
+	@touch $@
 
-.PHONY: go-test
-go-test:
+go-test: $(GO_TEST)
+
+$(GO_TEST): $(LINT) $(GO_SRC) go.mod go.sum
 	go test -v -trimpath -cover -coverprofile=coverage.txt -covermode=atomic -tags "exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo skipembed" ./pkg/... ./cmd/...
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
+	@mkdir -p $(dir $@)
+	@touch $@
 
 .PHONY: download-tools
 download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
@@ -200,7 +210,9 @@ PRIVILEGE_LEVEL ?= unpriv
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
-check: lint test go-test
+check:
+	$(MAKE) go-test
+	$(MAKE) test
 
 .PHONY: test
 test: stacker download-tools lintbats

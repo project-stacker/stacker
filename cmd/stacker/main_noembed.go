@@ -7,3 +7,4 @@ import "embed"
 var embeddedFS embed.FS
 
 const hasEmbedded = true
+const embeddedWrapperPath = ""
