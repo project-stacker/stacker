@@ -48,6 +48,7 @@ for priv in priv_to_test:
         "./test/setup_suite.bash",
         "--jobs",
         str(options.jobs),
+        "--abort",
         "--tap",
         "--timing",
         "--verbose-run",

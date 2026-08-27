@@ -47,7 +47,8 @@ REGCLIENT_VERSION := v0.5.1
 SKOPEO = $(TOOLS_D)/bin/skopeo
 export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
-BATS_VERSION := v1.10.0
+BATS_VERSION := v1.13.0
+BATS_VERSION_STAMP := $(TOOLS_D)/.bats-$(BATS_VERSION)
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.1.8
@@ -185,7 +186,9 @@ $(SKOPEO):
 	cd $(TOP_LEVEL); \
 	rm -rf $$tmpdir;
 
-$(BATS):
+$(BATS): $(BATS_VERSION_STAMP)
+
+$(BATS_VERSION_STAMP):
 	mkdir -p $(TOOLS_D)/bin
 	rm -rf bats-core
 	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git
@@ -195,6 +198,7 @@ $(BATS):
 	git clone --depth 1 https://github.com/bats-core/bats-support $(TOP_LEVEL)/test/test_helper/bats-support
 	git clone --depth 1 https://github.com/bats-core/bats-assert $(TOP_LEVEL)/test/test_helper/bats-assert
 	git clone --depth 1 https://github.com/bats-core/bats-file $(TOP_LEVEL)/test/test_helper/bats-file
+	touch $@
 
 
 $(UMOCI):
