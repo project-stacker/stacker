@@ -2,6 +2,7 @@ load helpers
 
 function setup() {
     stacker_setup
+    NETNS_NAME="stacker-test-${BATS_TEST_NUMBER}"
     mkdir -p reference
     mkdir -p dest
     rm -f nm_orig
@@ -35,7 +36,7 @@ function teardown() {
     rm -rf img || true
     rm -rf reference || true
     rm -rf dest || true
-    ip netns del stacker-test || true
+    ip netns del "$NETNS_NAME" 2>/dev/null || true
 }
 
 @test "importing from cache works for unreachable http urls" {
@@ -48,8 +49,9 @@ function teardown() {
     stacker build -f img/stacker2.yaml
     umoci ls --layout oci
     # Second execution reads from the cache, but cannot access the net
-    ip netns add stacker-test
-    run ip netns exec stacker-test "${ROOT_DIR}/stacker" build -f img/stacker2.yaml
+    ip netns del "$NETNS_NAME" 2>/dev/null || true
+    ip netns add "$NETNS_NAME"
+    run ip netns exec "$NETNS_NAME" "${ROOT_DIR}/stacker" build -f img/stacker2.yaml
     echo $output
     [ "$status" -eq 0 ]
     umoci ls --layout oci
