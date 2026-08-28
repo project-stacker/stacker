@@ -205,7 +205,7 @@ EOF
     echo $output | grep 'hash does not match'
 }
 
-@test "`require hash` flag allows build when hash is provided" {
+@test "--require-hash allows build when hash is provided" {
     touch test_file
     test_file_sha=$(sha test_file) || { stderr "failed sha $test_file"; return 1; }
     wget https://google.com/favicon.ico -O google_fav
@@ -229,7 +229,7 @@ EOF
     stacker build --require-hash
 }
 
-@test "`require hash` flag fails build when http import hash is not provided" {
+@test "--require-hash fails build when http import hash is not provided" {
     touch test_file
     test_file_sha=$(sha test_file) || { stderr "failed sha $test_file"; return 1; }
     wget https://google.com/favicon.ico -O google_fav
@@ -249,7 +249,7 @@ EOF
     bad_stacker build --require-hash
 }
 
-@test "`require hash` flag allows build even when local hash is not provided" {
+@test "--require-hash allows build even when local hash is not provided" {
     touch test_file
     wget https://google.com/favicon.ico -O google_fav
     google_sha=$(sha google_fav) || { stderr "failed sha $google_fav"; return 1; }
