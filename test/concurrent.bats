@@ -37,5 +37,7 @@ EOF
 EOF
 
     kill -9 $snoozpid
+    # Reap the intentionally killed build without printing Bash's "Killed" notice.
+    wait "$snoozpid" 2>/dev/null || true
 
 }
