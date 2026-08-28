@@ -62,7 +62,6 @@ GOLANGCI_LINT_URL = https://github.com/golangci/golangci-lint/releases/download
 GOLANGCI_LINT = $(TOOLS_D)/bin/golangci-lint
 
 STAGE1_STACKER ?= ./stacker-dynamic
-STACKER_PUBLISH_BIN = stacker-$(GOOS)-$(GOARCH)
 LXC_WRAPPER_DYNAMIC = cmd/stacker/lxc-wrapper/lxc-wrapper-host
 LXC_WRAPPER_STATIC = cmd/stacker/lxc-wrapper/lxc-wrapper-static
 LINT = $(BUILD_D)/lint
@@ -95,10 +94,8 @@ stacker-cov: $(STAGE1_STACKER) build.yaml
 		--substitute WITH_COV=yes
 
 .PHONY: publish-stacker-bin
-publish-stacker-bin: $(STACKER_PUBLISH_BIN)
-
-$(STACKER_PUBLISH_BIN): stacker
-	cp -v $< $@
+publish-stacker-bin: stacker
+	cp -v $< stacker-$$(go env GOOS)-$$(go env GOARCH)
 
 # On Ubuntu 24.04 the lxc package does not link against libsystemd so the pkg-config
 # below does list -lsystemd; we must add it to the list but only for stacker-dynamic
@@ -284,7 +281,6 @@ debug:
 
 .PHONY: clean
 clean:
-	-unshare -Urm rm -rf stacker stacker-dynamic .build
+	-unshare -Urm rm -rf ./stacker ./stacker-dynamic ./stacker-*-* ./.build ./.stacker ./oci ./roots ./stackertest-* ./coverage.txt ./hack ./bats-core
 	-rm -rf ./test/centos ./test/ubuntu ./test/busybox ./test/alpine ./test/test_helper
 	-make -C cmd/stacker/lxc-wrapper clean
-	-rm -rf $(TOOLS_D)
