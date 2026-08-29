@@ -92,11 +92,6 @@ EOF
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
 
-    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.git_version"')
-    echo "WARK1: publishedGitVersion=${publishedGitVersion}" >&3
-    echo "WARK1: VERSION_FULL=${VERSION_FULL}" >&3
-    [ "$publishedGitVersion" = "$VERSION_FULL" ]
-
     # need to trim the extra newline from jq
     cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
 
@@ -134,6 +129,34 @@ EOF
     umoci unpack --image oci:layer1 dest
     [ ! -f dest/rootfs/favicon.ico ]
     [ ! -d dest/rootfs/stacker ]
+}
+
+@test "git version annotation matches stackerfile repository" {
+    local gitdir="$TEST_TMPDIR/stackerfile-git"
+    local gitTag="v0.0.1"
+
+    mkdir "$gitdir"
+    cat > "$gitdir/stacker.yaml" <<"EOF"
+busybox:
+    from:
+        type: oci
+        url: ${{BUSYBOX_OCI}}
+    run: |
+        touch /foo
+EOF
+    git -C "$gitdir" init -q
+    git -C "$gitdir" add stacker.yaml
+    git -C "$gitdir" -c user.name=stacker-test -c user.email=stacker@test commit -qm test
+    git -C "$gitdir" tag "$gitTag"
+    give_user_ownership "$gitdir"
+
+    stacker build -f "$gitdir/stacker.yaml" --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+
+    manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
+    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.git_version"')
+    echo "publishedGitVersion=${publishedGitVersion}" >&3
+    echo "repositoryGitTag   =${gitTag}" >&3
+    [ "$publishedGitVersion" = "$gitTag" ]
 }
 
 @test "stacker.yaml without imports can run" {
@@ -256,11 +279,6 @@ EOF
     layer=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest)
     config=$(cat oci/blobs/sha256/$manifest | jq -r .config.digest | cut -f2 -d:)
     [ "$(cat oci/blobs/sha256/$config | jq -r '.config.Entrypoint | join(" ")')" = "echo hello world" ]
-
-    publishedGitVersion=$(cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.git_version"')
-    echo "WARK2: publishedGitVersion=${publishedGitVersion}" >&3
-    echo "WARK2: VERSION_FULL=${VERSION_FULL}" >&3
-    [ "$publishedGitVersion" = "$VERSION_FULL" ]
 
     # need to trim the extra newline from jq
     cat oci/blobs/sha256/$manifest | jq -r '.annotations."io.stackeroci.stacker.stacker_yaml"' | sed '$ d' > stacker_yaml_annotation
