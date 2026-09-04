@@ -9,7 +9,7 @@ on:
         type: string
         description: 'Stringified JSON object listing go versions'
         default: >-
-          ["1.25.12"]
+          ["1.26.8"]
       privilege-level:
         required: false
         type: string
@@ -63,7 +63,7 @@ jobs:
       - uses: benjlevesque/short-sha@v4.0
         id: short-sha
       - name: Set up golang ${{ matrix.go-version }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup Environment

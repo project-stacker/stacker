@@ -57,7 +57,7 @@ UMOCI_VERSION := main
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 
-GOLANGCI_LINT_VERSION = 2.7.2
+GOLANGCI_LINT_VERSION = 2.13.1
 GOLANGCI_LINT_URL = https://github.com/golangci/golangci-lint/releases/download
 GOLANGCI_LINT = $(TOOLS_D)/bin/golangci-lint
 
