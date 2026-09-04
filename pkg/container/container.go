@@ -147,7 +147,7 @@ func (c *Container) Execute(args []string, stdin io.Reader) error {
 
 	cmd, cleanup, err := embed_exec.GetCommand(
 		c.sc.EmbeddedFS,
-		"lxc-wrapper/lxc-wrapper",
+		c.sc.EmbeddedWrapperPath,
 		append([]string{"spawn", c.c.Name(), c.sc.RootFSDir, f.Name()}, args...)...,
 	)
 	if err != nil {

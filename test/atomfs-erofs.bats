@@ -137,6 +137,8 @@ EOF
 
 @test "bad existing verity device is rejected" {
     require_privilege priv
+    # This test creates a host-global device-mapper name from the layer hash.
+    # Keep its layer distinct from the concurrently running mount test.
     cat > stacker.yaml <<"EOF"
 test:
     from:
@@ -144,12 +146,15 @@ test:
         url: ${{BUSYBOX_OCI}}
     run: |
         touch /hello
+        touch /bad-existing-verity-device-erofs
 EOF
     stacker build --layer-type=erofs --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
     manifest=$(cat oci/index.json | jq -r .manifests[0].digest | cut -f2 -d:)
-    first_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[0].digest | cut -f2 -d:)
-    devname="$first_layer_hash-verity"
+    # Use this test's unique top layer, not the common base image layer.
+    last_layer_num=$(($(cat oci/blobs/sha256/$manifest | jq -r '.layers | length')-1))
+    last_layer_hash=$(cat oci/blobs/sha256/$manifest | jq -r .layers[$last_layer_num].digest | cut -f2 -d:)
+    devname="$last_layer_hash-verity"
 
     # make an evil device and fake it as an existing verity device
     dd if=/dev/random of=mydev bs=50K count=1

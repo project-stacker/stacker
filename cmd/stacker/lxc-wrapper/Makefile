@@ -1,2 +1,8 @@
+OUTPUT ?= lxc-wrapper
+
+$(OUTPUT): lxc-wrapper.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS)
+
+.PHONY: clean
 clean:
-	-rm lxc-wrapper
+	-rm -f lxc-wrapper lxc-wrapper-host lxc-wrapper-static

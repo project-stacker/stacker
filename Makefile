@@ -7,8 +7,9 @@ export GOCACHE ?= $(GOPATH)/gocache
 GO_SRC=$(shell find pkg cmd -name \*.go)
 GOARCH=$(shell go env GOARCH)
 GOOS=$(shell go env GOOS)
-VERSION?=$(shell git describe --tags || git rev-parse HEAD)
-VERSION_FULL?=$(if $(shell git status --porcelain --untracked-files=no),$(VERSION)-dirty,$(VERSION))
+# --tags includes both annotated and lightweight tags but must match our expected versioning
+VERSION?=$(shell git describe --tags --always --long --dirty --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || echo 'no-git')
+BUILD_ID?=$(shell git rev-parse --short HEAD || echo 'no-git')
 HASH = \#
 
 LXC_VERSION?=$(shell pkg-config --modversion lxc)
@@ -17,7 +18,7 @@ BUILD_TAGS = exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containe
 
 STACKER_OPTS=--oci-dir=$(BUILD_D)/oci --roots-dir=$(BUILD_D)/roots --stacker-dir=$(BUILD_D)/stacker --storage-type=overlay
 
-VERSION_LDFLAGS=-X stackerbuild.io/stacker/pkg/lib.StackerVersion=$(VERSION_FULL) -X stackerbuild.io/stacker/pkg/lib.LXCVersion=$(LXC_VERSION)
+VERSION_LDFLAGS=-X stackerbuild.io/stacker/pkg/lib.StackerVersion=$(VERSION) -X stackerbuild.io/stacker/pkg/lib.LXCVersion=$(LXC_VERSION)
 build_stacker = go build $1 -tags "$(BUILD_TAGS) $2" -ldflags "$(VERSION_LDFLAGS) $3" -o $4 ./cmd/stacker
 
 # See doc/hacking.md for how to use a local oci or docker repository.
@@ -46,7 +47,8 @@ REGCLIENT_VERSION := v0.5.1
 SKOPEO = $(TOOLS_D)/bin/skopeo
 export SKOPEO_VERSION = 1.13.0
 BATS = $(TOOLS_D)/bin/bats
-BATS_VERSION := v1.10.0
+BATS_VERSION := v1.13.0
+BATS_VERSION_STAMP := $(TOOLS_D)/.bats-$(BATS_VERSION)
 # OCI registry
 ZOT := $(TOOLS_D)/bin/zot
 ZOT_VERSION := v2.1.8
@@ -55,16 +57,21 @@ UMOCI_VERSION := main
 
 export PATH := $(TOOLS_D)/bin:$(PATH)
 
-GOLANGCI_LINT_VERSION = 2.7.2
+GOLANGCI_LINT_VERSION = 2.13.1
 GOLANGCI_LINT_URL = https://github.com/golangci/golangci-lint/releases/download
 GOLANGCI_LINT = $(TOOLS_D)/bin/golangci-lint
 
 STAGE1_STACKER ?= ./stacker-dynamic
-STACKER_PUBLISH_BIN := stacker-$(GOOS)-$(GOARCH)
+LXC_WRAPPER_DYNAMIC = cmd/stacker/lxc-wrapper/lxc-wrapper-host
+LXC_WRAPPER_STATIC = cmd/stacker/lxc-wrapper/lxc-wrapper-static
+LINT = $(BUILD_D)/lint
+GO_TEST = $(BUILD_D)/go-test
 
 STACKER_DEPS = $(GO_SRC) go.mod go.sum
+STACKER_DYNAMIC_DEPS = $(GO_TEST) $(STACKER_DEPS) $(LXC_WRAPPER_DYNAMIC)
+STACKER_STATIC_DEPS = $(STACKER_DEPS) $(LXC_WRAPPER_STATIC)
 
-stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
+stacker: $(STAGE1_STACKER) build.yaml
 	echo STACKER_DOCKER_BASE=$(STACKER_DOCKER_BASE)
 	echo STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE)
 	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
@@ -73,28 +80,30 @@ stacker: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
-		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute VERSION=$(VERSION) \
 		--substitute WITH_COV=no
 
-stacker-cov: $(STAGE1_STACKER) $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper.c
+stacker-cov: $(STAGE1_STACKER) build.yaml
 	$(STAGE1_STACKER) --debug $(STACKER_OPTS) build \
 		-f build.yaml \
 		--substitute BUILD_D=$(BUILD_D) \
 		--substitute STACKER_BUILD_BASE_IMAGE=$(STACKER_BUILD_BASE_IMAGE) \
 		--substitute LXC_CLONE_URL=$(LXC_CLONE_URL) \
 		--substitute LXC_BRANCH=$(LXC_BRANCH) \
-		--substitute VERSION_FULL=$(VERSION_FULL) \
+		--substitute VERSION=$(VERSION) \
 		--substitute WITH_COV=yes
 
 .PHONY: publish-stacker-bin
-publish-stacker-bin: $(STACKER_PUBLISH_BIN)
-
-$(STACKER_PUBLISH_BIN): stacker
-	cp -v $< $@
+publish-stacker-bin: stacker
+	cp -v $< stacker-$$(go env GOOS)-$$(go env GOARCH)
 
 # On Ubuntu 24.04 the lxc package does not link against libsystemd so the pkg-config
 # below does list -lsystemd; we must add it to the list but only for stacker-dynamic
-ifeq ($(shell awk -F= '/VERSION_ID/ {print $$2}' /etc/os-release),"24.04")
+OS_VERSION_ID ?= "24.04"
+ifneq (,$(wildcard /etc/os-release))
+OS_VERSION_ID := $(shell awk -F= '/VERSION_ID/ {print $$2}' /etc/os-release)
+endif
+ifeq ($(OS_VERSION_ID),"24.04")
 ifeq (stacker-dynamic,$(firstword $(MAKECMDGOALS)))
 LXC_WRAPPER_LIBS=-lsystemd
 else
@@ -102,38 +111,42 @@ LXC_WRAPPER_LIBS=
 endif
 endif
 
-stacker-static: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-static: $(STACKER_STATIC_DEPS)
 	$(call build_stacker,,static_build,-extldflags '-static',stacker)
 
 # can't use a comma in func call args, so do this instead
 , := ,
-stacker-static-cov: $(GO_SRC) go.mod go.sum cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-static-cov: $(STACKER_STATIC_DEPS)
 	$(call build_stacker,-cover -coverpkg="./pkg/...$(,)./cmd/...",static_build,-extldflags '-static',stacker)
 
-# TODO: because we clean lxc-wrapper in the nested build, this always rebuilds.
-# Could find a better way to do this.
-stacker-dynamic: $(STACKER_DEPS) cmd/stacker/lxc-wrapper/lxc-wrapper
+stacker-dynamic: $(STACKER_DYNAMIC_DEPS)
 	$(call build_stacker,,,,stacker-dynamic)
 
-cmd/stacker/lxc-wrapper/lxc-wrapper: cmd/stacker/lxc-wrapper/lxc-wrapper.c
-	make -C cmd/stacker/lxc-wrapper LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) $(LXC_WRAPPER_LIBS) -lpthread -ldl" lxc-wrapper
+$(LXC_WRAPPER_DYNAMIC) $(LXC_WRAPPER_STATIC): cmd/stacker/lxc-wrapper/lxc-wrapper.c
+	make -C cmd/stacker/lxc-wrapper OUTPUT=$(notdir $@) LDFLAGS=-static LDLIBS="$(shell pkg-config --static --libs lxc) $(LXC_WRAPPER_LIBS) -lpthread -ldl"
 
 
 .PHONY: go-download
 go-download:
 	go mod download
 
-.PHONY: lint
-lint: $(GO_SRC) $(GOLANGCI_LINT)
+lint: $(LINT)
+
+$(LINT): $(GO_SRC) go.mod go.sum $(GOLANGCI_LINT)
 	go mod tidy
 	go fmt ./... && ([ -z $(CI) ] || git diff --exit-code)
 	bash test/static-analysis.sh
 	$(GOLANGCI_LINT) run --build-tags "$(BUILD_TAGS) skipembed"
+	@mkdir -p $(dir $@)
+	@touch $@
 
-.PHONY: go-test
-go-test:
+go-test: $(GO_TEST)
+
+$(GO_TEST): $(LINT) $(GO_SRC) go.mod go.sum
 	go test -v -trimpath -cover -coverprofile=coverage.txt -covermode=atomic -tags "exclude_graphdriver_btrfs exclude_graphdriver_devicemapper containers_image_openpgp osusergo netgo skipembed" ./pkg/... ./cmd/...
 	go tool cover -html coverage.txt  -o $(HACK_D)/coverage.html
+	@mkdir -p $(dir $@)
+	@touch $@
 
 .PHONY: download-tools
 download-tools: $(GOLANGCI_LINT) $(REGCLIENT) $(ZOT) $(BATS) $(UMOCI) $(SKOPEO)
@@ -170,7 +183,9 @@ $(SKOPEO):
 	cd $(TOP_LEVEL); \
 	rm -rf $$tmpdir;
 
-$(BATS):
+$(BATS): $(BATS_VERSION_STAMP)
+
+$(BATS_VERSION_STAMP):
 	mkdir -p $(TOOLS_D)/bin
 	rm -rf bats-core
 	git clone -b $(BATS_VERSION) https://github.com/bats-core/bats-core.git
@@ -180,6 +195,7 @@ $(BATS):
 	git clone --depth 1 https://github.com/bats-core/bats-support $(TOP_LEVEL)/test/test_helper/bats-support
 	git clone --depth 1 https://github.com/bats-core/bats-assert $(TOP_LEVEL)/test/test_helper/bats-assert
 	git clone --depth 1 https://github.com/bats-core/bats-file $(TOP_LEVEL)/test/test_helper/bats-file
+	touch $@
 
 
 $(UMOCI):
@@ -195,7 +211,9 @@ PRIVILEGE_LEVEL ?= unpriv
 # make check TEST=basic will run only the basic test
 # make check PRIVILEGE_LEVEL=unpriv will run only unprivileged tests
 .PHONY: check
-check: lint test go-test
+check:
+	$(MAKE) go-test
+	$(MAKE) test
 
 .PHONY: test
 test: stacker download-tools lintbats
@@ -205,8 +223,8 @@ test: stacker download-tools lintbats
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
 		TOP_LEVEL=$(TOP_LEVEL) \
+		BUILD_ID=$(BUILD_ID) \
 		VERSION=$(VERSION) \
-		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -230,8 +248,8 @@ test-cov: stacker-cov download-tools
 		STACKER_BUILD_CENTOS_IMAGE=$(STACKER_BUILD_CENTOS_IMAGE) \
 		STACKER_BUILD_UBUNTU_IMAGE=$(STACKER_BUILD_UBUNTU_IMAGE) \
 		TOP_LEVEL=$(TOP_LEVEL) \
+		BUILD_ID=$(BUILD_ID) \
 		VERSION=$(VERSION) \
-		VERSION_FULL=$(VERSION_FULL) \
 		./test/main.py \
 		$(shell [ -z $(PRIVILEGE_LEVEL) ] || echo --privilege-level=$(PRIVILEGE_LEVEL)) \
 		$(patsubst %,test/%.bats,$(TEST))
@@ -245,6 +263,9 @@ docker-clone: $(SKOPEO)
 .PHONY: show-info
 show-info:
 	@echo BUILD_D=$(BUILD_D)
+	@echo BUILD_ID=$(BUILD_ID)
+	@echo VERSION=$(VERSION)
+	@echo TOP_LEVEL=$(TOP_LEVEL)
 	@go env
 
 .PHONY: vendorup
@@ -255,12 +276,11 @@ vendorup:
 .PHONY: debug
 debug:
 	@echo TOP_LEVEL=$(TOP_LEVEL)
+	@echo BUILD_ID=$(BUILD_ID)
 	@echo VERSION=$(VERSION)
-	@echo VERSION_FULL=$(VERSION_FULL)
 
 .PHONY: clean
 clean:
-	-unshare -Urm rm -rf stacker stacker-dynamic .build
+	-unshare -Urm rm -rf ./stacker ./stacker-dynamic ./stacker-*-* ./.build ./.stacker ./oci ./roots ./stackertest-* ./coverage.txt ./hack ./bats-core
 	-rm -rf ./test/centos ./test/ubuntu ./test/busybox ./test/alpine ./test/test_helper
 	-make -C cmd/stacker/lxc-wrapper clean
-	-rm -rf $(TOOLS_D)

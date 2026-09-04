@@ -46,6 +46,7 @@ EOF
   # build should now work
   ## docker build -t test
   mkdir -p /out
+  echo "# building converted Dockerfile; this may take several minutes" >&3
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=app
   if [ -z "${REGISTRY_URL}" ]; then
     skip "publish step of test because no registry found in REGISTRY_URL env variable"
@@ -55,12 +56,14 @@ EOF
   stacker clean
 }
 
-@test "alpine" {
+@test "alpine convert and build" {
   skip_slow_test
-  git clone https://github.com/alpinelinux/docker-alpine.git
+  echo "# cloning alpine Dockerfile repository; this may take some time" >&3
+  git clone --depth 1 https://github.com/alpinelinux/docker-alpine.git
   chmod -R a+rwx docker-alpine
   cd docker-alpine
   TEMPDIR=$(mktemp -d)
+  echo "# converting and building alpine; this may take several minutes" >&3
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=alpine --substitute STACKER_VOL1="$TEMPDIR"
   if [ -nz "${REGISTRY_URL}" ]; then
@@ -70,11 +73,13 @@ EOF
   stacker clean
 }
 
-@test "elasticsearch" {
+@test "elasticsearch convert and build" {
   skip_slow_test
+  echo "# cloning elasticsearch Dockerfile repository; this may take some time" >&3
   git clone --branch v8.17.10 --depth 1 https://github.com/elastic/dockerfiles.git
   chmod -R a+rwx dockerfiles
   cd dockerfiles/elasticsearch
+  echo "# converting and building elasticsearch; this may take several minutes" >&3
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=elasticsearch
   if [ -nz "${REGISTRY_URL}" ]; then
@@ -83,14 +88,18 @@ EOF
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
 }
-@test "python" {
+@test "python3 convert and build" {
   skip_slow_test
-  git clone https://github.com/docker-library/python.git
+  echo "# cloning python Dockerfile repository; this may take some time" >&3
+  git init -q python
   cd python
-  # pick a specific commit so we don't get broken by upstream changes:
-  git reset --hard aad39d215779f27b410b25f612b6680a75781edb
+  git remote add origin https://github.com/docker-library/python.git
+  # Fetch only the pinned commit so we do not need the repository's full history.
+  git fetch --depth 1 origin aad39d215779f27b410b25f612b6680a75781edb
+  git checkout --detach FETCH_HEAD
   cd 3.11/alpine3.22
   chmod -R a+rw .
+  echo "# converting and building python; this may take several minutes" >&3
   stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
   stacker build -f stacker.yaml --substitute-file stacker-subs.yaml --substitute IMAGE=python
   if [ -nz "${REGISTRY_URL}" ]; then

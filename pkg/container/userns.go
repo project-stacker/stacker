@@ -91,7 +91,7 @@ func MaybeRunInNamespace(config types.StackerConfig, userCmd []string) error {
 	log.Debugf("%s-ing %v", args[0], args[1:])
 	cmd, cleanup, err := embed_exec.GetCommand(
 		config.EmbeddedFS,
-		"lxc-wrapper/lxc-wrapper",
+		config.EmbeddedWrapperPath,
 		args...,
 	)
 	if err != nil {

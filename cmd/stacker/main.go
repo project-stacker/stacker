@@ -257,6 +257,7 @@ func main() {
 		}
 
 		config.EmbeddedFS = embeddedFS
+		config.EmbeddedWrapperPath = embeddedWrapperPath
 
 		if config.WorkDir == "" || ctx.IsSet("work-dir") {
 			config.WorkDir = ctx.String("work-dir")

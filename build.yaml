@@ -88,7 +88,7 @@ build:
     # golang wants somewhere to put its garbage
     export HOME=/root
     export LXC_VERSION=$(git -C /lxc rev-parse HEAD)
-    export VERSION_FULL=${{VERSION_FULL}}
+    export VERSION=${{VERSION}}
 
     # apk go pkg doesn't seem to have the standard go.env which would set GOTOOLCHAIN=auto.
     # therefore it defaults to 'local', which ignores the `toolchain` line in go.mod
@@ -97,9 +97,10 @@ build:
 
     cd /stacker-tree
     make BUILD_D=/build show-info
-    make BUILD_D=/build -C cmd/stacker/lxc-wrapper clean
+    # -B rebuilds the static wrapper for this build environment without
+    # cleaning the host wrapper used by stacker-dynamic.
     if [ x${{WITH_COV}} = x"yes" ]; then
-      make BUILD_D=/build stacker-static-cov
+      make -B BUILD_D=/build stacker-static-cov
     else
-      make -C /stacker-tree stacker-static
+      make -B -C /stacker-tree stacker-static
     fi
