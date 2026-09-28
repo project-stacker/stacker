@@ -27,7 +27,7 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vbatts/go-mtree v0.7.0
-	go.podman.io/image/v5 v5.41.1
+	go.podman.io/image/v5 v5.41.2
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -126,7 +126,7 @@ require (
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/vbatts/tar-split v0.12.3 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
-	go.podman.io/storage v1.64.0 // indirect
+	go.podman.io/storage v1.64.1 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
