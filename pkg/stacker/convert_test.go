@@ -22,8 +22,13 @@ func TestConverterConvertCommandErrors(t *testing.T) {
 		},
 		{
 			name: "invalid env",
-			c:    NewConverter(&ConvertArgs{}),
-			cmd:  &Command{Cmd: "env", Original: "ENV FOO", Value: []string{"FOO"}},
+			c: func() *Converter {
+				c := NewConverter(&ConvertArgs{})
+				c.currLayer = "layer"
+				c.output[c.currLayer] = &types.Layer{}
+				return c
+			}(),
+			cmd: &Command{Cmd: "env", Original: "ENV FOO", Value: []string{"FOO"}},
 		},
 		{
 			name: "invalid arg",
