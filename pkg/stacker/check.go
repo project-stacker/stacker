@@ -104,7 +104,7 @@ func MountInfo(path string) (string, error) {
 		return "", err
 	}
 
-	fstype, ok := fstypeMap[st.Type]
+	fstype, ok := fstypeMap[int64(st.Type)]
 	if !ok {
 		fstype = "unknown"
 	}
