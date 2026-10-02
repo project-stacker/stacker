@@ -42,7 +42,7 @@ func GitVersion(path string) (string, error) {
 	}
 
 	// Check if there are local changes
-	args = []string{"-C", path, "status", "--porcelain", "--untracked-files=no"}
+	args = []string{"--no-optional-locks", "-C", path, "status", "--porcelain", "--untracked-files=no"}
 	output, err = exec.Command("git", args...).CombinedOutput()
 	if err != nil {
 		return "", err
