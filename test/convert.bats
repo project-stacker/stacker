@@ -108,3 +108,47 @@ EOF
   rm -f stacker.yaml stacker-subs.yaml
   stacker clean
 }
+
+@test "convert FROM-AS in Dockerfile" {
+  # Remove any prior Dockerfile
+  rm -f Dockerfile
+
+  # Create myhello.go
+  cat > myhello.go << EOF
+package main
+
+func main() {
+}
+EOF
+
+  # Create a Dockerfile
+  cat > Dockerfile << EOF
+FROM golang AS mybuild
+COPY myhello.go /src/myhello.go
+WORKDIR /src
+RUN export GOPATH=/go && export PATH=/go/bin:/usr/local/go/bin:\$PATH && export HOME=/go && go build -o /bin/myhello myhello.go && ls /bin/myhello
+FROM alpine AS mybase
+FROM mybase AS A
+COPY --from=mybuild /bin/myhello /bin/myhello
+FROM A AS B
+RUN chmod 755 /bin/myhello && \
+    /bin/myhello
+EOF
+
+  # Convert
+  stacker convert --docker-file Dockerfile --output-file stacker.yaml --substitute-file stacker-subs.yaml
+
+  cat stacker.yaml
+
+  # Ensure fields are correctly converted
+  grep -A 5 "A:" stacker.yaml | grep -zo "tag: mybase.*type: built"
+  grep -A 5 "B:" stacker.yaml | grep -zo "tag: A.*type: built"
+  grep -A 5 "mybase:" stacker.yaml | grep -zo "type: docker.*url: docker://alpine"
+  grep -A 5 "mybuild:" stacker.yaml | grep -zo "type: docker.*url: docker://golang"
+
+  # build should work
+  stacker build -f stacker.yaml --substitute IMAGE=testFROMAS
+
+  rm -f stacker.yaml stacker-subs.yaml Dockerfile myhello.go
+  stacker clean
+}
