@@ -268,39 +268,62 @@ func parseLayers(referenceDirectory string, lms yaml.MapSlice, requireHash bool)
 	// Let's make sure that all the things people supplied in the layers are
 	// actually things this stacker understands.
 	for _, e := range lms {
-		for _, directive := range e.Value.(yaml.MapSlice) {
+		directives, ok := e.Value.(yaml.MapSlice)
+		if !ok {
+			return nil, errors.Errorf("stackerfile: layer '%v' must be a map of directives, found: %#v",
+				e.Key, e.Value)
+		}
+
+		for _, directive := range directives {
+			key, ok := directive.Key.(string)
+			if !ok {
+				return nil, errors.Errorf("stackerfile: layer '%v': directive %v is not a string",
+					e.Key, directive.Key)
+			}
+
 			found := false
 			for _, field := range layerFields {
-				if directive.Key.(string) == field {
+				if key == field {
 					found = true
 					break
 				}
 			}
 
 			if !found {
-				return nil, errors.Errorf("stackerfile: unknown directive %s", directive.Key.(string))
+				return nil, errors.Errorf("stackerfile: unknown directive %s", key)
 			}
 
-			if directive.Key.(string) == "from" {
-				for _, sourceDirective := range directive.Value.(yaml.MapSlice) {
+			if key == "from" {
+				sourceDirectives, ok := directive.Value.(yaml.MapSlice)
+				if !ok {
+					return nil, errors.Errorf("stackerfile: layer '%v': 'from' must be a map with a 'type' "+
+						"and a 'url' or 'tag', found: %#v", e.Key, directive.Value)
+				}
+
+				for _, sourceDirective := range sourceDirectives {
+					sourceKey, ok := sourceDirective.Key.(string)
+					if !ok {
+						return nil, errors.Errorf("stackerfile: layer '%v': image source directive %v "+
+							"is not a string", e.Key, sourceDirective.Key)
+					}
+
 					found = false
 					for _, field := range imageSourceFields {
-						if sourceDirective.Key.(string) == field {
+						if sourceKey == field {
 							found = true
 							break
 						}
 					}
 
 					if !found {
-						return nil, errors.Errorf("stackerfile: unknown image source directive %s",
-							sourceDirective.Key.(string))
+						return nil, errors.Errorf("stackerfile: unknown image source directive %s", sourceKey)
 					}
 				}
 			}
 
-			if directive.Key.(string) == "os" || directive.Key.(string) == "arch" {
+			if key == "os" || key == "arch" {
 				if directive.Value == nil {
-					return nil, errors.Errorf("stackerfile: %q value cannot be empty", directive.Key.(string))
+					return nil, errors.Errorf("stackerfile: %q value cannot be empty", key)
 				}
 			}
 		}
@@ -456,6 +479,9 @@ func getImportFromInterface(v interface{}) (Import, error) {
 	// if it is a simple string, that is the path
 	s, ok := v.(string)
 	if ok {
+		if s == "" {
+			return Import{}, errors.Errorf("import path cannot be empty")
+		}
 		ret.Path = s
 		return ret, nil
 	}

@@ -2,7 +2,9 @@ package types
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -48,6 +50,54 @@ func TestDockerFrom(t *testing.T) {
 
 	if l.From.Url != "" {
 		t.Fatalf("bad url")
+	}
+}
+
+func TestMalformedLayers(t *testing.T) {
+	tables := []struct {
+		desc    string
+		content string
+		errstr  string
+	}{
+		{desc: "layer is a string",
+			content: "foo: bar\n",
+			errstr:  "must be a map of directives"},
+		{desc: "layer is empty",
+			content: "foo:\n",
+			errstr:  "must be a map of directives"},
+		{desc: "directive is not a string",
+			content: "foo:\n  1: bar\n",
+			errstr:  "directive 1 is not a string"},
+		{desc: "from is a string",
+			content: "foo:\n  from: docker://ubuntu:latest\n",
+			errstr:  "'from' must be a map"},
+		{desc: "from is empty",
+			content: "foo:\n  from:\n",
+			errstr:  "'from' must be a map"},
+		{desc: "image source directive is not a string",
+			content: "foo:\n  from:\n    1: docker\n",
+			errstr:  "image source directive 1 is not a string"},
+		{desc: "import path is empty",
+			content: "foo:\n  from:\n    type: scratch\n  imports:\n    - \"\"\n",
+			errstr:  "import path cannot be empty"},
+	}
+
+	for _, tt := range tables {
+		t.Run(tt.desc, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "stacker.yaml")
+			if err := os.WriteFile(path, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("couldn't write stackerfile: %s", err)
+			}
+
+			_, err := NewStackerfile(path, false, nil)
+			if err == nil {
+				t.Fatalf("expected an error parsing %q", tt.content)
+			}
+
+			if !strings.Contains(err.Error(), tt.errstr) {
+				t.Fatalf("expected error containing %q, got %q", tt.errstr, err)
+			}
+		})
 	}
 }
 
