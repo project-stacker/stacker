@@ -31,6 +31,9 @@ func TestGetImportFromInterface(t *testing.T) {
 		{desc: "relative string",
 			val:      "path/to/file",
 			expected: Import{Path: "path/to/file", Uid: eUGid, Gid: eUGid}},
+		{desc: "string cannot be empty",
+			val:    "",
+			errstr: "import path cannot be empty"},
 		{desc: "dict no dest",
 			val: map[interface{}]interface{}{
 				"path": "/path/to/file",
