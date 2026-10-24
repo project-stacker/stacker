@@ -77,14 +77,28 @@ func substitute(content string, substitutions []string) (string, error) {
 		nobracket := fmt.Sprintf("$%s", membs[0])
 		onebracket := fmt.Sprintf("${%s}", membs[0])
 		bad_content := content
-		for _, unsupp_placeholder := range []string{nobracket, onebracket} {
-			if strings.Contains(content, unsupp_placeholder) {
-				msg := fmt.Sprintf("%q was provided as a substitution "+
-					"and unsupported placeholder %q was found. "+
-					"Replace %q with \"${{%s}}\" to use the substitution.\n", subst,
-					unsupp_placeholder, unsupp_placeholder, membs[0])
-				unsupported_messages = append(unsupported_messages, msg)
-			}
+
+		// $FOO is only a placeholder for FOO if it isn't followed by
+		// another character of a variable name, e.g. $FOO_BAR is not.
+		nobracket_re, err := regexp.Compile(regexp.QuoteMeta(nobracket) + `([^A-Za-z0-9_]|$)`)
+		if err != nil {
+			return "", err
+		}
+
+		unsupp_placeholders := []string{}
+		if nobracket_re.MatchString(content) {
+			unsupp_placeholders = append(unsupp_placeholders, nobracket)
+		}
+		if strings.Contains(content, onebracket) {
+			unsupp_placeholders = append(unsupp_placeholders, onebracket)
+		}
+
+		for _, unsupp_placeholder := range unsupp_placeholders {
+			msg := fmt.Sprintf("%q was provided as a substitution "+
+				"and unsupported placeholder %q was found. "+
+				"Replace %q with \"${{%s}}\" to use the substitution.\n", subst,
+				unsupp_placeholder, unsupp_placeholder, membs[0])
+			unsupported_messages = append(unsupported_messages, msg)
 		}
 
 		// the ${FOO:bar} syntax never worked! but since we documented it
