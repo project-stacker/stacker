@@ -352,6 +352,9 @@ substitution file. An error will be printed that explains how to rewrite it:
 
    error "A=B" was provided as a substitution and unsupported placeholder "${A}" was found. Replace "${A}" with "${{A}}" to use the substitution.
 
+Shell variables whose names only start with a provided key, such as `$FOO_BAR`
+when `FOO` is provided, are not placeholders for that key and are left alone.
+
 Substitutions can also be specified in a yaml file given with the argument
 `--substitute-file`, with any number of key: value pairs:
 
