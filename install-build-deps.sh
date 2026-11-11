@@ -2,6 +2,13 @@
 set -o pipefail
 set -o errexit
 
+echo "----"
+echo "running kernel is: $(uname -a)"
+echo "----"
+
+
+echo "Host kernel is: $(uname -a)"
+
 installdeps_fedora() {
   sudo dnf install \
     jq \
@@ -210,3 +217,7 @@ done
 
 # install golang deps
 installdeps_golang || exit 1
+
+echo "Host kernel is: $(uname -a)"
+echo "Host packages for atomfs/erofs:"
+dpkg --list | grep -E "^ii.*(linux-image|erofs|verity|mapper|cryptsetup)"
