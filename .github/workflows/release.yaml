@@ -38,7 +38,7 @@ jobs:
         platform:
           - linux-amd64  # ubuntu 24.04
           - linux-arm64  # ubuntu 24.04-arm64
-    runs-on: ${{ matrix.platform == 'linux-amd64' && 'cncf-ubuntu-24.04-16-64-x86' || matrix.platform == 'linux-arm64' && 'cncf-ubuntu-16-64-arm' }}
+    runs-on: ${{ matrix.platform == 'linux-amd64' && 'cncf-ubuntu-16-64-x86' || matrix.platform == 'linux-arm64' && 'cncf-ubuntu-16-64-arm' }}
     # needs ci for the cached stacker binary
     needs: [build-id, ci]
     steps:
