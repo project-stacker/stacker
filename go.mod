@@ -1,13 +1,13 @@
 module stackerbuild.io/stacker
 
-go 1.26.8
+go 1.26.10
 
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be
 	github.com/apex/log v1.9.0
 	github.com/apparentlymart/go-shquot v0.0.1
 	github.com/cheggaaa/pb/v3 v3.2.1
-	github.com/dustin/go-humanize v1.0.1
+	github.com/dustin/go-humanize v1.1.0
 	github.com/google/uuid v1.6.0
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/klauspost/pgzip v1.2.6
@@ -27,9 +27,9 @@ require (
 	github.com/udhos/equalfile v0.3.0
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vbatts/go-mtree v0.7.0
-	go.podman.io/image/v5 v5.41.1
-	golang.org/x/sys v0.47.0
-	golang.org/x/term v0.45.0
+	go.podman.io/image/v5 v5.41.2
+	golang.org/x/sys v0.48.0
+	golang.org/x/term v0.46.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -46,7 +46,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v1.0.0-rc.5 // indirect
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
-	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/freddierice/go-losetup v0.0.0-20220711213114-2a14873012db // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
@@ -68,15 +68,16 @@ require (
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/vbauerster/cupwriter v0.0.4 // indirect
 	github.com/vbauerster/mpb/v8 v8.14.0 // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel v1.46.0 // indirect
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
 )
 
 require (
@@ -126,31 +127,23 @@ require (
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/vbatts/tar-split v0.12.3 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
-	go.podman.io/storage v1.64.0 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	go.podman.io/storage v1.64.1 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5 // indirect
 	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	machinerun.io/atomfs v1.2.1
 )
 
-replace github.com/go-jose/go-jose/v4 => github.com/go-jose/go-jose/v4 v4.1.4
+replace golang.org/x/net => golang.org/x/net v0.60.0
 
 replace github.com/klauspost/compress => github.com/klauspost/compress v1.18.0
 
-replace github.com/sigstore/fulcio => github.com/sigstore/fulcio v1.8.6
-
-replace github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.10.4
-
-replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.15
-
 replace github.com/vbatts/go-mtree => github.com/vbatts/go-mtree v0.5.4
 
-replace golang.org/x/crypto => golang.org/x/crypto v0.52.0
+replace github.com/go-jose/go-jose/v4 => github.com/go-jose/go-jose/v4 v4.1.6
 
-replace golang.org/x/net => golang.org/x/net v0.55.0
-
-replace golang.org/x/text => golang.org/x/text v0.39.0
+replace github.com/moby/buildkit => github.com/moby/buildkit v0.33.0
