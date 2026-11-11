@@ -38,7 +38,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: cncf-ubuntu-2-8-arm
     services:
       registry:
         image: ${{ inputs.registry-service }}
