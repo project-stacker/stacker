@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    runs-on: ubuntu-latest
+    runs-on: cncf-ubuntu-2-8-arm
     steps:
       - name: Setup oras
         uses: oras-project/setup-oras@v2

@@ -9,7 +9,7 @@ permissions: read-all
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: cncf-ubuntu-2-8-arm
     steps:
     - uses: actions/checkout@v7
       with:

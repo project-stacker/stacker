@@ -51,7 +51,7 @@ jobs:
           - linux-arm64  # ubuntu 24.04-arm64
         go-version: ${{fromJson(inputs.go-version)}}
         privilege-level: ${{fromJson(inputs.privilege-level)}}
-    runs-on: ${{ matrix.platform == 'linux-amd64' && 'ubuntu-24.04' || matrix.platform == 'linux-arm64' && 'ubuntu-24.04-arm' }}
+    runs-on: ${{ matrix.platform == 'linux-amd64' && 'cncf-ubuntu-24.04-16-64-x86' || matrix.platform == 'linux-arm64' && 'cncf-ubuntu-16-64-arm' }}
     name: "Build platform ${{ matrix.platform }} golang ${{ matrix.go-version }} privilege ${{ matrix.privilege-level }}"
     steps:
       - uses: actions/checkout@v7
