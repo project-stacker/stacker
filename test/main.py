@@ -31,6 +31,44 @@ def check_env(env_to_check):
         raise RuntimeError(f"EnvCheckFailures: {errors}")
 
 
+def setup_bats_tmpdir():
+    """
+    create a tmpdir that allows unpriv user access to files within
+    """
+    bats_tmpdir = tempfile.mkdtemp(prefix="stacker-bats-")
+    # Mode 0711 lets unprivileged tests traverse TMPDIR without listing retained logs.
+    os.chmod(bats_tmpdir, 0o711)
+    return bats_tmpdir
+
+
+def setup_xdg_runtime_dir(bats_tmpdir, privilege_level):
+    """
+    configure a specified tmpdir as the XDG_RUNTIME_DIR for the specified priv level
+    """
+    runtime_dir = Path(bats_tmpdir) / "xdg-runtime"
+    auth_file = runtime_dir / "containers" / "auth.json"
+    auth_file.parent.mkdir(parents=True, mode=0o700)
+    auth_file.write_text('{"auths":{}}\n')
+
+    # Unprivileged Stacker runs as SUDO_UID inside a user namespace. Make the
+    # runtime directory owned by that UID so both liblxc and containers/image
+    # can use it.
+    if privilege_level == "unpriv":
+        runtime_uid = int(os.environ["SUDO_UID"])
+        runtime_gid = int(os.environ.get("SUDO_GID", os.getgid()))
+    else:
+        runtime_uid = os.getuid()
+        runtime_gid = os.getgid()
+
+    os.chown(runtime_dir, runtime_uid, runtime_gid)
+    os.chmod(runtime_dir, 0o700)
+    os.chown(auth_file.parent, runtime_uid, runtime_gid)
+    os.chmod(auth_file.parent, 0o700)
+    os.chown(auth_file, runtime_uid, runtime_gid)
+    os.chmod(auth_file, 0o600)
+    return str(runtime_dir)
+
+
 def dump_log(log):
     print(f"\n--- Bats log: {log} ---")
     try:
@@ -128,11 +166,15 @@ for priv in priv_to_test:
     cmd.extend(options.tests)
 
     env = os.environ.copy()
-    bats_tmpdir = tempfile.mkdtemp(prefix="stacker-bats-")
-    # Mode 0711 lets unprivileged tests traverse TMPDIR without listing retained logs.
-    os.chmod(bats_tmpdir, 0o711)
-    env["TMPDIR"] = bats_tmpdir
     env["PRIVILEGE_LEVEL"] = priv
+    env["TMPDIR"] = setup_bats_tmpdir()
+    env["XDG_RUNTIME_DIR"] = setup_xdg_runtime_dir(env["TMPDIR"], priv)
+
+    # Ignore an auth file inherited from the host. Tests use the empty file
+    # under XDG_RUNTIME_DIR unless they explicitly create test credentials.
+    if env.get("REGISTRY_AUTH_FILE"):
+        print("WARN: ignoring env value 'REGISTRY_AUTH_FILE'")
+        env.pop("REGISTRY_AUTH_FILE", None)
     try:
         check_env
     except RuntimeError as err:
@@ -145,7 +187,7 @@ for priv in priv_to_test:
             raise subprocess.CalledProcessError(1, cmd)
     except subprocess.CalledProcessError:
         print("tests in modes:", priv, "failed")
-        dump_bats_logs(bats_tmpdir)
+        dump_bats_logs(env["TMPDIR"])
         sys.exit(1)
     else:
-        shutil.rmtree(bats_tmpdir)
+        shutil.rmtree(env["TMPDIR"])

@@ -18,15 +18,13 @@ function teardown() {
 }
 
 @test "from: authenticated zot works" {
-    require_privilege priv
-
     if [ -z "${ZOT_HOST}${ZOT_PORT}" ]; then
         echo "skipping test $BATS_SUITE_TEST_NUMBER because it requires running zot."
         return 0
     fi
 
     export XDG_RUNTIME_DIR=$TEST_TMPDIR
-    mkdir -p $TEST_TMPDIR/containers/
+    mkdir -p "$XDG_RUNTIME_DIR/containers"
     cat > $TEST_TMPDIR/containers/auth.json <<EOF
 {
      "auths": {
@@ -34,7 +32,10 @@ function teardown() {
      }
 }
 EOF
-    export SSL_CERT_FILE=$BATS_SUITE_TMPDIR/ca.crt
+    export REGISTRY_AUTH_FILE=$TEST_TMPDIR/containers/auth.json
+    cp "$BATS_SUITE_TMPDIR/ca.crt" "$TEST_TMPDIR/ca.crt"
+    chmod 0644 "$TEST_TMPDIR/ca.crt"
+    export SSL_CERT_FILE=$TEST_TMPDIR/ca.crt
     skopeo copy --dest-creds "iam:careful" oci:${BUSYBOX_OCI} docker://${ZOT_HOST}:${ZOT_PORT}/busybox:latest
 
     stacker --debug build
