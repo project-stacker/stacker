@@ -3,6 +3,7 @@ package lib
 import (
 	"context"
 	"io"
+	"os"
 	"strings"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -95,6 +96,7 @@ func ImageCopy(opts ImageCopyOpts) error {
 	args.SourceCtx = &types.SystemContext{
 		ArchitectureChoice: opts.OverrideArch,
 		OSChoice:           opts.OverrideOS,
+		AuthFilePath:       os.Getenv("REGISTRY_AUTH_FILE"),
 	}
 
 	if opts.SrcSkipTLS {
@@ -112,6 +114,7 @@ func ImageCopy(opts ImageCopyOpts) error {
 	args.DestinationCtx = &types.SystemContext{
 		ArchitectureChoice: opts.OverrideArch,
 		OSChoice:           opts.OverrideOS,
+		AuthFilePath:       os.Getenv("REGISTRY_AUTH_FILE"),
 	}
 
 	if opts.DestSkipTLS {

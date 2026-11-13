@@ -34,6 +34,7 @@ function teardown() {
      }
 }
 EOF
+    export REGISTRY_AUTH_FILE=$TEST_TMPDIR/containers/auth.json
     export SSL_CERT_FILE=$BATS_SUITE_TMPDIR/ca.crt
     skopeo copy --dest-creds "iam:careful" oci:${BUSYBOX_OCI} docker://${ZOT_HOST}:${ZOT_PORT}/busybox:latest
 

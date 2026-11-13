@@ -133,6 +133,12 @@ for priv in priv_to_test:
     os.chmod(bats_tmpdir, 0o711)
     env["TMPDIR"] = bats_tmpdir
     env["PRIVILEGE_LEVEL"] = priv
+    auth_file = Path(bats_tmpdir) / "auth.json"
+    auth_file.write_text('{"auths":{}}\n')
+    # The unprivileged tests run as another UID, so make this credential-free
+    # file readable to them as well.
+    os.chmod(auth_file, 0o644)
+    env["REGISTRY_AUTH_FILE"] = str(auth_file)
     try:
         check_env
     except RuntimeError as err:
