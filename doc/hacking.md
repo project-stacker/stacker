@@ -35,11 +35,11 @@ The Makefile supports setting some variables for quicker development.
    set above.
 
    You can limit the tests run by specifying a TEST name during make invocation.
-   To run all the tests in the file `test/binds.bat`, and use your local image repository:
+   To run all the tests in the file `test/dir-whiteout.bats`, and use your local image repository:
 
        make test TEST=dir-whiteout STACKER_DOCKER_BASE=oci:$OCI_D:
 
-   By default, test will run both priviledged (priv) and unprivileged (unpriv) tests.
+   By default, test will run both privileged (priv) and unprivileged (unpriv) tests.
 
        make test PRIVILEGE_LEVEL=unpriv 
 
@@ -51,7 +51,7 @@ error originated via [github.com/pkg/errors](https://github.com/pkg/errors).
 
 Sometimes it is useful to write a small reproducer in `test/`, and run it with:
 
-    make check TEST=myreproducer.bats
+    make check TEST=myreproducer
 
 ## Overlayfs / layer issues
 
@@ -92,7 +92,7 @@ for GC and various other tasks, go code cannot directly unshare a user
 namespace (one wonders, then, why this was the language chosen for runc, lxd,
 etc...). A previous implementation (the one in lxd) was to use some
 `__attribute__((constructor))` nonsense and hope for the best, but it doesn't
-work in all cases, and go-embed allows for librar-ization of stacker code if
+work in all cases, and go-embed allows for library-ization of stacker code if
 someone else wants to use it eventually. See 8fa336834f31 ("container: move to
 go-embed for re-exec of C code") for details on that approach.
 
@@ -124,7 +124,7 @@ Note that there is currently one wart. In a stacker file like:
             dd if=/dev/random of=/bigfile bs=1M count=1000
     bar:
         from:
-            type: bult
+            type: built
             tag: foo
         run: |
             rm /bigfile
