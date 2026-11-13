@@ -2,6 +2,11 @@
 set -o pipefail
 set -o errexit
 
+echo "----"
+echo "running kernel is: $(uname -a)"
+echo "----"
+
+
 installdeps_fedora() {
   sudo dnf install \
     jq \
