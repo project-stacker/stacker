@@ -49,9 +49,9 @@ function run_stacker {
     else
         skip_if_no_unpriv_overlay
         if [[ -n "$NO_DEBUG" && "$NO_DEBUG" = 1 ]]; then
-            run sudo --preserve-env=SOURCE_DATE_EPOCH -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
+            run sudo --preserve-env=SOURCE_DATE_EPOCH,XDG_RUNTIME_DIR,REGISTRY_AUTH_FILE,SSL_CERT_FILE -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
         else
-            run sudo --preserve-env=SOURCE_DATE_EPOCH -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
+            run sudo --preserve-env=SOURCE_DATE_EPOCH,XDG_RUNTIME_DIR,REGISTRY_AUTH_FILE,SSL_CERT_FILE -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
         fi
     fi
 }
@@ -190,6 +190,28 @@ function cmp_files() {
         return 1
     fi
     return 0
+}
+
+# Encode credentials for the `auth` field in a containers auth.json file.
+function encode_auth() {
+    printf '%s' "$1" | base64 | tr -d '\n'
+}
+
+function wait_for_port() {
+    local host="$1" port="$2" attempts=50
+    while ! nc -z "$host" "$port"; do
+        attempts=$((attempts - 1))
+        [ "$attempts" -gt 0 ] || return 1
+        sleep 0.1
+    done
+}
+
+function stop_ran_server() {
+    local pidfile="${TEST_TMPDIR}/ran.pid" pid=""
+    [ -s "$pidfile" ] || return 0
+    pid=$(cat "$pidfile")
+    kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
 }
 
 function check_env_zot() {

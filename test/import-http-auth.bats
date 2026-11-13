@@ -26,18 +26,19 @@ EOF
 }
 
 function teardown() {
+    stop_ran_server
     cleanup
     rm -rf http_root || true
-    killall ran_for_stackertest || true
 }
 
 @test "importing from http server with auth works" {
-    require_privilege priv
-
     export XDG_RUNTIME_DIR=$TEST_TMPDIR
     mkdir -p $TEST_TMPDIR/containers/
-    # include valid but wrong creds for the bare hostname and host:port, and
-    # correct creds for a subpath
+    local valid_auth invalid_auth
+    valid_auth=$(encode_auth "iam:careful")
+    invalid_auth=$(encode_auth "wrong:password")
+    # Include syntactically valid but incorrect credentials for the bare
+    # hostname and host:port, and correct credentials for the subpath.
     #
     # NOTE: it is important that the key for each auth dict does NOT end in `/`.
     #
@@ -46,15 +47,22 @@ function teardown() {
     cat > $TEST_TMPDIR/containers/auth.json <<EOF
 {
     "auths": {
-         "localhost": {"auth": "d3Jvbmc6cGFzc3dvcmQ="},
-         "localhost:9999": {"auth": "d3Jvbmc6cGFzc3dvcmQ="},
-         "localhost:9999/path/to": {"auth": "aWFtOmNhcmVmdWw="}
+         "localhost": {"auth": "${invalid_auth}"},
+         "localhost:9999": {"auth": "${invalid_auth}"},
+         "localhost:9999/path/to": {"auth": "${valid_auth}"}
     }
 }
 EOF
-    ./ran_for_stackertest -p 9999 -r http_root -a "iam:careful" &
+    export REGISTRY_AUTH_FILE=$TEST_TMPDIR/containers/auth.json
+    ./ran_for_stackertest -p 9999 -r http_root -a "iam:careful" \
+        > ran.log 2>&1 &
+    echo "$!" > "$TEST_TMPDIR/ran.pid"
+    wait_for_port localhost 9999 || { cat ran.log; return 1; }
     ls -l $XDG_RUNTIME_DIR/containers/
-    stacker --debug build -f stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    if ! stacker --debug build -f stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}; then
+        cat ran.log
+        return 1
+    fi
     umoci ls --layout oci
 
     umoci unpack --image oci:img img
