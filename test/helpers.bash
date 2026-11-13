@@ -49,9 +49,9 @@ function run_stacker {
     else
         skip_if_no_unpriv_overlay
         if [[ -n "$NO_DEBUG" && "$NO_DEBUG" = 1 ]]; then
-            run sudo --preserve-env=SOURCE_DATE_EPOCH -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
+            run sudo --preserve-env=SOURCE_DATE_EPOCH,REGISTRY_AUTH_FILE -u $SUDO_USER "${ROOT_DIR}/stacker" "$@"
         else
-            run sudo --preserve-env=SOURCE_DATE_EPOCH -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
+            run sudo --preserve-env=SOURCE_DATE_EPOCH,REGISTRY_AUTH_FILE -u $SUDO_USER "${ROOT_DIR}/stacker" --debug "$@"
         fi
     fi
 }
@@ -378,13 +378,17 @@ function _skopeo() {
             mkdir --mode=755 /run/containers || chmod /run/containers 755
         fi
     fi
-    [ -n "$TEST_TMPDIR" ]
-    local home="${TEST_TMPDIR}/home"
+    [ -n "${TEST_TMPDIR:-$BATS_SUITE_TMPDIR}" ]
+    local home="${TEST_TMPDIR:-$BATS_SUITE_TMPDIR}/home"
     [ -d "$home" ] || mkdir -p "$home"
     HOME="$home" skopeo "$@"
 }
 
 function start_registry() {
+    REGISTRY_TMPDIR="${BATS_SUITE_TMPDIR}/local-registry"
+    echo "# using suite temp directory for local registry: ${REGISTRY_TMPDIR}" >&3
+    mkdir -p "$REGISTRY_TMPDIR"
+
     if [ -z "${REGISTRY_URL}" ]; then
         echo "Missing REGISTRY_URL env value"
         return 1
@@ -404,15 +408,15 @@ function start_registry() {
 
 
     imgname=$(basename "${REGISTRY_SERVICE}")  # registry:tag
-    if ! _skopeo copy "docker://${REGISTRY_SERVICE}" "oci:${TEST_TMPDIR}/ocid:${imgname}"; then
+    if ! _skopeo copy "docker://${REGISTRY_SERVICE}" "oci:${REGISTRY_TMPDIR}/ocid:${imgname}"; then
         echo "# skopeo copy of '${REGISTRY_SERVICE}' to local directory failed" >&3
         return 1
     fi
 
     # unpack the image
-    unpackdir="${TEST_TMPDIR}/unpacked-reg"
+    unpackdir="${REGISTRY_TMPDIR}/unpacked-reg"
     if [ ! -d "${unpackdir}" ]; then
-        if ! umoci unpack --keep-dirlinks --image "${TEST_TMPDIR}/ocid:${imgname}" "${unpackdir}"; then
+        if ! umoci unpack --keep-dirlinks --image "${REGISTRY_TMPDIR}/ocid:${imgname}" "${unpackdir}"; then
             echo "failed to unpack registry service image ${imgname} to ${unpackdir}"
             return 1
         fi
@@ -421,10 +425,11 @@ function start_registry() {
     fi
 
     # start up registry in the background
-    reglog="${TEST_TMPDIR}/registry.log"
-    chroot "${unpackdir}/rootfs" "/entrypoint.sh" "/etc/docker/registry/config.yml" "2>&1" "1>${reglog}" &
+    reglog="${REGISTRY_TMPDIR}/registry.log"
+    env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin REGISTRY_HTTP_ADDR=127.0.0.1:5000 \
+        chroot "${unpackdir}/rootfs" "/entrypoint.sh" "/etc/docker/registry/config.yml" >"${reglog}" 2>&1 &
     REGISTRY_PID=$!
-    echo "$REGISTRY_PID" > "${TEST_TMPDIR}/registry.pid"
+    echo "$REGISTRY_PID" > "${REGISTRY_TMPDIR}/registry.pid"
 
     regup=0
     for ((x=1;x<=5;x++)); do
@@ -440,14 +445,21 @@ function start_registry() {
 
     if [ "$regup" != "1" ]; then
         echo "failed to bring up local registry service"
+        if [ -s "$reglog" ]; then
+            echo "# local registry log (${reglog}):" >&3
+            cat "$reglog" >&3
+        else
+            echo "# local registry log is empty (${reglog})" >&3
+        fi
+        return 1
     fi
 
-    echo "local registry service up on ${REGISTRY_URL} PID=$(cat "${TEST_TMPDIR}/registry.pid")"
+    echo "local registry service up on ${REGISTRY_URL} PID=$(cat "${REGISTRY_TMPDIR}/registry.pid")"
     return 0
 }
 
 function stop_registry() {
-    regpid="${TEST_TMPDIR}/registry.pid"
+    regpid="${BATS_SUITE_TMPDIR}/local-registry/registry.pid"
     if [ -s "$regpid" ]; then
         echo "# stopping local registry" >&3
         pkill --pidfile "$regpid"

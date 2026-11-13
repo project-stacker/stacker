@@ -87,7 +87,9 @@ func Download(cacheDir string, remoteUrl string, progress bool, expectedHash, re
 	}
 	key := fmt.Sprintf("%s%s", u.Host, u.Path)
 	log.Infof("searching creds for key %q", key)
-	creds, err := config.GetCredentials(&types.SystemContext{}, key)
+	creds, err := config.GetCredentials(&types.SystemContext{
+		AuthFilePath: os.Getenv("REGISTRY_AUTH_FILE"),
+	}, key)
 	if err != nil {
 		log.Infof("credentials not found for host %s - reason:%s continuing without creds", u.Host, err)
 	}

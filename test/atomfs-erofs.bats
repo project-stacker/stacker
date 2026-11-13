@@ -5,6 +5,15 @@ function setup() {
 }
 
 function teardown() {
+    echo "# START atomfs-erorfs debug output" >&3
+    echo "# ================================" >&3
+    echo "# sudo dmsetup status: $(sudo dmsetup status)" >&3
+    echo "# sudo dmsetup table: $(sudo dmsetup table)" >&3
+    echo "# veritysetup status --help: $(veritysetup status --help)" >&3
+    echo "# losetup -a: $(losetup -a)" >&3
+    echo "# cat /proc/mounts: $(cat /proc/mounts)" >&3
+    echo "# ================================" >&3
+    echo "# END  atomfs-erorfs debug output" >&3
     cleanup
 }
 

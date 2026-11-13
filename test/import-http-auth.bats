@@ -52,6 +52,7 @@ function teardown() {
     }
 }
 EOF
+    export REGISTRY_AUTH_FILE=$TEST_TMPDIR/containers/auth.json
     ./ran_for_stackertest -p 9999 -r http_root -a "iam:careful" &
     ls -l $XDG_RUNTIME_DIR/containers/
     stacker --debug build -f stacker.yaml --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
