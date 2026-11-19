@@ -127,3 +127,20 @@ func TestCacheEntryChanged(t *testing.T) {
 	// enough to capture changes in types.
 	assert.Equal(uint64(0x9fa3e20d827f5ae5), h)
 }
+
+func TestChangedPathLines(t *testing.T) {
+	assert := assert.New(t)
+	files := []string{"a", "b", "c", "d"}
+
+	assert.Equal([]string{"changed: dir/a", "changed: dir/b"},
+		changedPathLines("dir", files[:2], false))
+
+	assert.Equal([]string{
+		"changed: dir/a",
+		"changed: dir/b",
+		"and 2 additional differences. use --debug for complete output",
+	}, changedPathLines("dir", files, false))
+
+	assert.Equal([]string{"changed: dir/a", "changed: dir/b", "changed: dir/c", "changed: dir/d"},
+		changedPathLines("dir", files, true))
+}

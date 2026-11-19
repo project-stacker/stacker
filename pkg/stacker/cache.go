@@ -255,6 +255,13 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 			}
 			if dirChanged {
 				log.Infof("cache miss because import dir content changed: %s", imp.Path)
+				changedFiles, err := cachedFileDiff(diskPath, cachedImport.Hash)
+				if err != nil {
+					return nil, false, err
+				}
+				for _, line := range changedPathLines(imp.Path, changedFiles, c.config.Debug) {
+					log.Infof("%s", line)
+				}
 				return nil, false, nil
 			}
 		} else {
@@ -316,6 +323,25 @@ func (c *BuildCache) Lookup(name string) (*CacheEntry, bool, error) {
 	}
 
 	return &result, true, nil
+}
+
+// changedPathLines returns the log lines describing changed paths under dir:
+// all of them with debug, otherwise the first maxShown plus a count.
+func changedPathLines(dir string, files []string, debug bool) []string {
+	const maxShown = 2
+	shown := files
+	if !debug && len(files) > maxShown {
+		shown = files[:maxShown]
+	}
+
+	lines := make([]string, 0, len(shown)+1)
+	for _, f := range shown {
+		lines = append(lines, "changed: "+path.Join(dir, f))
+	}
+	if len(shown) < len(files) {
+		lines = append(lines, fmt.Sprintf("and %d additional differences. use --debug for complete output", len(files)-len(shown)))
+	}
+	return lines
 }
 
 func isCachedDirChanged(dirPath string, cachedDirHash string) (bool, error) {
