@@ -567,7 +567,6 @@ first:
     url: ${{BUSYBOX_OCI}}
   imports:
   - path: folder1/
-    dest: /folder1/
 EOF
     stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
