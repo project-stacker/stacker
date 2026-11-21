@@ -108,6 +108,27 @@ func TestSubstitute(t *testing.T) {
 		t.Fatalf("substitution with unsupported placeholders should have failed but didn't")
 	}
 
+	// variables which merely start with the name of a provided
+	// substitution, e.g. $VERSION_ID for VERSION, are not placeholders
+	s = "$VERSION_ID $VERSIONS ${VERSION_ID} ${VERSIONS:-1} ${{VERSION}}"
+	result, err = substitute(s, []string{"VERSION=1.0"})
+	if err != nil {
+		t.Fatalf("failed substitution: %s", err)
+	}
+
+	expected = "$VERSION_ID $VERSIONS ${VERSION_ID} ${VERSIONS:-1} 1.0"
+	if result != expected {
+		t.Fatalf("bad substitution result, expected '%s' got '%s'", expected, result)
+	}
+
+	// but $VERSION followed by a non-name character still is
+	for _, s := range []string{"$VERSION", "$VERSION/bin", "$VERSION-rc1", "\"$VERSION\""} {
+		_, err = substitute(s, []string{"VERSION=1.0"})
+		if err == nil {
+			t.Fatalf("substitution of %q with unsupported placeholder should have failed but didn't", s)
+		}
+	}
+
 	// a double bracket placeholder with no default value must be provided
 	s = "${{NOT_SET}}"
 	_, err = substitute(s, []string{})
