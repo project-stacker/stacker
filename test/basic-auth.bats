@@ -40,3 +40,32 @@ EOF
 
     stacker --debug build
 }
+
+@test "publish uses credentials from netrc for authenticated zot" {
+    require_privilege priv
+
+    if [ -z "${ZOT_HOST}${ZOT_PORT}" ]; then
+        echo "skipping test $BATS_SUITE_TEST_NUMBER because it requires running zot."
+        return 0
+    fi
+
+    cat > stacker.yaml <<'EOF'
+busybox:
+    from:
+        type: oci
+        url: ${{BUSYBOX_OCI}}
+EOF
+    stacker build --substitute "BUSYBOX_OCI=${BUSYBOX_OCI}"
+
+    export NETRC="$TEST_TMPDIR/netrc"
+    cat > "$NETRC" <<EOF
+machine ${ZOT_HOST}:${ZOT_PORT} login iam password careful
+EOF
+
+    stacker publish --substitute "BUSYBOX_OCI=${BUSYBOX_OCI}" \
+        --skip-tls --url "docker://${ZOT_HOST}:${ZOT_PORT}" --tag netrc-test
+
+    run skopeo inspect --tls-verify=false --creds "iam:careful" \
+        "docker://${ZOT_HOST}:${ZOT_PORT}/busybox:netrc-test"
+    [ "$status" -eq 0 ]
+}

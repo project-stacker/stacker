@@ -3,6 +3,7 @@ package stacker
 import (
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -105,6 +106,24 @@ func (p *Publisher) Publish(file string) error {
 	if err != nil {
 		return err
 	}
+	username, password := opts.Username, opts.Password
+	if is.Type == types.DockerLayer && username == "" && password == "" {
+		registry := strings.TrimPrefix(opts.Url, "docker://")
+		registry = strings.SplitN(registry, "/", 2)[0]
+		username, password, _, err = lib.NetrcCredentials(registry)
+		if err != nil {
+			return errors.Wrap(err, "reading netrc credentials")
+		}
+		// Retry without the port; netrc machine entries often name only the host.
+		if username == "" && password == "" {
+			if host, _, splitErr := net.SplitHostPort(registry); splitErr == nil {
+				username, password, _, err = lib.NetrcCredentials(host)
+				if err != nil {
+					return errors.Wrap(err, "reading netrc credentials")
+				}
+			}
+		}
+	}
 
 	// Iterate through all layers defined in this stackerfile
 	for _, name := range sf.FileOrder {
@@ -173,8 +192,8 @@ func (p *Publisher) Publish(file string) error {
 				err = lib.ImageCopy(lib.ImageCopyOpts{
 					Src:          fmt.Sprintf("oci:%s:%s", opts.Config.OCIDir, layerName),
 					Dest:         destUrl,
-					DestUsername: opts.Username,
-					DestPassword: opts.Password,
+					DestUsername: username,
+					DestPassword: password,
 					Progress:     progressWriter,
 					SrcSkipTLS:   true,
 					DestSkipTLS:  opts.SkipTLS,

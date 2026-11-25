@@ -388,6 +388,16 @@ Stacker will look for credentials in the `auth.json` file documented at
 [containers-auth.json](https://github.com/containers/image/blob/main/docs/containers-auth.json.5.md).
 The longest matching substring of the import URL is used.
 
+`stacker publish` also supports registry credentials from a netrc file. It
+matches the registry host against a `machine` entry (or uses a `default`
+entry). Stacker reads the file named by `$NETRC`, or `~/.netrc` when `$NETRC`
+is unset. Explicit `--username` and `--password` flags take precedence. For
+example:
+
+```text
+machine registry.example.com login myuser password mypassword
+```
+
 So for example, this `auth.json` file will allow authentication to example.com
 with the username and password of `aw:yeah` (encoded as base64). For a URL
 `https://example.com:8080/reg1/p1/path/to/file.txt` or any other file under
