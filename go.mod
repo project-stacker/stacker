@@ -8,6 +8,7 @@ require (
 	github.com/apparentlymart/go-shquot v0.0.1
 	github.com/cheggaaa/pb/v3 v3.2.1
 	github.com/dustin/go-humanize v1.1.0
+	github.com/git-lfs/go-netrc v0.0.0-20250218165306-ba0029b43d11
 	github.com/google/uuid v1.6.0
 	github.com/justincormack/go-memfd v0.0.0-20170219213707-6e4af0518993
 	github.com/klauspost/pgzip v1.2.6
