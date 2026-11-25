@@ -317,6 +317,11 @@ function zot_setup_auth {
 }
 
 function start_zot {
+  # Bats runs test cases in a file concurrently. They share ZOT_HOST and
+  # ZOT_PORT, so serialize Zot's full lifetime across those cases.
+  exec {ZOT_LOCK_FD}>"$BATS_SUITE_TMPDIR/zot.lock"
+  flock "$ZOT_LOCK_FD"
+
   ZOT_USE_TLS=$1
   echo "# starting zot at $ZOT_HOST:$ZOT_PORT" >&3
   # start as a background task
@@ -326,7 +331,7 @@ function start_zot {
       cat "$zotcfg"
       return 1
   fi
-  zot serve "$TEST_TMPDIR/zot-config.json" &
+  zot serve "$TEST_TMPDIR/zot-config.json" {ZOT_LOCK_FD}>&- &
   pid=$!
   echo "$pid" > "${TEST_TMPDIR}/zot.pid"
 
@@ -381,11 +386,18 @@ function zot_teardown {
     zotpid="${TEST_TMPDIR}/zot.pid"
     if [ -s "$zotpid" ]; then
         echo "# stopping zot" >&3
-        pkill --pidfile "$zotpid"
+        zot_pid=$(cat "$zotpid")
+        kill "$zot_pid" 2>/dev/null || true
+        wait "$zot_pid" 2>/dev/null || true
         echo "# stopped zot" >&3
     fi
     rm -f "$TEST_TMPDIR/zot-config.json"
     rm -rf "$TEST_TMPDIR/zot"
+    if [ -n "${ZOT_LOCK_FD:-}" ]; then
+        flock -u "$ZOT_LOCK_FD"
+        exec {ZOT_LOCK_FD}>&-
+        unset ZOT_LOCK_FD
+    fi
 }
 
 function _skopeo() {
