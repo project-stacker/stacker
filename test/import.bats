@@ -554,3 +554,40 @@ EOF
 
     stacker build --substitute CENTOS_OCI=${CENTOS_OCI}
 }
+
+@test "import dir cache miss logs changed paths" {
+    mkdir folder1
+    echo a > folder1/file1
+    echo a > folder1/file2
+    echo a > folder1/file3
+    cat > stacker.yaml <<"EOF"
+first:
+  from:
+    type: oci
+    url: ${{BUSYBOX_OCI}}
+  imports:
+  - path: folder1
+EOF
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+
+    echo b > folder1/file1
+    echo b > folder1/file2
+    echo b > folder1/file3
+
+    # without --debug only the first two changed paths are shown
+    NO_DEBUG=1
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    echo "$output" | grep "cache miss because import dir content changed"
+    [ "$(echo "$output" | grep -c "changed: .*/folder1/file")" -eq 2 ]
+    echo "$output" | grep "and 1 additional differences. use --debug for complete output"
+
+    echo c > folder1/file1
+    echo c > folder1/file2
+    echo c > folder1/file3
+
+    # with --debug all of them are shown
+    NO_DEBUG=0
+    stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
+    echo "$output" | grep "cache miss because import dir content changed"
+    [ "$(echo "$output" | grep -c "changed: .*/folder1/file")" -eq 3 ]
+}
