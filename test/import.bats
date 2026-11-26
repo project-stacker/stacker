@@ -566,7 +566,7 @@ first:
     type: oci
     url: ${{BUSYBOX_OCI}}
   imports:
-  - path: folder1/
+  - path: folder1
 EOF
     stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
 
@@ -578,7 +578,7 @@ EOF
     NO_DEBUG=1
     stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo "$output" | grep "cache miss because import dir content changed"
-    [ "$(echo "$output" | grep -c "changed: folder1/file")" -eq 2 ]
+    [ "$(echo "$output" | grep -c "changed: .*/folder1/file")" -eq 2 ]
     echo "$output" | grep "and 1 additional differences. use --debug for complete output"
 
     echo c > folder1/file1
@@ -589,5 +589,5 @@ EOF
     NO_DEBUG=0
     stacker build --substitute BUSYBOX_OCI=${BUSYBOX_OCI}
     echo "$output" | grep "cache miss because import dir content changed"
-    [ "$(echo "$output" | grep -c "changed: folder1/file")" -eq 3 ]
+    [ "$(echo "$output" | grep -c "changed: .*/folder1/file")" -eq 3 ]
 }
